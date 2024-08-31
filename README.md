@@ -1,1 +1,1 @@
-# JobSearchTracker
+# OfferInsight
