@@ -10,6 +10,7 @@ import {
   RowData,
 } from '@tanstack/react-table';
 
+
 type Application = {
   application_id: number;
   company: string;
@@ -104,7 +105,7 @@ function App() {
   React.useEffect(() => {
     async function fetchData() {
       const response = await fetch('/api/applications');
-      const applications = await response.json();
+      const applications = await prisma.applications.findMany({});
       setData(applications);
     }
     fetchData();
