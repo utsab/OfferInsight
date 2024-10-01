@@ -6,6 +6,7 @@ For more information, see the [course curriculum](https://nextjs.org/learn) on t
 
 Commands used to install and start Prisma/PostgreSQL:
 
+```
 pnpm add -D prisma
 pnpm add @prisma/client
 pnpm add pg
@@ -24,6 +25,7 @@ postgres=# CREATE DATABASE offer_insight;
 postgres=# GRANT ALL PRIVILEGES ON DATABASE offer_insight TO ttran913;
 postgres=# \q
 postgres@codespaces-c5d24c:/workspaces/JobSearchTracker$ exit
-pnpm prisma migrate dev --name init
+pnpm prisma migrate dev --name init  //only works when postgresql is running
 pnpm prisma generate
 pnpm prisma studio
+```

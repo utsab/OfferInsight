@@ -1,21 +1,38 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { db } from '@vercel/postgres';
-
-const client = await db.connect();
+import { prisma } from '@/db'; // Import the prisma client
 
 export async function GET() {
   console.log('Fetching applications...');
   try {
-    const result = await client.sql`
-      SELECT application_id, company, first_round_or_coding_challenge, final_round, offer
-      FROM applications
-      ORDER BY company ASC
-    `;
-    return NextResponse.json(result.rows);
+    const applications = await prisma.applications.findMany({
+      orderBy: {
+        id: 'asc',
+      },
+    });
+    return NextResponse.json(applications);
   } catch (error) {
     console.error('Database Error:', error);
     return NextResponse.json({ error: 'Failed to fetch applications.' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const { id, company, firstRound, finalRound, offer } = await request.json();
+    const newApplication = await prisma.applications.create({
+      data: {
+        id,
+        company,
+        firstRound,
+        finalRound,
+        offer,
+      },
+    });
+    return NextResponse.json(newApplication);
+  } catch (error) {
+    console.error('Error adding new application:', error);
+    return NextResponse.json({ error: 'Failed to add new application.' }, { status: 500 });
   }
 }
