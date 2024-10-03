@@ -5,7 +5,6 @@ This is the starter template for the Next.js App Router Course. It contains the 
 For more information, see the [course curriculum](https://nextjs.org/learn) on the Next.js Website.
 
 Commands used to install and start Prisma/PostgreSQL:
-
 ```
 pnpm add -D prisma
 pnpm add @prisma/client
@@ -28,4 +27,14 @@ postgres@codespaces-c5d24c:/workspaces/JobSearchTracker$ exit
 pnpm prisma migrate dev --name init  //only works when postgresql is running
 pnpm prisma generate
 pnpm prisma studio
+```
+
+Commands to start every instance of codespace:
+```
+sudo service postgresql start
+sudo service postgresql status
+pnpm prisma generate (maybe not needed, seems only if made changes to schema)
+pnpm prisma migrate dev (also maybe not needed if no changes made to database??)
+pnpm prisma studio (optional if I want GUI)
+pnpm dev
 ```
