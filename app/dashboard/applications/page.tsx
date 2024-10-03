@@ -5,8 +5,6 @@ import '@/app/ui/dashboard/applications/applications.css'
 
 //
 import {
-  Column,
-  Table,
   ColumnDef,
   useReactTable,
   getCoreRowModel,
@@ -33,19 +31,39 @@ declare module '@tanstack/react-table' {
 // Give our default column cell renderer editing superpowers!
 const defaultColumn: Partial<ColumnDef<Application>> = {
   cell: ({ getValue, row: { index }, column: { id }, table }) => {
-    const initialValue = getValue()
+
+    if (id === 'id') {
+      return <span>{getValue() as string}</span>;
+    }
+
+    const initialValue = getValue();
     // We need to keep and update the state of the cell normally
-    const [value, setValue] = React.useState(initialValue)
+    const [value, setValue] = React.useState(initialValue);
 
     // When the input is blurred, we'll call our table meta's updateData function
     const onBlur = () => {
-      table.options.meta?.updateData(index, id, value)
-    }
+      table.options.meta?.updateData(index, id, value);
+    };
 
     // If the initialValue is changed external, sync it up with our state
     React.useEffect(() => {
-      setValue(initialValue)
-    }, [initialValue])
+      setValue(initialValue);
+    }, [initialValue]);
+
+    if (typeof value === 'boolean') {
+      return (
+        <div className="center-checkbox">
+          <input
+            type="checkbox"
+            checked={value}
+            onChange={(e) => {
+              setValue(e.target.checked);
+              table.options.meta?.updateData(index, id, e.target.checked);
+            }}
+          />
+        </div>
+      );
+    }
 
     return (
       <input
@@ -53,9 +71,9 @@ const defaultColumn: Partial<ColumnDef<Application>> = {
         onChange={e => setValue(e.target.value)}
         onBlur={onBlur}
       />
-    )
+    );
   },
-}
+};
 
 function useSkipper() {
   const shouldSkipRef = React.useRef(true)
@@ -114,8 +132,7 @@ function App() {
 
   const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
 
-  const [newRow, setNewRow] = React.useState<Application>({
-    id: 0,
+  const [newRow, setNewRow] = React.useState<Omit<Application, 'id'>>({
     company: '',
     firstRound: false,
     finalRound: false,
@@ -135,18 +152,37 @@ function App() {
     fetchData();
   }, []);
 
-  const updateData = (rowIndex: number, columnId: string, value: unknown) => {
+  const updateData = async (rowIndex: number, columnId: string, value: unknown) => {
+    // Skip page index reset until after next rerender
+    skipAutoResetPageIndex();
     setData((old) =>
       old.map((row, index) => {
         if (index === rowIndex) {
           return {
-            ...row,
+            ...old[rowIndex]!,
             [columnId]: value,
           };
         }
         return row;
       })
     );
+    const row = data[rowIndex];
+    const updatedRow = { ...row, [columnId]: value };
+    try {
+      const response = await fetch('/api/applications/', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedRow),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update the database');
+      }
+    } catch (error) {
+      console.error('Error updating the database:', error);
+    }
   };
 
   const addNewRow = async () => {
@@ -166,7 +202,6 @@ function App() {
       const addedApplication = await response.json();
       setData((old) => [...old, addedApplication]);
       setNewRow({
-        id: 0,
         company: '',
         firstRound: false,
         finalRound: false,
@@ -185,23 +220,8 @@ function App() {
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     autoResetPageIndex,
-    // Provide our updateData function to our table meta
     meta: {
-      updateData: (rowIndex, columnId, value) => {
-        // Skip page index reset until after next rerender
-        skipAutoResetPageIndex()
-        setData(old =>
-          old.map((row, index) => {
-            if (index === rowIndex) {
-              return {
-                ...old[rowIndex]!,
-                [columnId]: value,
-              }
-            }
-            return row
-          })
-        )
-      },
+      updateData,
     },
     debugTable: true,
   })
@@ -322,13 +342,6 @@ function App() {
       </div>
       <div className="mt-4">
         <h3>Add New Row</h3>
-        <input
-          type="number"
-          placeholder="ID"
-          value={newRow.id}
-          onChange={(e) => setNewRow({ ...newRow, id: Number(e.target.value) })}
-          className="border p-1 rounded"
-        />
         <input
           type="text"
           placeholder="Company"

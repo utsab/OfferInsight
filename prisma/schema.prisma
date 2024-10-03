@@ -14,9 +14,9 @@ datasource db {
 }
 
 model Applications {
-  id Int @id @default(autoincrement())
-  company String
-  firstRound Boolean
-  finalRound Boolean
-  offer Boolean
+  id          Int     @id @default(autoincrement())
+  company     String
+  firstRound  Boolean
+  finalRound  Boolean
+  offer       Boolean
 }

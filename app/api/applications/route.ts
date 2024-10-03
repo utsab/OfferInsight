@@ -20,10 +20,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { id, company, firstRound, finalRound, offer } = await request.json();
+    const { company, firstRound, finalRound, offer } = await request.json();
     const newApplication = await prisma.applications.create({
       data: {
-        id,
         company,
         firstRound,
         finalRound,
@@ -34,5 +33,19 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error adding new application:', error);
     return NextResponse.json({ error: 'Failed to add new application.' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const { id, ...data } = await request.json();
+    const updatedApplication = await prisma.applications.update({
+      where: { id },
+      data,
+    });
+    return NextResponse.json(updatedApplication);
+  } catch (error) {
+    console.error('Error updating application:', error);
+    return NextResponse.json({ error: 'Failed to update application.' }, { status: 500 });
   }
 }
