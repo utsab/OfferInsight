@@ -97,33 +97,50 @@ function App() {
   const columns = React.useMemo<ColumnDef<Application>[]>(
     () => [
       {
+        header: 'No.',
+        cell: ({ row }) => row.index + 1,
+        footer: () => 'No.',
+      },
+      {
         header: 'ID',
         accessorKey: 'id',
-        footer: props => props.column.id,
+        footer: () => 'ID',
       },
       {
         header: 'Company',
         accessorKey: 'company',
-        footer: (props) => props.column.id,
+        footer: () => 'Company Name',
       },
       {
         header: 'First Round/Coding Challenge',
         accessorKey: 'firstRound',
-        footer: (props) => props.column.id,
+        footer: () => 'First Round',
       },
       {
         header: 'Final Round',
         accessorKey: 'finalRound',
-        footer: (props) => props.column.id,
+        footer: () => 'Final Round',
       },
       {
         header: 'Offer',
         accessorKey: 'offer',
-        footer: (props) => props.column.id,
+        footer: () => 'Offer',
+      },
+      {
+        header: 'Actions',
+        cell: ({ row }) => (
+          <button
+            onClick={() => handleDelete(row.original.id)}
+            className="border rounded p-1"
+          >
+            Delete
+          </button>
+        ),
+        footer: () => 'Actions',
       },
     ],
     []
-  )
+  );
 
 //   const [data, setData] = React.useState(() => makeData(1000))
   const [data, setData] = React.useState<Application[]>([]);
@@ -212,6 +229,26 @@ function App() {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await fetch(`/api/applications`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to delete the application');
+      }
+  
+      setData((old) => old.filter((row) => row.id !== id));
+    } catch (error) {
+      console.error('Error deleting the application:', error);
+    }
+  };
+
   const table = useReactTable({
     data,
     columns,
@@ -231,43 +268,47 @@ function App() {
       <div className="h-2" />
       <table>
         <thead>
-          {table.getHeaderGroups().map(headerGroup => (
+          {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => {
-                return (
-                  <th key={header.id} colSpan={header.colSpan}>
-                    {header.isPlaceholder ? null : (
-                      <div>
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                      </div>
-                    )}
-                  </th>
-                )
-              })}
+              {headerGroup.headers.map((header) => (
+                <th key={header.id} colSpan={header.colSpan}>
+                  {header.isPlaceholder ? null : (
+                    <div>
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                    </div>
+                  )}
+                </th>
+              ))}
             </tr>
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map(row => {
-            return (
-              <tr key={row.id}>
-                {row.getVisibleCells().map(cell => {
-                  return (
-                    <td key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  )
-                })}
-              </tr>
-            )
-          })}
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <td key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
         </tbody>
+        <tfoot>
+          {table.getFooterGroups().map((footerGroup) => (
+            <tr key={footerGroup.id}>
+              {footerGroup.headers.map((header) => (
+                <th key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.footer, header.getContext())}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </tfoot>
       </table>
       <div className="h-2" />
       <div className="flex items-center gap-2">
@@ -302,8 +343,7 @@ function App() {
         <span className="flex items-center gap-1">
           <div>Page</div>
           <strong>
-            {table.getState().pagination.pageIndex + 1} of{' '}
-            {table.getPageCount()}
+            {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </strong>
         </span>
         <span className="flex items-center gap-1">
@@ -313,20 +353,20 @@ function App() {
             min="1"
             max={table.getPageCount()}
             defaultValue={table.getState().pagination.pageIndex + 1}
-            onChange={e => {
-              const page = e.target.value ? Number(e.target.value) - 1 : 0
-              table.setPageIndex(page)
+            onChange={(e) => {
+              const page = e.target.value ? Number(e.target.value) - 1 : 0;
+              table.setPageIndex(page);
             }}
             className="border p-1 rounded w-16"
           />
         </span>
         <select
           value={table.getState().pagination.pageSize}
-          onChange={e => {
-            table.setPageSize(Number(e.target.value))
+          onChange={(e) => {
+            table.setPageSize(Number(e.target.value));
           }}
         >
-          {[10, 20, 30, 40, 50].map(pageSize => (
+          {[10, 20, 30, 40, 50].map((pageSize) => (
             <option key={pageSize} value={pageSize}>
               Show {pageSize}
             </option>
@@ -367,7 +407,7 @@ function App() {
         <button onClick={addNewRow} className="border p-1 rounded">Add Row</button>
       </div>
     </div>
-  )
+  );
 }
 
 export default App;

@@ -49,3 +49,16 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Failed to update application.' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { id } = await request.json();
+    await prisma.applications.delete({
+      where: { id },
+    });
+    return NextResponse.json({ message: 'Application deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting application:', error);
+    return NextResponse.json({ error: 'Failed to delete application.' }, { status: 500 });
+  }
+}
