@@ -102,11 +102,6 @@ function App() {
         footer: () => 'No.',
       },
       {
-        header: 'ID',
-        accessorKey: 'id',
-        footer: () => 'ID',
-      },
-      {
         header: 'Company',
         accessorKey: 'company',
         footer: () => 'Company Name',
@@ -114,7 +109,7 @@ function App() {
       {
         header: 'First Round/Coding Challenge',
         accessorKey: 'firstRound',
-        footer: () => 'First Round',
+        footer: () => 'First Round/Coding Challenge',
       },
       {
         header: 'Final Round',
@@ -295,6 +290,49 @@ function App() {
               ))}
             </tr>
           ))}
+          {/* New row for adding entries */}
+          <tr>
+            <td></td> {/* No. column left blank */}
+            <td>
+              <input
+                type="text"
+                placeholder="Company"
+                value={newRow.company}
+                onChange={(e) => setNewRow({ ...newRow, company: e.target.value })}
+                className="border p-1 rounded"
+              />
+            </td>
+            <td>
+              <div className="center-checkbox">
+                <input
+                  type="checkbox"
+                  checked={newRow.firstRound}
+                  onChange={(e) => setNewRow({ ...newRow, firstRound: e.target.checked })}
+                />
+              </div>
+            </td>
+            <td>
+              <div className="center-checkbox">
+                <input
+                  type="checkbox"
+                  checked={newRow.finalRound}
+                  onChange={(e) => setNewRow({ ...newRow, finalRound: e.target.checked })}
+                />
+              </div>
+            </td>
+            <td>
+              <div className="center-checkbox">
+                <input
+                  type="checkbox"
+                  checked={newRow.offer}
+                  onChange={(e) => setNewRow({ ...newRow, offer: e.target.checked })}
+                />
+              </div>
+            </td>
+            <td>
+              <button onClick={addNewRow} className="border p-1 rounded">Add</button>
+            </td>
+          </tr>
         </tbody>
         <tfoot>
           {table.getFooterGroups().map((footerGroup) => (
@@ -379,32 +417,6 @@ function App() {
       </div>
       <div>
         <button onClick={() => refreshData()}>Refresh Data</button>
-      </div>
-      <div className="mt-4">
-        <h3>Add New Row</h3>
-        <input
-          type="text"
-          placeholder="Company"
-          value={newRow.company}
-          onChange={(e) => setNewRow({ ...newRow, company: e.target.value })}
-          className="border p-1 rounded"
-        />
-        <input
-          type="checkbox"
-          checked={newRow.firstRound}
-          onChange={(e) => setNewRow({ ...newRow, firstRound: e.target.checked })}
-        /> First Round/Coding Challenge
-        <input
-          type="checkbox"
-          checked={newRow.finalRound}
-          onChange={(e) => setNewRow({ ...newRow, finalRound: e.target.checked })}
-        /> Final Round
-        <input
-          type="checkbox"
-          checked={newRow.offer}
-          onChange={(e) => setNewRow({ ...newRow, offer: e.target.checked })}
-        /> Offer
-        <button onClick={addNewRow} className="border p-1 rounded">Add Row</button>
       </div>
     </div>
   );
