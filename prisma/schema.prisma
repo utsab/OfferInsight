@@ -20,3 +20,14 @@ model Applications {
   finalRound  Boolean
   offer       Boolean
 }
+
+model Applications_with_Outreach {
+  id              Int     @id @default(autoincrement())
+  company         String
+  hiringManager   String
+  msgToManager    String
+  recruiter       String
+  firstRound      Boolean
+  finalRound      Boolean
+  offer           Boolean
+}
