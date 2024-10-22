@@ -31,3 +31,11 @@ model Applications_with_Outreach {
   finalRound      Boolean
   offer           Boolean
 }
+
+model Linkedin_Outreach {
+  id      Int     @id @default(autoincrement())
+  name    String
+  company String
+  message String
+  result  String
+}
