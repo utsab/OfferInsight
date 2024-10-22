@@ -34,8 +34,8 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(newApplicationWithOutreach);
   } catch (error) {
-    console.error('Error adding new application:', error);
-    return NextResponse.json({ error: 'Failed to add new application.' }, { status: 500 });
+    console.error('Error adding new application with outreach:', error);
+    return NextResponse.json({ error: 'Failed to add new application with outreach.' }, { status: 500 });
   }
 }
 
@@ -48,8 +48,8 @@ export async function PUT(request: Request) {
     });
     return NextResponse.json(updatedApplicationWithOutreach);
   } catch (error) {
-    console.error('Error updating application:', error);
-    return NextResponse.json({ error: 'Failed to update application.' }, { status: 500 });
+    console.error('Error updating application with outreach:', error);
+    return NextResponse.json({ error: 'Failed to update application with outreach.' }, { status: 500 });
   }
 }
 
@@ -59,9 +59,9 @@ export async function DELETE(request: Request) {
     await prisma.applications_with_Outreach.delete({
       where: { id },
     });
-    return NextResponse.json({ message: 'Application deleted successfully' });
+    return NextResponse.json({ message: 'Application with outreach deleted successfully' });
   } catch (error) {
     console.error('Error deleting application:', error);
-    return NextResponse.json({ error: 'Failed to delete application.' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete application with outreach.' }, { status: 500 });
   }
 }

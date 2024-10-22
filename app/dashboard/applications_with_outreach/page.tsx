@@ -107,7 +107,7 @@ function App() {
       {
         header: 'Company',
         accessorKey: 'company',
-        footer: () => 'Company Name',
+        footer: () => 'Company',
       },
       {
         header: 'Hiring Manager',
@@ -176,10 +176,10 @@ function App() {
     async function fetchData() {
       try {
         const response = await fetch('/api/applications_with_outreach');
-        const applications = await response.json();
-        setData(applications);
+        const applicationsWithOutreach = await response.json();
+        setData(applicationsWithOutreach);
       } catch (error) {
-        console.error('Failed to fetch applications:', error);
+        console.error('Failed to fetch applications with outreach:', error);
       }
     }
     fetchData();
@@ -229,7 +229,7 @@ function App() {
       });
   
       if (!response.ok) {
-        throw new Error('Failed to add new application');
+        throw new Error('Failed to add new application with outreach');
       }
   
       const addedApplicationWithOutreach = await response.json();
@@ -244,7 +244,7 @@ function App() {
         offer: false,
       });
     } catch (error) {
-      console.error('Error adding new application:', error);
+      console.error('Error adding new application with outreach:', error);
     }
   };
 
@@ -259,12 +259,12 @@ function App() {
       });
   
       if (!response.ok) {
-        throw new Error('Failed to delete the application');
+        throw new Error('Failed to delete the application with outreach');
       }
   
       setData((old) => old.filter((row) => row.id !== id));
     } catch (error) {
-      console.error('Error deleting the application:', error);
+      console.error('Error deleting the application with outreach:', error);
     }
   };
 
@@ -330,7 +330,7 @@ function App() {
               <input
                 type="text"
                 placeholder="Hiring Manager"
-                value={newRow.company}
+                value={newRow.hiringManager}
                 onChange={(e) => setNewRow({ ...newRow, hiringManager: e.target.value })}
                 className="border p-1 rounded"
               />
@@ -339,7 +339,7 @@ function App() {
               <input
                 type="text"
                 placeholder="Message to Manager"
-                value={newRow.company}
+                value={newRow.msgToManager}
                 onChange={(e) => setNewRow({ ...newRow, msgToManager: e.target.value })}
                 className="border p-1 rounded"
               />
@@ -348,7 +348,7 @@ function App() {
               <input
                 type="text"
                 placeholder="Recruiter"
-                value={newRow.company}
+                value={newRow.recruiter}
                 onChange={(e) => setNewRow({ ...newRow, recruiter: e.target.value })}
                 className="border p-1 rounded"
               />
