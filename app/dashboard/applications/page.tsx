@@ -104,7 +104,7 @@ function App() {
       {
         header: 'Company',
         accessorKey: 'company',
-        footer: () => 'Company Name',
+        footer: () => 'Company',
       },
       {
         header: 'First Round/Coding Challenge',
