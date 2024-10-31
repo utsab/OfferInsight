@@ -39,3 +39,11 @@ model Linkedin_Outreach {
   message String
   result  String
 }
+
+model In_Person_Events {
+  id                  Int     @id @default(autoincrement())
+  event               String
+  date                String
+  numPeopleSpokenTo   Int
+  numLinkedInRequests Int
+}
