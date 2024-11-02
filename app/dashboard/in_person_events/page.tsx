@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import '@/app/ui/dashboard/linkedin_outreach/linkedin_outreach.css'
+import '@/app/ui/dashboard/in_person_events/in_person_events.css'
 
 //
 import {
@@ -28,6 +28,14 @@ declare module '@tanstack/react-table' {
   }
 }
 
+function debounce(func: (...args: any[]) => void, wait: number) {
+  let timeout: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 // Give our default column cell renderer editing superpowers!
 const defaultColumn: Partial<ColumnDef<InPersonEvents>> = {
   cell: ({ getValue, row: { index }, column: { id }, table }) => {
@@ -39,23 +47,51 @@ const defaultColumn: Partial<ColumnDef<InPersonEvents>> = {
     const initialValue = getValue();
     // We need to keep and update the state of the cell normally
     const [value, setValue] = React.useState(initialValue);
+    const [error, setError] = React.useState<string | null>(null);
+    const [previousValue, setPreviousValue] = React.useState(initialValue);
+
+    const debouncedSave = React.useMemo(
+      () => debounce((index: number, id: string, value: unknown) => {
+        table.options.meta?.updateData(index, id, value);
+      }, 500), // Adjust the debounce delay as needed
+      [table]
+    );
 
     // When the input is blurred, we'll call our table meta's updateData function
-    const onBlur = () => {
-      table.options.meta?.updateData(index, id, value);
-    };
+    // const onBlur = () => {
+    //   table.options.meta?.updateData(index, id, value);
+    // };
 
     // If the initialValue is changed external, sync it up with our state
     React.useEffect(() => {
       setValue(initialValue);
+      setPreviousValue(initialValue);
     }, [initialValue]);
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value;
+      if (id === 'numPeopleSpokenTo' || id === 'numLinkedInRequests') {
+        if (!/^\d*$/.test(newValue)) {
+          setError('Please enter a valid number');
+          setValue(previousValue);
+          return;
+        } else {
+          setError(null);
+          setPreviousValue(newValue);
+        }
+      }
+      setValue(newValue);
+      debouncedSave(index, id, newValue);
+    };
+
     return (
-      <input
-        value={value as string}
-        onChange={e => setValue(e.target.value)}
-        onBlur={onBlur}
-      />
+      <div>
+        <input
+          value={value as string}
+          onChange={handleChange}
+        />
+        {error && <span className="error">{error}</span>}
+      </div>
     );
   },
 };

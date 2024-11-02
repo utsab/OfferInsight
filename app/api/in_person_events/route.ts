@@ -38,10 +38,18 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const { id, ...data } = await request.json();
+    const { id, numPeopleSpokenTo, numLinkedInRequests, ...data } = await request.json();
+
+    // Ensure numPeopleSpokenTo and numLinkedInRequests are integers
+    const updatedData = {
+      ...data,
+      numPeopleSpokenTo: parseInt(numPeopleSpokenTo, 10),
+      numLinkedInRequests: parseInt(numLinkedInRequests, 10),
+    };
+
     const updatedInPersonEvents = await prisma.in_Person_Events.update({
       where: { id },
-      data,
+      data: updatedData,
     });
     return NextResponse.json(updatedInPersonEvents);
   } catch (error) {
