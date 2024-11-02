@@ -28,6 +28,14 @@ declare module '@tanstack/react-table' {
   }
 }
 
+function debounce(func: (...args: any[]) => void, wait: number) {
+  let timeout: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 // Give our default column cell renderer editing superpowers!
 const defaultColumn: Partial<ColumnDef<Application>> = {
   cell: ({ getValue, row: { index }, column: { id }, table }) => {
@@ -40,10 +48,17 @@ const defaultColumn: Partial<ColumnDef<Application>> = {
     // We need to keep and update the state of the cell normally
     const [value, setValue] = React.useState(initialValue);
 
+    const debouncedSave = React.useMemo(
+      () => debounce((index: number, id: string, value: unknown) => {
+        table.options.meta?.updateData(index, id, value);
+      }, 500), // Adjust the debounce delay as needed
+      [table]
+    );
+
     // When the input is blurred, we'll call our table meta's updateData function
-    const onBlur = () => {
-      table.options.meta?.updateData(index, id, value);
-    };
+    // const onBlur = () => {
+    //   debouncedSave(index, id, value);
+    // };
 
     // If the initialValue is changed external, sync it up with our state
     React.useEffect(() => {
@@ -58,7 +73,7 @@ const defaultColumn: Partial<ColumnDef<Application>> = {
             checked={value}
             onChange={(e) => {
               setValue(e.target.checked);
-              table.options.meta?.updateData(index, id, e.target.checked);
+              debouncedSave(index, id, e.target.checked);
             }}
           />
         </div>
@@ -68,8 +83,10 @@ const defaultColumn: Partial<ColumnDef<Application>> = {
     return (
       <input
         value={value as string}
-        onChange={e => setValue(e.target.value)}
-        onBlur={onBlur}
+        onChange={e => {
+          setValue(e.target.value);
+          debouncedSave(index, id, e.target.value);
+        }}
       />
     );
   },
