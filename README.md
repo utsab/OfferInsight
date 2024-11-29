@@ -17,6 +17,7 @@ pnpm prisma generate
 sudo vim /etc/sudoers.d/codespace
 sudo systemctl start postgresql
 sudo -i -u postgres
+psql
 postgres=# CREATE USER johndoe WITH PASSWORD 'randompassword';
 postgres=# CREATE USER ttran913 WITH PASSWORD '********';
 postgres=# ALTER USER ttran913 WITH SUPERUSER;
