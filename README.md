@@ -4,6 +4,22 @@ This is the starter template for the Next.js App Router Course. It contains the 
 
 For more information, see the [course curriculum](https://nextjs.org/learn) on the Next.js Website.
 
+Dependencies: 
+- npm (>=10.9.0)
+- pnpm (>=9.15.2) 
+- node (>=20.12.0)
+  
+Setting up oAuth to allow Github authentication: 
+1. Make a Github developer app
+2. For the homepage url, put anything (google.com)
+3. For the callback url, if you're on codespaces, then find out your codespace public url and append the following: /api/auth/callback/
+4. You can uncheck the "webhooks" option when creating the github app
+5. Generate a new client secret, copy that value into AUTH_GITHUB_SECRET
+6. For AUTH_SECRET, you can put in any random value, e.g ("12345")
+7. For NEXTAUTH_URL, it should either be http://localhost:3000 or your custom Github codespace public url
+
+   
+
 Commands used to install and start Prisma/PostgreSQL:
 ```
 pnpm add -D prisma
