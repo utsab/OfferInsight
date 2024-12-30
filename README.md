@@ -22,16 +22,20 @@ Setting up oAuth to allow Github authentication:
 
 Commands used to install and start Prisma/PostgreSQL:
 ```
-pnpm add -D prisma
-pnpm add @prisma/client
-pnpm add pg
-pnpm prisma init
-sudo apt-get update
+
+npx prisma generate
+npx prisma db push
+
+
+(Note: the following 3 commands will not work on Mac.  Find an alternative. ) 
+sudo apt-get update  
 sudo apt-get install postgresql postgresql-contrib
 sudo service postgresql start
+
 pnpm prisma generate
 sudo vim /etc/sudoers.d/codespace
-sudo systemctl start postgresql
+sudo systemctl start postgresql (TODO: Do we need this?  Seems redundant, because we ran "sudo service postgresql start" above) 
+
 sudo -i -u postgres
 psql
 postgres=# CREATE USER johndoe WITH PASSWORD 'randompassword';
@@ -44,6 +48,12 @@ postgres@codespaces-c5d24c:/workspaces/JobSearchTracker$ exit
 pnpm prisma migrate dev --name init  //only works when postgresql is running
 pnpm prisma generate
 pnpm prisma studio
+```
+
+Update the .env file. Set database url to include your postgres login details. 
+
+```
+DATABASE_URL="postgresql://<your_username>:<your_password>@localhost:5432/offerinsight"
 ```
 
 Commands to start every instance of codespace:
