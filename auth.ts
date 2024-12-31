@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
 import "next-auth/jwt"
-
 import GitHub from "next-auth/providers/github"
+import { prisma } from "@/db"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: !!process.env.AUTH_DEBUG,
@@ -16,6 +16,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   basePath: "/auth",
   session: { strategy: "jwt" },
   callbacks: {
+    async signIn({ user, account, profile }) {
+
+      try {
+
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        })
+
+
+        if (!existingUser) {
+          await prisma.user.create({
+            data: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            },
+          })
+        }
+        return true
+      } catch (error) {
+        //console.error("Error checking or creating user:", error)
+        console.log("Error checking or creating user:", error.stack)
+        return false
+      }
+    },
     authorized({ request, auth }) {
       const { pathname } = request.nextUrl
       if (pathname.startsWith("/dashboard")) return !!auth
