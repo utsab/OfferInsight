@@ -1,12 +1,23 @@
 'use server';
 
+import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/db'; // Import the prisma client
 
 export async function GET() {
   console.log('Fetching In Person Events entries...');
   try {
+    const session = await auth();
+        if (!session?.user?.email) {
+          return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+        }
+      
     const inPersonEvents = await prisma.in_Person_Events.findMany({
+      where: {
+        user: {
+          email: session.user.email
+        }
+      },
       orderBy: {
         id: 'asc',
       },
@@ -20,6 +31,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { event, date, numPeopleSpokenTo, numLinkedInRequests } = await request.json();
     const newInPersonEvents = await prisma.in_Person_Events.create({
       data: {
@@ -27,6 +43,11 @@ export async function POST(request: Request) {
         date,
         numPeopleSpokenTo,
         numLinkedInRequests,
+        user: {
+          connect: {
+            email: session.user.email,
+          },
+        },
       },
     });
     return NextResponse.json(newInPersonEvents);
@@ -38,7 +59,25 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { id, numPeopleSpokenTo, numLinkedInRequests, ...data } = await request.json();
+
+    const existing_in_Person_Events = await prisma.in_Person_Events.findFirst({
+      where: {
+        id,
+        user: {
+          email: session.user.email
+        }
+      }
+    });
+
+    if (!existing_in_Person_Events) {
+      return NextResponse.json({ error: 'In Person Event not found or unauthorized' }, { status: 403 });
+    }
 
     // Ensure numPeopleSpokenTo and numLinkedInRequests are integers
     const updatedData = {
@@ -60,7 +99,26 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { id } = await request.json();
+
+    const existing_in_Person_Events = await prisma.in_Person_Events.findFirst({
+      where: {
+        id,
+        user: {
+          email: session.user.email
+        }
+      }
+    });
+
+    if (!existing_in_Person_Events) {
+      return NextResponse.json({ error: 'In Person Event not found or unauthorized' }, { status: 403 });
+    }
+
     await prisma.in_Person_Events.delete({
       where: { id },
     });
