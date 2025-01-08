@@ -1,12 +1,23 @@
 'use server';
 
+import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/db'; // Import the prisma client
 
 export async function GET() {
   console.log('Fetching LinkedIn outreach entries...');
   try {
+    const session = await auth();
+        if (!session?.user?.email) {
+          return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+        }
+        
     const linkedInOutreach = await prisma.linkedin_Outreach.findMany({
+      where: {
+        user: {
+          email: session.user.email
+        }
+      },
       orderBy: {
         id: 'asc',
       },
@@ -20,6 +31,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { name, company, message, result } = await request.json();
     const newLinkedInOutreach = await prisma.linkedin_Outreach.create({
       data: {
@@ -27,6 +43,11 @@ export async function POST(request: Request) {
         company,
         message,
         result,
+        user: {
+          connect: {
+            email: session.user.email,
+          },
+        },
       },
     });
     return NextResponse.json(newLinkedInOutreach);
@@ -38,7 +59,26 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { id, ...data } = await request.json();
+
+    const existing_linkedin_Outreach = await prisma.linkedin_Outreach.findFirst({
+      where: {
+        id,
+        user: {
+          email: session.user.email
+        }
+      }
+    });
+
+    if (!existing_linkedin_Outreach) {
+      return NextResponse.json({ error: 'LinkedIn Outreach not found or unauthorized' }, { status: 403 });
+    }
+
     const updatedLinkedInOutreach = await prisma.linkedin_Outreach.update({
       where: { id },
       data,
@@ -52,7 +92,26 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { id } = await request.json();
+
+    const existing_linkedin_Outreach = await prisma.linkedin_Outreach.findFirst({
+      where: {
+        id,
+        user: {
+          email: session.user.email
+        }
+      }
+    });
+
+    if (!existing_linkedin_Outreach) {
+      return NextResponse.json({ error: 'LinkedIn Outreach not found or unauthorized' }, { status: 403 });
+    }
+    
     await prisma.linkedin_Outreach.delete({
       where: { id },
     });
