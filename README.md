@@ -19,44 +19,48 @@ Setting up oAuth to allow Github authentication:
 7. For NEXTAUTH_URL, it should either be http://localhost:3000 or your custom Github codespace public url
 
    
-
 Commands used to install and start Prisma/PostgreSQL:
+---
 ```
+pnpm install
 
-npx prisma generate
-npx prisma db push
+pnpm prisma generate
+npx auth secret
+|_
+	say yes to install
 
-
-(Note: the following 3 commands will not work on Mac.  Find an alternative. ) 
+(Note: the following 4 commands will not work on Mac.  Find an alternative. ) 
 sudo apt-get update  
 sudo apt-get install postgresql postgresql-contrib
 sudo service postgresql start
 
-pnpm prisma generate
 sudo vim /etc/sudoers.d/codespace
-sudo systemctl start postgresql (TODO: Do we need this?  Seems redundant, because we ran "sudo service postgresql start" above) 
+|_
+    change root to ALL in the first line (lookup VIM cheatsheet)
 
 sudo -i -u postgres
 psql
-postgres=# CREATE USER johndoe WITH PASSWORD 'randompassword';
-postgres=# CREATE USER ttran913 WITH PASSWORD '********';
-postgres=# ALTER USER ttran913 WITH SUPERUSER;
+postgres=# CREATE USER <your_name> WITH PASSWORD '<your_password>';
+postgres=# ALTER USER <your_name> WITH SUPERUSER;
 postgres=# CREATE DATABASE offer_insight;
-postgres=# GRANT ALL PRIVILEGES ON DATABASE offer_insight TO ttran913;
+postgres=# GRANT ALL PRIVILEGES ON DATABASE offer_insight TO <your_name>;
 postgres=# \q
 postgres@codespaces-c5d24c:/workspaces/JobSearchTracker$ exit
+```
+
+Setup .env (enviroment variables) DATABASE_URL before running below pnpm commands (also NOT .env.local)
+---
+DATABASE_URL="postgresql://<your_username>:<your_password>@localhost:5432/offer_insight"
+
+---
+```
 pnpm prisma migrate dev --name init  //only works when postgresql is running
-pnpm prisma generate
 pnpm prisma studio
 ```
 
-Update the .env file. Set database url to include your postgres login details. 
-
-```
-DATABASE_URL="postgresql://<your_username>:<your_password>@localhost:5432/offerinsight"
-```
 
 Commands to start every instance of codespace:
+---
 ```
 sudo service postgresql start
 sudo service postgresql status
