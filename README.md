@@ -24,6 +24,7 @@ Commands used to install and start Prisma/PostgreSQL:
 ```
 pnpm install
 
+pnpm prisma generate
 npx auth secret
 |_
 	say yes to install
@@ -54,7 +55,6 @@ DATABASE_URL="postgresql://<your_username>:<your_password>@localhost:5432/offer_
 ---
 ```
 pnpm prisma migrate dev --name init  //only works when postgresql is running
-pnpm prisma generate
 pnpm prisma studio
 ```
 
