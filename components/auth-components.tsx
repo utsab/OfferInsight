@@ -18,13 +18,18 @@ export function SignIn({
 }
 
 export function SignOut(props: React.ComponentPropsWithRef<typeof Button>) {
-  const router = useRouter()
+  const router = useRouter();
+
+  const onSignOut = async () => {
+    await handleSignOut();
+    router.push("/");
+  };
 
   return (
     <form
-      action={async () => {
-        await handleSignOut()
-        router.push("/")
+      onSubmit={async (e) => {
+        e.preventDefault();
+        await onSignOut();
       }}
       className="w-full"
     >
@@ -32,5 +37,5 @@ export function SignOut(props: React.ComponentPropsWithRef<typeof Button>) {
         Sign Out
       </Button>
     </form>
-  )
+  );
 }
