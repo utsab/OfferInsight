@@ -12,6 +12,18 @@ export default async function Page() {
     console.log("Unauthorized!!!!!!!!!!!!!!!!!!!!!!")
     redirect('/'); // Redirect to the sign-in page
   }
+
+  if (session.user.onboarding_progress === 0) {
+    console.log("Onboarding progress is 0.")
+    redirect('/onboarding/page1');
+  } else if (session.user.onboarding_progress === 1) {
+    redirect('/onboarding/page2');
+  } else if (session.user.onboarding_progress === 2) {
+    redirect('/onboarding/page3');
+  } else if (session.user.onboarding_progress === 3) {
+    redirect('/onboarding/page4');
+  }
+
   return (
     <main>
       <h1 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>

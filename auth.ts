@@ -12,6 +12,37 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   ...authConfig,
+  callbacks: { 
+    async redirect({ url, baseUrl }) {
+      return `${baseUrl}/dashboard`;
+    },
+   
+    async session({ session, user }) {
+      // Check if the user is new based on onboarding_progress
+
+      console.log("In session.....user:  ", user)
+      console.log("In session.....session:  ", session)
+
+      // // Fetch the user from the database to include all fields
+      const dbUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+      })
+
+      console.log("In session.....dbUser:  ", dbUser)
+
+      if (dbUser) {
+        session.user = {
+          id: dbUser.id,
+          name: dbUser.name,
+          email: dbUser.email,
+          image: dbUser.image,
+          onboarding_progress: dbUser.onboarding_progress,
+        }
+      }
+
+      return session
+    },
+  }
 })
 
 
