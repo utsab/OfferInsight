@@ -72,6 +72,10 @@ model User {
   school                    String?
   major                     String?
   expectedGraduationDate    DateTime?
+  monthsToSecureInternship  String?
+  wantToImprove1            String?
+  wantToImprove2            String?
+  confidenceLevel           String?
 }
 
 model VerificationToken {
