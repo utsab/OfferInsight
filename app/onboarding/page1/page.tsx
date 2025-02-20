@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { checkAuth } from './server';
+import { checkAuth } from '../../server';
 import { on } from 'events';
 
 export default function Page1() {
