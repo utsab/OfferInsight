@@ -1,27 +1,40 @@
+"use client"
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { checkAuth } from '../server';
 import { Card } from '@/app/ui/dashboard/cards';
 import RevenueChart from '@/app/ui/dashboard/revenue-chart';
 import LatestInvoices from '@/app/ui/dashboard/latest-invoices';
 import { lusitana } from '@/app/ui/fonts';
-import { redirect } from 'next/navigation';
-import { auth } from 'auth';
 
- 
-export default async function Page() {
-  const session = await auth();
-  if (!session?.user) {
-    console.log("Unauthorized!!!!!!!!!!!!!!!!!!!!!!")
-    redirect('/'); // Redirect to the sign-in page
-  }
+export default function Page() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  if (session.user.onboarding_progress === 0) {
-    console.log("Onboarding progress is 0.")
-    redirect('/onboarding/page1');
-  } else if (session.user.onboarding_progress === 1) {
-    redirect('/onboarding/page2');
-  } else if (session.user.onboarding_progress === 2) {
-    redirect('/onboarding/page3');
-  } else if (session.user.onboarding_progress === 3) {
-    redirect('/onboarding/page4');
+  useEffect(() => {
+    async function authenticate() {
+      const session = await checkAuth();
+      if (session) {
+        if (session.user.onboarding_progress === 0) {
+          console.log("Onboarding progress is 0.")
+          router.push('/onboarding/page1');
+        } else if (session.user.onboarding_progress === 1) {
+          router.push('/onboarding/page2');
+        } else if (session.user.onboarding_progress === 2) {
+          router.push('/onboarding/page3');
+        } else if (session.user.onboarding_progress === 3) {
+          router.push('/onboarding/page4');
+        } else {
+          setLoading(false);
+        }
+      }
+    }
+    authenticate();
+  }, [router]);
+
+  if (loading) {
+    return <p>Loading...</p>;
   }
 
   return (
