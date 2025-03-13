@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkAuth } from '../../server';
-import { on } from 'events';
+import './page.css';
 
 export default function Page1() {
+  const [name, setName] = useState('');
   const [school, setSchool] = useState('');
   const [major, setMajor] = useState('');
   const [graduationMonth, setGraduationMonth] = useState('');
@@ -22,7 +23,7 @@ export default function Page1() {
     authenticate();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const response = await fetch('/api/users/onboarding1', {
       method: 'POST',
@@ -30,6 +31,7 @@ export default function Page1() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        name,
         school,
         major,
         expectedGraduationDate: `${graduationYear}-${graduationMonth}-01`,
@@ -65,70 +67,125 @@ export default function Page1() {
   const years = Array.from({ length: 41 }, (_, i) => currentYear - 20 + i);
 
   if (loading) {
-    return <p>Loading...</p>;
+    return <div className="onboarding-container">Loading...</div>;
   }
 
   return (
-    <div>
-      <h1>Onboarding Page 1</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="school">School</label>
-          <input
-            type="text"
-            id="school"
-            value={school}
-            onChange={(e) => setSchool(e.target.value)}
-            required
-          />
+    <div className="onboarding-container">
+      <div className="onboarding-header">
+        <img
+          src="/profile-placeholder.jpg"
+          alt="Profile"
+          className="profile-image"
+        />
+        <h1 className="welcome-text">Welcome!</h1>
+        <p className="subtitle">Let's quickly complete your professional profile.</p>
+      </div>
+
+      <form className="onboarding-form" onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="name" className="form-label required">
+            Full Name
+          </label>
+          <div className="icon-input">
+            <span className="icon">👤</span>
+            <input
+              type="text"
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="form-input"
+              placeholder="John Doe"
+            />
+          </div>
         </div>
-        <div>
-          <label htmlFor="major">Major</label>
-          <input
-            type="text"
-            id="major"
-            value={major}
-            onChange={(e) => setMajor(e.target.value)}
-            required
-          />
+        
+        <div className="form-group">
+          <label htmlFor="school" className="form-label required">
+            School or University
+          </label>
+          <div className="icon-input">
+            <span className="icon">🏫</span>
+            <input
+              type="text"
+              id="school"
+              value={school}
+              onChange={(e) => setSchool(e.target.value)}
+              required
+              className="form-input"
+              placeholder="University of Nevada"
+            />
+          </div>
         </div>
-        <div>
-          <label htmlFor="graduationMonth">Expected Month of Graduation</label>
-          <select
-            id="graduationMonth"
-            value={graduationMonth}
-            onChange={(e) => setGraduationMonth(e.target.value)}
-            required
-          >
-            <option value="" disabled>Select Month</option>
-            {months.map((month) => (
-              <option key={month.value} value={month.value}>
-                {month.label}
-              </option>
-            ))}
-          </select>
+        
+        <div className="form-group">
+          <label htmlFor="major" className="form-label required">
+            Major
+          </label>
+          <div className="icon-input">
+            <span className="icon">📚</span>
+            <input
+              type="text"
+              id="major"
+              value={major}
+              onChange={(e) => setMajor(e.target.value)}
+              required
+              className="form-input"
+              placeholder="Computer Science"
+            />
+          </div>
         </div>
-        <div>
-          <label htmlFor="graduationYear">Expected Year of Graduation</label>
-          <select
-            id="graduationYear"
-            value={graduationYear}
-            onChange={(e) => setGraduationYear(e.target.value)}
-            required
-          >
-            <option value="" disabled>Select Year</option>
-            {years.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
+        
+        <div className="form-group">
+          <label htmlFor="graduationDate" className="form-label required">
+            Expected Graduation Date
+          </label>
+          <div className="date-inputs">
+            <div>
+              <select
+                id="graduationYear"
+                value={graduationYear}
+                onChange={(e) => setGraduationYear(e.target.value)}
+                required
+                className="form-select"
+              >
+                <option value="" disabled>Year</option>
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <select
+                id="graduationMonth"
+                value={graduationMonth}
+                onChange={(e) => setGraduationMonth(e.target.value)}
+                required
+                className="form-select"
+              >
+                <option value="" disabled>Month</option>
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
-        <button type="submit">Submit</button>
+        
+        <button type="submit" className="btn-primary">Continue</button>
       </form>
-      <Link href="/onboarding/page2">
-        Go to Page 2
-      </Link>
+      
+      <div className="progress-dots">
+        <div className="dot active"></div>
+        <div className="dot"></div>
+        <div className="dot"></div>
+        <div className="dot"></div>
+      </div>
     </div>
   );
 }
