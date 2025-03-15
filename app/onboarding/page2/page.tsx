@@ -19,6 +19,11 @@ export default function Page2() {
     authenticate();
   }, []);
 
+  // Function to handle option selection
+  const handleOptionSelect = (option: string) => {
+    setMonthsToSecureInternship(option);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const response = await fetch('/api/users/onboarding2', {
@@ -60,7 +65,7 @@ export default function Page2() {
                   <button
                     key={option}
                     type="button"
-                    onClick={() => setMonthsToSecureInternship(option)}
+                    onClick={() => handleOptionSelect(option)}
                     className={`btn-option ${monthsToSecureInternship === option ? 'btn-option-selected' : ''}`}
                   >
                     {option}
@@ -85,7 +90,9 @@ export default function Page2() {
             <h3>Timeline</h3>
             <div className="sidebar-item">
               <span>Secure internship within</span>
-              <span className="value-pill">9-12 Months</span>
+              <span className="value-pill">
+                {(monthsToSecureInternship || '9-12') + ' Months'}
+              </span>
             </div>
           </div>
           
