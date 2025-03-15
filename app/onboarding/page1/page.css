@@ -162,16 +162,14 @@ body {
 }
 
 .dot {
-  width: 8px;
+  width: 81px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: 4px;
   background-color: #dadce0;
 }
 
 .dot.active {
   background-color: var(--primary-color);
-  width: 32px;
-  border-radius: 4px;
 }
 
 /* Navigation link */
