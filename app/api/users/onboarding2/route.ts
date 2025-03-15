@@ -9,15 +9,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { monthsToSecureInternship, wantToImprove1, wantToImprove2, confidenceLevel } = await request.json();
+    const { monthsToSecureInternship } = await request.json();
 
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
       data: {
         monthsToSecureInternship,
-        wantToImprove1,
-        wantToImprove2,
-        confidenceLevel,
         onboarding_progress: 2,
       },
     });

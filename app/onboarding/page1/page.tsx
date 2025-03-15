@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkAuth } from '../../server';
 import './page.css';
+import '../shared-onboarding.css';
 
 export default function Page1() {
   const [name, setName] = useState('');

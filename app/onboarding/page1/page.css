@@ -1,38 +1,4 @@
-/* Global styles */
-:root {
-  --primary-color: #1a73e8;
-  --text-color: #333;
-  --border-color: #ddd;
-  --light-gray: #f5f5f5;
-  --error-color: #d93025;
-}
-
-body {
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  color: var(--text-color);
-  line-height: 1.5;
-  margin: 0;
-  padding: 0;
-  background-color: #fff;
-}
-
-/* Main container */
-.onboarding-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 80vh;
-}
-
-/* Header section */
-.onboarding-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
+/* Page1-specific styles only */
 
 .profile-image {
   width: 72px;
@@ -40,38 +6,6 @@ body {
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 20px;
-}
-
-.welcome-text {
-  font-size: 28px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: #202124;
-}
-
-.subtitle {
-  font-size: 16px;
-  font-weight: 400;
-  color: #5f6368;
-  margin-bottom: 40px;
-}
-
-/* Form styles */
-.onboarding-form {
-  width: 100%;
-  max-width: 500px;
-}
-
-.form-group {
-  margin-bottom: 24px;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: #5f6368;
 }
 
 .required::after {
@@ -127,50 +61,12 @@ body {
   flex: 1;
 }
 
-/* Button styles */
-.btn-primary {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  margin-top: 24px;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-  background-color: #0d62d1;
-}
-
 .btn-primary:disabled {
   background-color: #c2c2c2;
   cursor: not-allowed;
 }
 
-/* Progress indicator */
-.progress-dots {
-  display: flex;
-  justify-content: center;
-  margin-top: 40px;
-  gap: 8px;
-}
 
-.dot {
-  width: 81px;
-  height: 8px;
-  border-radius: 4px;
-  background-color: #dadce0;
-}
-
-.dot.active {
-  background-color: var(--primary-color);
-}
 
 /* Navigation link */
 .skip-link {
@@ -188,16 +84,8 @@ body {
   text-decoration: underline;
 }
 
-/* Responsive adjustments */
+/* Page1-specific responsive adjustments */
 @media (max-width: 600px) {
-  .onboarding-container {
-    padding: 20px 16px;
-  }
-  
-  .welcome-text {
-    font-size: 24px;
-  }
-  
   .date-inputs {
     flex-direction: column;
     gap: 16px;
