@@ -1,4 +1,4 @@
-import EmailProvider from "next-auth/providers/email"
+import EmailProvider from "next-auth/providers/nodemailer"
 import GitHub from "next-auth/providers/github"
 import type { NextAuthConfig } from "next-auth"
 
