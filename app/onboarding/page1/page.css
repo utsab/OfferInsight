@@ -40,12 +40,6 @@
   flex: 1;
 }
 
-/* Disabled button styles */
-.btn-primary:disabled {
-  background-color: #c2c2c2;
-  cursor: not-allowed;
-}
-
 /* Navigation link */
 .skip-link {
   margin-top: 16px;
