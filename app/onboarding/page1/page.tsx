@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkAuth } from '../../server';
-import './page.css';
 import '../shared-onboarding.css';
+import './page.css';
 
 export default function Page1() {
   const [name, setName] = useState('');
@@ -13,12 +13,16 @@ export default function Page1() {
   const [major, setMajor] = useState('');
   const [graduationMonth, setGraduationMonth] = useState('');
   const [graduationYear, setGraduationYear] = useState('');
+  const [profileImage, setProfileImage] = useState('/profile-placeholder.jpg'); // Default placeholder image
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     async function authenticate() {
-      await checkAuth();
+      const session = await checkAuth(); // Assuming checkAuth returns session data
+      if (session?.user?.image) {
+        setProfileImage(session.user.image); // Set the profile image from session
+      }
       setLoading(false);
     }
     authenticate();
@@ -75,7 +79,7 @@ export default function Page1() {
     <div className="onboarding-container">
       <div className="onboarding-header">
         <img
-          src="/profile-placeholder.jpg"
+          src={profileImage} // Use the profile image from session
           alt="Profile"
           className="profile-image"
         />
@@ -115,7 +119,7 @@ export default function Page1() {
               onChange={(e) => setSchool(e.target.value)}
               required
               className="form-input"
-              placeholder="University of Nevada"
+              placeholder="University of California, Los Angeles"
             />
           </div>
         </div>
