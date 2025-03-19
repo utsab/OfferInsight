@@ -24,7 +24,7 @@ export default function Page1() {
     authenticate();
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const response = await fetch('/api/users/onboarding1', {
       method: 'POST',
