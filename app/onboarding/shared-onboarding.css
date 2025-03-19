@@ -30,12 +30,12 @@ body {
 
 /* Header section */
 .onboarding-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   margin-bottom: 30px;
-}
-
-.onboarding-page2 .onboarding-header {
-    max-width: 500px;
 }
 
 .welcome-text {
@@ -43,11 +43,6 @@ body {
   font-weight: 500;
   margin-bottom: 8px;
   color: #202124;
-}
-
-/* Page 2 specific - larger title */
-.onboarding-page2 .welcome-text {
-  font-size: 32px;
 }
 
 .subtitle {
@@ -75,245 +70,43 @@ body {
   color: #5f6368;
 }
 
-/* Button styles */
-.btn-primary {
-  display: block;
+.form-input,
+.form-select {
   width: 100%;
-  padding: 12px;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: 12px 16px;
   font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  margin-top: 24px;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-  background-color: #0d62d1;
-}
-
-/* Option buttons */
-.btn-option {
-  padding: 8px 24px;
-  background-color: white;
   border: 1px solid var(--border-color);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
+  border-radius: 8px;
+  box-sizing: border-box;
+  background-color: #fff;
 }
 
-
-
-.btn-option-selected {
-  background-color: var(--primary-color);
-  color: white;
+.form-input:focus,
+.form-select:focus {
+  outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
 }
 
-/* Navigation links */
-.navigation-links {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 500px;
-  margin-top: 20px;
+.form-input::placeholder {
+  color: #9aa0a6;
 }
-
-.nav-link {
-  color: var(--primary-color);
-  text-decoration: none;
-  font-size: 14px;
-  padding: 8px 16px;
-}
-
-.nav-link:hover {
-  text-decoration: underline;
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-  .onboarding-container {
-    padding: 20px 16px;
-  }
-  
-  .welcome-text {
-    font-size: 24px;
-  }
-  
-  /* Page 2 specific responsive */
-  .onboarding-page2 .welcome-text {
-    font-size: 28px;
-  }
-}
-
-.onboarding-page2 .form-label {
-  display: block;
-  text-align: center;
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-
-.options-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 10px 0;
-  width: 80%;
-  max-width: 450px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.onboarding-page2 .btn-primary {
-  width: 80%;
-  max-width: 450px;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-}
-
 
 /* Progress indicator */
 .progress-dots {
-    display: flex;
-    justify-content: center;
-    margin-top: 40px;
-    gap: 8px;
-  }
-  
-  .dot {
-    width: 81px;
-    height: 8px;
-    border-radius: 4px;
-    background-color: #dadce0;
-  }
-  
-  .dot.active {
-    background-color: var(--primary-color);
-  }
-  
-/* Add these styles to your shared-onboarding.css file */
-
-.onboarding-content-wrapper {
   display: flex;
-  flex: 1;
-  width: 100%;
-  gap: 20px;
+  justify-content: center;
+  margin-top: 40px;
+  gap: 8px;
 }
 
-.onboarding-main-content {
-  flex: 3; /* Takes up 3/4 of the space */
-  width: 75%;
-  margin-right: 25%;
+.dot {
+  width: 81px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #dadce0;
 }
 
-.action-plan-sidebar {
-  flex: 1;
-  background-color: #2563EB; /* Royal blue color from the image */
-  color: white;
-  padding: 30px;
-  height: 100vh;
-  position: fixed;
-  right: 0;
-  top: 0;
-  width: 25%;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+.dot.active {
+  background-color: var(--primary-color);
 }
-
-.sidebar-logo {
-  display: flex;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-.sidebar-logo img {
-  width: 32px;
-  height: 32px;
-  margin-right: 10px;
-}
-
-.action-plan-sidebar h2 {
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 30px;
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.sidebar-section {
-  margin-bottom: 25px;
-}
-
-.sidebar-section h3 {
-  font-size: 20px;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 10px;
-}
-
-.sidebar-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.value-pill {
-  background-color: rgba(255, 255, 255, 0.2);
-  padding: 5px 15px;
-  border-radius: 20px;
-  font-weight: 500;
-}
-
-.value {
-  font-weight: 500;
-}
-
-.metrics-container {
-  display: flex;
-  gap: 15px;
-  margin-top: 20px;
-  margin-bottom: 30px;
-}
-
-.metric-box {
-  flex: 1;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  padding: 15px;
-  text-align: center;
-}
-
-.metric-box h4 {
-  font-size: 16px;
-  font-weight: 400;
-  margin-bottom: 10px;
-}
-
-.metric-value {
-  font-size: 36px;
-  font-weight: 600;
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-/* Adjust main content to account for fixed sidebar */
-.onboarding-main-content {
-  width: 75%;
-  margin-right: 25%;
-}
-  

@@ -1,5 +1,4 @@
-/* Page1-specific styles only */
-
+/* Profile image */
 .profile-image {
   width: 72px;
   height: 72px;
@@ -8,33 +7,13 @@
   margin-bottom: 20px;
 }
 
+/* Required field indicator */
 .required::after {
   content: ' *';
   color: var(--error-color);
 }
 
-.form-input,
-.form-select {
-  width: 100%;
-  padding: 12px 16px;
-  font-size: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-sizing: border-box;
-  background-color: #fff;
-}
-
-.form-input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-}
-
-.form-input::placeholder {
-  color: #9aa0a6;
-}
-
+/* Icon input styles */
 .icon-input {
   position: relative;
 }
@@ -61,12 +40,11 @@
   flex: 1;
 }
 
+/* Disabled button styles */
 .btn-primary:disabled {
   background-color: #c2c2c2;
   cursor: not-allowed;
 }
-
-
 
 /* Navigation link */
 .skip-link {
@@ -84,7 +62,7 @@
   text-decoration: underline;
 }
 
-/* Page1-specific responsive adjustments */
+/* Responsive adjustments */
 @media (max-width: 600px) {
   .date-inputs {
     flex-direction: column;

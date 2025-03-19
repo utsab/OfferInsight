@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkAuth } from '../../server';
 import '../shared-onboarding.css';
+import './page.css';
 
 export default function Page2() {
   const [monthsToSecureInternship, setMonthsToSecureInternship] = useState('');
