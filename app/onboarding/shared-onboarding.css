@@ -58,6 +58,32 @@ body {
   max-width: 500px;
 }
 
+/* Center the button */
+.btn-primary {
+  display: block; /* Ensures the button takes up only its content width */
+  margin: 20px auto; /* Centers the button horizontally and adds spacing */
+  padding: 12px 24px; /* Adds padding for a button-like appearance */
+  background-color: var(--primary-color); /* Blue background */
+  color: white; /* White text */
+  border: none; /* Removes default border */
+  border-radius: 8px; /* Rounded corners */
+  font-size: 16px; /* Adjust font size */
+  font-weight: 500; /* Slightly bold text */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+/* Hover effect for the button */
+.btn-primary:hover {
+  background-color: #0d62d1; /* Darker blue on hover */
+}
+
+/* Disabled button styles */
+.btn-primary:disabled {
+  background-color: #c2c2c2;
+  cursor: not-allowed;
+}
+
 .form-group {
   margin-bottom: 24px;
 }
