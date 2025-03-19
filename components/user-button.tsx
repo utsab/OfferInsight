@@ -1,11 +1,10 @@
 import { Button } from "./ui/button"
 import { auth } from "auth"
 import { SignIn, SignOut } from "./auth-components"
+import './user-button.css';
 
 export async function UserButton() {
   const session = await auth()
-  console.log("asdfasdfasdfasdfkasjhdlfkajsh")
-  console.log(session?.user)
-  if (!session?.user) return <SignIn />
-  return <SignOut />
+  if (!session?.user) return <div className="user-button-container"><SignIn /></div>
+  return <div className="user-button-container"><SignOut /></div>
 }
