@@ -14,7 +14,7 @@
   align-items: center;
   flex-wrap: wrap;
   margin: 10px 0;
-  width: 80%;
+  width: 100%;
   max-width: 450px;
   margin-left: auto;
   margin-right: auto;
@@ -41,10 +41,10 @@
   background-color: #2563EB; /* Royal blue color */
   color: white;
   padding: 30px;
-  height: 100vh;
+  height: calc(100vh - 64px); /* Adjust height to account for the navbar (64px is an example height) */
   position: fixed;
   right: 0;
-  top: 0;
+  top: 88px; /* Set the top value to match the navbar height */
   width: 25%;
   overflow-y: auto;
   display: flex;

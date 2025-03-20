@@ -81,7 +81,7 @@ export default function Page2() {
         
         <div className="action-plan-sidebar">
           <div className="sidebar-logo">
-            <img src="/logo-icon.png" alt="OpenResumeBook" />
+            <img src="/images/logo-only.png" alt="OpenResumeBook" />
             <span>OpenResumeBook</span>
           </div>
           
