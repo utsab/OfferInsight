@@ -7,6 +7,12 @@
   font-size: 32px;
 }
 
+
+.onboarding-page2 .onboarding-container {
+  max-width: 100%;
+  padding: 0px; 
+}
+
 /* Options container */
 .options-container {
   display: flex;
@@ -19,6 +25,25 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+.onboarding-content-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  padding: 0px 0px 20px 0px;
+  box-sizing: border-box;
+}
+
+
+.onboarding-main-content {
+  max-width: 500px;
+  width: 100%;
+  flex-grow: 1; /* Takes up remaining space */
+  /*margin-right: auto; /* Ensures it is centered between left and .side-bar */
+  margin: 60px auto 0px auto;  
+}
+
 
 .btn-option {
   padding: 8px 24px;
@@ -37,18 +62,14 @@
 
 /* Sidebar styles */
 .action-plan-sidebar {
-  flex: 1;
+  /*flex: 1;*/
   background-color: #2563EB; /* Royal blue color */
   color: white;
   padding: 30px;
   height: calc(100vh - 64px); /* Adjust height to account for the navbar (64px is an example height) */
-  position: fixed;
-  right: 0;
-  top: 88px; /* Set the top value to match the navbar height */
-  width: 25%;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  width: 400px; /* Adjust width as needed */
+  flex-shrink: 0; /* Prevents it from shrinking */
+
 }
 
 .sidebar-logo {

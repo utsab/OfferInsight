@@ -52,7 +52,8 @@ export default function Page2() {
   }
 
   return (
-    <div className="onboarding-container onboarding-page2">
+    <div className="onboarding-page2">
+    <div className="onboarding-container">
       <div className="onboarding-content-wrapper">
         <div className="onboarding-main-content">
           <div className="onboarding-header">
@@ -147,6 +148,7 @@ export default function Page2() {
         <div className="dot"></div>
         <div className="dot"></div>
       </div>
+    </div>
     </div>
   );
 }

@@ -20,7 +20,7 @@ body {
 .onboarding-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 0px 20px 40px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -93,6 +93,7 @@ body {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 8px;
+  text-align: center; 
   color: #5f6368;
 }
 
