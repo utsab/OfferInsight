@@ -8,6 +8,10 @@
 }
 
 
+.onboarding-page2 .form-label {     
+  text-align: center;
+}
+
 .onboarding-page2 .onboarding-container {
   max-width: 100%;
   padding: 0px; 
@@ -37,7 +41,7 @@
 
 
 .onboarding-main-content {
-  max-width: 500px;
+  max-width: 400px;
   width: 100%;
   flex-grow: 1; /* Takes up remaining space */
   /*margin-right: auto; /* Ensures it is centered between left and .side-bar */
