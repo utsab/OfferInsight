@@ -71,7 +71,7 @@
   color: white;
   padding: 30px;
   height: calc(100vh - 64px); /* Adjust height to account for the navbar (64px is an example height) */
-  width: 400px; /* Adjust width as needed */
+  width: 450px; /* Adjust width as needed */
   flex-shrink: 0; /* Prevents it from shrinking */
 
 }
@@ -79,7 +79,6 @@
 .sidebar-logo {
   display: flex;
   align-items: center;
-  margin-bottom: 30px;
 }
 
 .sidebar-logo img {
@@ -94,8 +93,8 @@
 
 .sidebar-section h3 {
   font-size: 20px;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.8);
+  font-weight: bold;
+  color: #B4CDFF;
   margin-bottom: 10px;
 }
 
@@ -106,11 +105,17 @@
   margin-bottom: 10px;
 }
 
+.sidebar-item .value {
+  font-size: 18px;
+  font-weight: 600; 
+}
+
 .value-pill {
   background-color: rgba(255, 255, 255, 0.2);
   padding: 5px 15px;
   border-radius: 20px;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 18px
 }
 
 .metrics-container {
@@ -130,5 +135,24 @@
 
 .metric-value {
   font-size: 36px;
+  font-weight: 600;
+}
+
+/* Add these styles to your existing CSS file */
+.sidebar-inactive {
+  opacity: 0.6;
+  background-color: #a0a0a0; /* Darker gray color */
+  transition: all 0.3s ease;
+}
+
+.sidebar-active {
+  opacity: 1;
+  background-color: #2563EB; /* Using the same royal blue color as defined earlier */
+  transition: all 0.3s ease;
+}
+
+.calculator-heading {
+  font-size: 1.8rem;
+  padding: 1.5rem 0;
   font-weight: 600;
 }

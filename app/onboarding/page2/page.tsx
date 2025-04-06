@@ -47,9 +47,59 @@ export default function Page2() {
     }
   };
 
+
+  /* 
+  * This plan was based on the calculations in this spreadsheet: https://docs.google.com/spreadsheets/d/1ti_ZVpi6VEqdAKkfRyWQNerpxSswTjvQF53w4JUahws/edit?gid=1637986855#gid=1637986855
+  */
+  const generatePlan = () => {
+    const plan = {
+      timeline: monthsToSecureInternship,
+      commitment: '?',
+      applications: '?',
+      apps_with_outreach: '?',
+      info_interview_outreach: '?',
+      in_person_events: '?',
+    };
+
+
+    if (monthsToSecureInternship === '1-3') {
+      plan.commitment = '25+ Hours';
+      plan.applications = '4 Weekly';
+      plan.apps_with_outreach = '2 Weekly';
+      plan.info_interview_outreach = '26 Weekly';
+      plan.in_person_events = '2 Weekly';
+    } else if (monthsToSecureInternship === '4-6') {
+      plan.commitment = '12+ Hours';
+      plan.applications = '2 Weekly';
+      plan.apps_with_outreach = '1 Weekly';
+      plan.info_interview_outreach = '13 Weekly';
+      plan.in_person_events = '1 Weekly';
+    } else if (monthsToSecureInternship === '7-9') {
+      plan.commitment = '9+ Hours';
+      plan.applications = '1 Weekly';
+      plan.apps_with_outreach = '1 Weekly';
+      plan.info_interview_outreach = '9 Weekly';
+      plan.in_person_events = '1 Weekly';
+    } else if (monthsToSecureInternship === '10-12') {
+      plan.commitment = '6+ Hours';
+      plan.applications = '1 Weekly';
+      plan.apps_with_outreach = '1 Weekly';
+      plan.info_interview_outreach = '6 Weekly';
+      plan.in_person_events = '1 Weekly';
+    } 
+
+    return plan;
+  }
+
+
   if (loading) {
     return <p>Loading...</p>;
   }
+
+
+  const plan = generatePlan();
+
+
 
   return (
     <div className="onboarding-page2">
@@ -63,7 +113,7 @@ export default function Page2() {
             <div className="form-group">
               <label className="form-label">How many months do you have to secure an internship?</label>
               <div className="options-container">
-                {['1-3', '4-6', '7-9', '10-12', '12+'].map((option, index) => (
+                {['1-3', '4-6', '7-9', '10-12'].map((option, index) => (
                   <button
                     key={option}
                     type="button"
@@ -80,20 +130,20 @@ export default function Page2() {
           </form>
         </div>
         
-        <div className="action-plan-sidebar">
+        <div className={`action-plan-sidebar ${monthsToSecureInternship ? 'sidebar-active' : 'sidebar-inactive'}`}>
           <div className="sidebar-logo">
             <img src="/images/logo-only.png" alt="OpenResumeBook" />
             <span>OpenResumeBook</span>
           </div>
           
-          <h2>Success Calculator</h2>
+          <h2 className="calculator-heading">Success Calculator</h2>
           
           <div className="sidebar-section">
             <h3>Timeline</h3>
             <div className="sidebar-item">
               <span>Secure internship within</span>
               <span className="value-pill">
-                {(monthsToSecureInternship || '9-12') + ' Months'}
+                {(monthsToSecureInternship || '?') + ' Months'}
               </span>
             </div>
           </div>
@@ -102,7 +152,7 @@ export default function Page2() {
             <h3>Commitment</h3>
             <div className="sidebar-item">
               <span>Weekly Commitment</span>
-              <span className="value">2+ Hours</span>
+              <span className="value"> {plan.commitment} </span>
             </div>
           </div>
           
@@ -110,35 +160,34 @@ export default function Page2() {
             <h3>Actions</h3>
             <div className="sidebar-item">
               <span>Applications</span>
-              <span className="value">15 Weekly</span>
+              <span className="value"> {plan.applications} </span>
             </div>
             <div className="sidebar-item">
-              <span>LinkedIn Outreach</span>
-              <span className="value">5 Weekly</span>
+              <span>Applications with Outreach</span>
+              <span className="value"> {plan.apps_with_outreach} </span>
             </div>
             <div className="sidebar-item">
-              <span>Meetup / Networking Events</span>
-              <span className="value">5+ Monthly</span>
+              <span>Informational Interview Outreach</span>
+              <span className="value"> {plan.info_interview_outreach} </span>
+            </div>
+            <div className="sidebar-item">
+              <span>In-person Events</span>
+              <span className="value"> {plan.in_person_events} </span>
             </div>
           </div>
           
           <div className="metrics-container">
             <div className="metric-box">
               <h4>Interviews</h4>
-              <div className="metric-value">5</div>
+              <div className="metric-value">{monthsToSecureInternship ? 15 : '?'}</div>
             </div>
             <div className="metric-box">
               <h4>Job Offers</h4>
-              <div className="metric-value">1</div>
+              <div className="metric-value">{monthsToSecureInternship ? 1 : '?'}</div>
             </div>
           </div>
           
-          <div className="sidebar-footer">
-            <div>© OpenResumeBook</div>
-            <div className="email">
-              <span>help@resumebook.com</span>
-            </div>
-          </div>
+          
         </div>
       </div>
 
