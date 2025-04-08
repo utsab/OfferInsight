@@ -57,22 +57,27 @@ model In_Person_Events {
 }
 
 model User {
-  id                        String                        @id @default(cuid())
-  name                      String?
-  email                     String?                       @unique
-  image                     String?
-  createdAt                 DateTime                      @default(now())
-  applications              Applications[]
-  applicationsWithOutreach  Applications_with_Outreach[]
-  linkedinOutreach          Linkedin_Outreach[]
-  inPersonEvents            In_Person_Events[]
-  emailVerified             DateTime?
-  accounts                  Account[]
-  onboarding_progress       Int                          @default(0)
-  school                    String?
-  major                     String?
-  expectedGraduationDate    DateTime?
-  monthsToSecureInternship  String?
+  id                                  String                        @id @default(cuid())
+  name                                String?
+  email                               String?                       @unique
+  image                               String?
+  createdAt                           DateTime                      @default(now())
+  applications                        Applications[]
+  applicationsWithOutreach            Applications_with_Outreach[]
+  linkedinOutreach                    Linkedin_Outreach[]
+  inPersonEvents                      In_Person_Events[]
+  emailVerified                       DateTime?
+  accounts                            Account[]
+  onboarding_progress                 Int                          @default(0)
+  school                              String?
+  major                               String?
+  expectedGraduationDate              DateTime?
+  monthsToSecureInternship            String?
+  commitment                          String?
+  applications_per_week               String?
+  apps_with_outreach_per_week         String?
+  info_interview_outreach_per_week    String?
+  in_person_events_per_week           String?
 }
 
 model VerificationToken {
