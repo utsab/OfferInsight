@@ -20,6 +20,11 @@ export async function GET() {
         major: true,
         expectedGraduationDate: true,
         monthsToSecureInternship: true,
+        commitment: true,
+        applications_per_week: true,
+        apps_with_outreach_per_week: true,
+        info_interview_outreach_per_week: true,
+        in_person_events_per_week: true,
         onboarding_progress: true,
       },
     });
@@ -42,12 +47,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { monthsToSecureInternship } = await request.json();
+    const { monthsToSecureInternship, commitment, applications_per_week, apps_with_outreach_per_week, info_interview_outreach_per_week, in_person_events_per_week } = await request.json();
 
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
       data: {
         monthsToSecureInternship,
+        commitment,
+        applications_per_week,
+        apps_with_outreach_per_week,
+        info_interview_outreach_per_week,
+        in_person_events_per_week,
         onboarding_progress: 2,
       },
     });
