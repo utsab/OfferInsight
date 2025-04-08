@@ -14,7 +14,17 @@ export default function Page2() {
 
   useEffect(() => {
     async function authenticate() {
-      await checkAuth();
+      const session = await checkAuth();
+      if (session?.user?.email) {
+        // Fetch user data from the database
+        const response = await fetch('/api/users/onboarding2');
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData.monthsToSecureInternship) {
+            setMonthsToSecureInternship(userData.monthsToSecureInternship);
+          }
+        }
+      }
       setLoading(false);
     }
     authenticate();
