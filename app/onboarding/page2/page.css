@@ -17,18 +17,7 @@
   padding: 0px; 
 }
 
-/* Options container */
-.options-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 10px 0;
-  width: 100%;
-  max-width: 450px;
-  margin-left: auto;
-  margin-right: auto;
-}
+
 
 .onboarding-content-wrapper {
   display: flex;
@@ -40,29 +29,12 @@
 }
 
 
-.onboarding-main-content {
-  max-width: 400px;
-  width: 100%;
-  flex-grow: 1; /* Takes up remaining space */
-  /*margin-right: auto; /* Ensures it is centered between left and .side-bar */
-  margin: 60px auto 0px auto;  
-}
 
 
-.btn-option {
-  padding: 8px 24px;
-  background-color: white;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
 
-.btn-option-selected {
-  background-color: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-}
+
+
+
 
 /* Sidebar styles */
 .action-plan-sidebar {

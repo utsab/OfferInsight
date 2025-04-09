@@ -9,7 +9,7 @@
 
 body {
   font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  color: var(--text-color);
+  color: #344054;
   line-height: 1.5;
   margin: 0;
   padding: 0;
@@ -55,7 +55,6 @@ body {
 /* Form styles */
 .onboarding-form {
   width: 100%;
-  max-width: 400px;
 }
 
 /* Center the button */
@@ -71,6 +70,7 @@ body {
   font-weight: 500; /* Slightly bold text */
   cursor: pointer; /* Pointer cursor on hover */
   width: 100%;
+  max-width: 350px;
   transition: background-color 0.3s ease; /* Smooth hover effect */
 }
 
@@ -91,8 +91,8 @@ body {
 
 .form-label {
   display: block;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   margin-bottom: 8px;
   text-align: left; 
   color: #5f6368;
@@ -138,3 +138,44 @@ body {
 .dot.active {
   background-color: var(--primary-color);
 }
+
+
+
+/* Page 2 and 3 styles */
+
+.btn-option {
+    padding: 8px 24px;
+    background-color: white;
+    border: 1px solid #D0D5DD;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-option-selected {
+    background-color: #DEEEFF;
+    border-color: #DEEEFF;
+  }
+
+
+.options-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+
+  .onboarding-main-content {
+    max-width: 500px;
+    width: 100%;
+    flex-grow: 1; /* Takes up remaining space */
+    /*margin-right: auto; /* Ensures it is centered between left and .side-bar */
+    margin: 60px auto 0px auto;  
+  }
+

@@ -78,9 +78,9 @@ export default function Page3() {
             
             <form className="onboarding-form" onSubmit={handleSubmit}>
               <div className="form-group">
-                <label className="form-label">How much time are you willing to commit per week?</label>
+                <label className="form-label">How many hours are you willing to commit per week?</label>
                 <div className="options-container">
-                  {['6+ Hours', '9+ Hours', '12+ Hours', '25+ Hours'].map((option) => (
+                  {['6 - 8', '9 - 11', '12 - 15', '16 -19', '20 - 25'].map((option) => (
                     <button
                       key={option}
                       type="button"
@@ -94,9 +94,9 @@ export default function Page3() {
               </div>
               
               <div className="form-group">
-                <label className="form-label">How many applications you'll submit?</label>
+                <label className="form-label">How many applications you'll submit per week?</label>
                 <div className="options-container">
-                  {['1 Weekly', '2 Weekly', '4 Weekly'].map((option) => (
+                  {['1 - 2', '3 - 5', '6 - 10', '11 - 20'].map((option) => (
                     <button
                       key={option}
                       type="button"
@@ -110,9 +110,9 @@ export default function Page3() {
               </div>
               
               <div className="form-group">
-                <label className="form-label">How many applications with outreach you'll submit?</label>
+                <label className="form-label">How many applications will you follow up with additional outreach? <br /><i>Reach out to <u>one</u> recruiter and <u>one</u> hiring manager per application</i></label>
                 <div className="options-container">
-                  {['1 Weekly', '2 Weekly'].map((option) => (
+                  {['1 - 2', '3 - 5', '6 - 10', '11 - 20'].map((option) => (
                     <button
                       key={option}
                       type="button"
@@ -126,9 +126,9 @@ export default function Page3() {
               </div>
               
               <div className="form-group">
-                <label className="form-label">Informational Interviews per week?</label>
+                <label className="form-label">How many people will you reach out to for <br/> Informational Interviews per week?</label>
                 <div className="options-container">
-                  {['6 Weekly', '9 Weekly', '13 Weekly', '26 Weekly'].map((option) => (
+                  {['1 - 5', '6 - 10', '11 - 20', '20 - 30'].map((option) => (
                     <button
                       key={option}
                       type="button"
@@ -144,7 +144,7 @@ export default function Page3() {
               <div className="form-group">
                 <label className="form-label">How many in-person events you'll attend?</label>
                 <div className="options-container">
-                  {['1 Weekly', '2 Weekly'].map((option) => (
+                  {['0', '1 per month', '1 per week', '2 per week'].map((option) => (
                     <button
                       key={option}
                       type="button"
