@@ -72,12 +72,12 @@ model User {
   school                              String?
   major                               String?
   expectedGraduationDate              DateTime?
-  monthsToSecureInternship            String?
-  commitment                          String?
-  applications_per_week               String?
-  apps_with_outreach_per_week         String?
-  info_interview_outreach_per_week    String?
-  in_person_events_per_week           String?
+  monthsToSecureInternship            Int?
+  commitment                          Int?
+  applications_per_week               Int?
+  apps_with_outreach_per_week         Int?
+  info_interview_outreach_per_week    Int?
+  in_person_events_per_month           Int?
 }
 
 model VerificationToken {

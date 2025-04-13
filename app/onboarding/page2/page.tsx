@@ -8,9 +8,11 @@ import '../shared-onboarding.css';
 import './page.css';
 
 export default function Page2() {
-  const [monthsToSecureInternship, setMonthsToSecureInternship] = useState('');
+  const [monthsToSecureInternship, setMonthsToSecureInternship] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const router = useRouter(); 
+
+
 
   useEffect(() => {
     async function authenticate() {
@@ -32,7 +34,16 @@ export default function Page2() {
 
   // Function to handle option selection
   const handleOptionSelect = (option: string) => {
-    setMonthsToSecureInternship(option);
+    // Convert display value to numeric data value
+    let numericMonths: number;
+    switch (option) {
+      case '1-3': numericMonths = 3; break;
+      case '4-6': numericMonths = 6; break;
+      case '7-9': numericMonths = 9; break;
+      case '10-12': numericMonths = 12; break;
+      default: numericMonths = 0;
+    }
+    setMonthsToSecureInternship(numericMonths);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,7 +63,7 @@ export default function Page2() {
         applications_per_week: plan.applications_per_week,
         apps_with_outreach_per_week: plan.apps_with_outreach_per_week,
         info_interview_outreach_per_week: plan.info_interview_outreach_per_week,
-        in_person_events_per_week: plan.in_person_events_per_week
+        in_person_events_per_month: plan.in_person_events_per_month
       }),
     });
 
@@ -73,41 +84,77 @@ export default function Page2() {
   const generatePlan = () => {
     const plan = {
       timeline: monthsToSecureInternship,
-      commitment: '?',
-      applications_per_week: '?',
-      apps_with_outreach_per_week: '?',
-      info_interview_outreach_per_week: '?',
-      in_person_events_per_week: '?',
+      timeline_display: getTimelineDisplay(monthsToSecureInternship),
+      commitment: 0,
+      commitment_display: '?',
+      applications_per_week: 0,
+      applications_per_week_display: '?',
+      apps_with_outreach_per_week: 0,
+      apps_with_outreach_per_week_display: '?',
+      info_interview_outreach_per_week: 0,
+      info_interview_outreach_per_week_display: '?',
+      in_person_events_per_month: 0,
+      in_person_events_per_month_display: '?',
     };
 
-
-    if (monthsToSecureInternship === '1-3') {
-      plan.commitment = '25+ Hours';
-      plan.applications_per_week = '4 Weekly';
-      plan.apps_with_outreach_per_week = '2 Weekly';
-      plan.info_interview_outreach_per_week = '26 Weekly';
-      plan.in_person_events_per_week = '2 Weekly';
-    } else if (monthsToSecureInternship === '4-6') {
-      plan.commitment = '12+ Hours';
-      plan.applications_per_week = '2 Weekly';
-      plan.apps_with_outreach_per_week = '1 Weekly';
-      plan.info_interview_outreach_per_week = '13 Weekly';
-      plan.in_person_events_per_week = '1 Weekly';
-    } else if (monthsToSecureInternship === '7-9') {
-      plan.commitment = '9+ Hours';
-      plan.applications_per_week = '1 Weekly';
-      plan.apps_with_outreach_per_week = '1 Weekly';
-      plan.info_interview_outreach_per_week = '9 Weekly';
-      plan.in_person_events_per_week = '1 Weekly';
-    } else if (monthsToSecureInternship === '10-12') {
-      plan.commitment = '6+ Hours';
-      plan.applications_per_week = '1 Weekly';
-      plan.apps_with_outreach_per_week = '1 Weekly';
-      plan.info_interview_outreach_per_week = '6 Weekly';
-      plan.in_person_events_per_week = '1 Weekly';
+    if (monthsToSecureInternship === 3) {
+      plan.commitment = 23;
+      plan.commitment_display = '23 Hours';
+      plan.applications_per_week = 3;
+      plan.applications_per_week_display = '3 Weekly';
+      plan.apps_with_outreach_per_week = 3;
+      plan.apps_with_outreach_per_week_display = '3 Weekly';
+      plan.info_interview_outreach_per_week = 21;
+      plan.info_interview_outreach_per_week_display = '21 Weekly';
+      plan.in_person_events_per_month = 8;
+      plan.in_person_events_per_month_display = '8 Monthly';
+    } else if (monthsToSecureInternship === 6) {
+      plan.commitment = 11;
+      plan.commitment_display = '11 Hours';
+      plan.applications_per_week = 2;
+      plan.applications_per_week_display = '2 Weekly';
+      plan.apps_with_outreach_per_week = 2;
+      plan.apps_with_outreach_per_week_display = '2 Weekly';
+      plan.info_interview_outreach_per_week = 10;
+      plan.info_interview_outreach_per_week_display = '10 Weekly';
+      plan.in_person_events_per_month = 4;
+      plan.in_person_events_per_month_display = '4 Monthly';
+    } else if (monthsToSecureInternship === 9) {
+      plan.commitment = 8;
+      plan.commitment_display = '8 Hours';
+      plan.applications_per_week = 1;
+      plan.applications_per_week_display = '1 Weekly';
+      plan.apps_with_outreach_per_week = 1;
+      plan.apps_with_outreach_per_week_display = '1 Weekly';
+      plan.info_interview_outreach_per_week = 7;
+      plan.info_interview_outreach_per_week_display = '7 Weekly';
+      plan.in_person_events_per_month = 2;
+      plan.in_person_events_per_month_display = '2 Monthly';
+    } else if (monthsToSecureInternship === 12) {
+      plan.commitment = 6;
+      plan.commitment_display = '6 Hours';
+      plan.applications_per_week = 1;
+      plan.applications_per_week_display = '1 Weekly';
+      plan.apps_with_outreach_per_week = 1;
+      plan.apps_with_outreach_per_week_display = '1 Weekly';
+      plan.info_interview_outreach_per_week = 5;
+      plan.info_interview_outreach_per_week_display = '5 Weekly';
+      plan.in_person_events_per_month = 2;
+      plan.in_person_events_per_month_display = '2 Monthly';
     } 
 
     return plan;
+  }
+
+  // Helper function to convert numeric value to display string
+  const getTimelineDisplay = (months: number | null): string => {
+    switch (months) {
+      case 3: return '1-3';
+      case 6: return '4-6';
+      case 9: return '7-9';
+      case 12: return '10-12';
+      default: return '?';
+    }
   }
 
 
@@ -137,7 +184,7 @@ export default function Page2() {
                     key={option}
                     type="button"
                     onClick={() => handleOptionSelect(option)}
-                    className={`btn-option ${monthsToSecureInternship === option ? 'btn-option-selected' : ''}`}
+                    className={`btn-option ${getTimelineDisplay(monthsToSecureInternship) === option ? 'btn-option-selected' : ''}`}
                   >
                     {option}
                   </button>
@@ -162,7 +209,7 @@ export default function Page2() {
             <div className="sidebar-item">
               <span>Secure internship within</span>
               <span className="value-pill">
-                {(monthsToSecureInternship || '?') + ' Months'}
+                {(plan.timeline_display || '?') + ' Months'}
               </span>
             </div>
           </div>
@@ -171,27 +218,27 @@ export default function Page2() {
             <h3>Commitment</h3>
             <div className="sidebar-item">
               <span>Weekly Commitment</span>
-              <span className="value"> {plan.commitment} </span>
+              <span className="value"> {plan.commitment_display} </span>
             </div>
-          </div>
+          </div> 
           
           <div className="sidebar-section">
             <h3>Actions</h3>
             <div className="sidebar-item">
               <span>Applications</span>
-              <span className="value"> {plan.applications_per_week} </span>
+              <span className="value"> {plan.applications_per_week_display} </span>
             </div>
             <div className="sidebar-item">
               <span>Applications with Outreach</span>
-              <span className="value"> {plan.apps_with_outreach_per_week} </span>
+              <span className="value"> {plan.apps_with_outreach_per_week_display} </span>
             </div>
             <div className="sidebar-item">
               <span>Informational Interview Outreach</span>
-              <span className="value"> {plan.info_interview_outreach_per_week} </span>
+              <span className="value"> {plan.info_interview_outreach_per_week_display} </span>
             </div>
             <div className="sidebar-item">
               <span>In-person Events</span>
-              <span className="value"> {plan.in_person_events_per_week} </span>
+              <span className="value"> {plan.in_person_events_per_month_display} </span>
             </div>
           </div>
           

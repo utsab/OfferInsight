@@ -6,12 +6,71 @@ import { checkAuth } from '../../server';
 import '../shared-onboarding.css';
 import './page.css';
 
-export default function Page3() {
+// Helper functions for data conversion
+function parseCommitmentToInt(commitment: string): number {
+  switch (commitment) {
+    case '6 - 8': return 7;
+    case '9 - 11': return 10;
+    case '12 - 19': return 15;
+    case '20 - 25': return 22;
+    default: return 0;
+  }
+}
+
+function parseRangeToInt(range: string): number {
+  const parts = range.split(' - ');
+  if (parts.length === 2) {
+    const min = parseInt(parts[0], 10);
+    const max = parseInt(parts[1], 10);
+    return Math.round((min + max) / 2);
+  }
+  return 0;
+}
+
+function parseEventsToInt(events: string): number {
+  switch (events) {
+    case '0': return 0;
+    case '1': return 1; // 1/4 per week
+    case '2': return 2;
+    case '4': return 4;
+    case '8': return 8;
+    default: return 0;
+  }
+}
+
+function intToCommitmentString(value: number): string {
+  if (value <= 8) return '6 - 8';
+  if (value <= 11) return '9 - 11';
+  if (value <= 19) return '12 - 19';
+  return '20 - 25';
+}
+
+function intToRangeString(value: number, type: string): string {
+  if (type === 'applications' || type === 'outreach') {
+    if (value <= 2) return '1 - 2';
+    if (value <= 5) return '3 - 5';
+    if (value <= 10) return '6 - 10';
+    return '11 - 20';
+  } else if (type === 'info') {
+    if (value <= 5) return '1 - 5';
+    if (value <= 10) return '6 - 10';
+    if (value <= 20) return '11 - 20';
+    return '20 - 30';
+  }
+  return '';
+}
+
+function intToEventsString(value: number): string {
+  return value.toString();
+}
+
+// Data layer hook
+function usePage3Data() {
   const [commitment, setCommitment] = useState('');
   const [applicationsPerWeek, setApplicationsPerWeek] = useState('');
   const [appsWithOutreachPerWeek, setAppsWithOutreachPerWeek] = useState('');
   const [infoInterviewOutreachPerWeek, setInfoInterviewOutreachPerWeek] = useState('');
-  const [inPersonEventsPerWeek, setInPersonEventsPerWeek] = useState('');
+  const [inPersonEventsPerMonth, setInPersonEventsPerMonth] = useState('');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -23,11 +82,22 @@ export default function Page3() {
         const response = await fetch('/api/users/onboarding2');
         if (response.ok) {
           const userData = await response.json();
-          if (userData.commitment) setCommitment(userData.commitment);
-          if (userData.applications_per_week) setApplicationsPerWeek(userData.applications_per_week);
-          if (userData.apps_with_outreach_per_week) setAppsWithOutreachPerWeek(userData.apps_with_outreach_per_week);
-          if (userData.info_interview_outreach_per_week) setInfoInterviewOutreachPerWeek(userData.info_interview_outreach_per_week);
-          if (userData.in_person_events_per_week) setInPersonEventsPerWeek(userData.in_person_events_per_week);
+          // Convert integer values from DB to string representations for UI
+          if (userData.commitment !== null && userData.commitment !== undefined) {
+            setCommitment(intToCommitmentString(userData.commitment));
+          }
+          if (userData.applications_per_week !== null && userData.applications_per_week !== undefined) {
+            setApplicationsPerWeek(intToRangeString(userData.applications_per_week, 'applications'));
+          }
+          if (userData.apps_with_outreach_per_week !== null && userData.apps_with_outreach_per_week !== undefined) {
+            setAppsWithOutreachPerWeek(intToRangeString(userData.apps_with_outreach_per_week, 'outreach'));
+          }
+          if (userData.info_interview_outreach_per_week !== null && userData.info_interview_outreach_per_week !== undefined) {
+            setInfoInterviewOutreachPerWeek(intToRangeString(userData.info_interview_outreach_per_week, 'info'));
+          }
+          if (userData.in_person_events_per_month !== null && userData.in_person_events_per_month !== undefined) {
+            setInPersonEventsPerMonth(intToEventsString(userData.in_person_events_per_month));
+          }
         }
       }
       setLoading(false);
@@ -38,17 +108,24 @@ export default function Page3() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Convert string values to integers for the API call
+    const commitmentValue = parseCommitmentToInt(commitment);
+    const applicationsValue = parseRangeToInt(applicationsPerWeek);
+    const outreachValue = parseRangeToInt(appsWithOutreachPerWeek);
+    const infoInterviewValue = parseRangeToInt(infoInterviewOutreachPerWeek);
+    const inPersonValue = parseEventsToInt(inPersonEventsPerMonth);
+    
     const response = await fetch('/api/users/onboarding3', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        commitment,
-        applications_per_week: applicationsPerWeek,
-        apps_with_outreach_per_week: appsWithOutreachPerWeek,
-        info_interview_outreach_per_week: infoInterviewOutreachPerWeek,
-        in_person_events_per_week: inPersonEventsPerWeek
+        commitment: commitmentValue,
+        applications_per_week: applicationsValue,
+        apps_with_outreach_per_week: outreachValue,
+        info_interview_outreach_per_week: infoInterviewValue,
+        in_person_events_per_month: inPersonValue
       }),
     });
 
@@ -62,10 +139,44 @@ export default function Page3() {
     }
   };
 
+  return {
+    commitment,
+    setCommitment,
+    applicationsPerWeek,
+    setApplicationsPerWeek,
+    appsWithOutreachPerWeek,
+    setAppsWithOutreachPerWeek,
+    infoInterviewOutreachPerWeek,
+    setInfoInterviewOutreachPerWeek,
+    inPersonEventsPerMonth,
+    setInPersonEventsPerMonth,
+    loading,
+    handleSubmit
+  };
+}
+
+// Main component
+export default function Page3() {
+  const {
+    commitment,
+    setCommitment,
+    applicationsPerWeek,
+    setApplicationsPerWeek,
+    appsWithOutreachPerWeek,
+    setAppsWithOutreachPerWeek,
+    infoInterviewOutreachPerWeek,
+    setInfoInterviewOutreachPerWeek,
+    inPersonEventsPerMonth,
+    setInPersonEventsPerMonth,
+    loading,
+    handleSubmit
+  } = usePage3Data();
+
   if (loading) {
     return <p>Loading...</p>;
   }
 
+  // Presentation layer
   return (
     <div className="onboarding-page3">
       <div className="onboarding-container">
@@ -80,7 +191,7 @@ export default function Page3() {
               <div className="form-group">
                 <label className="form-label">How many hours are you willing to commit per week?</label>
                 <div className="options-container">
-                  {['6 - 8', '9 - 11', '12 - 15', '16 -19', '20 - 25'].map((option) => (
+                  {['6 - 8', '9 - 11', '12 - 19', '20 - 25'].map((option) => (
                     <button
                       key={option}
                       type="button"
@@ -142,14 +253,14 @@ export default function Page3() {
               </div>
               
               <div className="form-group">
-                <label className="form-label">How many in-person events you'll attend?</label>
+                <label className="form-label">How many in-person events you'll attend <b>per month</b>?</label>
                 <div className="options-container">
-                  {['0', '1 per month', '1 per week', '2 per week'].map((option) => (
+                  {['0', '1', '2', '4', '8'].map((option) => (
                     <button
                       key={option}
                       type="button"
-                      onClick={() => setInPersonEventsPerWeek(option)}
-                      className={`btn-option ${inPersonEventsPerWeek === option ? 'btn-option-selected' : ''}`}
+                      onClick={() => setInPersonEventsPerMonth(option)}
+                      className={`btn-option ${inPersonEventsPerMonth === option ? 'btn-option-selected' : ''}`}
                     >
                       {option}
                     </button>
