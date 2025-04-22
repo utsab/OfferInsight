@@ -24,7 +24,7 @@
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
-  padding: 0px 0px 20px 0px;
+  padding: 0px 0px 0px 0px;
   box-sizing: border-box;
 }
 
@@ -42,7 +42,7 @@
   background-color: #2563EB; /* Royal blue color */
   color: white;
   padding: 30px;
-  height: calc(100vh - 64px); /* Adjust height to account for the navbar (64px is an example height) */
+  height: 100%; 
   width: 450px; /* Adjust width as needed */
   flex-shrink: 0; /* Prevents it from shrinking */
 

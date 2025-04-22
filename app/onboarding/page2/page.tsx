@@ -194,6 +194,13 @@ export default function Page2() {
            
             <button type="submit" className="btn-primary">Continue</button>
           </form>
+
+          <div className="progress-dots">
+            <div className="dot"></div>
+            <div className="dot active"></div>
+            <div className="dot"></div>
+            <div className="dot"></div>
+          </div>
         </div>
         
         <div className={`action-plan-sidebar ${monthsToSecureInternship ? 'sidebar-active' : 'sidebar-inactive'}`}>
@@ -257,12 +264,7 @@ export default function Page2() {
         </div>
       </div>
 
-      <div className="progress-dots">
-        <div className="dot"></div>
-        <div className="dot active"></div>
-        <div className="dot"></div>
-        <div className="dot"></div>
-      </div>
+     
     </div>
     </div>
   );
