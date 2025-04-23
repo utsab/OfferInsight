@@ -176,6 +176,8 @@ export default function Page3() {
     return <p>Loading...</p>;
   }
 
+  console.log("Recalculating estimated date...: ", "applicationsPerWeek: ", applicationsPerWeek, "appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
+
   // Presentation layer
   return (
     <div className="onboarding-page3">
@@ -183,8 +185,7 @@ export default function Page3() {
         <div className="onboarding-content-wrapper">
           <div className="onboarding-main-content">
             <div className="onboarding-header">
-              <h1 className="welcome-text">Let's review your plan!</h1>
-              <p className="subtitle">Finalize your goals below.</p>
+              <h1 className="welcome-text">Let's fine-tune your plan!</h1>
             </div>
             
             <form className="onboarding-form" onSubmit={handleSubmit}>
@@ -268,23 +269,11 @@ export default function Page3() {
                 </div>
               </div>
               
-              {/* Metrics and Estimated Date Section */}
-              <div className="metrics-date-section">
-                <div className="metrics-container">
-                  <div className="metric-box">
-                    <h4>Interviews</h4>
-                    <div className="metric-value">{5}</div>
-                  </div>
-                  <div className="metric-box">
-                    <h4>Job Offers</h4>
-                    <div className="metric-value">{1}</div>
-                  </div>
-                </div>
-                <div className="estimated-date-container">
+              <div className="estimated-date-container">
                   <h4 className="estimated-date-label">Estimated Internship Offer Date:</h4>
                   <p className="estimated-date-value">{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                </div>
               </div>
+            
 
               <button type="submit" className="btn-primary">Finalize Goals</button>
             </form>

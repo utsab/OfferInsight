@@ -64,10 +64,12 @@
 
 .onboarding-page3 .estimated-date-container {
   text-align: center;
+  padding-bottom: 30px;
 }
 
 .onboarding-page3 .estimated-date-label {
   font-size: 1rem;
+  font-weight: bold;
   color: #374151;
   margin-bottom: 0.5rem;
 }
