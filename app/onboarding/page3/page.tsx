@@ -155,6 +155,78 @@ function usePage3Data() {
   };
 }
 
+
+function calculateEstimatedOfferDate(applicationsPerWeek: number, appsWithOutreachPerWeek: number, infoInterviewOutreachPerWeek: number, inPersonEventsPerMonth: number) {
+  
+  
+  console.log("applicationsPerWeek: ", applicationsPerWeek, "appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
+  
+  // Hardocde the ROI percentages for each habit 
+
+  let offersPerApplication = 0.001;
+  let offersPerAppWithOutreach = 0.0025;
+  let offersPerInfoInterviewAttempt = 0.00075;
+  let offersPerInPersonEvent = 0.0075;
+
+  let bonusPoints = 0;
+
+  if (infoInterviewOutreachPerWeek === 1) {
+    bonusPoints += 1;
+  } else if (infoInterviewOutreachPerWeek === 6) {
+    bonusPoints += 6;
+  } else if (infoInterviewOutreachPerWeek === 11) {
+    bonusPoints += 11;
+  } else if (infoInterviewOutreachPerWeek === 20) {
+    bonusPoints += 20;
+  }
+  
+
+  if (inPersonEventsPerMonth === 1) {
+    bonusPoints += 10; 
+  } else if (inPersonEventsPerMonth === 2) {
+    bonusPoints += 20; 
+  } else if (inPersonEventsPerMonth === 4) {
+    bonusPoints += 40; 
+  } else if (inPersonEventsPerMonth === 8) {
+    bonusPoints += 80; 
+  }
+
+  const a = 2.0;
+  const b = 0.01;
+  const x = bonusPoints; // Using bonusPoints as the x value
+  let multiplier = 3 - a * Math.exp(-b * x);
+
+  console.log("************************************************")
+  console.log("bonusPoints: ", bonusPoints, "multiplier: ", multiplier)
+  console.log("************************************************")
+
+  offersPerApplication *= multiplier;
+  offersPerAppWithOutreach *= multiplier;
+  offersPerInfoInterviewAttempt *= multiplier;
+  offersPerInPersonEvent *= multiplier;
+
+
+
+  // Calculate the total number of job offers per week 
+
+  const totalOffersPerWeek = (applicationsPerWeek * offersPerApplication) + (appsWithOutreachPerWeek * offersPerAppWithOutreach) + (infoInterviewOutreachPerWeek * offersPerInfoInterviewAttempt) + (inPersonEventsPerMonth * offersPerInPersonEvent);
+
+  // Calculate the total number of weeks
+
+  const totalWeeks = 3 + (1 / totalOffersPerWeek);
+
+
+  // Calculate the estimated offer date 
+
+  const estimatedOfferDate = new Date(Date.now() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
+
+  // Return the estimated offer date 
+
+  return estimatedOfferDate;
+
+}
+
+
 // Main component
 export default function Page3() {
   const {
@@ -176,8 +248,16 @@ export default function Page3() {
     return <p>Loading...</p>;
   }
 
-  console.log("Recalculating estimated date...: ", "applicationsPerWeek: ", applicationsPerWeek, "appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
+  //console.log("Recalculating estimated date...: ", "applicationsPerWeek: ", applicationsPerWeek, "appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
 
+  const estimatedOfferDate = calculateEstimatedOfferDate(
+    parseInt(applicationsPerWeek), 
+    parseInt(appsWithOutreachPerWeek), 
+    parseInt(infoInterviewOutreachPerWeek), 
+    parseInt(inPersonEventsPerMonth)
+  );
+  
+  
   // Presentation layer
   return (
     <div className="onboarding-page3">
@@ -271,7 +351,7 @@ export default function Page3() {
               
               <div className="estimated-date-container">
                   <h4 className="estimated-date-label">Estimated Internship Offer Date:</h4>
-                  <p className="estimated-date-value">{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  <p className="estimated-date-value">{estimatedOfferDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
             
 
