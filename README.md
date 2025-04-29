@@ -49,6 +49,7 @@ postgres@codespaces-c5d24c:/workspaces/JobSearchTracker$ exit
 
 Setup .env (enviroment variables) DATABASE_URL before running below pnpm commands (also NOT .env.local)
 ---
+Copy the .env.sample file to make a new file named .env
 DATABASE_URL="postgresql://<your_username>:<your_password>@localhost:5432/offer_insight"
 
 ---
