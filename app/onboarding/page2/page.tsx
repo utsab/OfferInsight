@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { checkAuth } from '../../server';
 import '../shared-onboarding.css';
 import './page.css';
+import { auth } from 'auth';
+import { redirect } from 'next/navigation';
 
 export default function Page2() {
   const [monthsToSecureInternship, setMonthsToSecureInternship] = useState<number | null>(null);
@@ -28,9 +30,15 @@ export default function Page2() {
         }
       }
       setLoading(false);
+
+      if (session?.user?.onboarding_progress >= 2) {
+        redirect('/onboarding/page3');
+      } 
     }
     authenticate();
   }, []);
+
+
 
   // Function to handle option selection
   const handleOptionSelect = (option: string) => {
