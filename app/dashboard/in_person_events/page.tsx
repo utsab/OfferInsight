@@ -2,6 +2,29 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  DragOverEvent,
+  useDraggable,
+  useDroppable,
+  UniqueIdentifier,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type Event = {
   id: number;
@@ -15,10 +38,139 @@ type Event = {
   connectedOnline: boolean;
 };
 
+type ColumnId = "scheduled" | "attended" | "connectedOnline";
+
+// Draggable event card component
+const DraggableEventCard = ({ event }: { event: Event }) => {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: event.id.toString(),
+    data: { event },
+  });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="bg-white p-3 mb-2 rounded shadow cursor-move"
+    >
+      <h3 className="font-medium text-gray-800">{event.event}</h3>
+      <p className="text-sm text-gray-600">Date: {event.date}</p>
+      {event.location && (
+        <p className="text-sm text-gray-600">Location: {event.location}</p>
+      )}
+      {event.url && (
+        <a
+          href={event.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-blue-500 hover:underline"
+          onClick={(e) => e.stopPropagation()} // Prevent drag when clicking link
+        >
+          Event Link
+        </a>
+      )}
+      {event.notes && (
+        <div className="mt-2 text-sm text-gray-600">
+          <p className="font-medium">Notes:</p>
+          <p>{event.notes}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Regular event card for drag overlay
+const EventCard = ({ event }: { event: Event }) => (
+  <div className="bg-white p-3 mb-2 rounded shadow">
+    <h3 className="font-medium text-gray-800">{event.event}</h3>
+    <p className="text-sm text-gray-600">Date: {event.date}</p>
+    {event.location && (
+      <p className="text-sm text-gray-600">Location: {event.location}</p>
+    )}
+    {event.url && (
+      <a
+        href={event.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-blue-500 hover:underline"
+      >
+        Event Link
+      </a>
+    )}
+    {event.notes && (
+      <div className="mt-2 text-sm text-gray-600">
+        <p className="font-medium">Notes:</p>
+        <p>{event.notes}</p>
+      </div>
+    )}
+  </div>
+);
+
+// Column component with droppable area
+const Column = ({
+  id,
+  title,
+  events,
+  color,
+}: {
+  id: ColumnId;
+  title: string;
+  events: Event[];
+  color: string;
+}) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id,
+  });
+
+  // Add a background highlight when dragging over this column
+  const dropStyle = isOver
+    ? {
+        backgroundColor: "rgba(0, 0, 0, 0.05)",
+        boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.2)",
+      }
+    : undefined;
+
+  return (
+    <div className="flex-shrink-0 w-80 bg-gray-100 rounded-lg shadow-md">
+      <div className={`p-3 ${color} text-white rounded-t-lg`}>
+        <h2 className="font-semibold">{title}</h2>
+      </div>
+      <div
+        ref={setNodeRef}
+        className="p-2 min-h-[500px] transition-colors duration-200"
+        style={dropStyle}
+      >
+        {events.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">
+            No {title.toLowerCase()} events
+          </p>
+        ) : (
+          events.map((event) => (
+            <DraggableEventCard key={event.id} event={event} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function InPersonEventsPage() {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeEvent, setActiveEvent] = useState<Event | null>(null);
+  const [activeDroppableId, setActiveDroppableId] = useState<ColumnId | null>(
+    null
+  );
   const [newEvent, setNewEvent] = useState({
     event: "",
     date: "",
@@ -27,6 +179,18 @@ export default function InPersonEventsPage() {
     notes: "",
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Setup sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     fetchEvents();
@@ -79,9 +243,9 @@ export default function InPersonEventsPage() {
   const handleUpdateStatus = async (
     id: number,
     status: {
-      scheduled?: boolean;
-      attended?: boolean;
-      connectedOnline?: boolean;
+      scheduled: boolean;
+      attended: boolean;
+      connectedOnline: boolean;
     }
   ) => {
     try {
@@ -94,7 +258,12 @@ export default function InPersonEventsPage() {
       });
 
       if (response.ok) {
-        fetchEvents();
+        // Update local state without fetching again
+        setEvents(
+          events.map((event) =>
+            event.id === id ? { ...event, ...status } : event
+          )
+        );
       }
     } catch (error) {
       console.error("Error updating event status:", error);
@@ -108,6 +277,81 @@ export default function InPersonEventsPage() {
     setNewEvent((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Drag handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id as string);
+
+    const draggedEvent = events.find(
+      (item) => item.id.toString() === active.id
+    );
+    if (draggedEvent) {
+      setActiveEvent(draggedEvent);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event;
+    if (over) {
+      // Track which droppable container we're over
+      setActiveDroppableId(over.id as ColumnId);
+    } else {
+      setActiveDroppableId(null);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || !active) {
+      setActiveId(null);
+      setActiveEvent(null);
+      setActiveDroppableId(null);
+      return;
+    }
+
+    const eventId = parseInt(active.id as string);
+    const columnId = over.id as ColumnId;
+
+    // Only process if we're dropping onto a column and have a valid ID
+    if (
+      columnId &&
+      ["scheduled", "attended", "connectedOnline"].includes(columnId) &&
+      eventId
+    ) {
+      // Get column-specific statuses
+      let newStatus: {
+        scheduled: boolean;
+        attended: boolean;
+        connectedOnline: boolean;
+      };
+
+      if (columnId === "scheduled") {
+        newStatus = {
+          scheduled: true,
+          attended: false,
+          connectedOnline: false,
+        };
+      } else if (columnId === "attended") {
+        newStatus = {
+          scheduled: false,
+          attended: true,
+          connectedOnline: false,
+        };
+      } else {
+        // connectedOnline
+        newStatus = { scheduled: false, attended: true, connectedOnline: true };
+      }
+
+      // Update the event status
+      await handleUpdateStatus(eventId, newStatus);
+    }
+
+    setActiveId(null);
+    setActiveEvent(null);
+    setActiveDroppableId(null);
+  };
+
   // Filter events for each column
   const scheduledEvents = events.filter(
     (event) => event.scheduled && !event.attended && !event.connectedOnline
@@ -116,55 +360,6 @@ export default function InPersonEventsPage() {
     (event) => event.attended && !event.connectedOnline
   );
   const connectedEvents = events.filter((event) => event.connectedOnline);
-
-  const EventCard = ({ event }: { event: Event }) => (
-    <div className="bg-white p-3 mb-2 rounded shadow">
-      <h3 className="font-medium text-gray-800">{event.event}</h3>
-      <p className="text-sm text-gray-600">Date: {event.date}</p>
-      {event.location && (
-        <p className="text-sm text-gray-600">Location: {event.location}</p>
-      )}
-      {event.url && (
-        <a
-          href={event.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-blue-500 hover:underline"
-        >
-          Event Link
-        </a>
-      )}
-      {event.notes && (
-        <div className="mt-2 text-sm text-gray-600">
-          <p className="font-medium">Notes:</p>
-          <p>{event.notes}</p>
-        </div>
-      )}
-
-      <div className="mt-3 flex gap-2">
-        {!event.attended && (
-          <button
-            onClick={() =>
-              handleUpdateStatus(event.id, { attended: true, scheduled: false })
-            }
-            className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200"
-          >
-            Mark Attended
-          </button>
-        )}
-        {event.attended && !event.connectedOnline && (
-          <button
-            onClick={() =>
-              handleUpdateStatus(event.id, { connectedOnline: true })
-            }
-            className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded hover:bg-purple-200"
-          >
-            Mark Connected
-          </button>
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <div className="p-4">
@@ -181,61 +376,48 @@ export default function InPersonEventsPage() {
       {isLoading ? (
         <div className="text-center py-10">Loading events...</div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {/* Scheduled Column */}
-          <div className="flex-shrink-0 w-80 bg-gray-100 rounded-lg shadow-md">
-            <div className="p-3 bg-blue-500 text-white rounded-t-lg">
-              <h2 className="font-semibold">Scheduled</h2>
-            </div>
-            <div className="p-2 min-h-[500px]">
-              {scheduledEvents.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">
-                  No scheduled events
-                </p>
-              ) : (
-                scheduledEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))
-              )}
-            </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {/* Scheduled Column */}
+            <Column
+              id="scheduled"
+              title="Scheduled"
+              events={scheduledEvents}
+              color="bg-blue-500"
+            />
+
+            {/* Attended Column */}
+            <Column
+              id="attended"
+              title="Attended"
+              events={attendedEvents}
+              color="bg-green-500"
+            />
+
+            {/* Connected Online Column */}
+            <Column
+              id="connectedOnline"
+              title="Connected Online"
+              events={connectedEvents}
+              color="bg-purple-500"
+            />
           </div>
 
-          {/* Attended Column */}
-          <div className="flex-shrink-0 w-80 bg-gray-100 rounded-lg shadow-md">
-            <div className="p-3 bg-green-500 text-white rounded-t-lg">
-              <h2 className="font-semibold">Attended</h2>
-            </div>
-            <div className="p-2 min-h-[500px]">
-              {attendedEvents.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">
-                  No attended events
-                </p>
-              ) : (
-                attendedEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Connected Online Column */}
-          <div className="flex-shrink-0 w-80 bg-gray-100 rounded-lg shadow-md">
-            <div className="p-3 bg-purple-500 text-white rounded-t-lg">
-              <h2 className="font-semibold">Connected Online</h2>
-            </div>
-            <div className="p-2 min-h-[500px]">
-              {connectedEvents.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">
-                  No connected events
-                </p>
-              ) : (
-                connectedEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+          {/* Drag Overlay */}
+          <DragOverlay>
+            {activeId && activeEvent ? (
+              <div className="opacity-80">
+                <EventCard event={activeEvent} />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
       {/* Modal for creating new events */}
