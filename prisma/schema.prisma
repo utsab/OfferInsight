@@ -57,6 +57,9 @@ model In_Person_Events {
   numLinkedInRequests Int?
   userId              String
   user                User    @relation(fields: [userId], references: [id])
+  scheduled           Boolean @default(true)
+  attended            Boolean @default(false)
+  connectedOnline     Boolean @default(false)
 }
 
 model User {
