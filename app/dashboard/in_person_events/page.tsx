@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -15,16 +15,9 @@ import {
   DragOverEvent,
   useDraggable,
   useDroppable,
-  UniqueIdentifier,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 type Event = {
   id: number;
@@ -41,17 +34,135 @@ type Event = {
 type ColumnId = "scheduled" | "attended" | "connectedOnline";
 
 // Draggable event card component
-const DraggableEventCard = ({ event }: { event: Event }) => {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: event.id.toString(),
-    data: { event },
-  });
+const DraggableEventCard = ({
+  event,
+  onEdit,
+}: {
+  event: Event;
+  onEdit: (event: Event) => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: event.id.toString(),
+      data: { event },
+    });
+
+  // Track if we have a pending click
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isClicking, setIsClicking] = useState(false);
+  const [mouseDownTime, setMouseDownTime] = useState<number | null>(null);
 
   const style = transform
     ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        transform: CSS.Translate.toString(transform),
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 1,
+        cursor: isDragging ? "grabbing" : "pointer",
       }
-    : undefined;
+    : {
+        cursor: "pointer",
+      };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Clear any existing timeouts
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+    }
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+
+    // Set clicking state to true
+    setIsClicking(true);
+    setMouseDownTime(Date.now());
+
+    // Start a timer to initiate drag if the mouse is held down
+    longPressTimeoutRef.current = setTimeout(() => {
+      // This will initiate the drag after the delay
+      if (listeners && listeners.onMouseDown) {
+        const syntheticEvent = new MouseEvent("mousedown", {
+          bubbles: true,
+          cancelable: true,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        });
+
+        // Now we're ready to start dragging
+        e.target.dispatchEvent(syntheticEvent);
+      }
+    }, 100); // 100ms delay for faster drag initiation
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    // Clear the long press timer
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+
+    const mouseUpTime = Date.now();
+    const mouseDownDuration = mouseDownTime ? mouseUpTime - mouseDownTime : 0;
+
+    // If press was short (less than 100ms), consider it a click
+    if (isClicking && mouseDownDuration < 100 && !isDragging) {
+      clickTimeoutRef.current = setTimeout(() => {
+        onEdit(event);
+      }, 50);
+    }
+
+    // Reset clicking state
+    setIsClicking(false);
+    setMouseDownTime(null);
+  };
+
+  // Touch handling for mobile devices
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Track touch start time
+    setMouseDownTime(Date.now());
+    setIsClicking(true);
+
+    // Set a timeout to distinguish between tap and drag
+    longPressTimeoutRef.current = setTimeout(() => {
+      // Add visual feedback for long press
+      const target = e.currentTarget as HTMLElement;
+      target.classList.add("touch-dragging");
+
+      // Haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 100);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    // Clear the long press timer
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+
+    const touchEndTime = Date.now();
+    const touchDuration = mouseDownTime ? touchEndTime - mouseDownTime : 0;
+
+    // If it was a short tap (not a drag), open the edit modal
+    if (isClicking && touchDuration < 100 && !isDragging) {
+      e.currentTarget.classList.remove("touch-dragging");
+      onEdit(event);
+    }
+
+    // Reset state
+    setIsClicking(false);
+    setMouseDownTime(null);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // If finger moves significantly, cancel the click and let dnd-kit handle the drag
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+  };
 
   return (
     <div
@@ -59,8 +170,18 @@ const DraggableEventCard = ({ event }: { event: Event }) => {
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white p-3 mb-2 rounded shadow cursor-move"
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      className="bg-white p-3 mb-2 rounded shadow hover:shadow-md transition-shadow relative group"
     >
+      {/* Drag handle icon that appears on hover */}
+      <div className="absolute -left-1 top-0 bottom-0 w-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <GripVertical size={16} className="text-gray-400 drag-handle" />
+      </div>
+
       <h3 className="font-medium text-gray-800">{event.event}</h3>
       <p className="text-sm text-gray-600">Date: {event.date}</p>
       {event.location && (
@@ -72,7 +193,7 @@ const DraggableEventCard = ({ event }: { event: Event }) => {
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-blue-500 hover:underline"
-          onClick={(e) => e.stopPropagation()} // Prevent drag when clicking link
+          onClick={(e) => e.stopPropagation()} // Prevent edit modal when clicking link
         >
           Event Link
         </a>
@@ -120,11 +241,13 @@ const Column = ({
   title,
   events,
   color,
+  onEditEvent,
 }: {
   id: ColumnId;
   title: string;
   events: Event[];
   color: string;
+  onEditEvent: (event: Event) => void;
 }) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -154,7 +277,11 @@ const Column = ({
           </p>
         ) : (
           events.map((event) => (
-            <DraggableEventCard key={event.id} event={event} />
+            <DraggableEventCard
+              key={event.id}
+              event={event}
+              onEdit={onEditEvent}
+            />
           ))
         )}
       </div>
@@ -166,8 +293,10 @@ export default function InPersonEventsPage() {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeEvent, setActiveEvent] = useState<Event | null>(null);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [activeDroppableId, setActiveDroppableId] = useState<ColumnId | null>(
     null
   );
@@ -180,15 +309,17 @@ export default function InPersonEventsPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Setup sensors for drag and drop
+  // Setup sensors for drag and drop with appropriate activation constraints
   const sensors = useSensors(
     useSensor(PointerSensor, {
+      // Set a shorter delay to distinguish between click and drag
       activationConstraint: {
-        distance: 8,
+        delay: 100, // Wait 100ms before activating drag
+        tolerance: 5, // Allow 5px of movement during that delay
       },
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: () => ({ x: 0, y: 0 }),
     })
   );
 
@@ -240,13 +371,37 @@ export default function InPersonEventsPage() {
     }
   };
 
+  const handleUpdateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+
+    try {
+      const response = await fetch("/api/in_person_events", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editingEvent),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setEvents(
+          events.map((event) =>
+            event.id === editingEvent.id ? editingEvent : event
+          )
+        );
+        setIsEditModalOpen(false);
+        setEditingEvent(null);
+      }
+    } catch (error) {
+      console.error("Error updating event:", error);
+    }
+  };
+
   const handleUpdateStatus = async (
     id: number,
-    status: {
-      scheduled: boolean;
-      attended: boolean;
-      connectedOnline: boolean;
-    }
+    status: { scheduled: boolean; attended: boolean; connectedOnline: boolean }
   ) => {
     try {
       const response = await fetch("/api/in_person_events", {
@@ -277,6 +432,45 @@ export default function InPersonEventsPage() {
     setNewEvent((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleEditInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    if (!editingEvent) return;
+
+    const { name, value } = e.target;
+    setEditingEvent((prev) => (prev ? { ...prev, [name]: value } : null));
+  };
+
+  const handleEditEvent = (event: Event) => {
+    // Only open edit modal if we're not currently dragging something
+    if (!activeId) {
+      setEditingEvent(event);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!editingEvent) return;
+
+    try {
+      const response = await fetch(
+        `/api/in_person_events?id=${editingEvent.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        // Remove from local state
+        setEvents(events.filter((event) => event.id !== editingEvent.id));
+        setIsEditModalOpen(false);
+        setEditingEvent(null);
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    }
+  };
+
   // Drag handlers
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -287,6 +481,9 @@ export default function InPersonEventsPage() {
     );
     if (draggedEvent) {
       setActiveEvent(draggedEvent);
+
+      // Set cursor to grabbing during drag
+      document.body.style.cursor = "grabbing";
     }
   };
 
@@ -302,6 +499,9 @@ export default function InPersonEventsPage() {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+
+    // Reset cursor
+    document.body.style.cursor = "";
 
     if (!over || !active) {
       setActiveId(null);
@@ -340,7 +540,11 @@ export default function InPersonEventsPage() {
         };
       } else {
         // connectedOnline
-        newStatus = { scheduled: false, attended: true, connectedOnline: true };
+        newStatus = {
+          scheduled: false,
+          attended: false,
+          connectedOnline: true,
+        };
       }
 
       // Update the event status
@@ -390,6 +594,7 @@ export default function InPersonEventsPage() {
               title="Scheduled"
               events={scheduledEvents}
               color="bg-blue-500"
+              onEditEvent={handleEditEvent}
             />
 
             {/* Attended Column */}
@@ -398,6 +603,7 @@ export default function InPersonEventsPage() {
               title="Attended"
               events={attendedEvents}
               color="bg-green-500"
+              onEditEvent={handleEditEvent}
             />
 
             {/* Connected Online Column */}
@@ -406,13 +612,14 @@ export default function InPersonEventsPage() {
               title="Connected Online"
               events={connectedEvents}
               color="bg-purple-500"
+              onEditEvent={handleEditEvent}
             />
           </div>
 
           {/* Drag Overlay */}
           <DragOverlay>
             {activeId && activeEvent ? (
-              <div className="opacity-80">
+              <div className="opacity-80 transform scale-105 shadow-lg">
                 <EventCard event={activeEvent} />
               </div>
             ) : null}
@@ -512,6 +719,138 @@ export default function InPersonEventsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal for editing events */}
+      {isEditModalOpen && editingEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Edit Event</h2>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateEvent}>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-1">Event Name *</label>
+                <input
+                  type="text"
+                  name="event"
+                  value={editingEvent.event}
+                  onChange={handleEditInputChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  required
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-1">Date *</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={editingEvent.date}
+                  onChange={handleEditInputChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  required
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={editingEvent.location || ""}
+                  onChange={handleEditInputChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-1">URL</label>
+                <input
+                  type="url"
+                  name="url"
+                  value={editingEvent.url || ""}
+                  onChange={handleEditInputChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-1">Notes</label>
+                <textarea
+                  name="notes"
+                  value={editingEvent.notes || ""}
+                  onChange={handleEditInputChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={handleDeleteEvent}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add styles for touch interactions */}
+      <style jsx global>{`
+        /* Touch indicator */
+        .touch-dragging {
+          transform: scale(1.02);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(59, 130, 246, 0.5);
+          opacity: 0.9;
+        }
+
+        /* Touch indicator ripple effect */
+        @keyframes ripple {
+          to {
+            transform: scale(8);
+            opacity: 0;
+          }
+        }
+
+        /* Better visual feedback during active drag */
+        [data-dragging="true"] {
+          cursor: grabbing !important;
+        }
+
+        /* Drag handle styling */
+        .drag-handle {
+          cursor: grab;
+        }
+      `}</style>
     </div>
   );
 }
