@@ -24,16 +24,20 @@ model Applications {
 }
 
 model Applications_with_Outreach {
-  id              Int     @id @default(autoincrement())
-  company         String
-  hiringManager   String
-  msgToManager    String
-  recruiter       String
-  firstRound      Boolean
-  finalRound      Boolean
-  offer           Boolean
-  userId          String
-  user            User    @relation(fields: [userId], references: [id])
+  id                    Int     @id @default(autoincrement())
+  company               String
+  hiringManager         String?
+  msgToManager          String?
+  recruiter             String?
+  msgToRecruiter        String?
+  notes                 String?
+  appliedStatus         Boolean @default(true)
+  msgToRecruiterStatus  Boolean
+  msgToManagerStatus    Boolean
+  interviewStatus       Boolean
+  offerStatus           Boolean
+  userId                String
+  user                  User    @relation(fields: [userId], references: [id])
 }
 
 model Linkedin_Outreach {
