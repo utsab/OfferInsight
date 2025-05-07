@@ -421,13 +421,14 @@ export default function ApplicationsWithOutreachPage() {
         }),
       });
 
-      if (response.ok) {
-        await fetchApplications();
-      } else {
+      if (!response.ok) {
         console.error("Failed to update application status");
+        return false;
       }
+      return true;
     } catch (error) {
       console.error("Error updating application status:", error);
+      return false;
     }
   };
 
@@ -504,8 +505,36 @@ export default function ApplicationsWithOutreachPage() {
           offerStatus: targetColumn === "offer",
         };
 
-        // Update application status in the database
-        await handleUpdateStatus(applicationId, newStatus);
+        // Optimistic update - update local state immediately
+        setApplications((prev) =>
+          prev.map((app) =>
+            app.id === applicationId ? { ...app, ...newStatus } : app
+          )
+        );
+
+        // Update application status in the database without awaiting
+        try {
+          const response = await fetch("/api/applications_with_outreach", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: applicationId,
+              ...newStatus,
+            }),
+          });
+
+          if (!response.ok) {
+            console.error("Failed to update application status");
+            // If update fails, revert to original data
+            await fetchApplications();
+          }
+        } catch (error) {
+          console.error("Error updating application status:", error);
+          // If there's an error, revert to original data
+          await fetchApplications();
+        }
       }
     }
 
