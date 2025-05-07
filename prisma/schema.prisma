@@ -32,10 +32,10 @@ model Applications_with_Outreach {
   msgToRecruiter        String?
   notes                 String?
   appliedStatus         Boolean @default(true)
-  msgToRecruiterStatus  Boolean
-  msgToManagerStatus    Boolean
-  interviewStatus       Boolean
-  offerStatus           Boolean
+  msgToRecruiterStatus  Boolean @default(false)
+  msgToManagerStatus    Boolean @default(false)
+  interviewStatus       Boolean @default(false)
+  offerStatus           Boolean @default(false)
   userId                String
   user                  User    @relation(fields: [userId], references: [id])
 }
