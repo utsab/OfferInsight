@@ -70,6 +70,19 @@ model In_Person_Events {
   connectedOnline     Boolean @default(false)
 }
 
+model Career_Fairs {
+  id                  Int     @id @default(autoincrement())
+  event               String
+  date                String
+  location            String?
+  url                 String?
+  notes               String?
+  userId              String
+  user                User    @relation(fields: [userId], references: [id])
+  scheduled           Boolean @default(true)
+  attended            Boolean @default(false)
+}
+
 model User {
   id                                  String                        @id @default(cuid())
   name                                String?
@@ -80,6 +93,7 @@ model User {
   applicationsWithOutreach            Applications_with_Outreach[]
   linkedinOutreach                    Linkedin_Outreach[]
   inPersonEvents                      In_Person_Events[]
+  careerFairs                         Career_Fairs[]
   emailVerified                       DateTime?
   accounts                            Account[]
   onboarding_progress                 Int                          @default(0)
