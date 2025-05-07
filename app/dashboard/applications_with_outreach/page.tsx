@@ -248,32 +248,41 @@ const Column = ({
   color: string;
   onEditApplication: (application: Application) => void;
 }) => {
-  const { setNodeRef } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id,
   });
 
+  // Add a background highlight when dragging over this column
+  const dropStyle = isOver
+    ? {
+        backgroundColor: "rgba(0, 0, 0, 0.05)",
+        boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.2)",
+      }
+    : undefined;
+
   return (
-    <div
-      className="flex flex-col w-full md:w-1/5 min-w-[250px] bg-gray-50 rounded-lg p-2 mx-1 my-2 md:my-0"
-      style={{ minHeight: "500px" }}
-    >
-      <div
-        className={`text-center p-2 mb-3 rounded-md font-medium text-white ${color}`}
-      >
-        {title}
+    <div className="flex-shrink-0 w-80 bg-gray-100 rounded-lg shadow-md">
+      <div className={`p-3 ${color} text-white rounded-t-lg`}>
+        <h2 className="font-semibold">{title}</h2>
       </div>
       <div
         ref={setNodeRef}
-        className="flex-1 p-2 overflow-y-auto"
-        style={{ minHeight: "400px" }}
+        className="p-2 min-h-[500px] transition-colors duration-200"
+        style={dropStyle}
       >
-        {applications.map((application) => (
-          <DraggableApplicationCard
-            key={application.id}
-            application={application}
-            onEdit={onEditApplication}
-          />
-        ))}
+        {applications.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">
+            No {title.toLowerCase()} applications
+          </p>
+        ) : (
+          applications.map((application) => (
+            <DraggableApplicationCard
+              key={application.id}
+              application={application}
+              onEdit={onEditApplication}
+            />
+          ))
+        )}
       </div>
     </div>
   );
@@ -537,16 +546,14 @@ export default function ApplicationsWithOutreachPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold text-center mb-6">
-        Applications with Outreach
-      </h1>
-      <div className="flex justify-end mb-4">
+    <div className="p-4">
+      <div className="flex justify-between mb-4 items-center">
+        <h1 className="text-2xl font-bold">Applications with Outreach</h1>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded shadow"
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center hover:bg-blue-600 transition-colors"
         >
-          Add New Application
+          <span className="mr-1 text-xl">+</span> New Application
         </button>
       </div>
 
@@ -557,7 +564,7 @@ export default function ApplicationsWithOutreachPage() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex flex-col md:flex-row md:overflow-x-auto space-y-4 md:space-y-0 p-2">
+        <div className="flex gap-4 overflow-x-auto pb-4">
           <Column
             id="applied"
             title="Applied"
