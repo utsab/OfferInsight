@@ -555,8 +555,27 @@ export default function LinkedInOutreachPage() {
         };
       }
 
-      // Update the outreach status
-      await handleUpdateStatus(outreachId, newStatus);
+      // Update local state immediately to prevent UI flicker
+      setOutreaches((prevOutreaches) =>
+        prevOutreaches.map((outreach) =>
+          outreach.id === outreachId ? { ...outreach, ...newStatus } : outreach
+        )
+      );
+
+      // Then update the server state
+      try {
+        await fetch("/api/linkedin_outreach", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: outreachId, ...newStatus }),
+        });
+      } catch (error) {
+        console.error("Error updating outreach status:", error);
+        // Revert local state in case of error
+        fetchOutreaches();
+      }
     }
 
     setActiveId(null);
@@ -625,8 +644,13 @@ export default function LinkedInOutreachPage() {
             />
           </div>
 
-          {/* Drag Overlay */}
-          <DragOverlay>
+          {/* Drag Overlay with animation */}
+          <DragOverlay
+            dropAnimation={{
+              duration: 250,
+              easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+            }}
+          >
             {activeId && activeOutreach ? (
               <div className="opacity-80 transform scale-105 shadow-lg">
                 <OutreachCard outreach={activeOutreach} />
