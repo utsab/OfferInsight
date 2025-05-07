@@ -41,13 +41,17 @@ model Applications_with_Outreach {
 }
 
 model Linkedin_Outreach {
-  id      Int     @id @default(autoincrement())
-  name    String
-  company String
-  message String
-  result  String
-  userId  String
-  user    User    @relation(fields: [userId], references: [id])
+  id           Int     @id @default(autoincrement())
+  name         String
+  company      String
+  message      String?
+  linkedInUrl  String?
+  notes        String?
+  responded    Boolean @default(true)
+  scheduled    Boolean @default(false)
+  referral     Boolean @default(false)
+  userId       String
+  user         User    @relation(fields: [userId], references: [id])
 }
 
 model In_Person_Events {
