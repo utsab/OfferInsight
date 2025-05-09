@@ -1,525 +1,865 @@
-'use client'
+"use client";
 
-import React from 'react'
-import '@/app/ui/dashboard/applications_with_outreach/applications_with_outreach.css'
-
-//
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
-  ColumnDef,
-  useReactTable,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  flexRender,
-  RowData,
-} from '@tanstack/react-table'
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  DragOverEvent,
+  useDraggable,
+  useDroppable,
+} from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
-type ApplicationWithOutreach = {
-    id: number;
-    company: string;
-    hiringManager: string;
-    msgToManager: string;
-    recruiter: string;
-    firstRound: boolean;
-    finalRound: boolean;
-    offer: boolean;
-  };
-
-declare module '@tanstack/react-table' {
-  interface TableMeta<TData extends RowData> {
-    updateData: (rowIndex: number, columnId: string, value: unknown) => void
-  }
-}
-
-function debounce(func: (...args: any[]) => void, wait: number) {
-  let timeout: NodeJS.Timeout;
-  return (...args: any[]) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-
-// Give our default column cell renderer editing superpowers!
-const defaultColumn: Partial<ColumnDef<ApplicationWithOutreach>> = {
-  cell: ({ getValue, row: { index }, column: { id }, table }) => {
-
-    if (id === 'id') {
-      return <span>{getValue() as string}</span>;
-    }
-
-    const initialValue = getValue();
-    // We need to keep and update the state of the cell normally
-    const [value, setValue] = React.useState(initialValue);
-
-    const debouncedSave = React.useMemo(
-      () => debounce((index: number, id: string, value: unknown) => {
-        table.options.meta?.updateData(index, id, value);
-      }, 500), // Adjust the debounce delay as needed
-      [table]
-    );
-
-    // When the input is blurred, we'll call our table meta's updateData function
-    // const onBlur = () => {
-    //   table.options.meta?.updateData(index, id, value);
-    // };
-
-    // If the initialValue is changed external, sync it up with our state
-    React.useEffect(() => {
-      setValue(initialValue);
-    }, [initialValue]);
-
-    if (typeof value === 'boolean') {
-      return (
-        <div className="center-checkbox">
-          <input
-            type="checkbox"
-            checked={value}
-            onChange={(e) => {
-              setValue(e.target.checked);
-              debouncedSave(index, id, e.target.checked);
-            }}
-          />
-        </div>
-      );
-    }
-
-    // if (typeof value === 'boolean') {
-    //   return (
-    //     <div className="center-checkbox">
-    //       <input
-    //         type="checkbox"
-    //         checked={value}
-    //         onChange={(e) => {
-    //           setValue(e.target.checked);
-    //           table.options.meta?.updateData(index, id, e.target.checked);
-    //         }}
-    //       />
-    //     </div>
-    //   );
-    // }
-
-    return (
-      <input
-        value={value as string}
-        onChange={e => {
-          setValue(e.target.value);
-          debouncedSave(index, id, e.target.value);
-        }}
-      />
-    );
-
-    // return (
-    //   <input
-    //     value={value as string}
-    //     onChange={e => setValue(e.target.value)}
-    //     onBlur={onBlur}
-    //   />
-    // );
-  },
+type Application = {
+  id: number;
+  company: string;
+  hiringManager: string | null;
+  msgToManager: string | null;
+  recruiter: string | null;
+  msgToRecruiter: string | null;
+  notes: string | null;
+  appliedStatus: boolean;
+  msgToRecruiterStatus: boolean;
+  msgToManagerStatus: boolean;
+  interviewStatus: boolean;
+  offerStatus: boolean;
 };
 
-function useSkipper() {
-  const shouldSkipRef = React.useRef(true)
-  const shouldSkip = shouldSkipRef.current
+type ColumnId =
+  | "applied"
+  | "msgToRecruiter"
+  | "msgToManager"
+  | "interview"
+  | "offer";
 
-  // Wrap a function with this to skip a pagination reset temporarily
-  const skip = React.useCallback(() => {
-    shouldSkipRef.current = false
-  }, [])
+// Draggable application card component
+const DraggableApplicationCard = ({
+  application,
+  onEdit,
+}: {
+  application: Application;
+  onEdit: (application: Application) => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: application.id.toString(),
+      data: { application },
+    });
 
-  React.useEffect(() => {
-    shouldSkipRef.current = true
-  })
+  // Track if we have a pending click
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isClicking, setIsClicking] = useState(false);
+  const [mouseDownTime, setMouseDownTime] = useState<number | null>(null);
 
-  return [shouldSkip, skip] as const
-}
-
-function App() {
-  const rerender = React.useReducer(() => ({}), {})[1]
-
-  const columns = React.useMemo<ColumnDef<ApplicationWithOutreach>[]>(
-    () => [
-      {
-        header: 'No.',
-        cell: ({ row }) => row.index + 1,
-        footer: () => 'No.',
-      },
-      {
-        header: 'Company',
-        accessorKey: 'company',
-        footer: () => 'Company',
-      },
-      {
-        header: 'Hiring Manager',
-        accessorKey: 'hiringManager',
-        footer: () => 'Hiring Manager',
-      },
-      {
-        header: 'Message to Manager',
-        accessorKey: 'msgToManager',
-        footer: () => 'Message to Manager',
-      },
-      {
-        header: 'Recruiter',
-        accessorKey: 'recruiter',
-        footer: () => 'Recruiter',
-      },
-      {
-        header: 'First Round/Coding Challenge',
-        accessorKey: 'firstRound',
-        footer: () => 'First Round/Coding Challenge',
-      },
-      {
-        header: 'Final Round',
-        accessorKey: 'finalRound',
-        footer: () => 'Final Round',
-      },
-      {
-        header: 'Offer',
-        accessorKey: 'offer',
-        footer: () => 'Offer',
-      },
-      {
-        header: 'Actions',
-        cell: ({ row }) => (
-          <button
-            onClick={() => handleDelete(row.original.id)}
-            className="border rounded p-1"
-          >
-            Delete
-          </button>
-        ),
-        footer: () => 'Actions',
-      },
-    ],
-    []
-  );
-
-//   const [data, setData] = React.useState(() => makeData(1000))
-  const [data, setData] = React.useState<ApplicationWithOutreach[]>([]);
-//   const refreshData = () => setData(() => makeData(1000))
-  const refreshData = () => setData(data)
-
-  const [autoResetPageIndex, skipAutoResetPageIndex] = useSkipper();
-
-  const [newRow, setNewRow] = React.useState<Omit<ApplicationWithOutreach, 'id'>>({
-    company: '',
-    hiringManager: '',
-    msgToManager: '',
-    recruiter: '',
-    firstRound: false,
-    finalRound: false,
-    offer: false,
-  });
-
-  React.useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await fetch('/api/applications_with_outreach');
-        const applicationsWithOutreach = await response.json();
-        setData(applicationsWithOutreach);
-      } catch (error) {
-        console.error('Failed to fetch applications with outreach:', error);
+  const style = transform
+    ? {
+        transform: CSS.Translate.toString(transform),
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 1000 : 1,
+        cursor: isDragging ? "grabbing" : "pointer",
       }
+    : {
+        cursor: "pointer",
+      };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Clear any existing timeouts
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
     }
-    fetchData();
-  }, []);
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
 
-  const updateData = async (rowIndex: number, columnId: string, value: unknown) => {
-    // Skip page index reset until after next rerender
-    skipAutoResetPageIndex();
-    setData((old) =>
-      old.map((row, index) => {
-        if (index === rowIndex) {
-          return {
-            ...old[rowIndex]!,
-            [columnId]: value,
-          };
-        }
-        return row;
-      })
-    );
-    const row = data[rowIndex];
-    const updatedRow = { ...row, [columnId]: value };
-    try {
-      const response = await fetch('/api/applications_with_outreach/', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application_with_outreach/json',
-        },
-        body: JSON.stringify(updatedRow),
-      });
+    // Set clicking state to true
+    setIsClicking(true);
+    setMouseDownTime(Date.now());
 
-      if (!response.ok) {
-        throw new Error('Failed to update the database');
+    // Start a timer to initiate drag if the mouse is held down
+    longPressTimeoutRef.current = setTimeout(() => {
+      // This will initiate the drag after the delay
+      if (listeners && listeners.onMouseDown) {
+        const syntheticEvent = new MouseEvent("mousedown", {
+          bubbles: true,
+          cancelable: true,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        });
+
+        // Now we're ready to start dragging
+        e.target.dispatchEvent(syntheticEvent);
       }
-    } catch (error) {
-      console.error('Error updating the database:', error);
-    }
+    }, 100); // 100ms delay for faster drag initiation
   };
 
-  const addNewRow = async () => {
-    try {
-      const response = await fetch('/api/applications_with_outreach', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application_with_outreach/json',
-        },
-        body: JSON.stringify(newRow),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Failed to add new application with outreach');
-      }
-  
-      const addedApplicationWithOutreach = await response.json();
-      setData((old) => [...old, addedApplicationWithOutreach]);
-      setNewRow({
-        company: '',
-        hiringManager: '',
-        msgToManager: '',
-        recruiter: '',
-        firstRound: false,
-        finalRound: false,
-        offer: false,
-      });
-    } catch (error) {
-      console.error('Error adding new application with outreach:', error);
+  const handleMouseUp = (e: React.MouseEvent) => {
+    // Clear the long press timer
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
     }
+
+    const mouseUpTime = Date.now();
+    const mouseDownDuration = mouseDownTime ? mouseUpTime - mouseDownTime : 0;
+
+    // If press was short (less than 100ms), consider it a click
+    if (isClicking && mouseDownDuration < 100 && !isDragging) {
+      clickTimeoutRef.current = setTimeout(() => {
+        onEdit(application);
+      }, 50);
+    }
+
+    // Reset clicking state
+    setIsClicking(false);
+    setMouseDownTime(null);
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      const response = await fetch(`/api/applications_with_outreach`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application_with_outreach/json',
-        },
-        body: JSON.stringify({ id }),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Failed to delete the application with outreach');
+  // Touch handling for mobile devices
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Track touch start time
+    setMouseDownTime(Date.now());
+    setIsClicking(true);
+
+    // Set a timeout to distinguish between tap and drag
+    longPressTimeoutRef.current = setTimeout(() => {
+      // Add visual feedback for long press
+      const target = e.currentTarget as HTMLElement;
+      target.classList.add("touch-dragging");
+
+      // Haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
       }
-  
-      setData((old) => old.filter((row) => row.id !== id));
-    } catch (error) {
-      console.error('Error deleting the application with outreach:', error);
-    }
+    }, 100);
   };
 
-  const table = useReactTable({
-    data,
-    columns,
-    defaultColumn,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    autoResetPageIndex,
-    meta: {
-      updateData,
-    },
-    debugTable: true,
-  })
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    // Clear the long press timer
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+
+    const touchEndTime = Date.now();
+    const touchDuration = mouseDownTime ? touchEndTime - mouseDownTime : 0;
+
+    // If it was a short tap (not a drag), open the edit modal
+    if (isClicking && touchDuration < 100 && !isDragging) {
+      e.currentTarget.classList.remove("touch-dragging");
+      onEdit(application);
+    }
+
+    // Reset state
+    setIsClicking(false);
+    setMouseDownTime(null);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // If finger moves significantly, cancel the click and let dnd-kit handle the drag
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+  };
 
   return (
-    <div className="p-2">
-      <div className="h-2" />
-      <table>
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} colSpan={header.colSpan}>
-                  {header.isPlaceholder ? null : (
-                    <div>
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                    </div>
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-          {/* New row for adding entries */}
-          <tr>
-            <td></td> {/* No. column left blank */}
-            <td>
-              <input
-                type="text"
-                placeholder="Company"
-                value={newRow.company}
-                onChange={(e) => setNewRow({ ...newRow, company: e.target.value })}
-                className="border p-1 rounded"
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                placeholder="Hiring Manager"
-                value={newRow.hiringManager}
-                onChange={(e) => setNewRow({ ...newRow, hiringManager: e.target.value })}
-                className="border p-1 rounded"
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                placeholder="Message to Manager"
-                value={newRow.msgToManager}
-                onChange={(e) => setNewRow({ ...newRow, msgToManager: e.target.value })}
-                className="border p-1 rounded"
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                placeholder="Recruiter"
-                value={newRow.recruiter}
-                onChange={(e) => setNewRow({ ...newRow, recruiter: e.target.value })}
-                className="border p-1 rounded"
-              />
-            </td>
-            <td>
-              <div className="center-checkbox">
-                <input
-                  type="checkbox"
-                  checked={newRow.firstRound}
-                  onChange={(e) => setNewRow({ ...newRow, firstRound: e.target.checked })}
-                />
-              </div>
-            </td>
-            <td>
-              <div className="center-checkbox">
-                <input
-                  type="checkbox"
-                  checked={newRow.finalRound}
-                  onChange={(e) => setNewRow({ ...newRow, finalRound: e.target.checked })}
-                />
-              </div>
-            </td>
-            <td>
-              <div className="center-checkbox">
-                <input
-                  type="checkbox"
-                  checked={newRow.offer}
-                  onChange={(e) => setNewRow({ ...newRow, offer: e.target.checked })}
-                />
-              </div>
-            </td>
-            <td>
-              <button onClick={addNewRow} className="border p-1 rounded">Add</button>
-            </td>
-          </tr>
-        </tbody>
-        <tfoot>
-          {table.getFooterGroups().map((footerGroup) => (
-            <tr key={footerGroup.id}>
-              {footerGroup.headers.map((header) => (
-                <th key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.footer, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </tfoot>
-      </table>
-      <div className="h-2" />
-      <div className="flex items-center gap-2">
-        <button
-          className="border rounded p-1"
-          onClick={() => table.setPageIndex(0)}
-          disabled={!table.getCanPreviousPage()}
-        >
-          {'<<'}
-        </button>
-        <button
-          className="border rounded p-1"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          {'<'}
-        </button>
-        <button
-          className="border rounded p-1"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          {'>'}
-        </button>
-        <button
-          className="border rounded p-1"
-          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-          disabled={!table.getCanNextPage()}
-        >
-          {'>>'}
-        </button>
-        <span className="flex items-center gap-1">
-          <div>Page</div>
-          <strong>
-            {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-          </strong>
-        </span>
-        <span className="flex items-center gap-1">
-          | Go to page:
-          <input
-            type="number"
-            min="1"
-            max={table.getPageCount()}
-            defaultValue={table.getState().pagination.pageIndex + 1}
-            onChange={(e) => {
-              const page = e.target.value ? Number(e.target.value) - 1 : 0;
-              table.setPageIndex(page);
-            }}
-            className="border p-1 rounded w-16"
-          />
-        </span>
-        <select
-          value={table.getState().pagination.pageSize}
-          onChange={(e) => {
-            table.setPageSize(Number(e.target.value));
-          }}
-        >
-          {[10, 20, 30, 40, 50].map((pageSize) => (
-            <option key={pageSize} value={pageSize}>
-              Show {pageSize}
-            </option>
-          ))}
-        </select>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      className="bg-white p-3 mb-2 rounded shadow hover:shadow-md transition-shadow relative group"
+    >
+      {/* Drag handle icon that appears on hover */}
+      <div className="absolute -left-1 top-0 bottom-0 w-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <GripVertical size={16} className="text-gray-400 drag-handle" />
       </div>
-      <div>{table.getRowModel().rows.length} Rows</div>
-      <div>
-        <button onClick={() => rerender()}>Force Rerender</button>
+
+      <h3 className="font-medium text-gray-800">{application.company}</h3>
+      {application.recruiter && (
+        <p className="text-sm text-gray-600">
+          Recruiter: {application.recruiter}
+        </p>
+      )}
+      {application.hiringManager && (
+        <p className="text-sm text-gray-600">
+          Hiring Manager: {application.hiringManager}
+        </p>
+      )}
+      {application.notes && (
+        <div className="mt-2 text-sm text-gray-600">
+          <p className="font-medium">Notes:</p>
+          <p>{application.notes}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Regular application card for drag overlay
+const ApplicationCard = ({ application }: { application: Application }) => (
+  <div className="bg-white p-3 mb-2 rounded shadow">
+    <h3 className="font-medium text-gray-800">{application.company}</h3>
+    {application.recruiter && (
+      <p className="text-sm text-gray-600">
+        Recruiter: {application.recruiter}
+      </p>
+    )}
+    {application.hiringManager && (
+      <p className="text-sm text-gray-600">
+        Hiring Manager: {application.hiringManager}
+      </p>
+    )}
+    {application.notes && (
+      <div className="mt-2 text-sm text-gray-600">
+        <p className="font-medium">Notes:</p>
+        <p>{application.notes}</p>
       </div>
-      <div>
-        <button onClick={() => refreshData()}>Refresh Data</button>
+    )}
+  </div>
+);
+
+// Column component with droppable area
+const Column = ({
+  id,
+  title,
+  applications,
+  color,
+  onEditApplication,
+}: {
+  id: ColumnId;
+  title: string;
+  applications: Application[];
+  color: string;
+  onEditApplication: (application: Application) => void;
+}) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id,
+  });
+
+  // Add a background highlight when dragging over this column
+  const dropStyle = isOver
+    ? {
+        backgroundColor: "rgba(0, 0, 0, 0.05)",
+        boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.2)",
+      }
+    : undefined;
+
+  return (
+    <div className="flex-shrink-0 w-80 bg-gray-100 rounded-lg shadow-md">
+      <div className={`p-3 ${color} text-white rounded-t-lg`}>
+        <h2 className="font-semibold">{title}</h2>
+      </div>
+      <div
+        ref={setNodeRef}
+        className="p-2 min-h-[500px] transition-colors duration-200"
+        style={dropStyle}
+      >
+        {applications.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">
+            No {title.toLowerCase()} applications
+          </p>
+        ) : (
+          applications.map((application) => (
+            <DraggableApplicationCard
+              key={application.id}
+              application={application}
+              onEdit={onEditApplication}
+            />
+          ))
+        )}
       </div>
     </div>
   );
+};
+
+export default function ApplicationsWithOutreachPage() {
+  const router = useRouter();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeApplication, setActiveApplication] =
+    useState<Application | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [formData, setFormData] = useState({
+    company: "",
+    hiringManager: "",
+    msgToManager: "",
+    recruiter: "",
+    msgToRecruiter: "",
+    notes: "",
+  });
+  const [editFormData, setEditFormData] = useState({
+    id: 0,
+    company: "",
+    hiringManager: "" as string | null,
+    msgToManager: "" as string | null,
+    recruiter: "" as string | null,
+    msgToRecruiter: "" as string | null,
+    notes: "" as string | null,
+    appliedStatus: false,
+    msgToRecruiterStatus: false,
+    msgToManagerStatus: false,
+    interviewStatus: false,
+    offerStatus: false,
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 100,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
+
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/applications_with_outreach");
+      const data = await response.json();
+      setApplications(Array.isArray(data) ? data : []);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      setLoading(false);
+    }
+  };
+
+  const handleCreateApplication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("/api/applications_with_outreach", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setShowCreateModal(false);
+        setFormData({
+          company: "",
+          hiringManager: "",
+          msgToManager: "",
+          recruiter: "",
+          msgToRecruiter: "",
+          notes: "",
+        });
+        await fetchApplications();
+      } else {
+        console.error("Failed to create application");
+      }
+    } catch (error) {
+      console.error("Error creating application:", error);
+    }
+  };
+
+  const handleUpdateApplication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("/api/applications_with_outreach", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editFormData),
+      });
+
+      if (response.ok) {
+        setShowEditModal(false);
+        await fetchApplications();
+      } else {
+        console.error("Failed to update application");
+      }
+    } catch (error) {
+      console.error("Error updating application:", error);
+    }
+  };
+
+  const handleUpdateStatus = async (
+    id: number,
+    status: {
+      appliedStatus: boolean;
+      msgToRecruiterStatus: boolean;
+      msgToManagerStatus: boolean;
+      interviewStatus: boolean;
+      offerStatus: boolean;
+    }
+  ) => {
+    try {
+      const response = await fetch("/api/applications_with_outreach", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          ...status,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to update application status");
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error updating application status:", error);
+      return false;
+    }
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditApplication = (application: Application) => {
+    setEditFormData({ ...application });
+    setActiveApplication(application);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteApplication = async () => {
+    if (!activeApplication) return;
+
+    try {
+      const response = await fetch(
+        `/api/applications_with_outreach?id=${activeApplication.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        setShowDeleteConfirm(false);
+        setShowEditModal(false);
+        await fetchApplications();
+      } else {
+        console.error("Failed to delete application");
+      }
+    } catch (error) {
+      console.error("Error deleting application:", error);
+    }
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const applicationData = active.data.current as { application: Application };
+
+    // Set the active application for the drag overlay
+    if (applicationData && applicationData.application) {
+      setActiveApplication(applicationData.application);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    // Optional: can be used for real-time feedback during dragging
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const applicationId = parseInt(active.id.toString());
+      const application = applications.find((a) => a.id === applicationId);
+      const targetColumn = over.id as ColumnId;
+
+      if (application) {
+        // Define status update based on target column
+        const newStatus = {
+          appliedStatus: targetColumn === "applied",
+          msgToRecruiterStatus: targetColumn === "msgToRecruiter",
+          msgToManagerStatus: targetColumn === "msgToManager",
+          interviewStatus: targetColumn === "interview",
+          offerStatus: targetColumn === "offer",
+        };
+
+        // Optimistic update - update local state immediately
+        setApplications((prev) =>
+          prev.map((app) =>
+            app.id === applicationId ? { ...app, ...newStatus } : app
+          )
+        );
+
+        // Update application status in the database without awaiting
+        try {
+          const response = await fetch("/api/applications_with_outreach", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: applicationId,
+              ...newStatus,
+            }),
+          });
+
+          if (!response.ok) {
+            console.error("Failed to update application status");
+            // If update fails, revert to original data
+            await fetchApplications();
+          }
+        } catch (error) {
+          console.error("Error updating application status:", error);
+          // If there's an error, revert to original data
+          await fetchApplications();
+        }
+      }
+    }
+
+    // Reset active application
+    setActiveApplication(null);
+  };
+
+  // Group applications by status
+  const appliedApplications = applications.filter(
+    (a) =>
+      a.appliedStatus &&
+      !a.msgToRecruiterStatus &&
+      !a.msgToManagerStatus &&
+      !a.interviewStatus &&
+      !a.offerStatus
+  );
+  const msgToRecruiterApplications = applications.filter(
+    (a) =>
+      a.msgToRecruiterStatus &&
+      !a.msgToManagerStatus &&
+      !a.interviewStatus &&
+      !a.offerStatus
+  );
+  const msgToManagerApplications = applications.filter(
+    (a) => a.msgToManagerStatus && !a.interviewStatus && !a.offerStatus
+  );
+  const interviewApplications = applications.filter(
+    (a) => a.interviewStatus && !a.offerStatus
+  );
+  const offerApplications = applications.filter((a) => a.offerStatus);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4">
+      <div className="flex justify-between mb-4 items-center">
+        <h1 className="text-2xl font-bold">Applications with Outreach</h1>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center hover:bg-blue-600 transition-colors"
+        >
+          <span className="mr-1 text-xl">+</span> New Application
+        </button>
+      </div>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          <Column
+            id="applied"
+            title="Applied"
+            applications={appliedApplications}
+            color="bg-gray-500"
+            onEditApplication={handleEditApplication}
+          />
+          <Column
+            id="msgToRecruiter"
+            title="Messaged Recruiter"
+            applications={msgToRecruiterApplications}
+            color="bg-blue-500"
+            onEditApplication={handleEditApplication}
+          />
+          <Column
+            id="msgToManager"
+            title="Messaged Hiring Manager"
+            applications={msgToManagerApplications}
+            color="bg-purple-500"
+            onEditApplication={handleEditApplication}
+          />
+          <Column
+            id="interview"
+            title="Interview"
+            applications={interviewApplications}
+            color="bg-orange-500"
+            onEditApplication={handleEditApplication}
+          />
+          <Column
+            id="offer"
+            title="Offer"
+            applications={offerApplications}
+            color="bg-green-500"
+            onEditApplication={handleEditApplication}
+          />
+        </div>
+
+        {/* Drag overlay for visual feedback during dragging */}
+        <DragOverlay>
+          {activeApplication ? (
+            <ApplicationCard application={activeApplication} />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Add New Application</h2>
+            <form onSubmit={handleCreateApplication}>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Company *</label>
+                <input
+                  type="text"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Recruiter</label>
+                <input
+                  type="text"
+                  name="recruiter"
+                  value={formData.recruiter}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">
+                  Message to Recruiter
+                </label>
+                <textarea
+                  name="msgToRecruiter"
+                  value={formData.msgToRecruiter}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  rows={3}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">
+                  Hiring Manager
+                </label>
+                <input
+                  type="text"
+                  name="hiringManager"
+                  value={formData.hiringManager}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">
+                  Message to Hiring Manager
+                </label>
+                <textarea
+                  name="msgToManager"
+                  value={formData.msgToManager}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  rows={3}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Notes</label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && activeApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Edit Application</h2>
+            <form onSubmit={handleUpdateApplication}>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Company *</label>
+                <input
+                  type="text"
+                  name="company"
+                  value={editFormData.company}
+                  onChange={handleEditInputChange}
+                  className="w-full p-2 border rounded"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Recruiter</label>
+                <input
+                  type="text"
+                  name="recruiter"
+                  value={editFormData.recruiter || ""}
+                  onChange={handleEditInputChange}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">
+                  Message to Recruiter
+                </label>
+                <textarea
+                  name="msgToRecruiter"
+                  value={editFormData.msgToRecruiter || ""}
+                  onChange={handleEditInputChange}
+                  className="w-full p-2 border rounded"
+                  rows={3}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">
+                  Hiring Manager
+                </label>
+                <input
+                  type="text"
+                  name="hiringManager"
+                  value={editFormData.hiringManager || ""}
+                  onChange={handleEditInputChange}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">
+                  Message to Hiring Manager
+                </label>
+                <textarea
+                  name="msgToManager"
+                  value={editFormData.msgToManager || ""}
+                  onChange={handleEditInputChange}
+                  className="w-full p-2 border rounded"
+                  rows={3}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Notes</label>
+                <textarea
+                  name="notes"
+                  value={editFormData.notes || ""}
+                  onChange={handleEditInputChange}
+                  className="w-full p-2 border rounded"
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Update
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
+            <p className="mb-6">
+              Are you sure you want to delete this application? This action
+              cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteApplication}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
-
-export default App;
-
-// const rootElement = document.getElementById('root')
-// if (!rootElement) throw new Error('Failed to find the root element')
-
-// ReactDOM.createRoot(rootElement).render(
-//   <React.StrictMode>
-//     <App />
-//   </React.StrictMode>
-// )

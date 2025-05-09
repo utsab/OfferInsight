@@ -19,32 +19,31 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 
-type Outreach = {
+type CareerFair = {
   id: number;
-  name: string;
-  company: string;
-  message: string | null;
-  linkedInUrl: string | null;
+  event: string;
+  date: string;
+  location: string | null;
+  url: string | null;
   notes: string | null;
-  responded: boolean;
   scheduled: boolean;
-  referral: boolean;
+  attended: boolean;
 };
 
-type ColumnId = "responded" | "scheduled" | "referral";
+type ColumnId = "scheduled" | "attended";
 
-// Draggable outreach card component
-const DraggableOutreachCard = ({
-  outreach,
+// Draggable event card component
+const DraggableCareerFairCard = ({
+  careerFair,
   onEdit,
 }: {
-  outreach: Outreach;
-  onEdit: (outreach: Outreach) => void;
+  careerFair: CareerFair;
+  onEdit: (careerFair: CareerFair) => void;
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
-      id: outreach.id.toString(),
-      data: { outreach },
+      id: careerFair.id.toString(),
+      data: { careerFair },
     });
 
   // Track if we have a pending click
@@ -107,7 +106,7 @@ const DraggableOutreachCard = ({
     // If press was short (less than 100ms), consider it a click
     if (isClicking && mouseDownDuration < 100 && !isDragging) {
       clickTimeoutRef.current = setTimeout(() => {
-        onEdit(outreach);
+        onEdit(careerFair);
       }, 50);
     }
 
@@ -148,7 +147,7 @@ const DraggableOutreachCard = ({
     // If it was a short tap (not a drag), open the edit modal
     if (isClicking && touchDuration < 100 && !isDragging) {
       e.currentTarget.classList.remove("touch-dragging");
-      onEdit(outreach);
+      onEdit(careerFair);
     }
 
     // Reset state
@@ -182,60 +181,54 @@ const DraggableOutreachCard = ({
         <GripVertical size={16} className="text-gray-400 drag-handle" />
       </div>
 
-      <h3 className="font-medium text-gray-800">{outreach.name}</h3>
-      <p className="text-sm text-gray-600">Company: {outreach.company}</p>
-      {outreach.linkedInUrl && (
+      <h3 className="font-medium text-gray-800">{careerFair.event}</h3>
+      <p className="text-sm text-gray-600">Date: {careerFair.date}</p>
+      {careerFair.location && (
+        <p className="text-sm text-gray-600">Location: {careerFair.location}</p>
+      )}
+      {careerFair.url && (
         <a
-          href={outreach.linkedInUrl}
+          href={careerFair.url}
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-blue-500 hover:underline"
           onClick={(e) => e.stopPropagation()} // Prevent edit modal when clicking link
         >
-          LinkedIn Profile
+          Event Link
         </a>
       )}
-      {outreach.message && (
-        <div className="mt-2 text-sm text-gray-600">
-          <p className="font-medium">Message:</p>
-          <p>{outreach.message}</p>
-        </div>
-      )}
-      {outreach.notes && (
+      {careerFair.notes && (
         <div className="mt-2 text-sm text-gray-600">
           <p className="font-medium">Notes:</p>
-          <p>{outreach.notes}</p>
+          <p>{careerFair.notes}</p>
         </div>
       )}
     </div>
   );
 };
 
-// Regular outreach card for drag overlay
-const OutreachCard = ({ outreach }: { outreach: Outreach }) => (
+// Regular event card for drag overlay
+const CareerFairCard = ({ careerFair }: { careerFair: CareerFair }) => (
   <div className="bg-white p-3 mb-2 rounded shadow">
-    <h3 className="font-medium text-gray-800">{outreach.name}</h3>
-    <p className="text-sm text-gray-600">Company: {outreach.company}</p>
-    {outreach.linkedInUrl && (
+    <h3 className="font-medium text-gray-800">{careerFair.event}</h3>
+    <p className="text-sm text-gray-600">Date: {careerFair.date}</p>
+    {careerFair.location && (
+      <p className="text-sm text-gray-600">Location: {careerFair.location}</p>
+    )}
+    {careerFair.url && (
       <a
-        href={outreach.linkedInUrl}
+        href={careerFair.url}
         target="_blank"
         rel="noopener noreferrer"
         className="text-sm text-blue-500 hover:underline"
       >
-        LinkedIn Profile
+        Event Link
       </a>
     )}
-    {outreach.message && (
-      <div className="mt-2 text-sm text-gray-600">
-        <p className="font-medium">Message:</p>
-        <p>{outreach.message}</p>
-      </div>
-    )}
-    {outreach.notes && (
+    {careerFair.notes && (
       <div className="mt-2 text-sm text-gray-600">
         <p className="font-medium">Notes:</p>
-        <p>{outreach.notes}</p>
+        <p>{careerFair.notes}</p>
       </div>
     )}
   </div>
@@ -245,15 +238,15 @@ const OutreachCard = ({ outreach }: { outreach: Outreach }) => (
 const Column = ({
   id,
   title,
-  outreaches,
+  careerFairs,
   color,
-  onEditOutreach,
+  onEditCareerFair,
 }: {
   id: ColumnId;
   title: string;
-  outreaches: Outreach[];
+  careerFairs: CareerFair[];
   color: string;
-  onEditOutreach: (outreach: Outreach) => void;
+  onEditCareerFair: (careerFair: CareerFair) => void;
 }) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -277,16 +270,16 @@ const Column = ({
         className="p-2 min-h-[500px] transition-colors duration-200"
         style={dropStyle}
       >
-        {outreaches.length === 0 ? (
+        {careerFairs.length === 0 ? (
           <p className="text-gray-500 text-center py-4">
-            No {title.toLowerCase()} contacts
+            No {title.toLowerCase()} career fairs
           </p>
         ) : (
-          outreaches.map((outreach) => (
-            <DraggableOutreachCard
-              key={outreach.id}
-              outreach={outreach}
-              onEdit={onEditOutreach}
+          careerFairs.map((careerFair) => (
+            <DraggableCareerFairCard
+              key={careerFair.id}
+              careerFair={careerFair}
+              onEdit={onEditCareerFair}
             />
           ))
         )}
@@ -295,22 +288,26 @@ const Column = ({
   );
 };
 
-export default function LinkedInOutreachPage() {
+export default function CareerFairsPage() {
   const router = useRouter();
-  const [outreaches, setOutreaches] = useState<Outreach[]>([]);
+  const [careerFairs, setCareerFairs] = useState<CareerFair[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeOutreach, setActiveOutreach] = useState<Outreach | null>(null);
-  const [editingOutreach, setEditingOutreach] = useState<Outreach | null>(null);
+  const [activeCareerFair, setActiveCareerFair] = useState<CareerFair | null>(
+    null
+  );
+  const [editingCareerFair, setEditingCareerFair] = useState<CareerFair | null>(
+    null
+  );
   const [activeDroppableId, setActiveDroppableId] = useState<ColumnId | null>(
     null
   );
-  const [newOutreach, setNewOutreach] = useState({
-    name: "",
-    company: "",
-    message: "",
-    linkedInUrl: "",
+  const [newCareerFair, setNewCareerFair] = useState({
+    event: "",
+    date: "",
+    location: "",
+    url: "",
     notes: "",
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -330,87 +327,89 @@ export default function LinkedInOutreachPage() {
   );
 
   useEffect(() => {
-    fetchOutreaches();
+    fetchCareerFairs();
   }, []);
 
-  const fetchOutreaches = async () => {
+  const fetchCareerFairs = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/linkedin_outreach");
+      const response = await fetch("/api/career_fairs");
       if (response.ok) {
         const data = await response.json();
-        setOutreaches(data);
+        setCareerFairs(data);
       }
     } catch (error) {
-      console.error("Error fetching outreaches:", error);
+      console.error("Error fetching career fairs:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCreateOutreach = async (e: React.FormEvent) => {
+  const handleCreateCareerFair = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("/api/linkedin_outreach", {
+      const response = await fetch("/api/career_fairs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newOutreach),
+        body: JSON.stringify(newCareerFair),
       });
 
       if (response.ok) {
-        const createdOutreach = await response.json();
-        setOutreaches([createdOutreach, ...outreaches]);
-        setNewOutreach({
-          name: "",
-          company: "",
-          message: "",
-          linkedInUrl: "",
+        const createdCareerFair = await response.json();
+        setCareerFairs([createdCareerFair, ...careerFairs]);
+        setNewCareerFair({
+          event: "",
+          date: "",
+          location: "",
+          url: "",
           notes: "",
         });
         setIsModalOpen(false);
         router.refresh();
       }
     } catch (error) {
-      console.error("Error creating outreach:", error);
+      console.error("Error creating career fair:", error);
     }
   };
 
-  const handleUpdateOutreach = async (e: React.FormEvent) => {
+  const handleUpdateCareerFair = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingOutreach) return;
+    if (!editingCareerFair) return;
 
     try {
-      const response = await fetch("/api/linkedin_outreach", {
+      const response = await fetch("/api/career_fairs", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(editingOutreach),
+        body: JSON.stringify(editingCareerFair),
       });
 
       if (response.ok) {
         // Update local state
-        setOutreaches(
-          outreaches.map((outreach) =>
-            outreach.id === editingOutreach.id ? editingOutreach : outreach
+        setCareerFairs(
+          careerFairs.map((careerFair) =>
+            careerFair.id === editingCareerFair.id
+              ? editingCareerFair
+              : careerFair
           )
         );
         setIsEditModalOpen(false);
-        setEditingOutreach(null);
+        setEditingCareerFair(null);
       }
     } catch (error) {
-      console.error("Error updating outreach:", error);
+      console.error("Error updating career fair:", error);
     }
   };
 
   const handleUpdateStatus = async (
     id: number,
-    status: { responded: boolean; scheduled: boolean; referral: boolean }
+    status: { scheduled: boolean; attended: boolean }
   ) => {
     try {
-      const response = await fetch("/api/linkedin_outreach", {
+      const response = await fetch("/api/career_fairs", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -420,14 +419,14 @@ export default function LinkedInOutreachPage() {
 
       if (response.ok) {
         // Update local state without fetching again
-        setOutreaches(
-          outreaches.map((outreach) =>
-            outreach.id === id ? { ...outreach, ...status } : outreach
+        setCareerFairs(
+          careerFairs.map((careerFair) =>
+            careerFair.id === id ? { ...careerFair, ...status } : careerFair
           )
         );
       }
     } catch (error) {
-      console.error("Error updating outreach status:", error);
+      console.error("Error updating career fair status:", error);
     }
   };
 
@@ -435,32 +434,32 @@ export default function LinkedInOutreachPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setNewOutreach((prev) => ({ ...prev, [name]: value }));
+    setNewCareerFair((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEditInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    if (!editingOutreach) return;
+    if (!editingCareerFair) return;
 
     const { name, value } = e.target;
-    setEditingOutreach((prev) => (prev ? { ...prev, [name]: value } : null));
+    setEditingCareerFair((prev) => (prev ? { ...prev, [name]: value } : null));
   };
 
-  const handleEditOutreach = (outreach: Outreach) => {
+  const handleEditCareerFair = (careerFair: CareerFair) => {
     // Only open edit modal if we're not currently dragging something
     if (!activeId) {
-      setEditingOutreach(outreach);
+      setEditingCareerFair(careerFair);
       setIsEditModalOpen(true);
     }
   };
 
-  const handleDeleteOutreach = async () => {
-    if (!editingOutreach) return;
+  const handleDeleteCareerFair = async () => {
+    if (!editingCareerFair) return;
 
     try {
       const response = await fetch(
-        `/api/linkedin_outreach?id=${editingOutreach.id}`,
+        `/api/career_fairs?id=${editingCareerFair.id}`,
         {
           method: "DELETE",
         }
@@ -468,14 +467,16 @@ export default function LinkedInOutreachPage() {
 
       if (response.ok) {
         // Remove from local state
-        setOutreaches(
-          outreaches.filter((outreach) => outreach.id !== editingOutreach.id)
+        setCareerFairs(
+          careerFairs.filter(
+            (careerFair) => careerFair.id !== editingCareerFair.id
+          )
         );
         setIsEditModalOpen(false);
-        setEditingOutreach(null);
+        setEditingCareerFair(null);
       }
     } catch (error) {
-      console.error("Error deleting outreach:", error);
+      console.error("Error deleting career fair:", error);
     }
   };
 
@@ -484,11 +485,11 @@ export default function LinkedInOutreachPage() {
     const { active } = event;
     setActiveId(active.id as string);
 
-    const draggedOutreach = outreaches.find(
+    const draggedCareerFair = careerFairs.find(
       (item) => item.id.toString() === active.id
     );
-    if (draggedOutreach) {
-      setActiveOutreach(draggedOutreach);
+    if (draggedCareerFair) {
+      setActiveCareerFair(draggedCareerFair);
 
       // Set cursor to grabbing during drag
       document.body.style.cursor = "grabbing";
@@ -513,100 +514,91 @@ export default function LinkedInOutreachPage() {
 
     if (!over || !active) {
       setActiveId(null);
-      setActiveOutreach(null);
+      setActiveCareerFair(null);
       setActiveDroppableId(null);
       return;
     }
 
-    const outreachId = parseInt(active.id as string);
+    const careerFairId = parseInt(active.id as string);
     const columnId = over.id as ColumnId;
 
     // Only process if we're dropping onto a column and have a valid ID
     if (
       columnId &&
-      ["responded", "scheduled", "referral"].includes(columnId) &&
-      outreachId
+      ["scheduled", "attended"].includes(columnId) &&
+      careerFairId
     ) {
       // Get column-specific statuses
       let newStatus: {
-        responded: boolean;
         scheduled: boolean;
-        referral: boolean;
+        attended: boolean;
       };
 
-      if (columnId === "responded") {
+      if (columnId === "scheduled") {
         newStatus = {
-          responded: true,
-          scheduled: false,
-          referral: false,
-        };
-      } else if (columnId === "scheduled") {
-        newStatus = {
-          responded: false,
           scheduled: true,
-          referral: false,
+          attended: false,
         };
       } else {
-        // referral
+        // attended
         newStatus = {
-          responded: false,
           scheduled: false,
-          referral: true,
+          attended: true,
         };
       }
 
       // Update local state immediately to prevent UI flicker
-      setOutreaches((prevOutreaches) =>
-        prevOutreaches.map((outreach) =>
-          outreach.id === outreachId ? { ...outreach, ...newStatus } : outreach
+      setCareerFairs((prevCareerFairs) =>
+        prevCareerFairs.map((careerFair) =>
+          careerFair.id === careerFairId
+            ? { ...careerFair, ...newStatus }
+            : careerFair
         )
       );
 
       // Then update the server state
       try {
-        await fetch("/api/linkedin_outreach", {
+        await fetch("/api/career_fairs", {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id: outreachId, ...newStatus }),
+          body: JSON.stringify({ id: careerFairId, ...newStatus }),
         });
       } catch (error) {
-        console.error("Error updating outreach status:", error);
+        console.error("Error updating career fair status:", error);
         // Revert local state in case of error
-        fetchOutreaches();
+        fetchCareerFairs();
       }
     }
 
     setActiveId(null);
-    setActiveOutreach(null);
+    setActiveCareerFair(null);
     setActiveDroppableId(null);
   };
 
-  // Filter outreaches for each column
-  const respondedOutreaches = outreaches.filter(
-    (outreach) =>
-      outreach.responded && !outreach.scheduled && !outreach.referral
+  // Filter career fairs for each column
+  const scheduledCareerFairs = careerFairs.filter(
+    (careerFair) => careerFair.scheduled && !careerFair.attended
   );
-  const scheduledOutreaches = outreaches.filter(
-    (outreach) => outreach.scheduled && !outreach.referral
+  const attendedCareerFairs = careerFairs.filter(
+    (careerFair) => careerFair.attended
   );
-  const referralOutreaches = outreaches.filter((outreach) => outreach.referral);
 
   return (
     <div className="p-4">
       <div className="flex justify-between mb-4 items-center">
-        <h1 className="text-2xl font-bold">LinkedIn Outreach</h1>
+        <h1 className="text-2xl font-bold">Career Fairs</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center hover:bg-blue-600 transition-colors"
         >
-          <span className="mr-1 text-xl">+</span> New Contact
+          <span className="mr-1 text-xl">+</span> New Career Fair
         </button>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-10">Loading contacts...</div>
+        <div className="text-center py-10">Loading career fairs...</div>
       ) : (
         <DndContext
           sensors={sensors}
@@ -616,31 +608,22 @@ export default function LinkedInOutreachPage() {
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-4 overflow-x-auto pb-4">
-            {/* Responded Column */}
-            <Column
-              id="responded"
-              title="Responded"
-              outreaches={respondedOutreaches}
-              color="bg-blue-500"
-              onEditOutreach={handleEditOutreach}
-            />
-
             {/* Scheduled Column */}
             <Column
               id="scheduled"
               title="Scheduled"
-              outreaches={scheduledOutreaches}
-              color="bg-green-500"
-              onEditOutreach={handleEditOutreach}
+              careerFairs={scheduledCareerFairs}
+              color="bg-blue-500"
+              onEditCareerFair={handleEditCareerFair}
             />
 
-            {/* Referral Column */}
+            {/* Attended Column */}
             <Column
-              id="referral"
-              title="Referral"
-              outreaches={referralOutreaches}
-              color="bg-purple-500"
-              onEditOutreach={handleEditOutreach}
+              id="attended"
+              title="Attended"
+              careerFairs={attendedCareerFairs}
+              color="bg-green-500"
+              onEditCareerFair={handleEditCareerFair}
             />
           </div>
 
@@ -651,21 +634,21 @@ export default function LinkedInOutreachPage() {
               easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
             }}
           >
-            {activeId && activeOutreach ? (
+            {activeId && activeCareerFair ? (
               <div className="opacity-80 transform scale-105 shadow-lg">
-                <OutreachCard outreach={activeOutreach} />
+                <CareerFairCard careerFair={activeCareerFair} />
               </div>
             ) : null}
           </DragOverlay>
         </DndContext>
       )}
 
-      {/* Modal for creating new contacts */}
+      {/* Modal for creating new career fairs */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Create New Contact</h2>
+              <h2 className="text-xl font-semibold">Create New Career Fair</h2>
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -674,13 +657,13 @@ export default function LinkedInOutreachPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateOutreach}>
+            <form onSubmit={handleCreateCareerFair}>
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Name *</label>
+                <label className="block text-gray-700 mb-1">Event Name *</label>
                 <input
                   type="text"
-                  name="name"
-                  value={newOutreach.name}
+                  name="event"
+                  value={newCareerFair.event}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   required
@@ -688,11 +671,11 @@ export default function LinkedInOutreachPage() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Company *</label>
+                <label className="block text-gray-700 mb-1">Date *</label>
                 <input
-                  type="text"
-                  name="company"
-                  value={newOutreach.company}
+                  type="date"
+                  name="date"
+                  value={newCareerFair.date}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   required
@@ -700,26 +683,25 @@ export default function LinkedInOutreachPage() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">LinkedIn URL</label>
+                <label className="block text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={newCareerFair.location}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-1">URL</label>
                 <input
                   type="url"
-                  name="linkedInUrl"
-                  value={newOutreach.linkedInUrl}
+                  name="url"
+                  value={newCareerFair.url}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
-                  placeholder="https://linkedin.com/in/..."
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Message</label>
-                <textarea
-                  name="message"
-                  value={newOutreach.message}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  rows={3}
-                  placeholder="Enter your outreach message here..."
+                  placeholder="https://..."
                 />
               </div>
 
@@ -727,7 +709,7 @@ export default function LinkedInOutreachPage() {
                 <label className="block text-gray-700 mb-1">Notes</label>
                 <textarea
                   name="notes"
-                  value={newOutreach.notes}
+                  value={newCareerFair.notes}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   rows={3}
@@ -746,7 +728,7 @@ export default function LinkedInOutreachPage() {
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
-                  Create Contact
+                  Create Career Fair
                 </button>
               </div>
             </form>
@@ -754,12 +736,12 @@ export default function LinkedInOutreachPage() {
         </div>
       )}
 
-      {/* Modal for editing contacts */}
-      {isEditModalOpen && editingOutreach && (
+      {/* Modal for editing career fairs */}
+      {isEditModalOpen && editingCareerFair && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Edit Contact</h2>
+              <h2 className="text-xl font-semibold">Edit Career Fair</h2>
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -768,13 +750,13 @@ export default function LinkedInOutreachPage() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateOutreach}>
+            <form onSubmit={handleUpdateCareerFair}>
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Name *</label>
+                <label className="block text-gray-700 mb-1">Event Name *</label>
                 <input
                   type="text"
-                  name="name"
-                  value={editingOutreach.name}
+                  name="event"
+                  value={editingCareerFair.event}
                   onChange={handleEditInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   required
@@ -782,11 +764,11 @@ export default function LinkedInOutreachPage() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Company *</label>
+                <label className="block text-gray-700 mb-1">Date *</label>
                 <input
-                  type="text"
-                  name="company"
-                  value={editingOutreach.company}
+                  type="date"
+                  name="date"
+                  value={editingCareerFair.date}
                   onChange={handleEditInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   required
@@ -794,26 +776,25 @@ export default function LinkedInOutreachPage() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">LinkedIn URL</label>
+                <label className="block text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={editingCareerFair.location || ""}
+                  onChange={handleEditInputChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-1">URL</label>
                 <input
                   type="url"
-                  name="linkedInUrl"
-                  value={editingOutreach.linkedInUrl || ""}
+                  name="url"
+                  value={editingCareerFair.url || ""}
                   onChange={handleEditInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
-                  placeholder="https://linkedin.com/in/..."
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Message</label>
-                <textarea
-                  name="message"
-                  value={editingOutreach.message || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  rows={3}
-                  placeholder="Enter your outreach message here..."
+                  placeholder="https://..."
                 />
               </div>
 
@@ -821,7 +802,7 @@ export default function LinkedInOutreachPage() {
                 <label className="block text-gray-700 mb-1">Notes</label>
                 <textarea
                   name="notes"
-                  value={editingOutreach.notes || ""}
+                  value={editingCareerFair.notes || ""}
                   onChange={handleEditInputChange}
                   className="w-full border border-gray-300 rounded px-3 py-2"
                   rows={3}
@@ -831,7 +812,7 @@ export default function LinkedInOutreachPage() {
               <div className="flex justify-between gap-2">
                 <button
                   type="button"
-                  onClick={handleDeleteOutreach}
+                  onClick={handleDeleteCareerFair}
                   className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                 >
                   Delete

@@ -24,36 +24,63 @@ model Applications {
 }
 
 model Applications_with_Outreach {
-  id              Int     @id @default(autoincrement())
-  company         String
-  hiringManager   String
-  msgToManager    String
-  recruiter       String
-  firstRound      Boolean
-  finalRound      Boolean
-  offer           Boolean
-  userId          String
-  user            User    @relation(fields: [userId], references: [id])
+  id                    Int     @id @default(autoincrement())
+  company               String
+  hiringManager         String?
+  msgToManager          String?
+  recruiter             String?
+  msgToRecruiter        String?
+  notes                 String?
+  appliedStatus         Boolean @default(true)
+  msgToRecruiterStatus  Boolean @default(false)
+  msgToManagerStatus    Boolean @default(false)
+  interviewStatus       Boolean @default(false)
+  offerStatus           Boolean @default(false)
+  userId                String
+  user                  User    @relation(fields: [userId], references: [id])
 }
 
 model Linkedin_Outreach {
-  id      Int     @id @default(autoincrement())
-  name    String
-  company String
-  message String
-  result  String
-  userId  String
-  user    User    @relation(fields: [userId], references: [id])
+  id           Int     @id @default(autoincrement())
+  name         String
+  company      String
+  message      String?
+  linkedInUrl  String?
+  notes        String?
+  responded    Boolean @default(true)
+  scheduled    Boolean @default(false)
+  referral     Boolean @default(false)
+  userId       String
+  user         User    @relation(fields: [userId], references: [id])
 }
 
 model In_Person_Events {
   id                  Int     @id @default(autoincrement())
   event               String
   date                String
-  numPeopleSpokenTo   Int
-  numLinkedInRequests Int
+  location            String?
+  url                 String?
+  notes               String?
+  numPeopleSpokenTo   Int?
+  numLinkedInRequests Int?
   userId              String
   user                User    @relation(fields: [userId], references: [id])
+  scheduled           Boolean @default(true)
+  attended            Boolean @default(false)
+  connectedOnline     Boolean @default(false)
+}
+
+model Career_Fairs {
+  id                  Int     @id @default(autoincrement())
+  event               String
+  date                String
+  location            String?
+  url                 String?
+  notes               String?
+  userId              String
+  user                User    @relation(fields: [userId], references: [id])
+  scheduled           Boolean @default(true)
+  attended            Boolean @default(false)
 }
 
 model User {
@@ -66,6 +93,7 @@ model User {
   applicationsWithOutreach            Applications_with_Outreach[]
   linkedinOutreach                    Linkedin_Outreach[]
   inPersonEvents                      In_Person_Events[]
+  careerFairs                         Career_Fairs[]
   emailVerified                       DateTime?
   accounts                            Account[]
   onboarding_progress                 Int                          @default(0)

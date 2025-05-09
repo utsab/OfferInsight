@@ -1,123 +1,204 @@
-'use server';
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import { auth } from "@/auth";
 
-import { auth } from '@/auth';
-import { NextResponse } from 'next/server';
-import { prisma } from '@/db'; // Import the prisma client
+// Create a new Prisma client instance
+const prisma = new PrismaClient();
 
-export async function GET() {
-  console.log('Fetching LinkedIn outreach entries...');
+// GET: Fetch all LinkedIn outreach for the current user
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
-        if (!session?.user?.email) {
-          return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-        }
-        
-    const linkedInOutreach = await prisma.linkedin_Outreach.findMany({
-      where: {
-        user: {
-          email: session.user.email
-        }
-      },
-      orderBy: {
-        id: 'asc',
-      },
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
     });
-    return NextResponse.json(linkedInOutreach);
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const outreaches = await prisma.linkedin_Outreach.findMany({
+      where: { userId: user.id },
+      orderBy: { id: "desc" },
+    });
+
+    return NextResponse.json(outreaches);
   } catch (error) {
-    console.error('Database Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch LinkedIn outreach entries.' }, { status: 500 });
+    console.error("Error fetching LinkedIn outreach:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch LinkedIn outreach" },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+// POST: Create a new LinkedIn outreach
+export async function POST(request: NextRequest) {
   try {
     const session = await auth();
+
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, company, message, result } = await request.json();
-    const newLinkedInOutreach = await prisma.linkedin_Outreach.create({
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const data = await request.json();
+
+    const outreach = await prisma.linkedin_Outreach.create({
       data: {
-        name,
-        company,
-        message,
-        result,
-        user: {
-          connect: {
-            email: session.user.email,
-          },
-        },
+        name: data.name,
+        company: data.company,
+        message: data.message || null,
+        linkedInUrl: data.linkedInUrl || null,
+        notes: data.notes || null,
+        responded: data.responded !== undefined ? data.responded : true,
+        scheduled: data.scheduled !== undefined ? data.scheduled : false,
+        referral: data.referral !== undefined ? data.referral : false,
+        userId: user.id,
       },
     });
-    return NextResponse.json(newLinkedInOutreach);
+
+    return NextResponse.json(outreach);
   } catch (error) {
-    console.error('Error adding new LinkedIn outreach entry:', error);
-    return NextResponse.json({ error: 'Failed to add new LinkedIn outreach entry.' }, { status: 500 });
+    console.error("Error creating LinkedIn outreach:", error);
+    return NextResponse.json(
+      { error: "Failed to create LinkedIn outreach" },
+      { status: 500 }
+    );
   }
 }
 
-export async function PUT(request: Request) {
+// PUT: Update an existing LinkedIn outreach
+export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
+
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id, ...data } = await request.json();
+    const data = await request.json();
 
-    const existing_linkedin_Outreach = await prisma.linkedin_Outreach.findFirst({
+    if (!data.id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // First check if the outreach belongs to the user
+    const outreach = await prisma.linkedin_Outreach.findFirst({
       where: {
-        id,
-        user: {
-          email: session.user.email
-        }
-      }
+        id: data.id,
+        userId: user.id,
+      },
     });
 
-    if (!existing_linkedin_Outreach) {
-      return NextResponse.json({ error: 'LinkedIn Outreach not found or unauthorized' }, { status: 403 });
+    if (!outreach) {
+      return NextResponse.json(
+        { error: "LinkedIn outreach not found or not owned by user" },
+        { status: 404 }
+      );
     }
 
-    const updatedLinkedInOutreach = await prisma.linkedin_Outreach.update({
-      where: { id },
-      data,
+    // Update the outreach
+    const updatedOutreach = await prisma.linkedin_Outreach.update({
+      where: { id: data.id },
+      data: {
+        name: data.name !== undefined ? data.name : outreach.name,
+        company: data.company !== undefined ? data.company : outreach.company,
+        message: data.message !== undefined ? data.message : outreach.message,
+        linkedInUrl:
+          data.linkedInUrl !== undefined
+            ? data.linkedInUrl
+            : outreach.linkedInUrl,
+        notes: data.notes !== undefined ? data.notes : outreach.notes,
+        responded:
+          data.responded !== undefined ? data.responded : outreach.responded,
+        scheduled:
+          data.scheduled !== undefined ? data.scheduled : outreach.scheduled,
+        referral:
+          data.referral !== undefined ? data.referral : outreach.referral,
+      },
     });
-    return NextResponse.json(updatedLinkedInOutreach);
+
+    return NextResponse.json(updatedOutreach);
   } catch (error) {
-    console.error('Error updating LinkedIn outreach entry:', error);
-    return NextResponse.json({ error: 'Failed to update LinkedIn outreach entry.' }, { status: 500 });
+    console.error("Error updating LinkedIn outreach:", error);
+    return NextResponse.json(
+      { error: "Failed to update LinkedIn outreach" },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: Request) {
+// DELETE: Remove a LinkedIn outreach
+export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
+
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await request.json();
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
 
-    const existing_linkedin_Outreach = await prisma.linkedin_Outreach.findFirst({
-      where: {
-        id,
-        user: {
-          email: session.user.email
-        }
-      }
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
     });
 
-    if (!existing_linkedin_Outreach) {
-      return NextResponse.json({ error: 'LinkedIn Outreach not found or unauthorized' }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    
+
+    // Check if the outreach belongs to the user
+    const outreach = await prisma.linkedin_Outreach.findFirst({
+      where: {
+        id: parseInt(id),
+        userId: user.id,
+      },
+    });
+
+    if (!outreach) {
+      return NextResponse.json(
+        { error: "LinkedIn outreach not found or not owned by user" },
+        { status: 404 }
+      );
+    }
+
+    // Delete the outreach
     await prisma.linkedin_Outreach.delete({
-      where: { id },
+      where: { id: parseInt(id) },
     });
-    return NextResponse.json({ message: 'LinkedIn outreach entry deleted successfully' });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting LinkedIn outreach entry:', error);
-    return NextResponse.json({ error: 'Failed to delete LinkedIn outreach entry.' }, { status: 500 });
+    console.error("Error deleting LinkedIn outreach:", error);
+    return NextResponse.json(
+      { error: "Failed to delete LinkedIn outreach" },
+      { status: 500 }
+    );
   }
 }
