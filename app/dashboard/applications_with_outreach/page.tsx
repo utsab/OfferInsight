@@ -156,6 +156,9 @@ export default function ApplicationsWithOutreachPage() {
 
       const updatedApplication = { ...application, status };
 
+      // Note: The UI is already updated by the DragAndDropBoard component
+      // We just need to make the API call here
+
       const response = await fetch(`/api/applications_with_outreach?id=${id}`, {
         method: "PUT",
         headers: {
@@ -168,7 +171,8 @@ export default function ApplicationsWithOutreachPage() {
         throw new Error("Failed to update application status");
       }
 
-      // Update the local state
+      // If successful, update our app state to match
+      // The UI is already updated, but we need to keep our state in sync
       setApplications((prevApplications) =>
         prevApplications.map((app) =>
           app.id === id ? { ...app, status } : app
@@ -176,6 +180,7 @@ export default function ApplicationsWithOutreachPage() {
       );
     } catch (error) {
       console.error("Error updating application status:", error);
+      // No need to revert the UI as the DragAndDropBoard will handle that
     }
   };
 

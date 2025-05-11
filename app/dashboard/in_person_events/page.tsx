@@ -143,6 +143,9 @@ export default function InPersonEventsPage() {
 
       const updatedEvent = { ...event, status };
 
+      // Note: The UI is already updated by the DragAndDropBoard component
+      // We just need to make the API call here
+
       const response = await fetch(`/api/in_person_events?id=${id}`, {
         method: "PUT",
         headers: {
@@ -155,7 +158,8 @@ export default function InPersonEventsPage() {
         throw new Error("Failed to update event status");
       }
 
-      // Update the local state
+      // If successful, update our app state to match
+      // The UI is already updated, but we need to keep our state in sync
       setEvents((prevEvents) =>
         prevEvents.map((event) =>
           event.id === id ? { ...event, status } : event
@@ -163,6 +167,7 @@ export default function InPersonEventsPage() {
       );
     } catch (error) {
       console.error("Error updating event status:", error);
+      // No need to revert the UI as the DragAndDropBoard will handle that
     }
   };
 

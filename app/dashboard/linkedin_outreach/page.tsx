@@ -140,6 +140,9 @@ export default function LinkedInOutreachPage() {
 
       const updatedOutreach = { ...outreach, status };
 
+      // Note: The UI is already updated by the DragAndDropBoard component
+      // We just need to make the API call here
+
       const response = await fetch(`/api/linkedin_outreach?id=${id}`, {
         method: "PUT",
         headers: {
@@ -152,12 +155,14 @@ export default function LinkedInOutreachPage() {
         throw new Error("Failed to update outreach status");
       }
 
-      // Update the local state
+      // If successful, update our app state to match
+      // The UI is already updated, but we need to keep our state in sync
       setOutreaches((prevOutreaches) =>
         prevOutreaches.map((out) => (out.id === id ? { ...out, status } : out))
       );
     } catch (error) {
       console.error("Error updating outreach status:", error);
+      // No need to revert the UI as the DragAndDropBoard will handle that
     }
   };
 

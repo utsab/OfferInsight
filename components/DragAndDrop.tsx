@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -271,6 +271,14 @@ export const DragAndDropBoard = <T extends DraggableItem>({
   onDragStart?: (event: DragStartEvent) => void;
   onDragEnd?: (event: DragEndEvent) => void;
 }) => {
+  // Add local state to manage items during drag operations
+  const [localItems, setLocalItems] = useState<T[]>(items);
+
+  // Update local items when props change
+  useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -294,7 +302,21 @@ export const DragAndDropBoard = <T extends DraggableItem>({
       const newStatus = over.id.toString();
       const itemId = parseInt(active.id.toString());
 
-      await onUpdateStatus(itemId, newStatus);
+      // Optimistically update the UI immediately
+      setLocalItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === itemId ? { ...item, status: newStatus } : item
+        )
+      );
+
+      try {
+        // Then make the API call
+        await onUpdateStatus(itemId, newStatus);
+      } catch (error) {
+        // If the API call fails, revert to the previous state
+        console.error("Error updating status:", error);
+        setLocalItems(items); // Revert to the original items from props
+      }
     }
 
     if (onDragEnd) {
@@ -311,7 +333,10 @@ export const DragAndDropBoard = <T extends DraggableItem>({
     >
       <div className="flex flex-col md:flex-row gap-4 overflow-x-auto pb-4 max-w-full">
         {columns.map((column) => {
-          const columnItems = items.filter((item) => item.status === column.id);
+          // Use the local items state instead of props
+          const columnItems = localItems.filter(
+            (item) => item.status === column.id
+          );
 
           return (
             <Column
