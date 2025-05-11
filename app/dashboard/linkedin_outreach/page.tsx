@@ -26,9 +26,7 @@ type Outreach = {
   message: string | null;
   linkedInUrl: string | null;
   notes: string | null;
-  responded: boolean;
-  scheduled: boolean;
-  referral: boolean;
+  status: string;
 };
 
 type ColumnId = "responded" | "scheduled" | "referral";
@@ -405,29 +403,30 @@ export default function LinkedInOutreachPage() {
     }
   };
 
-  const handleUpdateStatus = async (
-    id: number,
-    status: { responded: boolean; scheduled: boolean; referral: boolean }
-  ) => {
+  const handleUpdateStatus = async (id: number, status: string) => {
     try {
       const response = await fetch("/api/linkedin_outreach", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id, ...status }),
+        body: JSON.stringify({ id, status }),
       });
 
       if (response.ok) {
         // Update local state without fetching again
         setOutreaches(
           outreaches.map((outreach) =>
-            outreach.id === id ? { ...outreach, ...status } : outreach
+            outreach.id === id ? { ...outreach, status } : outreach
           )
         );
+      } else {
+        console.error("Failed to update outreach status");
+        await fetchOutreaches();
       }
     } catch (error) {
       console.error("Error updating outreach status:", error);
+      await fetchOutreaches();
     }
   };
 
@@ -527,38 +526,15 @@ export default function LinkedInOutreachPage() {
       ["responded", "scheduled", "referral"].includes(columnId) &&
       outreachId
     ) {
-      // Get column-specific statuses
-      let newStatus: {
-        responded: boolean;
-        scheduled: boolean;
-        referral: boolean;
-      };
-
-      if (columnId === "responded") {
-        newStatus = {
-          responded: true,
-          scheduled: false,
-          referral: false,
-        };
-      } else if (columnId === "scheduled") {
-        newStatus = {
-          responded: false,
-          scheduled: true,
-          referral: false,
-        };
-      } else {
-        // referral
-        newStatus = {
-          responded: false,
-          scheduled: false,
-          referral: true,
-        };
-      }
+      // Update to use the single status field
+      const newStatus = columnId;
 
       // Update local state immediately to prevent UI flicker
       setOutreaches((prevOutreaches) =>
         prevOutreaches.map((outreach) =>
-          outreach.id === outreachId ? { ...outreach, ...newStatus } : outreach
+          outreach.id === outreachId
+            ? { ...outreach, status: newStatus }
+            : outreach
         )
       );
 
@@ -569,7 +545,7 @@ export default function LinkedInOutreachPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id: outreachId, ...newStatus }),
+          body: JSON.stringify({ id: outreachId, status: newStatus }),
         });
       } catch (error) {
         console.error("Error updating outreach status:", error);
@@ -585,13 +561,14 @@ export default function LinkedInOutreachPage() {
 
   // Filter outreaches for each column
   const respondedOutreaches = outreaches.filter(
-    (outreach) =>
-      outreach.responded && !outreach.scheduled && !outreach.referral
+    (outreach) => outreach.status === "responded"
   );
   const scheduledOutreaches = outreaches.filter(
-    (outreach) => outreach.scheduled && !outreach.referral
+    (outreach) => outreach.status === "scheduled"
   );
-  const referralOutreaches = outreaches.filter((outreach) => outreach.referral);
+  const referralOutreaches = outreaches.filter(
+    (outreach) => outreach.status === "referral"
+  );
 
   return (
     <div className="p-4">

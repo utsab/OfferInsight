@@ -49,6 +49,7 @@ export async function POST(request: Request) {
       recruiter,
       msgToRecruiter,
       notes,
+      status,
     } = body;
 
     if (!company) {
@@ -66,11 +67,7 @@ export async function POST(request: Request) {
         recruiter: recruiter || null,
         msgToRecruiter: msgToRecruiter || null,
         notes: notes || null,
-        appliedStatus: true,
-        msgToRecruiterStatus: false,
-        msgToManagerStatus: false,
-        interviewStatus: false,
-        offerStatus: false,
+        status: status || "applied",
         userId: session.user.id,
       },
     });
@@ -103,11 +100,7 @@ export async function PUT(request: Request) {
       recruiter,
       msgToRecruiter,
       notes,
-      appliedStatus,
-      msgToRecruiterStatus,
-      msgToManagerStatus,
-      interviewStatus,
-      offerStatus,
+      status,
     } = body;
 
     if (!id) {
@@ -143,14 +136,7 @@ export async function PUT(request: Request) {
     if (msgToRecruiter !== undefined)
       updateData.msgToRecruiter = msgToRecruiter;
     if (notes !== undefined) updateData.notes = notes;
-    if (appliedStatus !== undefined) updateData.appliedStatus = appliedStatus;
-    if (msgToRecruiterStatus !== undefined)
-      updateData.msgToRecruiterStatus = msgToRecruiterStatus;
-    if (msgToManagerStatus !== undefined)
-      updateData.msgToManagerStatus = msgToManagerStatus;
-    if (interviewStatus !== undefined)
-      updateData.interviewStatus = interviewStatus;
-    if (offerStatus !== undefined) updateData.offerStatus = offerStatus;
+    if (status !== undefined) updateData.status = status;
 
     const updatedApplication = await prisma.applications_with_Outreach.update({
       where: { id },

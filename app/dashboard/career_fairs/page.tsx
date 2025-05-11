@@ -26,8 +26,7 @@ type CareerFair = {
   location: string | null;
   url: string | null;
   notes: string | null;
-  scheduled: boolean;
-  attended: boolean;
+  status: string;
 };
 
 type ColumnId = "scheduled" | "attended";
@@ -404,29 +403,30 @@ export default function CareerFairsPage() {
     }
   };
 
-  const handleUpdateStatus = async (
-    id: number,
-    status: { scheduled: boolean; attended: boolean }
-  ) => {
+  const handleUpdateStatus = async (id: number, status: string) => {
     try {
       const response = await fetch("/api/career_fairs", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id, ...status }),
+        body: JSON.stringify({ id, status }),
       });
 
       if (response.ok) {
         // Update local state without fetching again
         setCareerFairs(
           careerFairs.map((careerFair) =>
-            careerFair.id === id ? { ...careerFair, ...status } : careerFair
+            careerFair.id === id ? { ...careerFair, status } : careerFair
           )
         );
+      } else {
+        console.error("Failed to update career fair status");
+        await fetchCareerFairs();
       }
     } catch (error) {
       console.error("Error updating career fair status:", error);
+      await fetchCareerFairs();
     }
   };
 
@@ -528,30 +528,14 @@ export default function CareerFairsPage() {
       ["scheduled", "attended"].includes(columnId) &&
       careerFairId
     ) {
-      // Get column-specific statuses
-      let newStatus: {
-        scheduled: boolean;
-        attended: boolean;
-      };
-
-      if (columnId === "scheduled") {
-        newStatus = {
-          scheduled: true,
-          attended: false,
-        };
-      } else {
-        // attended
-        newStatus = {
-          scheduled: false,
-          attended: true,
-        };
-      }
+      // Update to use the single status field
+      const newStatus = columnId;
 
       // Update local state immediately to prevent UI flicker
       setCareerFairs((prevCareerFairs) =>
         prevCareerFairs.map((careerFair) =>
           careerFair.id === careerFairId
-            ? { ...careerFair, ...newStatus }
+            ? { ...careerFair, status: newStatus }
             : careerFair
         )
       );
@@ -563,7 +547,7 @@ export default function CareerFairsPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id: careerFairId, ...newStatus }),
+          body: JSON.stringify({ id: careerFairId, status: newStatus }),
         });
       } catch (error) {
         console.error("Error updating career fair status:", error);
@@ -579,10 +563,10 @@ export default function CareerFairsPage() {
 
   // Filter career fairs for each column
   const scheduledCareerFairs = careerFairs.filter(
-    (careerFair) => careerFair.scheduled && !careerFair.attended
+    (careerFair) => careerFair.status === "scheduled"
   );
   const attendedCareerFairs = careerFairs.filter(
-    (careerFair) => careerFair.attended
+    (careerFair) => careerFair.status === "attended"
   );
 
   return (

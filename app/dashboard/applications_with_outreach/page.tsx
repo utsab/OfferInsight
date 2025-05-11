@@ -27,11 +27,7 @@ type Application = {
   recruiter: string | null;
   msgToRecruiter: string | null;
   notes: string | null;
-  appliedStatus: boolean;
-  msgToRecruiterStatus: boolean;
-  msgToManagerStatus: boolean;
-  interviewStatus: boolean;
-  offerStatus: boolean;
+  status: string;
 };
 
 type ColumnId =
@@ -313,11 +309,7 @@ export default function ApplicationsWithOutreachPage() {
     recruiter: "" as string | null,
     msgToRecruiter: "" as string | null,
     notes: "" as string | null,
-    appliedStatus: false,
-    msgToRecruiterStatus: false,
-    msgToManagerStatus: false,
-    interviewStatus: false,
-    offerStatus: false,
+    status: "",
   });
 
   const sensors = useSensors(
@@ -399,16 +391,7 @@ export default function ApplicationsWithOutreachPage() {
     }
   };
 
-  const handleUpdateStatus = async (
-    id: number,
-    status: {
-      appliedStatus: boolean;
-      msgToRecruiterStatus: boolean;
-      msgToManagerStatus: boolean;
-      interviewStatus: boolean;
-      offerStatus: boolean;
-    }
-  ) => {
+  const handleUpdateStatus = async (id: number, status: string) => {
     try {
       const response = await fetch("/api/applications_with_outreach", {
         method: "PUT",
@@ -417,18 +400,22 @@ export default function ApplicationsWithOutreachPage() {
         },
         body: JSON.stringify({
           id,
-          ...status,
+          status,
         }),
       });
 
-      if (!response.ok) {
-        console.error("Failed to update application status");
-        return false;
+      if (response.ok) {
+        // Update local state without fetching again
+        setApplications(
+          applications.map((app) => (app.id === id ? { ...app, status } : app))
+        );
+      } else {
+        console.error("Failed to update application");
+        await fetchApplications();
       }
-      return true;
     } catch (error) {
-      console.error("Error updating application status:", error);
-      return false;
+      console.error("Error updating application:", error);
+      await fetchApplications();
     }
   };
 
@@ -496,19 +483,13 @@ export default function ApplicationsWithOutreachPage() {
       const targetColumn = over.id as ColumnId;
 
       if (application) {
-        // Define status update based on target column
-        const newStatus = {
-          appliedStatus: targetColumn === "applied",
-          msgToRecruiterStatus: targetColumn === "msgToRecruiter",
-          msgToManagerStatus: targetColumn === "msgToManager",
-          interviewStatus: targetColumn === "interview",
-          offerStatus: targetColumn === "offer",
-        };
+        // Update to use the single status field
+        const newStatus = targetColumn;
 
         // Optimistic update - update local state immediately
         setApplications((prev) =>
           prev.map((app) =>
-            app.id === applicationId ? { ...app, ...newStatus } : app
+            app.id === applicationId ? { ...app, status: newStatus } : app
           )
         );
 
@@ -521,7 +502,7 @@ export default function ApplicationsWithOutreachPage() {
             },
             body: JSON.stringify({
               id: applicationId,
-              ...newStatus,
+              status: newStatus,
             }),
           });
 
@@ -544,27 +525,18 @@ export default function ApplicationsWithOutreachPage() {
 
   // Group applications by status
   const appliedApplications = applications.filter(
-    (a) =>
-      a.appliedStatus &&
-      !a.msgToRecruiterStatus &&
-      !a.msgToManagerStatus &&
-      !a.interviewStatus &&
-      !a.offerStatus
+    (a) => a.status === "applied"
   );
   const msgToRecruiterApplications = applications.filter(
-    (a) =>
-      a.msgToRecruiterStatus &&
-      !a.msgToManagerStatus &&
-      !a.interviewStatus &&
-      !a.offerStatus
+    (a) => a.status === "msgToRecruiter"
   );
   const msgToManagerApplications = applications.filter(
-    (a) => a.msgToManagerStatus && !a.interviewStatus && !a.offerStatus
+    (a) => a.status === "msgToManager"
   );
   const interviewApplications = applications.filter(
-    (a) => a.interviewStatus && !a.offerStatus
+    (a) => a.status === "interview"
   );
-  const offerApplications = applications.filter((a) => a.offerStatus);
+  const offerApplications = applications.filter((a) => a.status === "offer");
 
   if (loading) {
     return (

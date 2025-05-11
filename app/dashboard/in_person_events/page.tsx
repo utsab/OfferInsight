@@ -26,9 +26,9 @@ type Event = {
   location: string | null;
   url: string | null;
   notes: string | null;
-  scheduled: boolean;
-  attended: boolean;
-  connectedOnline: boolean;
+  status: string;
+  numPeopleSpokenTo: number | null;
+  numLinkedInRequests: number | null;
 };
 
 type ColumnId = "scheduled" | "attended" | "connectedOnline";
@@ -399,29 +399,30 @@ export default function InPersonEventsPage() {
     }
   };
 
-  const handleUpdateStatus = async (
-    id: number,
-    status: { scheduled: boolean; attended: boolean; connectedOnline: boolean }
-  ) => {
+  const handleUpdateStatus = async (id: number, status: string) => {
     try {
       const response = await fetch("/api/in_person_events", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id, ...status }),
+        body: JSON.stringify({ id, status }),
       });
 
       if (response.ok) {
         // Update local state without fetching again
         setEvents(
           events.map((event) =>
-            event.id === id ? { ...event, ...status } : event
+            event.id === id ? { ...event, status } : event
           )
         );
+      } else {
+        console.error("Failed to update event status");
+        await fetchEvents();
       }
     } catch (error) {
       console.error("Error updating event status:", error);
+      await fetchEvents();
     }
   };
 
@@ -519,38 +520,13 @@ export default function InPersonEventsPage() {
       ["scheduled", "attended", "connectedOnline"].includes(columnId) &&
       eventId
     ) {
-      // Get column-specific statuses
-      let newStatus: {
-        scheduled: boolean;
-        attended: boolean;
-        connectedOnline: boolean;
-      };
-
-      if (columnId === "scheduled") {
-        newStatus = {
-          scheduled: true,
-          attended: false,
-          connectedOnline: false,
-        };
-      } else if (columnId === "attended") {
-        newStatus = {
-          scheduled: false,
-          attended: true,
-          connectedOnline: false,
-        };
-      } else {
-        // connectedOnline
-        newStatus = {
-          scheduled: false,
-          attended: false,
-          connectedOnline: true,
-        };
-      }
+      // Update to use the single status field
+      const newStatus = columnId;
 
       // Update local state immediately to prevent UI flicker
       setEvents((prevEvents) =>
         prevEvents.map((event) =>
-          event.id === eventId ? { ...event, ...newStatus } : event
+          event.id === eventId ? { ...event, status: newStatus } : event
         )
       );
 
@@ -561,7 +537,7 @@ export default function InPersonEventsPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id: eventId, ...newStatus }),
+          body: JSON.stringify({ id: eventId, status: newStatus }),
         });
       } catch (error) {
         console.error("Error updating event status:", error);
@@ -577,12 +553,12 @@ export default function InPersonEventsPage() {
 
   // Filter events for each column
   const scheduledEvents = events.filter(
-    (event) => event.scheduled && !event.attended && !event.connectedOnline
+    (event) => event.status === "scheduled"
   );
-  const attendedEvents = events.filter(
-    (event) => event.attended && !event.connectedOnline
+  const attendedEvents = events.filter((event) => event.status === "attended");
+  const connectedEvents = events.filter(
+    (event) => event.status === "connectedOnline"
   );
-  const connectedEvents = events.filter((event) => event.connectedOnline);
 
   return (
     <div className="p-4">

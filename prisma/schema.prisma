@@ -31,11 +31,7 @@ model Applications_with_Outreach {
   recruiter             String?
   msgToRecruiter        String?
   notes                 String?
-  appliedStatus         Boolean @default(true)
-  msgToRecruiterStatus  Boolean @default(false)
-  msgToManagerStatus    Boolean @default(false)
-  interviewStatus       Boolean @default(false)
-  offerStatus           Boolean @default(false)
+  status                String  @default("applied")
   userId                String
   user                  User    @relation(fields: [userId], references: [id])
 }
@@ -47,9 +43,7 @@ model Linkedin_Outreach {
   message      String?
   linkedInUrl  String?
   notes        String?
-  responded    Boolean @default(true)
-  scheduled    Boolean @default(false)
-  referral     Boolean @default(false)
+  status       String  @default("responded")
   userId       String
   user         User    @relation(fields: [userId], references: [id])
 }
@@ -65,9 +59,7 @@ model In_Person_Events {
   numLinkedInRequests Int?
   userId              String
   user                User    @relation(fields: [userId], references: [id])
-  scheduled           Boolean @default(true)
-  attended            Boolean @default(false)
-  connectedOnline     Boolean @default(false)
+  status              String  @default("scheduled")
 }
 
 model Career_Fairs {
@@ -79,8 +71,7 @@ model Career_Fairs {
   notes               String?
   userId              String
   user                User    @relation(fields: [userId], references: [id])
-  scheduled           Boolean @default(true)
-  attended            Boolean @default(false)
+  status              String  @default("scheduled")
 }
 
 model User {
