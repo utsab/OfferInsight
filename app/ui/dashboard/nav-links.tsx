@@ -27,10 +27,10 @@ import clsx from 'clsx';
 
 const links = [
   { name: 'Home', href: '/dashboard', icon: HomeIcon },
-  { name: 'Applications', href: '/dashboard/applications', icon: ClipboardIcon },
   { name: 'Applications with Outreach', href: '/dashboard/applications_with_outreach', icon: UsersIcon },
   { name: 'In Person Events', href: '/dashboard/in_person_events', icon: CalendarIcon },
   { name: 'LinkedIn Outreach', href: '/dashboard/linkedin_outreach', icon: BriefcaseIcon },
+  { name: 'Career Fairs', href: '/dashboard/career_fairs', icon: BriefcaseIcon },
 ];
 
 export default function NavLinks() {
