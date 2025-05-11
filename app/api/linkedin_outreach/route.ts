@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         message: data.message || null,
         linkedInUrl: data.linkedInUrl || null,
         notes: data.notes || null,
-        status: data.status || "responded",
+        status: data.status || "contacted",
         userId: user.id,
       },
     });

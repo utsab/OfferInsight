@@ -112,7 +112,7 @@ export default function LinkedInOutreachPage() {
         message: "",
         linkedInUrl: "",
         notes: "",
-        status: "responded",
+        status: "contacted",
       });
       fetchOutreaches();
     } catch (error) {

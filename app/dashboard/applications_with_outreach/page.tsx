@@ -58,19 +58,21 @@ export default function ApplicationsWithOutreachPage() {
       type: "text" as const,
       required: true,
     },
-    { name: "hiringManager", label: "Hiring Manager", type: "text" as const },
+    { name: "hiringManager", label: "Hiring Manager", type: "text" as const, required: true },
     {
       name: "msgToManager",
       label: "Message to Manager",
       type: "textarea" as const,
       rows: 3,
+      required: true,
     },
-    { name: "recruiter", label: "Recruiter", type: "text" as const },
+    { name: "recruiter", label: "Recruiter", type: "text" as const, required: true },
     {
       name: "msgToRecruiter",
       label: "Message to Recruiter",
       type: "textarea" as const,
       rows: 3,
+      required: true,
     },
     { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
   ];

@@ -43,7 +43,7 @@ model Linkedin_Outreach {
   message      String?
   linkedInUrl  String?
   notes        String?
-  status       String  @default("responded")
+  status       String  @default("contacted")
   userId       String
   user         User    @relation(fields: [userId], references: [id])
 }

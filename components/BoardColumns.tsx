@@ -19,11 +19,6 @@ export const getBoardColumns = (boardType: BoardType): ColumnConfig[] => {
           color: "bg-blue-500",
         },
         {
-          id: "followUp",
-          title: "Follow up",
-          color: "bg-purple-500",
-        },
-        {
           id: "interview",
           title: "Interview",
           color: "bg-yellow-500",
