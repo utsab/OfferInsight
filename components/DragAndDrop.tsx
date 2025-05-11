@@ -57,7 +57,7 @@ export const DraggableCard = <T extends DraggableItem>({
   const style = transform
     ? {
         transform: CSS.Translate.toString(transform),
-        opacity: isDragging ? 0.5 : 1,
+        opacity: isDragging ? 1 : 0,
         zIndex: isDragging ? 1000 : 1,
         cursor: isDragging ? "grabbing" : "pointer",
       }
