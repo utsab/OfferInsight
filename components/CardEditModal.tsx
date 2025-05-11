@@ -47,7 +47,10 @@ export default function CardEditModal({
         <form onSubmit={onSubmit}>
           {fields.map((field) => (
             <div className="mb-4" key={field.name}>
-              <label className="block text-gray-700 mb-2">{field.label}</label>
+              <label className="block text-gray-700 mb-2">
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
               {field.type === "textarea" ? (
                 <textarea
                   name={field.name}
@@ -85,6 +88,11 @@ export default function CardEditModal({
               Save
             </button>
           </div>
+          {fields.some((field) => field.required) && (
+            <div className="mt-2 text-xs text-gray-500">
+              <span className="text-red-500">*</span> Required field
+            </div>
+          )}
         </form>
       </div>
     </div>
