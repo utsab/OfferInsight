@@ -1,23 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  DragOverEvent,
-  useDraggable,
-  useDroppable,
-} from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+  DragAndDropBoard,
+  ColumnConfig,
+  DraggableItem,
+} from "@/components/DragAndDrop";
 
 type Outreach = {
   id: number;
@@ -29,157 +19,209 @@ type Outreach = {
   status: string;
 };
 
-type ColumnId = "responded" | "scheduled" | "referral";
+export default function LinkedInOutreachPage() {
+  const router = useRouter();
+  const [outreaches, setOutreaches] = useState<Outreach[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeOutreach, setActiveOutreach] = useState<Outreach | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [newOutreach, setNewOutreach] = useState<Partial<Outreach>>({
+    name: "",
+    company: "",
+    message: "",
+    linkedInUrl: "",
+    notes: "",
+    status: "responded",
+  });
+  const [editOutreach, setEditOutreach] = useState<Outreach | null>(null);
 
-// Draggable outreach card component
-const DraggableOutreachCard = ({
-  outreach,
-  onEdit,
-}: {
-  outreach: Outreach;
-  onEdit: (outreach: Outreach) => void;
-}) => {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: outreach.id.toString(),
-      data: { outreach },
-    });
+  // Define columns configuration
+  const columns: ColumnConfig[] = [
+    {
+      id: "responded",
+      title: "Responded",
+      color: "bg-blue-500",
+    },
+    {
+      id: "scheduled",
+      title: "Scheduled",
+      color: "bg-green-500",
+    },
+    {
+      id: "referral",
+      title: "Referral",
+      color: "bg-purple-500",
+    },
+  ];
 
-  // Track if we have a pending click
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isClicking, setIsClicking] = useState(false);
-  const [mouseDownTime, setMouseDownTime] = useState<number | null>(null);
+  useEffect(() => {
+    fetchOutreaches();
+  }, []);
 
-  const style = transform
-    ? {
-        transform: CSS.Translate.toString(transform),
-        opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 1000 : 1,
-        cursor: isDragging ? "grabbing" : "pointer",
+  const fetchOutreaches = async () => {
+    try {
+      const response = await fetch("/api/linkedin_outreach");
+      if (!response.ok) {
+        throw new Error("Failed to fetch outreaches");
       }
-    : {
-        cursor: "pointer",
-      };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Clear any existing timeouts
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
+      const data = await response.json();
+      setOutreaches(data);
+    } catch (error) {
+      console.error("Error fetching outreaches:", error);
     }
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-    }
+  };
 
-    // Set clicking state to true
-    setIsClicking(true);
-    setMouseDownTime(Date.now());
+  const handleCreateOutreach = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    // Start a timer to initiate drag if the mouse is held down
-    longPressTimeoutRef.current = setTimeout(() => {
-      // This will initiate the drag after the delay
-      if (listeners && listeners.onMouseDown) {
-        const syntheticEvent = new MouseEvent("mousedown", {
-          bubbles: true,
-          cancelable: true,
-          clientX: e.clientX,
-          clientY: e.clientY,
-        });
+    try {
+      const response = await fetch("/api/linkedin_outreach", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newOutreach),
+      });
 
-        // Now we're ready to start dragging
-        e.target.dispatchEvent(syntheticEvent);
+      if (!response.ok) {
+        throw new Error("Failed to create outreach");
       }
-    }, 100); // 100ms delay for faster drag initiation
+
+      setShowCreateModal(false);
+      setNewOutreach({
+        name: "",
+        company: "",
+        message: "",
+        linkedInUrl: "",
+        notes: "",
+        status: "responded",
+      });
+      fetchOutreaches();
+    } catch (error) {
+      console.error("Error creating outreach:", error);
+    }
   };
 
-  const handleMouseUp = (e: React.MouseEvent) => {
-    // Clear the long press timer
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-      longPressTimeoutRef.current = null;
-    }
+  const handleUpdateOutreach = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    const mouseUpTime = Date.now();
-    const mouseDownDuration = mouseDownTime ? mouseUpTime - mouseDownTime : 0;
+    if (!editOutreach) return;
 
-    // If press was short (less than 100ms), consider it a click
-    if (isClicking && mouseDownDuration < 100 && !isDragging) {
-      clickTimeoutRef.current = setTimeout(() => {
-        onEdit(outreach);
-      }, 50);
-    }
+    try {
+      const response = await fetch(
+        `/api/linkedin_outreach?id=${editOutreach.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editOutreach),
+        }
+      );
 
-    // Reset clicking state
-    setIsClicking(false);
-    setMouseDownTime(null);
-  };
-
-  // Touch handling for mobile devices
-  const handleTouchStart = (e: React.TouchEvent) => {
-    // Track touch start time
-    setMouseDownTime(Date.now());
-    setIsClicking(true);
-
-    // Set a timeout to distinguish between tap and drag
-    longPressTimeoutRef.current = setTimeout(() => {
-      // Add visual feedback for long press
-      const target = e.currentTarget as HTMLElement;
-      target.classList.add("touch-dragging");
-
-      // Haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
+      if (!response.ok) {
+        throw new Error("Failed to update outreach");
       }
-    }, 100);
-  };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    // Clear the long press timer
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-      longPressTimeoutRef.current = null;
-    }
-
-    const touchEndTime = Date.now();
-    const touchDuration = mouseDownTime ? touchEndTime - mouseDownTime : 0;
-
-    // If it was a short tap (not a drag), open the edit modal
-    if (isClicking && touchDuration < 100 && !isDragging) {
-      e.currentTarget.classList.remove("touch-dragging");
-      onEdit(outreach);
-    }
-
-    // Reset state
-    setIsClicking(false);
-    setMouseDownTime(null);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    // If finger moves significantly, cancel the click and let dnd-kit handle the drag
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-      longPressTimeoutRef.current = null;
+      setShowEditModal(false);
+      setEditOutreach(null);
+      fetchOutreaches();
+    } catch (error) {
+      console.error("Error updating outreach:", error);
     }
   };
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchMove}
-      className="bg-white p-3 mb-2 rounded shadow hover:shadow-md transition-shadow relative group"
-    >
-      {/* Drag handle icon that appears on hover */}
-      <div className="absolute -left-1 top-0 bottom-0 w-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <GripVertical size={16} className="text-gray-400 drag-handle" />
-      </div>
+  const handleUpdateStatus = async (id: number, status: string) => {
+    try {
+      const outreach = outreaches.find((out) => out.id === id);
+      if (!outreach) return;
 
+      const updatedOutreach = { ...outreach, status };
+
+      const response = await fetch(`/api/linkedin_outreach?id=${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedOutreach),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update outreach status");
+      }
+
+      // Update the local state
+      setOutreaches((prevOutreaches) =>
+        prevOutreaches.map((out) => (out.id === id ? { ...out, status } : out))
+      );
+    } catch (error) {
+      console.error("Error updating outreach status:", error);
+    }
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setNewOutreach((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    if (editOutreach) {
+      setEditOutreach({ ...editOutreach, [name]: value });
+    }
+  };
+
+  const handleEditOutreach = (outreach: Outreach) => {
+    setEditOutreach(outreach);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteOutreach = async () => {
+    if (!editOutreach) return;
+
+    try {
+      const response = await fetch(
+        `/api/linkedin_outreach?id=${editOutreach.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete outreach");
+      }
+
+      setShowDeleteModal(false);
+      setShowEditModal(false);
+      setEditOutreach(null);
+      fetchOutreaches();
+    } catch (error) {
+      console.error("Error deleting outreach:", error);
+    }
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id.toString());
+
+    // Find the active outreach
+    const foundOutreach = outreaches.find(
+      (out) => out.id.toString() === active.id.toString()
+    );
+    if (foundOutreach) {
+      setActiveOutreach(foundOutreach);
+    }
+  };
+
+  // Render content for outreach cards
+  const renderOutreachContent = (outreach: Outreach) => (
+    <>
       <h3 className="font-medium text-gray-800">{outreach.name}</h3>
       <p className="text-sm text-gray-600">Company: {outreach.company}</p>
       {outreach.linkedInUrl && (
@@ -205,517 +247,96 @@ const DraggableOutreachCard = ({
           <p>{outreach.notes}</p>
         </div>
       )}
-    </div>
-  );
-};
-
-// Regular outreach card for drag overlay
-const OutreachCard = ({ outreach }: { outreach: Outreach }) => (
-  <div className="bg-white p-3 mb-2 rounded shadow">
-    <h3 className="font-medium text-gray-800">{outreach.name}</h3>
-    <p className="text-sm text-gray-600">Company: {outreach.company}</p>
-    {outreach.linkedInUrl && (
-      <a
-        href={outreach.linkedInUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm text-blue-500 hover:underline"
-      >
-        LinkedIn Profile
-      </a>
-    )}
-    {outreach.message && (
-      <div className="mt-2 text-sm text-gray-600">
-        <p className="font-medium">Message:</p>
-        <p>{outreach.message}</p>
-      </div>
-    )}
-    {outreach.notes && (
-      <div className="mt-2 text-sm text-gray-600">
-        <p className="font-medium">Notes:</p>
-        <p>{outreach.notes}</p>
-      </div>
-    )}
-  </div>
-);
-
-// Column component with droppable area
-const Column = ({
-  id,
-  title,
-  outreaches,
-  color,
-  onEditOutreach,
-}: {
-  id: ColumnId;
-  title: string;
-  outreaches: Outreach[];
-  color: string;
-  onEditOutreach: (outreach: Outreach) => void;
-}) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id,
-  });
-
-  // Add a background highlight when dragging over this column
-  const dropStyle = isOver
-    ? {
-        backgroundColor: "rgba(0, 0, 0, 0.05)",
-        boxShadow: "inset 0 0 5px rgba(0, 0, 0, 0.2)",
-      }
-    : undefined;
-
-  return (
-    <div className="flex-shrink-0 w-80 bg-gray-100 rounded-lg shadow-md">
-      <div className={`p-3 ${color} text-white rounded-t-lg`}>
-        <h2 className="font-semibold">{title}</h2>
-      </div>
-      <div
-        ref={setNodeRef}
-        className="p-2 min-h-[500px] transition-colors duration-200"
-        style={dropStyle}
-      >
-        {outreaches.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">
-            No {title.toLowerCase()} contacts
-          </p>
-        ) : (
-          outreaches.map((outreach) => (
-            <DraggableOutreachCard
-              key={outreach.id}
-              outreach={outreach}
-              onEdit={onEditOutreach}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default function LinkedInOutreachPage() {
-  const router = useRouter();
-  const [outreaches, setOutreaches] = useState<Outreach[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeOutreach, setActiveOutreach] = useState<Outreach | null>(null);
-  const [editingOutreach, setEditingOutreach] = useState<Outreach | null>(null);
-  const [activeDroppableId, setActiveDroppableId] = useState<ColumnId | null>(
-    null
-  );
-  const [newOutreach, setNewOutreach] = useState({
-    name: "",
-    company: "",
-    message: "",
-    linkedInUrl: "",
-    notes: "",
-  });
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Setup sensors for drag and drop with appropriate activation constraints
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      // Set a shorter delay to distinguish between click and drag
-      activationConstraint: {
-        delay: 100, // Wait 100ms before activating drag
-        tolerance: 5, // Allow 5px of movement during that delay
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: () => ({ x: 0, y: 0 }),
-    })
-  );
-
-  useEffect(() => {
-    fetchOutreaches();
-  }, []);
-
-  const fetchOutreaches = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/linkedin_outreach");
-      if (response.ok) {
-        const data = await response.json();
-        setOutreaches(data);
-      }
-    } catch (error) {
-      console.error("Error fetching outreaches:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreateOutreach = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch("/api/linkedin_outreach", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newOutreach),
-      });
-
-      if (response.ok) {
-        const createdOutreach = await response.json();
-        setOutreaches([createdOutreach, ...outreaches]);
-        setNewOutreach({
-          name: "",
-          company: "",
-          message: "",
-          linkedInUrl: "",
-          notes: "",
-        });
-        setIsModalOpen(false);
-        router.refresh();
-      }
-    } catch (error) {
-      console.error("Error creating outreach:", error);
-    }
-  };
-
-  const handleUpdateOutreach = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingOutreach) return;
-
-    try {
-      const response = await fetch("/api/linkedin_outreach", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editingOutreach),
-      });
-
-      if (response.ok) {
-        // Update local state
-        setOutreaches(
-          outreaches.map((outreach) =>
-            outreach.id === editingOutreach.id ? editingOutreach : outreach
-          )
-        );
-        setIsEditModalOpen(false);
-        setEditingOutreach(null);
-      }
-    } catch (error) {
-      console.error("Error updating outreach:", error);
-    }
-  };
-
-  const handleUpdateStatus = async (id: number, status: string) => {
-    try {
-      const response = await fetch("/api/linkedin_outreach", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, status }),
-      });
-
-      if (response.ok) {
-        // Update local state without fetching again
-        setOutreaches(
-          outreaches.map((outreach) =>
-            outreach.id === id ? { ...outreach, status } : outreach
-          )
-        );
-      } else {
-        console.error("Failed to update outreach status");
-        await fetchOutreaches();
-      }
-    } catch (error) {
-      console.error("Error updating outreach status:", error);
-      await fetchOutreaches();
-    }
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setNewOutreach((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleEditInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    if (!editingOutreach) return;
-
-    const { name, value } = e.target;
-    setEditingOutreach((prev) => (prev ? { ...prev, [name]: value } : null));
-  };
-
-  const handleEditOutreach = (outreach: Outreach) => {
-    // Only open edit modal if we're not currently dragging something
-    if (!activeId) {
-      setEditingOutreach(outreach);
-      setIsEditModalOpen(true);
-    }
-  };
-
-  const handleDeleteOutreach = async () => {
-    if (!editingOutreach) return;
-
-    try {
-      const response = await fetch(
-        `/api/linkedin_outreach?id=${editingOutreach.id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (response.ok) {
-        // Remove from local state
-        setOutreaches(
-          outreaches.filter((outreach) => outreach.id !== editingOutreach.id)
-        );
-        setIsEditModalOpen(false);
-        setEditingOutreach(null);
-      }
-    } catch (error) {
-      console.error("Error deleting outreach:", error);
-    }
-  };
-
-  // Drag handlers
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    setActiveId(active.id as string);
-
-    const draggedOutreach = outreaches.find(
-      (item) => item.id.toString() === active.id
-    );
-    if (draggedOutreach) {
-      setActiveOutreach(draggedOutreach);
-
-      // Set cursor to grabbing during drag
-      document.body.style.cursor = "grabbing";
-    }
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-    if (over) {
-      // Track which droppable container we're over
-      setActiveDroppableId(over.id as ColumnId);
-    } else {
-      setActiveDroppableId(null);
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    // Reset cursor
-    document.body.style.cursor = "";
-
-    if (!over || !active) {
-      setActiveId(null);
-      setActiveOutreach(null);
-      setActiveDroppableId(null);
-      return;
-    }
-
-    const outreachId = parseInt(active.id as string);
-    const columnId = over.id as ColumnId;
-
-    // Only process if we're dropping onto a column and have a valid ID
-    if (
-      columnId &&
-      ["responded", "scheduled", "referral"].includes(columnId) &&
-      outreachId
-    ) {
-      // Update to use the single status field
-      const newStatus = columnId;
-
-      // Update local state immediately to prevent UI flicker
-      setOutreaches((prevOutreaches) =>
-        prevOutreaches.map((outreach) =>
-          outreach.id === outreachId
-            ? { ...outreach, status: newStatus }
-            : outreach
-        )
-      );
-
-      // Then update the server state
-      try {
-        await fetch("/api/linkedin_outreach", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: outreachId, status: newStatus }),
-        });
-      } catch (error) {
-        console.error("Error updating outreach status:", error);
-        // Revert local state in case of error
-        fetchOutreaches();
-      }
-    }
-
-    setActiveId(null);
-    setActiveOutreach(null);
-    setActiveDroppableId(null);
-  };
-
-  // Filter outreaches for each column
-  const respondedOutreaches = outreaches.filter(
-    (outreach) => outreach.status === "responded"
-  );
-  const scheduledOutreaches = outreaches.filter(
-    (outreach) => outreach.status === "scheduled"
-  );
-  const referralOutreaches = outreaches.filter(
-    (outreach) => outreach.status === "referral"
+    </>
   );
 
   return (
     <div className="p-4">
-      <div className="flex justify-between mb-4 items-center">
-        <h1 className="text-2xl font-bold">LinkedIn Outreach</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">LinkedIn Outreach</h1>
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center hover:bg-blue-600 transition-colors"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+          onClick={() => setShowCreateModal(true)}
         >
-          <span className="mr-1 text-xl">+</span> New Contact
+          Add Outreach
         </button>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-10">Loading contacts...</div>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {/* Responded Column */}
-            <Column
-              id="responded"
-              title="Responded"
-              outreaches={respondedOutreaches}
-              color="bg-blue-500"
-              onEditOutreach={handleEditOutreach}
-            />
+      {/* Drag and Drop Board */}
+      <DragAndDropBoard<Outreach>
+        items={outreaches}
+        columns={columns}
+        activeItem={activeOutreach}
+        onUpdateStatus={handleUpdateStatus}
+        onEditItem={handleEditOutreach}
+        renderContent={renderOutreachContent}
+        renderOverlay={(outreach) => renderOutreachContent(outreach)}
+        onDragStart={handleDragStart}
+      />
 
-            {/* Scheduled Column */}
-            <Column
-              id="scheduled"
-              title="Scheduled"
-              outreaches={scheduledOutreaches}
-              color="bg-green-500"
-              onEditOutreach={handleEditOutreach}
-            />
-
-            {/* Referral Column */}
-            <Column
-              id="referral"
-              title="Referral"
-              outreaches={referralOutreaches}
-              color="bg-purple-500"
-              onEditOutreach={handleEditOutreach}
-            />
-          </div>
-
-          {/* Drag Overlay with animation */}
-          <DragOverlay
-            dropAnimation={{
-              duration: 250,
-              easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
-            }}
-          >
-            {activeId && activeOutreach ? (
-              <div className="opacity-80 transform scale-105 shadow-lg">
-                <OutreachCard outreach={activeOutreach} />
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      )}
-
-      {/* Modal for creating new contacts */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      {/* Create Outreach Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Create New Contact</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                &times;
-              </button>
-            </div>
-
+            <h2 className="text-xl font-bold mb-4">Add New Outreach</h2>
             <form onSubmit={handleCreateOutreach}>
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Name *</label>
+                <label className="block text-gray-700 mb-2">Name</label>
                 <input
                   type="text"
                   name="name"
                   value={newOutreach.name}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  className="w-full p-2 border rounded"
                   required
                 />
               </div>
-
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Company *</label>
+                <label className="block text-gray-700 mb-2">Company</label>
                 <input
                   type="text"
                   name="company"
                   value={newOutreach.company}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  className="w-full p-2 border rounded"
                   required
                 />
               </div>
-
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">LinkedIn URL</label>
+                <label className="block text-gray-700 mb-2">LinkedIn URL</label>
                 <input
                   type="url"
                   name="linkedInUrl"
-                  value={newOutreach.linkedInUrl}
+                  value={newOutreach.linkedInUrl || ""}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  placeholder="https://linkedin.com/in/..."
+                  className="w-full p-2 border rounded"
                 />
               </div>
-
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Message</label>
+                <label className="block text-gray-700 mb-2">Message</label>
                 <textarea
                   name="message"
-                  value={newOutreach.message}
+                  value={newOutreach.message || ""}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  className="w-full p-2 border rounded"
                   rows={3}
-                  placeholder="Enter your outreach message here..."
                 />
               </div>
-
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Notes</label>
+                <label className="block text-gray-700 mb-2">Notes</label>
                 <textarea
                   name="notes"
-                  value={newOutreach.notes}
+                  value={newOutreach.notes || ""}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  className="w-full p-2 border rounded"
                   rows={3}
                 />
               </div>
-
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded hover:bg-gray-100"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
                 >
                   Cancel
                 </button>
@@ -723,7 +344,7 @@ export default function LinkedInOutreachPage() {
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
-                  Create Contact
+                  Create
                 </button>
               </div>
             </form>
@@ -731,94 +352,77 @@ export default function LinkedInOutreachPage() {
         </div>
       )}
 
-      {/* Modal for editing contacts */}
-      {isEditModalOpen && editingOutreach && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      {/* Edit Outreach Modal */}
+      {showEditModal && editOutreach && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Edit Contact</h2>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                &times;
-              </button>
-            </div>
-
+            <h2 className="text-xl font-bold mb-4">Edit Outreach</h2>
             <form onSubmit={handleUpdateOutreach}>
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Name *</label>
+                <label className="block text-gray-700 mb-2">Name</label>
                 <input
                   type="text"
                   name="name"
-                  value={editingOutreach.name}
+                  value={editOutreach.name}
                   onChange={handleEditInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  className="w-full p-2 border rounded"
                   required
                 />
               </div>
-
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Company *</label>
+                <label className="block text-gray-700 mb-2">Company</label>
                 <input
                   type="text"
                   name="company"
-                  value={editingOutreach.company}
+                  value={editOutreach.company}
                   onChange={handleEditInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  className="w-full p-2 border rounded"
                   required
                 />
               </div>
-
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">LinkedIn URL</label>
+                <label className="block text-gray-700 mb-2">LinkedIn URL</label>
                 <input
                   type="url"
                   name="linkedInUrl"
-                  value={editingOutreach.linkedInUrl || ""}
+                  value={editOutreach.linkedInUrl || ""}
                   onChange={handleEditInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
-                  placeholder="https://linkedin.com/in/..."
+                  className="w-full p-2 border rounded"
                 />
               </div>
-
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Message</label>
+                <label className="block text-gray-700 mb-2">Message</label>
                 <textarea
                   name="message"
-                  value={editingOutreach.message || ""}
+                  value={editOutreach.message || ""}
                   onChange={handleEditInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  className="w-full p-2 border rounded"
                   rows={3}
-                  placeholder="Enter your outreach message here..."
                 />
               </div>
-
               <div className="mb-4">
-                <label className="block text-gray-700 mb-1">Notes</label>
+                <label className="block text-gray-700 mb-2">Notes</label>
                 <textarea
                   name="notes"
-                  value={editingOutreach.notes || ""}
+                  value={editOutreach.notes || ""}
                   onChange={handleEditInputChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  className="w-full p-2 border rounded"
                   rows={3}
                 />
               </div>
-
-              <div className="flex justify-between gap-2">
+              <div className="flex justify-between">
                 <button
                   type="button"
-                  onClick={handleDeleteOutreach}
+                  onClick={() => setShowDeleteModal(true)}
                   className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                 >
                   Delete
                 </button>
-
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded hover:bg-gray-100"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
                   >
                     Cancel
                   </button>
@@ -826,7 +430,7 @@ export default function LinkedInOutreachPage() {
                     type="submit"
                     className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   >
-                    Save Changes
+                    Update
                   </button>
                 </div>
               </div>
@@ -835,34 +439,32 @@ export default function LinkedInOutreachPage() {
         </div>
       )}
 
-      {/* Add styles for touch interactions */}
-      <style jsx global>{`
-        /* Touch indicator */
-        .touch-dragging {
-          transform: scale(1.02);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-          border: 1px solid rgba(59, 130, 246, 0.5);
-          opacity: 0.9;
-        }
-
-        /* Touch indicator ripple effect */
-        @keyframes ripple {
-          to {
-            transform: scale(8);
-            opacity: 0;
-          }
-        }
-
-        /* Better visual feedback during active drag */
-        [data-dragging="true"] {
-          cursor: grabbing !important;
-        }
-
-        /* Drag handle styling */
-        .drag-handle {
-          cursor: grab;
-        }
-      `}</style>
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
+            <p>
+              Are you sure you want to delete this outreach? This action cannot
+              be undone.
+            </p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteOutreach}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
