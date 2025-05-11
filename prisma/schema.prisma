@@ -95,6 +95,8 @@ model User {
   commitment                          Int?
   applications_per_week               Int?
   apps_with_outreach_per_week         Int?
+  apps_with_outreach_tracker          Int                          @default(0)
+  lastTrackerResetDate                DateTime?
   info_interview_outreach_per_week    Int?
   in_person_events_per_month           Int?
 }
