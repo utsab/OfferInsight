@@ -19,14 +19,9 @@ export const getBoardColumns = (boardType: BoardType): ColumnConfig[] => {
           color: "bg-blue-500",
         },
         {
-          id: "msgToRecruiter",
-          title: "Messaged Recruiter",
+          id: "followUp",
+          title: "Follow up",
           color: "bg-purple-500",
-        },
-        {
-          id: "msgToManager",
-          title: "Messaged Manager",
-          color: "bg-indigo-500",
         },
         {
           id: "interview",
@@ -60,23 +55,18 @@ export const getBoardColumns = (boardType: BoardType): ColumnConfig[] => {
           color: "bg-blue-500",
         },
         {
-          id: "registered",
-          title: "Registered",
-          color: "bg-purple-500",
-        },
-        {
           id: "attended",
           title: "Attended",
           color: "bg-green-500",
         },
+        {
+          id: "connectedOnline",
+          title: "Connected Online",
+          color: "bg-purple-500",
+        },
       ];
     case "linkedinOutreach":
       return [
-        {
-          id: "toContact",
-          title: "To Contact",
-          color: "bg-blue-500",
-        },
         {
           id: "contacted",
           title: "Contacted",
