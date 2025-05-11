@@ -8,6 +8,7 @@ import {
   ColumnConfig,
   DraggableItem,
 } from "@/components/DragAndDrop";
+import { getBoardColumns } from "@/components/BoardColumns";
 
 type Application = {
   id: number;
@@ -42,34 +43,8 @@ export default function ApplicationsWithOutreachPage() {
     null
   );
 
-  // Define columns configuration
-  const columns: ColumnConfig[] = [
-    {
-      id: "applied",
-      title: "Applied",
-      color: "bg-blue-500",
-    },
-    {
-      id: "msgToRecruiter",
-      title: "Messaged Recruiter",
-      color: "bg-purple-500",
-    },
-    {
-      id: "msgToManager",
-      title: "Messaged Manager",
-      color: "bg-indigo-500",
-    },
-    {
-      id: "interview",
-      title: "Interview",
-      color: "bg-yellow-500",
-    },
-    {
-      id: "offer",
-      title: "Offer",
-      color: "bg-green-500",
-    },
-  ];
+  // Use the modularized column configuration
+  const columns = getBoardColumns("applications");
 
   useEffect(() => {
     fetchApplications();

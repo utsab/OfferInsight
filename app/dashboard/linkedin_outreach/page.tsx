@@ -8,6 +8,7 @@ import {
   ColumnConfig,
   DraggableItem,
 } from "@/components/DragAndDrop";
+import { getBoardColumns } from "@/components/BoardColumns";
 
 type Outreach = {
   id: number;
@@ -38,23 +39,8 @@ export default function LinkedInOutreachPage() {
   const [editOutreach, setEditOutreach] = useState<Outreach | null>(null);
 
   // Define columns configuration
-  const columns: ColumnConfig[] = [
-    {
-      id: "responded",
-      title: "Responded",
-      color: "bg-blue-500",
-    },
-    {
-      id: "scheduled",
-      title: "Scheduled",
-      color: "bg-green-500",
-    },
-    {
-      id: "referral",
-      title: "Referral",
-      color: "bg-purple-500",
-    },
-  ];
+  const columns = getBoardColumns("linkedinOutreach");
+
 
   useEffect(() => {
     fetchOutreaches();

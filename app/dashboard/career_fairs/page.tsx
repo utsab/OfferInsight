@@ -8,6 +8,7 @@ import {
   ColumnConfig,
   DraggableItem,
 } from "@/components/DragAndDrop";
+import { getBoardColumns } from "@/components/BoardColumns";
 
 type CareerFair = {
   id: number;
@@ -39,19 +40,8 @@ export default function CareerFairsPage() {
   });
   const [editCareerFair, setEditCareerFair] = useState<CareerFair | null>(null);
 
-  // Define columns configuration
-  const columns: ColumnConfig[] = [
-    {
-      id: "scheduled",
-      title: "Scheduled",
-      color: "bg-blue-500",
-    },
-    {
-      id: "attended",
-      title: "Attended",
-      color: "bg-green-500",
-    },
-  ];
+  // Use the modularized column configuration
+  const columns = getBoardColumns("careerFairs");
 
   useEffect(() => {
     fetchCareerFairs();

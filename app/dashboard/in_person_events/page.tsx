@@ -9,6 +9,8 @@ import {
   DraggableItem,
 } from "@/components/DragAndDrop";
 
+import { getBoardColumns } from "@/components/BoardColumns";
+
 type Event = {
   id: number;
   event: string;
@@ -42,23 +44,7 @@ export default function InPersonEventsPage() {
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
   // Define columns configuration
-  const columns: ColumnConfig[] = [
-    {
-      id: "scheduled",
-      title: "Scheduled",
-      color: "bg-blue-500",
-    },
-    {
-      id: "attended",
-      title: "Attended",
-      color: "bg-green-500",
-    },
-    {
-      id: "connectedOnline",
-      title: "Connected Online",
-      color: "bg-purple-500",
-    },
-  ];
+  const columns = getBoardColumns("inPersonEvents");
 
   useEffect(() => {
     fetchEvents();
