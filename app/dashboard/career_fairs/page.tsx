@@ -9,6 +9,10 @@ import {
   DraggableItem,
 } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
+import CardCreationModal from "@/components/CardCreationModal";
+import CardContent from "@/components/CardContent";
+import CardEditModal from "@/components/CardEditModal";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 type CareerFair = {
   id: number;
@@ -42,6 +46,33 @@ export default function CareerFairsPage() {
 
   // Use the modularized column configuration
   const columns = getBoardColumns("careerFairs");
+
+  // Define fields for the create modal
+  const createFields = [
+    {
+      name: "event",
+      label: "Event Name",
+      type: "text" as const,
+      required: true,
+    },
+    { name: "date", label: "Date", type: "date" as const, required: true },
+    { name: "location", label: "Location", type: "text" as const },
+    { name: "url", label: "URL", type: "url" as const },
+    { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
+  ];
+
+  // Define fields for the card content
+  const contentFields = [
+    { key: "date", label: "Date", type: "text" as const },
+    { key: "location", label: "Location", type: "text" as const },
+    {
+      key: "url",
+      label: "Event Link",
+      type: "url" as const,
+      linkText: "Event Link",
+    },
+    { key: "notes", label: "Notes", type: "notes" as const },
+  ];
 
   useEffect(() => {
     fetchCareerFairs();
@@ -211,33 +242,13 @@ export default function CareerFairsPage() {
     }
   };
 
-  // Render content for career fair cards
-  const renderCareerFairContent = (careerFair: CareerFair) => (
-    <>
-      <h3 className="font-medium text-gray-800">{careerFair.event}</h3>
-      <p className="text-sm text-gray-600">Date: {careerFair.date}</p>
-      {careerFair.location && (
-        <p className="text-sm text-gray-600">Location: {careerFair.location}</p>
-      )}
-      {careerFair.url && (
-        <a
-          href={careerFair.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-blue-500 hover:underline"
-          onClick={(e) => e.stopPropagation()} // Prevent edit modal when clicking link
-        >
-          Event Link
-        </a>
-      )}
-      {careerFair.notes && (
-        <div className="mt-2 text-sm text-gray-600">
-          <p className="font-medium">Notes:</p>
-          <p>{careerFair.notes}</p>
-        </div>
-      )}
-    </>
-  );
+  // Render content for career fair cards using our new component
+  const renderCareerFairContent = (item: DraggableItem) => {
+    const careerFair = item as unknown as CareerFair;
+    return (
+      <CardContent title="event" item={careerFair} fields={contentFields} />
+    );
+  };
 
   return (
     <div className="p-4">
@@ -251,208 +262,49 @@ export default function CareerFairsPage() {
         </button>
       </div>
 
-      {/* Drag and Drop Board */}
-      <DragAndDropBoard<CareerFair>
+      <DragAndDropBoard
         items={careerFairs}
         columns={columns}
         activeItem={activeCareerFair}
         onUpdateStatus={handleUpdateStatus}
         onEditItem={handleEditCareerFair}
         renderContent={renderCareerFairContent}
-        renderOverlay={(careerFair) => renderCareerFairContent(careerFair)}
+        renderOverlay={renderCareerFairContent}
         onDragStart={handleDragStart}
       />
 
-      {/* Create Career Fair Modal */}
+      {/* Use our new reusable components for modals */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add New Career Fair</h2>
-            <form onSubmit={handleCreateCareerFair}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Event Name</label>
-                <input
-                  type="text"
-                  name="event"
-                  value={newCareerFair.event}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={newCareerFair.date}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={newCareerFair.location || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">URL</label>
-                <input
-                  type="url"
-                  name="url"
-                  value={newCareerFair.url || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Notes</label>
-                <textarea
-                  name="notes"
-                  value={newCareerFair.notes || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CardCreationModal
+          title="Add New Career Fair"
+          onSubmit={handleCreateCareerFair}
+          onClose={() => setShowCreateModal(false)}
+          fields={createFields}
+          values={newCareerFair}
+          onChange={handleInputChange}
+        />
       )}
 
-      {/* Edit Career Fair Modal */}
       {showEditModal && editCareerFair && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Edit Career Fair</h2>
-            <form onSubmit={handleUpdateCareerFair}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Event Name</label>
-                <input
-                  type="text"
-                  name="event"
-                  value={editCareerFair.event}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={editCareerFair.date}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={editCareerFair.location || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">URL</label>
-                <input
-                  type="url"
-                  name="url"
-                  value={editCareerFair.url || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Notes</label>
-                <textarea
-                  name="notes"
-                  value={editCareerFair.notes || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Update
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CardEditModal
+          title="Edit Career Fair"
+          onSubmit={handleUpdateCareerFair}
+          onClose={() => setShowEditModal(false)}
+          onDelete={() => setShowDeleteModal(true)}
+          fields={createFields}
+          values={editCareerFair}
+          onChange={handleEditInputChange}
+        />
       )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>
-              Are you sure you want to delete this career fair? This action
-              cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteCareerFair}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmationModal
+          title="Delete Career Fair"
+          message="Are you sure you want to delete this career fair? This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={handleDeleteCareerFair}
+          onCancel={() => setShowDeleteModal(false)}
+        />
       )}
     </div>
   );

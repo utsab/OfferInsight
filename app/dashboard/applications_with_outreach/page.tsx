@@ -9,6 +9,10 @@ import {
   DraggableItem,
 } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
+import CardCreationModal from "@/components/CardCreationModal";
+import CardContent from "@/components/CardContent";
+import CardEditModal from "@/components/CardEditModal";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 type Application = {
   id: number;
@@ -45,6 +49,48 @@ export default function ApplicationsWithOutreachPage() {
 
   // Use the modularized column configuration
   const columns = getBoardColumns("applications");
+
+  // Define fields for the create/edit modal
+  const applicationFields = [
+    {
+      name: "company",
+      label: "Company",
+      type: "text" as const,
+      required: true,
+    },
+    { name: "hiringManager", label: "Hiring Manager", type: "text" as const },
+    {
+      name: "msgToManager",
+      label: "Message to Manager",
+      type: "textarea" as const,
+      rows: 3,
+    },
+    { name: "recruiter", label: "Recruiter", type: "text" as const },
+    {
+      name: "msgToRecruiter",
+      label: "Message to Recruiter",
+      type: "textarea" as const,
+      rows: 3,
+    },
+    { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
+  ];
+
+  // Define fields for the card content
+  const contentFields = [
+    { key: "recruiter", label: "Recruiter", type: "text" as const },
+    { key: "hiringManager", label: "Hiring Manager", type: "text" as const },
+    {
+      key: "msgToManager",
+      label: "Message to Manager",
+      type: "notes" as const,
+    },
+    {
+      key: "msgToRecruiter",
+      label: "Message to Recruiter",
+      type: "notes" as const,
+    },
+    { key: "notes", label: "Notes", type: "notes" as const },
+  ];
 
   useEffect(() => {
     fetchApplications();
@@ -217,28 +263,13 @@ export default function ApplicationsWithOutreachPage() {
     }
   };
 
-  // Render content for application cards
-  const renderApplicationContent = (application: Application) => (
-    <>
-      <h3 className="font-medium text-gray-800">{application.company}</h3>
-      {application.recruiter && (
-        <p className="text-sm text-gray-600">
-          Recruiter: {application.recruiter}
-        </p>
-      )}
-      {application.hiringManager && (
-        <p className="text-sm text-gray-600">
-          Hiring Manager: {application.hiringManager}
-        </p>
-      )}
-      {application.notes && (
-        <div className="mt-2 text-sm text-gray-600">
-          <p className="font-medium">Notes:</p>
-          <p>{application.notes}</p>
-        </div>
-      )}
-    </>
-  );
+  // Render content for application cards using our new CardContent component
+  const renderApplicationContent = (item: DraggableItem) => {
+    const application = item as unknown as Application;
+    return (
+      <CardContent title="company" item={application} fields={contentFields} />
+    );
+  };
 
   return (
     <div className="p-4">
@@ -254,238 +285,49 @@ export default function ApplicationsWithOutreachPage() {
         </button>
       </div>
 
-      {/* Drag and Drop Board */}
-      <DragAndDropBoard<Application>
+      <DragAndDropBoard
         items={applications}
         columns={columns}
         activeItem={activeApplication}
         onUpdateStatus={handleUpdateStatus}
         onEditItem={handleEditApplication}
         renderContent={renderApplicationContent}
-        renderOverlay={(application) => renderApplicationContent(application)}
+        renderOverlay={renderApplicationContent}
         onDragStart={handleDragStart}
       />
 
-      {/* Create Application Modal */}
+      {/* Use our reusable components for modals */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add New Application</h2>
-            <form onSubmit={handleCreateApplication}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Company</label>
-                <input
-                  type="text"
-                  name="company"
-                  value={newApplication.company}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Recruiter</label>
-                <input
-                  type="text"
-                  name="recruiter"
-                  value={newApplication.recruiter || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">
-                  Message to Recruiter
-                </label>
-                <textarea
-                  name="msgToRecruiter"
-                  value={newApplication.msgToRecruiter || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">
-                  Hiring Manager
-                </label>
-                <input
-                  type="text"
-                  name="hiringManager"
-                  value={newApplication.hiringManager || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">
-                  Message to Hiring Manager
-                </label>
-                <textarea
-                  name="msgToManager"
-                  value={newApplication.msgToManager || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Notes</label>
-                <textarea
-                  name="notes"
-                  value={newApplication.notes || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CardCreationModal
+          title="Add New Application"
+          onSubmit={handleCreateApplication}
+          onClose={() => setShowCreateModal(false)}
+          fields={applicationFields}
+          values={newApplication}
+          onChange={handleInputChange}
+        />
       )}
 
-      {/* Edit Application Modal */}
       {showEditModal && editApplication && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Edit Application</h2>
-            <form onSubmit={handleUpdateApplication}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Company</label>
-                <input
-                  type="text"
-                  name="company"
-                  value={editApplication.company}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Recruiter</label>
-                <input
-                  type="text"
-                  name="recruiter"
-                  value={editApplication.recruiter || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">
-                  Message to Recruiter
-                </label>
-                <textarea
-                  name="msgToRecruiter"
-                  value={editApplication.msgToRecruiter || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">
-                  Hiring Manager
-                </label>
-                <input
-                  type="text"
-                  name="hiringManager"
-                  value={editApplication.hiringManager || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">
-                  Message to Hiring Manager
-                </label>
-                <textarea
-                  name="msgToManager"
-                  value={editApplication.msgToManager || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Notes</label>
-                <textarea
-                  name="notes"
-                  value={editApplication.notes || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Update
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CardEditModal
+          title="Edit Application"
+          onSubmit={handleUpdateApplication}
+          onClose={() => setShowEditModal(false)}
+          onDelete={() => setShowDeleteModal(true)}
+          fields={applicationFields}
+          values={editApplication}
+          onChange={handleEditInputChange}
+        />
       )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>
-              Are you sure you want to delete this application? This action
-              cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteApplication}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmationModal
+          title="Delete Application"
+          message="Are you sure you want to delete this application? This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={handleDeleteApplication}
+          onCancel={() => setShowDeleteModal(false)}
+        />
       )}
     </div>
   );

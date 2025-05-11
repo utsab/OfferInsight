@@ -9,6 +9,10 @@ import {
   DraggableItem,
 } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
+import CardCreationModal from "@/components/CardCreationModal";
+import CardContent from "@/components/CardContent";
+import CardEditModal from "@/components/CardEditModal";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 type Outreach = {
   id: number;
@@ -41,6 +45,32 @@ export default function LinkedInOutreachPage() {
   // Define columns configuration
   const columns = getBoardColumns("linkedinOutreach");
 
+  // Define fields for the create/edit modal
+  const outreachFields = [
+    { name: "name", label: "Name", type: "text" as const, required: true },
+    {
+      name: "company",
+      label: "Company",
+      type: "text" as const,
+      required: true,
+    },
+    { name: "linkedInUrl", label: "LinkedIn URL", type: "url" as const },
+    { name: "message", label: "Message", type: "textarea" as const, rows: 3 },
+    { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
+  ];
+
+  // Define fields for the card content
+  const contentFields = [
+    { key: "company", label: "Company", type: "text" as const },
+    {
+      key: "linkedInUrl",
+      label: "LinkedIn Profile",
+      type: "url" as const,
+      linkText: "LinkedIn Profile",
+    },
+    { key: "message", label: "Message", type: "notes" as const },
+    { key: "notes", label: "Notes", type: "notes" as const },
+  ];
 
   useEffect(() => {
     fetchOutreaches();
@@ -210,36 +240,11 @@ export default function LinkedInOutreachPage() {
     }
   };
 
-  // Render content for outreach cards
-  const renderOutreachContent = (outreach: Outreach) => (
-    <>
-      <h3 className="font-medium text-gray-800">{outreach.name}</h3>
-      <p className="text-sm text-gray-600">Company: {outreach.company}</p>
-      {outreach.linkedInUrl && (
-        <a
-          href={outreach.linkedInUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-blue-500 hover:underline"
-          onClick={(e) => e.stopPropagation()} // Prevent edit modal when clicking link
-        >
-          LinkedIn Profile
-        </a>
-      )}
-      {outreach.message && (
-        <div className="mt-2 text-sm text-gray-600">
-          <p className="font-medium">Message:</p>
-          <p>{outreach.message}</p>
-        </div>
-      )}
-      {outreach.notes && (
-        <div className="mt-2 text-sm text-gray-600">
-          <p className="font-medium">Notes:</p>
-          <p>{outreach.notes}</p>
-        </div>
-      )}
-    </>
-  );
+  // Render content for outreach cards using our new CardContent component
+  const renderOutreachContent = (item: DraggableItem) => {
+    const outreach = item as unknown as Outreach;
+    return <CardContent title="name" item={outreach} fields={contentFields} />;
+  };
 
   return (
     <div className="p-4">
@@ -253,208 +258,49 @@ export default function LinkedInOutreachPage() {
         </button>
       </div>
 
-      {/* Drag and Drop Board */}
-      <DragAndDropBoard<Outreach>
+      <DragAndDropBoard
         items={outreaches}
         columns={columns}
         activeItem={activeOutreach}
         onUpdateStatus={handleUpdateStatus}
         onEditItem={handleEditOutreach}
         renderContent={renderOutreachContent}
-        renderOverlay={(outreach) => renderOutreachContent(outreach)}
+        renderOverlay={renderOutreachContent}
         onDragStart={handleDragStart}
       />
 
-      {/* Create Outreach Modal */}
+      {/* Use our reusable components for modals */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add New Outreach</h2>
-            <form onSubmit={handleCreateOutreach}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={newOutreach.name}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Company</label>
-                <input
-                  type="text"
-                  name="company"
-                  value={newOutreach.company}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">LinkedIn URL</label>
-                <input
-                  type="url"
-                  name="linkedInUrl"
-                  value={newOutreach.linkedInUrl || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Message</label>
-                <textarea
-                  name="message"
-                  value={newOutreach.message || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Notes</label>
-                <textarea
-                  name="notes"
-                  value={newOutreach.notes || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CardCreationModal
+          title="Add New Outreach"
+          onSubmit={handleCreateOutreach}
+          onClose={() => setShowCreateModal(false)}
+          fields={outreachFields}
+          values={newOutreach}
+          onChange={handleInputChange}
+        />
       )}
 
-      {/* Edit Outreach Modal */}
       {showEditModal && editOutreach && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Edit Outreach</h2>
-            <form onSubmit={handleUpdateOutreach}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={editOutreach.name}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Company</label>
-                <input
-                  type="text"
-                  name="company"
-                  value={editOutreach.company}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">LinkedIn URL</label>
-                <input
-                  type="url"
-                  name="linkedInUrl"
-                  value={editOutreach.linkedInUrl || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Message</label>
-                <textarea
-                  name="message"
-                  value={editOutreach.message || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Notes</label>
-                <textarea
-                  name="notes"
-                  value={editOutreach.notes || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Update
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CardEditModal
+          title="Edit Outreach"
+          onSubmit={handleUpdateOutreach}
+          onClose={() => setShowEditModal(false)}
+          onDelete={() => setShowDeleteModal(true)}
+          fields={outreachFields}
+          values={editOutreach}
+          onChange={handleEditInputChange}
+        />
       )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>
-              Are you sure you want to delete this outreach? This action cannot
-              be undone.
-            </p>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteOutreach}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmationModal
+          title="Delete Outreach"
+          message="Are you sure you want to delete this outreach? This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={handleDeleteOutreach}
+          onCancel={() => setShowDeleteModal(false)}
+        />
       )}
     </div>
   );

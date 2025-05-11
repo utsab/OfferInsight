@@ -8,8 +8,11 @@ import {
   ColumnConfig,
   DraggableItem,
 } from "@/components/DragAndDrop";
-
 import { getBoardColumns } from "@/components/BoardColumns";
+import CardCreationModal from "@/components/CardCreationModal";
+import CardContent from "@/components/CardContent";
+import CardEditModal from "@/components/CardEditModal";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 type Event = {
   id: number;
@@ -45,6 +48,53 @@ export default function InPersonEventsPage() {
 
   // Define columns configuration
   const columns = getBoardColumns("inPersonEvents");
+
+  // Define fields for the create/edit modal
+  const eventFields = [
+    {
+      name: "event",
+      label: "Event Name",
+      type: "text" as const,
+      required: true,
+    },
+    { name: "date", label: "Date", type: "date" as const, required: true },
+    { name: "location", label: "Location", type: "text" as const },
+    { name: "url", label: "URL", type: "url" as const },
+    {
+      name: "numPeopleSpokenTo",
+      label: "Number of People Spoken To",
+      type: "number" as const,
+    },
+    {
+      name: "numLinkedInRequests",
+      label: "Number of LinkedIn Requests",
+      type: "number" as const,
+    },
+    { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
+  ];
+
+  // Define fields for the card content
+  const contentFields = [
+    { key: "date", label: "Date", type: "text" as const },
+    { key: "location", label: "Location", type: "text" as const },
+    {
+      key: "url",
+      label: "Event Link",
+      type: "url" as const,
+      linkText: "Event Link",
+    },
+    {
+      key: "numPeopleSpokenTo",
+      label: "People Spoken To",
+      type: "text" as const,
+    },
+    {
+      key: "numLinkedInRequests",
+      label: "LinkedIn Requests",
+      type: "text" as const,
+    },
+    { key: "notes", label: "Notes", type: "notes" as const },
+  ];
 
   useEffect(() => {
     fetchEvents();
@@ -212,33 +262,11 @@ export default function InPersonEventsPage() {
     }
   };
 
-  // Render content for event cards
-  const renderEventContent = (event: Event) => (
-    <>
-      <h3 className="font-medium text-gray-800">{event.event}</h3>
-      <p className="text-sm text-gray-600">Date: {event.date}</p>
-      {event.location && (
-        <p className="text-sm text-gray-600">Location: {event.location}</p>
-      )}
-      {event.url && (
-        <a
-          href={event.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-blue-500 hover:underline"
-          onClick={(e) => e.stopPropagation()} // Prevent edit modal when clicking link
-        >
-          Event Link
-        </a>
-      )}
-      {event.notes && (
-        <div className="mt-2 text-sm text-gray-600">
-          <p className="font-medium">Notes:</p>
-          <p>{event.notes}</p>
-        </div>
-      )}
-    </>
-  );
+  // Render content for event cards using our new CardContent component
+  const renderEventContent = (item: DraggableItem) => {
+    const event = item as unknown as Event;
+    return <CardContent title="event" item={event} fields={contentFields} />;
+  };
 
   return (
     <div className="p-4">
@@ -252,238 +280,49 @@ export default function InPersonEventsPage() {
         </button>
       </div>
 
-      {/* Drag and Drop Board */}
-      <DragAndDropBoard<Event>
+      <DragAndDropBoard
         items={events}
         columns={columns}
         activeItem={activeEvent}
         onUpdateStatus={handleUpdateStatus}
         onEditItem={handleEditEvent}
         renderContent={renderEventContent}
-        renderOverlay={(event) => renderEventContent(event)}
+        renderOverlay={renderEventContent}
         onDragStart={handleDragStart}
       />
 
-      {/* Create Event Modal */}
+      {/* Use our reusable components for modals */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add New Event</h2>
-            <form onSubmit={handleCreateEvent}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Event Name</label>
-                <input
-                  type="text"
-                  name="event"
-                  value={newEvent.event}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={newEvent.date}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={newEvent.location || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">URL</label>
-                <input
-                  type="url"
-                  name="url"
-                  value={newEvent.url || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Notes</label>
-                <textarea
-                  name="notes"
-                  value={newEvent.notes || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CardCreationModal
+          title="Add New Event"
+          onSubmit={handleCreateEvent}
+          onClose={() => setShowCreateModal(false)}
+          fields={eventFields}
+          values={newEvent}
+          onChange={handleInputChange}
+        />
       )}
 
-      {/* Edit Event Modal */}
       {showEditModal && editEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Edit Event</h2>
-            <form onSubmit={handleUpdateEvent}>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Event Name</label>
-                <input
-                  type="text"
-                  name="event"
-                  value={editEvent.event}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={editEvent.date}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={editEvent.location || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">URL</label>
-                <input
-                  type="url"
-                  name="url"
-                  value={editEvent.url || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Notes</label>
-                <textarea
-                  name="notes"
-                  value={editEvent.notes || ""}
-                  onChange={handleEditInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
-              </div>
-              {editEvent.status === "attended" && (
-                <>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">
-                      Number of People Spoken To
-                    </label>
-                    <input
-                      type="number"
-                      name="numPeopleSpokenTo"
-                      value={editEvent.numPeopleSpokenTo || ""}
-                      onChange={handleEditInputChange}
-                      className="w-full p-2 border rounded"
-                      min="0"
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 mb-2">
-                      Number of LinkedIn Requests
-                    </label>
-                    <input
-                      type="number"
-                      name="numLinkedInRequests"
-                      value={editEvent.numLinkedInRequests || ""}
-                      onChange={handleEditInputChange}
-                      className="w-full p-2 border rounded"
-                      min="0"
-                    />
-                  </div>
-                </>
-              )}
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Update
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CardEditModal
+          title="Edit Event"
+          onSubmit={handleUpdateEvent}
+          onClose={() => setShowEditModal(false)}
+          onDelete={() => setShowDeleteModal(true)}
+          fields={eventFields}
+          values={editEvent}
+          onChange={handleEditInputChange}
+        />
       )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>
-              Are you sure you want to delete this event? This action cannot be
-              undone.
-            </p>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteEvent}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmationModal
+          title="Delete Event"
+          message="Are you sure you want to delete this event? This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={handleDeleteEvent}
+          onCancel={() => setShowDeleteModal(false)}
+        />
       )}
     </div>
   );
