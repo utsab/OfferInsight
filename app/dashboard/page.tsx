@@ -4,6 +4,28 @@ import { redirect } from "next/navigation";
 import { auth } from "auth";
 import { prisma } from "@/db";
 
+// ANALYTICS: Helper function to get the start and end of the current week (Monday to Sunday)
+function getCurrentWeekDateRange() {
+  const now = new Date();
+  // Get the current day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+  const currentDay = now.getDay();
+
+  // Calculate days to Monday (if today is Sunday, we need to go back 6 days)
+  const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
+
+  // Create a new date for Monday (start of the week)
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - daysToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  // Create a new date for Sunday (end of the week)
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+
+  return { monday, sunday };
+}
+
 export default async function Page() {
   const session = await auth();
   if (!session?.user) {
@@ -36,6 +58,20 @@ export default async function Page() {
     redirect("/onboarding/page3");
   }
 
+  // Get the current week's date range
+  const { monday, sunday } = getCurrentWeekDateRange();
+
+  // Count applications with outreach created this week
+  const appWithOutreachCount = await prisma.applications_with_Outreach.count({
+    where: {
+      userId: user.id,
+      dateCreated: {
+        gte: monday,
+        lte: sunday,
+      },
+    },
+  });
+
   return (
     <main>
       <h1 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
@@ -44,15 +80,17 @@ export default async function Page() {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
         <AnalyticsCard
           title="Applications with Outreach"
-          current={0}
-          total={user.apps_with_outreach_per_week || 10}
-          displayValue={`0/${user.apps_with_outreach_per_week || 10} per week`}
+          current={appWithOutreachCount}
+          total={user.apps_with_outreach_per_week || -1}
+          displayValue={`${appWithOutreachCount}/${
+            user.apps_with_outreach_per_week || 10
+          } per week`}
         />
 
         <AnalyticsCard
           title="Linked-in Outreach"
           current={0}
-          total={user.info_interview_outreach_per_week || 10}
+          total={user.info_interview_outreach_per_week || -1}
           displayValue={`0/${
             user.info_interview_outreach_per_week || 10
           } per week`}
@@ -61,8 +99,8 @@ export default async function Page() {
         <AnalyticsCard
           title="In-person Events"
           current={0}
-          total={user.in_person_events_per_month || 5}
-          displayValue={`0/${user.in_person_events_per_month || 5} per month`}
+          total={user.in_person_events_per_month || -1}
+          displayValue={`0/${user.in_person_events_per_month || -1} per month`}
         />
 
         <AnalyticsCard
