@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
+import { DragStartEvent } from "@dnd-kit/core";
 import {
   DragAndDropBoard,
-  ColumnConfig,
   DraggableItem,
 } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
