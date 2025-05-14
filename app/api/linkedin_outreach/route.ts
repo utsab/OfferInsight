@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
         message: data.message || null,
         linkedInUrl: data.linkedInUrl || null,
         notes: data.notes || null,
-        status: data.status || "contacted",
+        status: data.status || "linkedInRequestSent", // TODO: This is apart of default status. eliminate redundancy (1/3)
+        recievedReferral: data.recievedReferral || false,
         userId: user.id,
       },
     });
@@ -129,6 +130,10 @@ export async function PUT(request: NextRequest) {
             : outreach.linkedInUrl,
         notes: data.notes !== undefined ? data.notes : outreach.notes,
         status: data.status !== undefined ? data.status : outreach.status,
+        recievedReferral:
+          data.recievedReferral !== undefined
+            ? data.recievedReferral
+            : outreach.recievedReferral,
       },
     });
 

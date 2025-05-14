@@ -7,7 +7,7 @@ type CardCreationModalProps = {
   fields: {
     name: string;
     label: string;
-    type: "text" | "date" | "url" | "textarea" | "number";
+    type: "text" | "date" | "url" | "textarea" | "number" | "checkbox";
     required?: boolean;
     rows?: number;
   }[];
@@ -44,6 +44,14 @@ export default function CardCreationModal({
                   className="w-full p-2 border rounded"
                   rows={field.rows || 3}
                   required={field.required}
+                />
+              ) : field.type === "checkbox" ? (
+                <input
+                  type="checkbox"
+                  name={field.name}
+                  checked={values[field.name] || false}
+                  onChange={onChange}
+                  className="h-5 w-5 text-blue-600"
                 />
               ) : (
                 <input

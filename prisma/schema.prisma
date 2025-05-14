@@ -44,7 +44,7 @@ model Linkedin_Outreach {
   message             String?
   linkedInUrl         String?
   notes               String?
-  status              String  @default("contacted")
+  status              String  @default("linkedInRequestSent")
   dateCreated         DateTime @default(now())
   recievedReferral    Boolean @default(false)
   userId              String
@@ -52,7 +52,7 @@ model Linkedin_Outreach {
 }
 
 model In_Person_Events {
-  id                  Int     @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
   event               String
   date                String
   location            String?
@@ -61,8 +61,8 @@ model In_Person_Events {
   numPeopleSpokenTo   Int?
   numLinkedInRequests Int?
   userId              String
-  user                User    @relation(fields: [userId], references: [id])
-  status              String  @default("scheduled")
+  user                User     @relation(fields: [userId], references: [id])
+  status              String   @default("scheduled")
 }
 
 model Career_Fairs {

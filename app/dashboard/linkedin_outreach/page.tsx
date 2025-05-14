@@ -3,10 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DragStartEvent } from "@dnd-kit/core";
-import {
-  DragAndDropBoard,
-  DraggableItem,
-} from "@/components/DragAndDrop";
+import { DragAndDropBoard, DraggableItem } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
 import CardCreationModal from "@/components/CardCreationModal";
 import CardContent from "@/components/CardContent";
@@ -21,6 +18,7 @@ type Outreach = {
   linkedInUrl: string | null;
   notes: string | null;
   status: string;
+  recievedReferral: boolean;
 };
 
 export default function LinkedInOutreachPage() {
@@ -37,7 +35,8 @@ export default function LinkedInOutreachPage() {
     message: "",
     linkedInUrl: "",
     notes: "",
-    status: "responded",
+    status: "linkedInRequestSent", // TODO: This is apart of default status. eliminate redundancy (2/3)
+    recievedReferral: false,
   });
   const [editOutreach, setEditOutreach] = useState<Outreach | null>(null);
 
@@ -56,6 +55,11 @@ export default function LinkedInOutreachPage() {
     { name: "linkedInUrl", label: "LinkedIn URL", type: "url" as const },
     { name: "message", label: "Message", type: "textarea" as const, rows: 3 },
     { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
+    {
+      name: "recievedReferral",
+      label: "Received Referral",
+      type: "checkbox" as const,
+    },
   ];
 
   // Define fields for the card content
@@ -69,6 +73,11 @@ export default function LinkedInOutreachPage() {
     },
     { key: "message", label: "Message", type: "notes" as const },
     { key: "notes", label: "Notes", type: "notes" as const },
+    {
+      key: "recievedReferral",
+      label: "Received Referral",
+      type: "boolean" as const,
+    },
   ];
 
   useEffect(() => {
@@ -111,7 +120,8 @@ export default function LinkedInOutreachPage() {
         message: "",
         linkedInUrl: "",
         notes: "",
-        status: "contacted",
+        status: "linkedInRequestSent", // TODO: This is apart of default status. eliminate redundancy (3/3)
+        recievedReferral: false,
       });
       fetchOutreaches();
     } catch (error) {
@@ -184,16 +194,24 @@ export default function LinkedInOutreachPage() {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
-    setNewOutreach((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+    if (type === "checkbox") {
+      setNewOutreach((prev) => ({ ...prev, [name]: checked }));
+    } else {
+      setNewOutreach((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleEditInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     if (editOutreach) {
-      setEditOutreach({ ...editOutreach, [name]: value });
+      if (type === "checkbox") {
+        setEditOutreach({ ...editOutreach, [name]: checked });
+      } else {
+        setEditOutreach({ ...editOutreach, [name]: value });
+      }
     }
   };
 
