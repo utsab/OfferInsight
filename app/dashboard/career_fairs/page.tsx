@@ -71,12 +71,21 @@ export default function CareerFairsPage() {
       label: "Date",
       type: "text" as const,
       formatter: (date: Date | string) => {
+        let dateObj: Date;
+
         if (date instanceof Date) {
-          return date.toLocaleDateString();
+          dateObj = date;
+        } else {
+          dateObj = new Date(date);
         }
-        return typeof date === "string"
-          ? new Date(date).toLocaleDateString()
-          : "";
+
+        // Fix date display by using UTC methods
+        const year = dateObj.getUTCFullYear();
+        const month = dateObj.getUTCMonth() + 1; // getUTCMonth() returns 0-11
+        const day = dateObj.getUTCDate();
+
+        // Format as MM/DD/YYYY
+        return `${month}/${day}/${year}`;
       },
     },
     { key: "location", label: "Location", type: "text" as const },
@@ -102,9 +111,10 @@ export default function CareerFairsPage() {
       }
       const data = await response.json();
 
-      // Ensure dates are properly formatted after fetching
+      // Ensure dates are properly handled as UTC
       const formattedData = data.map((fair: any) => ({
         ...fair,
+        // Store the date as an ISO string for consistent handling
         date: new Date(fair.date),
       }));
 
@@ -118,10 +128,14 @@ export default function CareerFairsPage() {
     e.preventDefault();
 
     try {
-      // Ensure date is in the correct format
+      // Ensure date is in the correct format - HTML date inputs provide YYYY-MM-DD
+      // which should be interpreted as UTC to avoid timezone issues
+      const dateString = newCareerFair.date as string;
+
       const fairData = {
         ...newCareerFair,
-        date: newCareerFair.date, // Date input field already provides format that can be parsed
+        // Keep the date as is - the API will handle the conversion properly
+        date: dateString,
       };
 
       const response = await fetch("/api/career_fairs", {

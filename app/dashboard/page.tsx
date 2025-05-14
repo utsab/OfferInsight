@@ -116,6 +116,9 @@ export default async function Page() {
         gte: firstDayOfMonth,
         lte: lastDayOfMonth,
       },
+      status: {
+        in: ["attended", "followUp"],
+      },
     },
   });
 
