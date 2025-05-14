@@ -5,6 +5,7 @@ import {
   UsersIcon,
   CalendarIcon,
   BriefcaseIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -55,6 +56,31 @@ function HealthBar({ current, total, isActive, displayValue }: HealthBarProps) {
   );
 }
 
+// Dashboard overview component for the Home tab
+function DashboardOverview({ isActive }: { isActive: boolean }) {
+  return (
+    <div className="w-full h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-md relative overflow-hidden">
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <span className="text-xs font-bold text-white">
+            Analytics Overview
+          </span>
+        </div>
+      </div>
+      <div className="absolute inset-0 bg-white opacity-10">
+        {/* Add subtle wave animation pattern */}
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            background:
+              "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 20px)",
+          }}
+        ></div>
+      </div>
+    </div>
+  );
+}
+
 // Define the tab data with progress information
 interface TabData {
   name: string;
@@ -69,9 +95,9 @@ export default function TabNav() {
   const pathname = usePathname();
   const [tabData, setTabData] = useState<TabData[]>([
     {
-      name: "Home",
+      name: "Dashboard",
       href: "/dashboard",
-      icon: HomeIcon,
+      icon: ChartBarIcon,
       current: 0,
       total: 0,
       displayValue: "",
@@ -121,9 +147,9 @@ export default function TabNav() {
           // Update tab data with fetched metrics
           setTabData([
             {
-              name: "Home",
+              name: "Dashboard",
               href: "/dashboard",
-              icon: HomeIcon,
+              icon: ChartBarIcon,
               current: 0,
               total: 0,
               displayValue: "",
@@ -214,7 +240,9 @@ export default function TabNav() {
                 <span>{tab.name}</span>
               </div>
 
-              {tab.href !== "/dashboard" && (
+              {tab.href === "/dashboard" ? (
+                <DashboardOverview isActive={isActive} />
+              ) : (
                 <HealthBar
                   current={tab.current}
                   total={tab.total}
