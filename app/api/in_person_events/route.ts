@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { event, date, location, url, notes } = body;
+    const { event, date, location, url, notes, status } = body;
 
     if (!event || !date) {
       return NextResponse.json(
@@ -57,9 +57,7 @@ export async function POST(request: Request) {
         url,
         notes,
         userId: session.user.id,
-        scheduled: true,
-        attended: false,
-        connectedOnline: false,
+        status: status || "scheduled",
         numPeopleSpokenTo: null,
         numLinkedInRequests: null,
       },
@@ -87,14 +85,14 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const {
       id,
-      scheduled,
-      attended,
-      connectedOnline,
-      event,
+      status,
+      event: eventName,
       date,
       location,
       url,
       notes,
+      numPeopleSpokenTo,
+      numLinkedInRequests,
     } = body;
 
     if (!id) {
@@ -119,15 +117,16 @@ export async function PUT(request: Request) {
     // Only include the fields that are being updated
     const updateData: any = {};
 
-    if (scheduled !== undefined) updateData.scheduled = scheduled;
-    if (attended !== undefined) updateData.attended = attended;
-    if (connectedOnline !== undefined)
-      updateData.connectedOnline = connectedOnline;
-    if (event !== undefined) updateData.event = event;
+    if (status !== undefined) updateData.status = status;
+    if (eventName !== undefined) updateData.event = eventName;
     if (date !== undefined) updateData.date = date;
     if (location !== undefined) updateData.location = location;
     if (url !== undefined) updateData.url = url;
     if (notes !== undefined) updateData.notes = notes;
+    if (numPeopleSpokenTo !== undefined)
+      updateData.numPeopleSpokenTo = numPeopleSpokenTo;
+    if (numLinkedInRequests !== undefined)
+      updateData.numLinkedInRequests = numLinkedInRequests;
 
     const updatedEvent = await prisma.in_Person_Events.update({
       where: { id },

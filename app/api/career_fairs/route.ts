@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { event, date, location, url, notes } = body;
+    const { event, date, location, url, notes, status } = body;
 
     if (!event || !date) {
       return NextResponse.json(
@@ -57,8 +57,7 @@ export async function POST(request: NextRequest) {
         url,
         notes,
         userId: session.user.id,
-        scheduled: true,
-        attended: false,
+        status: status || "scheduled",
       },
     });
 
@@ -82,7 +81,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, event, date, location, url, notes, scheduled, attended } = body;
+    const { id, event, date, location, url, notes, status } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -118,8 +117,7 @@ export async function PUT(request: NextRequest) {
     if (location !== undefined) updatedData.location = location;
     if (url !== undefined) updatedData.url = url;
     if (notes !== undefined) updatedData.notes = notes;
-    if (scheduled !== undefined) updatedData.scheduled = scheduled;
-    if (attended !== undefined) updatedData.attended = attended;
+    if (status !== undefined) updatedData.status = status;
 
     const updatedCareerFair = await prisma.career_Fairs.update({
       where: { id },

@@ -63,9 +63,7 @@ export async function POST(request: NextRequest) {
         message: data.message || null,
         linkedInUrl: data.linkedInUrl || null,
         notes: data.notes || null,
-        responded: data.responded !== undefined ? data.responded : true,
-        scheduled: data.scheduled !== undefined ? data.scheduled : false,
-        referral: data.referral !== undefined ? data.referral : false,
+        status: data.status || "contacted",
         userId: user.id,
       },
     });
@@ -130,12 +128,7 @@ export async function PUT(request: NextRequest) {
             ? data.linkedInUrl
             : outreach.linkedInUrl,
         notes: data.notes !== undefined ? data.notes : outreach.notes,
-        responded:
-          data.responded !== undefined ? data.responded : outreach.responded,
-        scheduled:
-          data.scheduled !== undefined ? data.scheduled : outreach.scheduled,
-        referral:
-          data.referral !== undefined ? data.referral : outreach.referral,
+        status: data.status !== undefined ? data.status : outreach.status,
       },
     });
 
