@@ -80,6 +80,18 @@ export default async function Page() {
         gte: firstDayOfMonth,
         lte: lastDayOfMonth,
       },
+      msgToManager: {
+        not: ""
+      },
+      msgToRecruiter: {
+        not: ""
+      },
+      recruiter: {
+        not: ""
+      },
+      hiringManager: {
+        not: ""
+      },
     },
   });
 
