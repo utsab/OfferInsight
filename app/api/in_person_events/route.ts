@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     const newEvent = await prisma.in_Person_Events.create({
       data: {
         event,
-        date,
+        date: new Date(date),
         location,
         url,
         notes,
@@ -119,7 +119,7 @@ export async function PUT(request: Request) {
 
     if (status !== undefined) updateData.status = status;
     if (eventName !== undefined) updateData.event = eventName;
-    if (date !== undefined) updateData.date = date;
+    if (date !== undefined) updateData.date = new Date(date);
     if (location !== undefined) updateData.location = location;
     if (url !== undefined) updateData.url = url;
     if (notes !== undefined) updateData.notes = notes;

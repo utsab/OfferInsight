@@ -3,10 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DragStartEvent } from "@dnd-kit/core";
-import {
-  DragAndDropBoard,
-  DraggableItem,
-} from "@/components/DragAndDrop";
+import { DragAndDropBoard, DraggableItem } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
 import CardCreationModal from "@/components/CardCreationModal";
 import CardContent from "@/components/CardContent";
@@ -16,7 +13,7 @@ import ConfirmationModal from "@/components/ConfirmationModal";
 type Event = {
   id: number;
   event: string;
-  date: string;
+  date: Date | string;
   location: string | null;
   url: string | null;
   notes: string | null;
@@ -74,7 +71,19 @@ export default function InPersonEventsPage() {
 
   // Define fields for the card content
   const contentFields = [
-    { key: "date", label: "Date", type: "text" as const },
+    {
+      key: "date",
+      label: "Date",
+      type: "text" as const,
+      formatter: (date: Date | string) => {
+        if (date instanceof Date) {
+          return date.toLocaleDateString();
+        }
+        return typeof date === "string"
+          ? new Date(date).toLocaleDateString()
+          : "";
+      },
+    },
     { key: "location", label: "Location", type: "text" as const },
     {
       key: "url",

@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const careerFair = await prisma.career_Fairs.create({
       data: {
         event,
-        date,
+        date: new Date(date),
         location,
         url,
         notes,
@@ -115,7 +115,7 @@ export async function PUT(request: NextRequest) {
     const updatedData: any = {};
 
     if (event !== undefined) updatedData.event = event;
-    if (date !== undefined) updatedData.date = date;
+    if (date !== undefined) updatedData.date = new Date(date);
     if (location !== undefined) updatedData.location = location;
     if (url !== undefined) updatedData.url = url;
     if (notes !== undefined) updatedData.notes = notes;

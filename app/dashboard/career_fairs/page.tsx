@@ -13,7 +13,7 @@ import ConfirmationModal from "@/components/ConfirmationModal";
 type CareerFair = {
   id: number;
   event: string;
-  date: string;
+  date: Date | string;
   location: string | null;
   url: string | null;
   notes: string | null;
@@ -66,7 +66,19 @@ export default function CareerFairsPage() {
 
   // Define fields for the card content
   const contentFields = [
-    { key: "date", label: "Date", type: "text" as const },
+    {
+      key: "date",
+      label: "Date",
+      type: "text" as const,
+      formatter: (date: Date | string) => {
+        if (date instanceof Date) {
+          return date.toLocaleDateString();
+        }
+        return typeof date === "string"
+          ? new Date(date).toLocaleDateString()
+          : "";
+      },
+    },
     { key: "location", label: "Location", type: "text" as const },
     {
       key: "url",

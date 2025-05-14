@@ -54,7 +54,7 @@ model Linkedin_Outreach {
 model In_Person_Events {
   id                  Int      @id @default(autoincrement())
   event               String
-  date                String
+  date                DateTime
   location            String?
   url                 String?
   notes               String?
@@ -68,7 +68,7 @@ model In_Person_Events {
 model Career_Fairs {
   id                  Int     @id @default(autoincrement())
   event               String
-  date                String
+  date                DateTime
   location            String?
   url                 String?
   notes               String?

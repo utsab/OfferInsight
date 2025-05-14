@@ -62,46 +62,60 @@ export default async function Page() {
   // Get the current week's date range
   const { monday, sunday } = getCurrentWeekDateRange();
 
-  // Get the current month date range
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  // Define date range for current month
+  const firstDayOfMonth = new Date();
+  firstDayOfMonth.setDate(1);
+  firstDayOfMonth.setHours(0, 0, 0, 0);
+
+  const lastDayOfMonth = new Date();
+  lastDayOfMonth.setMonth(lastDayOfMonth.getMonth() + 1);
+  lastDayOfMonth.setDate(0);
   lastDayOfMonth.setHours(23, 59, 59, 999);
 
-  // Count applications with outreach created this week
+  // Count applications with outreach created this month
   const appWithOutreachCount = await prisma.applications_with_Outreach.count({
     where: {
       userId: user.id,
       dateCreated: {
-        gte: monday,
-        lte: sunday,
+        gte: firstDayOfMonth,
+        lte: lastDayOfMonth,
       },
     },
   });
 
-  // Count LinkedIn outreach created this week (simplified, without date filtering for now)
-  // TODO: Add date filtering once TypeScript type issues are resolved
-  // (should filter by dateCreated field within the current week)
+  // Count LinkedIn outreach created this month
   const linkedInOutreachCount = await prisma.linkedin_Outreach.count({
     where: {
       userId: user.id,
+      dateCreated: {
+        gte: firstDayOfMonth,
+        lte: lastDayOfMonth,
+      },
     },
   });
 
-  // Count in-person events this month - simplified date comparison
-  // TODO: Add date filtering once TypeScript type issues are resolved
-  // (should filter by date field within the current month)
+  // Count in-person events this month
   const inPersonEventsCount = await prisma.in_Person_Events.count({
     where: {
       userId: user.id,
+      date: {
+        gte: firstDayOfMonth,
+        lte: lastDayOfMonth,
+      },
+      status: {
+        in: ["attended", "connectedOnline", "followUp"],
+      },
     },
   });
 
-  // Count career fairs (total)
-  // TODO: Add date filtering
+  // Count career fairs this month
   const careerFairsCount = await prisma.career_Fairs.count({
     where: {
       userId: user.id,
+      date: {
+        gte: firstDayOfMonth,
+        lte: lastDayOfMonth,
+      },
     },
   });
 
@@ -142,7 +156,9 @@ export default async function Page() {
           title="Career Fairs"
           current={careerFairsCount}
           total={user.career_fairs_quota || -1}
-          displayValue={`${careerFairsCount}/${user.career_fairs_quota || -1} total`}
+          displayValue={`${careerFairsCount}/${
+            user.career_fairs_quota || -1
+          } total`}
         />
       </div>
     </main>

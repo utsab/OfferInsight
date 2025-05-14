@@ -5,6 +5,7 @@ type CardField = {
   label: string;
   type?: "text" | "url" | "notes" | "boolean";
   linkText?: string;
+  formatter?: (value: any) => string;
 };
 
 type CardContentProps = {
@@ -49,9 +50,13 @@ export default function CardContent({ title, item, fields }: CardContentProps) {
             </p>
           );
         } else {
+          const displayValue = field.formatter
+            ? field.formatter(item[field.key])
+            : item[field.key];
+
           return (
             <p key={field.key} className="text-sm text-gray-600">
-              {field.label}: {item[field.key]}
+              {field.label}: {displayValue}
             </p>
           );
         }
