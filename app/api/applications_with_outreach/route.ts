@@ -59,7 +59,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create new application without incrementing the tracker
     const newApplication = await prisma.applications_with_Outreach.create({
       data: {
         company,

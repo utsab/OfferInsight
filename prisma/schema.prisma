@@ -101,7 +101,7 @@ model User {
   apps_with_outreach_per_week         Int?
   info_interview_outreach_per_week    Int?
   in_person_events_per_month          Int?
-  career_fairs                        Int?                         @default(1)                        
+  career_fairs_quota                  Int?                         @default(1)                        
 }
 
 model VerificationToken {
