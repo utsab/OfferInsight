@@ -115,7 +115,14 @@ export default function InPersonEventsPage() {
         throw new Error("Failed to fetch events");
       }
       const data = await response.json();
-      setEvents(data);
+
+      // Ensure dates are properly formatted after fetching
+      const formattedData = data.map((event: any) => ({
+        ...event,
+        date: new Date(event.date),
+      }));
+
+      setEvents(formattedData);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -125,12 +132,18 @@ export default function InPersonEventsPage() {
     e.preventDefault();
 
     try {
+      // Ensure date is in the correct format
+      const eventData = {
+        ...newEvent,
+        date: newEvent.date, // Date input field already provides format that can be parsed
+      };
+
       const response = await fetch("/api/in_person_events", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newEvent),
+        body: JSON.stringify(eventData),
       });
 
       if (!response.ok) {
@@ -160,6 +173,8 @@ export default function InPersonEventsPage() {
     if (!editEvent) return;
 
     try {
+      // The date is already formatted correctly from handleEditEvent
+      // Just send as is - the API will convert to DateTime
       const response = await fetch(`/api/in_person_events?id=${editEvent.id}`, {
         method: "PUT",
         headers: {
@@ -232,7 +247,15 @@ export default function InPersonEventsPage() {
   };
 
   const handleEditEvent = (event: Event) => {
-    setEditEvent(event);
+    // Format the date as YYYY-MM-DD for the HTML date input
+    const formattedEvent = {
+      ...event,
+      date:
+        event.date instanceof Date
+          ? event.date.toISOString().substring(0, 10)
+          : new Date(event.date).toISOString().substring(0, 10),
+    };
+    setEditEvent(formattedEvent);
     setShowEditModal(true);
   };
 

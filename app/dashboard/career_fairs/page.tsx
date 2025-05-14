@@ -101,7 +101,14 @@ export default function CareerFairsPage() {
         throw new Error("Failed to fetch career fairs");
       }
       const data = await response.json();
-      setCareerFairs(data);
+
+      // Ensure dates are properly formatted after fetching
+      const formattedData = data.map((fair: any) => ({
+        ...fair,
+        date: new Date(fair.date),
+      }));
+
+      setCareerFairs(formattedData);
     } catch (error) {
       console.error("Error fetching career fairs:", error);
     }
@@ -111,12 +118,18 @@ export default function CareerFairsPage() {
     e.preventDefault();
 
     try {
+      // Ensure date is in the correct format
+      const fairData = {
+        ...newCareerFair,
+        date: newCareerFair.date, // Date input field already provides format that can be parsed
+      };
+
       const response = await fetch("/api/career_fairs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newCareerFair),
+        body: JSON.stringify(fairData),
       });
 
       if (!response.ok) {
@@ -145,6 +158,8 @@ export default function CareerFairsPage() {
     if (!editCareerFair) return;
 
     try {
+      // The date is already formatted correctly from handleEditCareerFair
+      // Just send as is - the API will convert to DateTime
       const response = await fetch(
         `/api/career_fairs?id=${editCareerFair.id}`,
         {
@@ -218,7 +233,15 @@ export default function CareerFairsPage() {
   };
 
   const handleEditCareerFair = (careerFair: CareerFair) => {
-    setEditCareerFair(careerFair);
+    // Format the date as YYYY-MM-DD for the HTML date input
+    const formattedCareerFair = {
+      ...careerFair,
+      date:
+        careerFair.date instanceof Date
+          ? careerFair.date.toISOString().substring(0, 10)
+          : new Date(careerFair.date).toISOString().substring(0, 10),
+    };
+    setEditCareerFair(formattedCareerFair);
     setShowEditModal(true);
   };
 
