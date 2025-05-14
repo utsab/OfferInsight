@@ -38,16 +38,17 @@ model Applications_with_Outreach {
 }
 
 model Linkedin_Outreach {
-  id           Int     @id @default(autoincrement())
-  name         String
-  company      String
-  message      String?
-  linkedInUrl  String?
-  notes        String?
-  status       String  @default("contacted")
-  dateCreated  DateTime @default(now())
-  userId       String
-  user         User    @relation(fields: [userId], references: [id])
+  id                  Int     @id @default(autoincrement())
+  name                String
+  company             String
+  message             String?
+  linkedInUrl         String?
+  notes               String?
+  status              String  @default("contacted")
+  dateCreated         DateTime @default(now())
+  recievedReferral    Boolean @default(false)
+  userId              String
+  user                User    @relation(fields: [userId], references: [id])
 }
 
 model In_Person_Events {
@@ -71,6 +72,7 @@ model Career_Fairs {
   location            String?
   url                 String?
   notes               String?
+  numOfInterviews     Int?
   userId              String
   user                User    @relation(fields: [userId], references: [id])
   status              String  @default("scheduled")
@@ -98,7 +100,8 @@ model User {
   applications_per_week               Int?
   apps_with_outreach_per_week         Int?
   info_interview_outreach_per_week    Int?
-  in_person_events_per_month           Int?
+  in_person_events_per_month          Int?
+  career_fairs                        Int?                         @default(1)                        
 }
 
 model VerificationToken {
