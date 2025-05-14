@@ -3,6 +3,7 @@ import { lusitana } from "@/app/ui/fonts";
 import { redirect } from "next/navigation";
 import { auth } from "auth";
 import { prisma } from "@/db";
+import { TotalProgressBarWrapper } from "@/app/ui/dashboard/total-progress-wrapper";
 
 // ANALYTICS: Helper function to get the start and end of the current week (Monday to Sunday)
 function getCurrentWeekDateRange() {
@@ -81,16 +82,16 @@ export default async function Page() {
         lte: lastDayOfMonth,
       },
       msgToManager: {
-        not: ""
+        not: "",
       },
       msgToRecruiter: {
-        not: ""
+        not: "",
       },
       recruiter: {
-        not: ""
+        not: "",
       },
       hiringManager: {
-        not: ""
+        not: "",
       },
     },
   });
@@ -134,11 +135,39 @@ export default async function Page() {
     },
   });
 
+  // Prepare metrics for total progress bar
+  const metricsData = [
+    {
+      name: "Applications",
+      current: appWithOutreachCount,
+      total: user.apps_with_outreach_per_week || 10,
+    },
+    {
+      name: "LinkedIn",
+      current: linkedInOutreachCount,
+      total: user.info_interview_outreach_per_week || 10,
+    },
+    {
+      name: "Events",
+      current: inPersonEventsCount,
+      total: user.in_person_events_per_month || 5,
+    },
+    {
+      name: "Career Fairs",
+      current: careerFairsCount,
+      total: user.career_fairs_quota || 5,
+    },
+  ];
+
   return (
     <main>
       <h1 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
         Dashboard
       </h1>
+
+      {/* Total Progress Bar */}
+      <TotalProgressBarWrapper metricsData={metricsData} />
+
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
         <AnalyticsCard
           title="Applications with Outreach"
