@@ -83,23 +83,18 @@ export function TotalProgressBar({ metrics }: TotalProgressBarProps) {
           animate={{ width: `${percentage}%` }}
           transition={{ duration: 1, ease: "easeOut" }}
         >
-          {/* Shine effect */}
-          <motion.div
-            className="absolute top-0 left-0 w-20 h-full bg-white"
-            style={{
-              transform: "skewX(-25deg)",
-              opacity: 0.3,
-            }}
-            animate={{
-              x: ["0%", "150%"],
-            }}
-            transition={{
-              repeat: Infinity,
-              repeatType: "loop",
-              duration: 2,
-              ease: "easeInOut",
-            }}
-          />
+          {/* Subtle gradient overlay to add depth */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent"></div>
+
+          {/* Remove the problematic shine effect and replace with a better one */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div
+              className="absolute top-0 -left-48 h-full w-48 bg-gradient-to-r from-transparent via-white/10 to-transparent transform skew-x-[-20deg]"
+              style={{
+                animation: "shine 3s infinite linear",
+              }}
+            ></div>
+          </div>
         </motion.div>
 
         {/* Percentage text inside the bar */}
@@ -181,6 +176,18 @@ export function TotalProgressBar({ metrics }: TotalProgressBarProps) {
           );
         })}
       </div>
+
+      {/* Add the necessary keyframe animation for the shine effect */}
+      <style jsx global>{`
+        @keyframes shine {
+          0% {
+            left: -100%;
+          }
+          100% {
+            left: 200%;
+          }
+        }
+      `}</style>
     </div>
   );
 }
