@@ -3,10 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DragStartEvent } from "@dnd-kit/core";
-import {
-  DragAndDropBoard,
-  DraggableItem,
-} from "@/components/DragAndDrop";
+import { DragAndDropBoard, DraggableItem } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
 import CardCreationModal from "@/components/CardCreationModal";
 import CardContent from "@/components/CardContent";
@@ -21,6 +18,7 @@ type CareerFair = {
   url: string | null;
   notes: string | null;
   status: string;
+  numOfInterviews: number | null;
 };
 
 export default function CareerFairsPage() {
@@ -40,6 +38,7 @@ export default function CareerFairsPage() {
     url: "",
     notes: "",
     status: "scheduled",
+    numOfInterviews: null,
   });
   const [editCareerFair, setEditCareerFair] = useState<CareerFair | null>(null);
 
@@ -58,6 +57,11 @@ export default function CareerFairsPage() {
     { name: "location", label: "Location", type: "text" as const },
     { name: "url", label: "URL", type: "url" as const },
     { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
+    {
+      name: "numOfInterviews",
+      label: "Number of Interviews",
+      type: "number" as const,
+    },
   ];
 
   // Define fields for the card content
@@ -70,6 +74,7 @@ export default function CareerFairsPage() {
       type: "url" as const,
       linkText: "Event Link",
     },
+    { key: "numOfInterviews", label: "Interviews", type: "text" as const },
     { key: "notes", label: "Notes", type: "notes" as const },
   ];
 
@@ -114,6 +119,7 @@ export default function CareerFairsPage() {
         url: "",
         notes: "",
         status: "scheduled",
+        numOfInterviews: null,
       });
       fetchCareerFairs();
     } catch (error) {
