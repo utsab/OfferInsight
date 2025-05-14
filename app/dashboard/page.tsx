@@ -18,41 +18,13 @@ export default async function Page() {
       id: true,
       onboarding_progress: true,
       apps_with_outreach_per_week: true,
-      apps_with_outreach_tracker: true,
       info_interview_outreach_per_week: true,
       in_person_events_per_month: true,
-      lastTrackerResetDate: true,
     },
   });
 
   if (!user) {
     redirect("/");
-  }
-
-  // Check if we need to reset the tracker (if it's Monday and hasn't been reset yet)
-  const today = new Date();
-  const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday
-  const lastReset = user.lastTrackerResetDate
-    ? new Date(user.lastTrackerResetDate)
-    : null;
-
-  // If it's Monday (1) or if the last reset was before this week's Monday, reset the tracker
-  const needsReset =
-    currentDay === 1 &&
-    (!lastReset || lastReset.getTime() < getStartOfMonday(today).getTime());
-
-  if (needsReset) {
-    // Reset the tracker and update the last reset date
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        apps_with_outreach_tracker: 0,
-        lastTrackerResetDate: today,
-      },
-    });
-
-    // Update the user object with reset values for display
-    user.apps_with_outreach_tracker = 0;
   }
 
   if (user.onboarding_progress === 0) {
@@ -72,11 +44,9 @@ export default async function Page() {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
         <AnalyticsCard
           title="Applications with Outreach"
-          current={user.apps_with_outreach_tracker || 0}
+          current={0}
           total={user.apps_with_outreach_per_week || 10}
-          displayValue={`${user.apps_with_outreach_tracker || 0}/${
-            user.apps_with_outreach_per_week || 10
-          } per week`}
+          displayValue={`0/${user.apps_with_outreach_per_week || 10} per week`}
         />
 
         <AnalyticsCard
@@ -104,14 +74,4 @@ export default async function Page() {
       </div>
     </main>
   );
-}
-
-// Helper function to get the start of Monday for the current week
-function getStartOfMonday(date: Date): Date {
-  const day = date.getDay(); // 0 is Sunday, 1 is Monday
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday being 0
-  const monday = new Date(date);
-  monday.setDate(diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
 }
