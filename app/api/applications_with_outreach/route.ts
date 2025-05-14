@@ -59,41 +59,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create new application and increment the tracker in a transaction
-    const [newApplication, updatedUser] = await prisma.$transaction([
-      prisma.applications_with_Outreach.create({
-        data: {
-          company,
-          hiringManager: hiringManager || null,
-          msgToManager: msgToManager || null,
-          recruiter: recruiter || null,
-          msgToRecruiter: msgToRecruiter || null,
-          notes: notes || null,
-          status: status || "applied",
-          userId: session.user.id,
-        },
-      }),
-      // Increment the apps_with_outreach_tracker counter
-      prisma.user.update({
-        where: { id: session.user.id },
-        data: {
-          apps_with_outreach_tracker: {
-            increment: 1,
-          },
-        },
-        select: {
-          apps_with_outreach_tracker: true,
-          apps_with_outreach_per_week: true,
-        },
-      }),
-    ]);
+    // Create new application without incrementing the tracker
+    const newApplication = await prisma.applications_with_Outreach.create({
+      data: {
+        company,
+        hiringManager: hiringManager || null,
+        msgToManager: msgToManager || null,
+        recruiter: recruiter || null,
+        msgToRecruiter: msgToRecruiter || null,
+        notes: notes || null,
+        status: status || "applied",
+        userId: session.user.id,
+      },
+    });
 
     return NextResponse.json({
       application: newApplication,
-      tracker: {
-        current: updatedUser.apps_with_outreach_tracker,
-        total: updatedUser.apps_with_outreach_per_week,
-      },
     });
   } catch (error) {
     console.error("Error creating application:", error);
