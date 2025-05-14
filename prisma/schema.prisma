@@ -32,6 +32,7 @@ model Applications_with_Outreach {
   msgToRecruiter        String?
   notes                 String?
   status                String  @default("applied")
+  dateCreated           DateTime @default(now())
   userId                String
   user                  User    @relation(fields: [userId], references: [id])
 }
@@ -44,6 +45,7 @@ model Linkedin_Outreach {
   linkedInUrl  String?
   notes        String?
   status       String  @default("contacted")
+  dateCreated           DateTime @default(now())
   userId       String
   user         User    @relation(fields: [userId], references: [id])
 }
