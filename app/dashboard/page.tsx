@@ -135,7 +135,8 @@ export default async function Page() {
     },
   });
 
-  // Prepare metrics for total progress bar
+  // Prepare metrics for total progress bar - this will be used as initial data
+  // The client-side context will take over for updates
   const metricsData = [
     {
       name: "Applications",
@@ -165,7 +166,7 @@ export default async function Page() {
         Dashboard
       </h1>
 
-      {/* Total Progress Bar */}
+      {/* Total Progress Bar - provide initial server-rendered data */}
       <TotalProgressBarWrapper metricsData={metricsData} />
 
       {/* <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">

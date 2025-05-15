@@ -72,6 +72,70 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH: Update just the status of a career fair (more efficient for drag and drop updates)
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Career fair ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { status } = body;
+
+    if (status === undefined) {
+      return NextResponse.json(
+        { error: "Status is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if the career fair belongs to the user
+    const careerFair = await prisma.career_Fairs.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!careerFair) {
+      return NextResponse.json(
+        { error: "Career fair not found" },
+        { status: 404 }
+      );
+    }
+
+    if (careerFair.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "Unauthorized to update this career fair" },
+        { status: 403 }
+      );
+    }
+
+    // Update only the status
+    const updatedCareerFair = await prisma.career_Fairs.update({
+      where: { id: parseInt(id) },
+      data: { status },
+    });
+
+    return NextResponse.json(updatedCareerFair);
+  } catch (error) {
+    console.error("Error updating career fair status:", error);
+    return NextResponse.json(
+      { error: "Failed to update career fair status" },
+      { status: 500 }
+    );
+  }
+}
+
 // PUT: Update a career fair
 export async function PUT(request: NextRequest) {
   try {

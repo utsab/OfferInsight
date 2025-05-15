@@ -84,6 +84,67 @@ export async function POST(request: Request) {
   }
 }
 
+// PATCH to update just the status (more efficient for drag and drop updates)
+export async function PATCH(request: Request) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { status } = body;
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Application ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (status === undefined) {
+      return NextResponse.json(
+        { error: "Status is required" },
+        { status: 400 }
+      );
+    }
+
+    // Ensure the application belongs to the user
+    const existingApplication =
+      await prisma.applications_with_Outreach.findFirst({
+        where: {
+          id: parseInt(id),
+          userId: session.user.id,
+        },
+      });
+
+    if (!existingApplication) {
+      return NextResponse.json(
+        { error: "Application not found" },
+        { status: 404 }
+      );
+    }
+
+    // Update just the status
+    const updatedApplication = await prisma.applications_with_Outreach.update({
+      where: { id: parseInt(id) },
+      data: { status },
+    });
+
+    return NextResponse.json(updatedApplication);
+  } catch (error) {
+    console.error("Error updating application status:", error);
+    return NextResponse.json(
+      { error: "Failed to update application status" },
+      { status: 500 }
+    );
+  }
+}
+
 // PUT to update an application
 export async function PUT(request: Request) {
   try {

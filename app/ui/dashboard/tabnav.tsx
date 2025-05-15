@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { getDashboardMetrics } from "@/app/actions/dashboard-metrics";
+import { useDashboardMetrics } from "@/app/contexts/DashboardMetricsContext";
 
 // Define the props for the health bar component
 interface HealthBarProps {
@@ -93,6 +94,8 @@ interface TabData {
 
 export default function TabNav() {
   const pathname = usePathname();
+  const { metricsData, isLoading, refreshMetrics } = useDashboardMetrics();
+
   const [tabData, setTabData] = useState<TabData[]>([
     {
       name: "Dashboard",
@@ -135,73 +138,64 @@ export default function TabNav() {
       displayValue: "0/5",
     },
   ]);
-  const [loading, setLoading] = useState(true);
 
+  // Update tabData whenever metricsData changes
   useEffect(() => {
-    async function fetchData() {
-      try {
-        // Get metrics data from server action
-        const data = await getDashboardMetrics();
+    if (metricsData && metricsData.length === 4) {
+      // Get the specific metrics from the array
+      const appWithOutreach = metricsData[0];
+      const linkedIn = metricsData[1];
+      const events = metricsData[2];
+      const careerFairs = metricsData[3];
 
-        if (data) {
-          // Update tab data with fetched metrics
-          setTabData([
-            {
-              name: "Dashboard",
-              href: "/dashboard",
-              icon: ChartBarIcon,
-              current: 0,
-              total: 0,
-              displayValue: "",
-            },
-            {
-              name: "Applications with Outreach",
-              href: "/dashboard/applications_with_outreach",
-              icon: UsersIcon,
-              current: data.appWithOutreachCount,
-              total: data.apps_with_outreach_per_week,
-              displayValue: `${data.appWithOutreachCount}/${data.apps_with_outreach_per_week}`,
-            },
-            {
-              name: "In Person Events",
-              href: "/dashboard/in_person_events",
-              icon: CalendarIcon,
-              current: data.inPersonEventsCount,
-              total: data.in_person_events_per_month,
-              displayValue: `${data.inPersonEventsCount}/${data.in_person_events_per_month}`,
-            },
-            {
-              name: "LinkedIn Outreach",
-              href: "/dashboard/linkedin_outreach",
-              icon: BriefcaseIcon,
-              current: data.linkedInOutreachCount,
-              total: data.info_interview_outreach_per_week,
-              displayValue: `${data.linkedInOutreachCount}/${data.info_interview_outreach_per_week}`,
-            },
-            {
-              name: "Career Fairs",
-              href: "/dashboard/career_fairs",
-              icon: BriefcaseIcon,
-              current: data.careerFairsCount,
-              total: data.career_fairs_quota,
-              displayValue: `${data.careerFairsCount}/${data.career_fairs_quota}`,
-            },
-          ]);
-        }
-        // If data is null (not authenticated), we'll use the default values
-      } catch (error) {
-        console.error("Error fetching dashboard metrics:", error);
-        // Default data already set in state initialization
-      } finally {
-        setLoading(false);
-      }
+      // Update tab data with metrics from context
+      setTabData([
+        {
+          name: "Dashboard",
+          href: "/dashboard",
+          icon: ChartBarIcon,
+          current: 0,
+          total: 0,
+          displayValue: "",
+        },
+        {
+          name: "Applications with Outreach",
+          href: "/dashboard/applications_with_outreach",
+          icon: UsersIcon,
+          current: appWithOutreach.current,
+          total: appWithOutreach.total,
+          displayValue: `${appWithOutreach.current}/${appWithOutreach.total}`,
+        },
+        {
+          name: "In Person Events",
+          href: "/dashboard/in_person_events",
+          icon: CalendarIcon,
+          current: events.current,
+          total: events.total,
+          displayValue: `${events.current}/${events.total}`,
+        },
+        {
+          name: "LinkedIn Outreach",
+          href: "/dashboard/linkedin_outreach",
+          icon: BriefcaseIcon,
+          current: linkedIn.current,
+          total: linkedIn.total,
+          displayValue: `${linkedIn.current}/${linkedIn.total}`,
+        },
+        {
+          name: "Career Fairs",
+          href: "/dashboard/career_fairs",
+          icon: BriefcaseIcon,
+          current: careerFairs.current,
+          total: careerFairs.total,
+          displayValue: `${careerFairs.current}/${careerFairs.total}`,
+        },
+      ]);
     }
+  }, [metricsData]);
 
-    fetchData();
-  }, []);
-
-  if (loading) {
-    // Show skeleton loading tabs
+  if (isLoading && tabData[1].current === 0) {
+    // Show skeleton loading tabs only on initial load
     return (
       <div className="w-full bg-white border-b border-gray-200">
         <div className="grid grid-cols-5 gap-2 px-4 py-2">

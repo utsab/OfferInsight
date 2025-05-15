@@ -73,6 +73,63 @@ export async function POST(request: Request) {
   }
 }
 
+// PATCH to update just the status (more efficient for drag and drop updates)
+export async function PATCH(request: Request) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { status } = body;
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Event ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (status === undefined) {
+      return NextResponse.json(
+        { error: "Status is required" },
+        { status: 400 }
+      );
+    }
+
+    // Ensure the event belongs to the user
+    const existingEvent = await prisma.in_Person_Events.findFirst({
+      where: {
+        id: parseInt(id),
+        userId: session.user.id,
+      },
+    });
+
+    if (!existingEvent) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // Update just the status
+    const updatedEvent = await prisma.in_Person_Events.update({
+      where: { id: parseInt(id) },
+      data: { status },
+    });
+
+    return NextResponse.json(updatedEvent);
+  } catch (error) {
+    console.error("Error updating event status:", error);
+    return NextResponse.json(
+      { error: "Failed to update event status" },
+      { status: 500 }
+    );
+  }
+}
+
 // PUT to update an event's status
 export async function PUT(request: Request) {
   try {

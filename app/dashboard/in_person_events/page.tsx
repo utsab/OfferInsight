@@ -9,6 +9,7 @@ import CardCreationModal from "@/components/CardCreationModal";
 import CardContent from "@/components/CardContent";
 import CardEditModal from "@/components/CardEditModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { useDashboardMetrics } from "@/app/contexts/DashboardMetricsContext";
 
 type Event = {
   id: number;
@@ -24,6 +25,7 @@ type Event = {
 
 export default function InPersonEventsPage() {
   const router = useRouter();
+  const { refreshMetrics } = useDashboardMetrics();
   const [events, setEvents] = useState<Event[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeEvent, setActiveEvent] = useState<Event | null>(null);
@@ -175,7 +177,9 @@ export default function InPersonEventsPage() {
         numPeopleSpokenTo: null,
         numLinkedInRequests: null,
       });
-      fetchEvents();
+      await fetchEvents();
+      // Refresh dashboard metrics after creating a new event
+      await refreshMetrics();
     } catch (error) {
       console.error("Error creating event:", error);
     }
@@ -203,44 +207,35 @@ export default function InPersonEventsPage() {
 
       setShowEditModal(false);
       setEditEvent(null);
-      fetchEvents();
+      await fetchEvents();
+      // Refresh dashboard metrics after updating an event
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating event:", error);
     }
   };
 
-  const handleUpdateStatus = async (id: number, status: string) => {
+  const handleUpdateStatus = async (id: number, newStatus: string) => {
+    if (!id) return;
+
     try {
-      const event = events.find((event) => event.id === id);
-      if (!event) return;
-
-      const updatedEvent = { ...event, status };
-
-      // Note: The UI is already updated by the DragAndDropBoard component
-      // We just need to make the API call here
-
       const response = await fetch(`/api/in_person_events?id=${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedEvent),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to update event status");
       }
 
-      // If successful, update our app state to match
-      // The UI is already updated, but we need to keep our state in sync
-      setEvents((prevEvents) =>
-        prevEvents.map((event) =>
-          event.id === id ? { ...event, status } : event
-        )
-      );
+      await fetchEvents();
+      // Refresh dashboard metrics after updating status
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating event status:", error);
-      // No need to revert the UI as the DragAndDropBoard will handle that
     }
   };
 
@@ -288,7 +283,9 @@ export default function InPersonEventsPage() {
       setShowDeleteModal(false);
       setShowEditModal(false);
       setEditEvent(null);
-      fetchEvents();
+      await fetchEvents();
+      // Refresh dashboard metrics after deleting an event
+      await refreshMetrics();
     } catch (error) {
       console.error("Error deleting event:", error);
     }

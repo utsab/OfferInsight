@@ -9,6 +9,7 @@ import CardCreationModal from "@/components/CardCreationModal";
 import CardContent from "@/components/CardContent";
 import CardEditModal from "@/components/CardEditModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { useDashboardMetrics } from "@/app/contexts/DashboardMetricsContext";
 
 type CareerFair = {
   id: number;
@@ -23,6 +24,7 @@ type CareerFair = {
 
 export default function CareerFairsPage() {
   const router = useRouter();
+  const { refreshMetrics } = useDashboardMetrics();
   const [careerFairs, setCareerFairs] = useState<CareerFair[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeCareerFair, setActiveCareerFair] = useState<CareerFair | null>(
@@ -160,7 +162,9 @@ export default function CareerFairsPage() {
         status: "scheduled",
         numOfInterviews: null,
       });
-      fetchCareerFairs();
+      await fetchCareerFairs();
+      // Refresh dashboard metrics after creating a new career fair
+      await refreshMetrics();
     } catch (error) {
       console.error("Error creating career fair:", error);
     }
@@ -191,42 +195,35 @@ export default function CareerFairsPage() {
 
       setShowEditModal(false);
       setEditCareerFair(null);
-      fetchCareerFairs();
+      await fetchCareerFairs();
+      // Refresh dashboard metrics after updating a career fair
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating career fair:", error);
     }
   };
 
-  const handleUpdateStatus = async (id: number, status: string) => {
+  const handleUpdateStatus = async (id: number, newStatus: string) => {
+    if (!id) return;
+
     try {
-      const careerFair = careerFairs.find((cf) => cf.id === id);
-      if (!careerFair) return;
-
-      const updatedCareerFair = { ...careerFair, status };
-
-      // Note: The UI is already updated by the DragAndDropBoard component
-      // We just need to make the API call here
-
       const response = await fetch(`/api/career_fairs?id=${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedCareerFair),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to update career fair status");
       }
 
-      // If successful, update our app state to match
-      // The UI is already updated, but we need to keep our state in sync
-      setCareerFairs((prevCareerFairs) =>
-        prevCareerFairs.map((cf) => (cf.id === id ? { ...cf, status } : cf))
-      );
+      await fetchCareerFairs();
+      // Refresh dashboard metrics after updating status
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating career fair status:", error);
-      // No need to revert the UI as the DragAndDropBoard will handle that
     }
   };
 
@@ -277,7 +274,9 @@ export default function CareerFairsPage() {
       setShowDeleteModal(false);
       setShowEditModal(false);
       setEditCareerFair(null);
-      fetchCareerFairs();
+      await fetchCareerFairs();
+      // Refresh dashboard metrics after deleting a career fair
+      await refreshMetrics();
     } catch (error) {
       console.error("Error deleting career fair:", error);
     }
