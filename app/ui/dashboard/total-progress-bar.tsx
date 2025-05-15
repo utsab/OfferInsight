@@ -124,7 +124,7 @@ export function TotalProgressBar({ metrics }: TotalProgressBarProps) {
       </div>
 
       {/* Individual metric indicators */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+      <div className="grid grid-cols-2 gap-6 mt-8">
         {metrics.map((metric, index) => {
           const metricPercentage =
             metric.total > 0
@@ -134,20 +134,20 @@ export function TotalProgressBar({ metrics }: TotalProgressBarProps) {
           return (
             <motion.div
               key={index}
-              className="bg-white p-3 rounded-md shadow-sm"
+              className="bg-white p-5 rounded-md shadow-sm"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + index * 0.1, duration: 0.5 }}
             >
-              <div className="text-sm font-medium text-gray-700 mb-2">
+              <div className="text-base font-medium text-gray-700 mb-3">
                 {metric.name}
               </div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-gray-500">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-500">
                   {metric.current}/{metric.total}
                 </span>
                 <span
-                  className={`text-xs font-bold ${
+                  className={`text-sm font-bold ${
                     metricPercentage >= 100
                       ? "text-blue-600"
                       : metricPercentage >= 50
@@ -158,7 +158,7 @@ export function TotalProgressBar({ metrics }: TotalProgressBarProps) {
                   {metricPercentage}%
                 </span>
               </div>
-              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
                 <motion.div
                   className={`h-full ${
                     metricPercentage >= 100

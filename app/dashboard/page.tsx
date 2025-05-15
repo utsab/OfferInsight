@@ -168,7 +168,7 @@ export default async function Page() {
       {/* Total Progress Bar */}
       <TotalProgressBarWrapper metricsData={metricsData} />
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+      {/* <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
         <AnalyticsCard
           title="Applications with Outreach"
           current={appWithOutreachCount}
@@ -204,7 +204,7 @@ export default async function Page() {
             user.career_fairs_quota || -1
           } total`}
         />
-      </div>
+      </div> */}
     </main>
   );
 }
