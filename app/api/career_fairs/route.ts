@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { event, date, location, url, notes, status } = body;
+    const { event, date, location, url, notes, status, numOfInterviews } = body;
 
     if (!event || !date) {
       return NextResponse.json(
@@ -52,13 +52,14 @@ export async function POST(request: NextRequest) {
     const careerFair = await prisma.career_Fairs.create({
       data: {
         event,
-        date,
+        date: new Date(date),
         location,
         url,
         notes,
+        numOfInterviews: numOfInterviews ? Number(numOfInterviews) : null,
         userId: session.user.id,
         status: status || "scheduled",
-      },
+      } as any,
     });
 
     return NextResponse.json(careerFair);
@@ -66,6 +67,70 @@ export async function POST(request: NextRequest) {
     console.error("Error creating career fair:", error);
     return NextResponse.json(
       { error: "Failed to create career fair" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH: Update just the status of a career fair (more efficient for drag and drop updates)
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Career fair ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { status } = body;
+
+    if (status === undefined) {
+      return NextResponse.json(
+        { error: "Status is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if the career fair belongs to the user
+    const careerFair = await prisma.career_Fairs.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!careerFair) {
+      return NextResponse.json(
+        { error: "Career fair not found" },
+        { status: 404 }
+      );
+    }
+
+    if (careerFair.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "Unauthorized to update this career fair" },
+        { status: 403 }
+      );
+    }
+
+    // Update only the status
+    const updatedCareerFair = await prisma.career_Fairs.update({
+      where: { id: parseInt(id) },
+      data: { status },
+    });
+
+    return NextResponse.json(updatedCareerFair);
+  } catch (error) {
+    console.error("Error updating career fair status:", error);
+    return NextResponse.json(
+      { error: "Failed to update career fair status" },
       { status: 500 }
     );
   }
@@ -81,7 +146,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, event, date, location, url, notes, status } = body;
+    const { id, event, date, location, url, notes, status, numOfInterviews } =
+      body;
 
     if (!id) {
       return NextResponse.json(
@@ -113,15 +179,20 @@ export async function PUT(request: NextRequest) {
     const updatedData: any = {};
 
     if (event !== undefined) updatedData.event = event;
-    if (date !== undefined) updatedData.date = date;
+    if (date !== undefined) updatedData.date = new Date(date);
     if (location !== undefined) updatedData.location = location;
     if (url !== undefined) updatedData.url = url;
     if (notes !== undefined) updatedData.notes = notes;
     if (status !== undefined) updatedData.status = status;
+    if (numOfInterviews !== undefined) {
+      updatedData.numOfInterviews = numOfInterviews
+        ? Number(numOfInterviews)
+        : null;
+    }
 
     const updatedCareerFair = await prisma.career_Fairs.update({
       where: { id },
-      data: updatedData,
+      data: updatedData as any,
     });
 
     return NextResponse.json(updatedCareerFair);

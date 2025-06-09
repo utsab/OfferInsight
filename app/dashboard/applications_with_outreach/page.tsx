@@ -2,17 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
-import {
-  DragAndDropBoard,
-  ColumnConfig,
-  DraggableItem,
-} from "@/components/DragAndDrop";
+import { DragStartEvent } from "@dnd-kit/core";
+import { DragAndDropBoard, DraggableItem } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
 import CardCreationModal from "@/components/CardCreationModal";
 import CardContent from "@/components/CardContent";
 import CardEditModal from "@/components/CardEditModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { useDashboardMetrics } from "@/app/contexts/DashboardMetricsContext";
 
 type Application = {
   id: number;
@@ -27,6 +24,7 @@ type Application = {
 
 export default function ApplicationsWithOutreachPage() {
   const router = useRouter();
+  const { refreshMetrics } = useDashboardMetrics();
   const [applications, setApplications] = useState<Application[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeApplication, setActiveApplication] =
@@ -58,21 +56,19 @@ export default function ApplicationsWithOutreachPage() {
       type: "text" as const,
       required: true,
     },
-    { name: "hiringManager", label: "Hiring Manager", type: "text" as const, required: true },
+    { name: "hiringManager", label: "Hiring Manager", type: "text" as const },
     {
       name: "msgToManager",
       label: "Message to Manager",
       type: "textarea" as const,
       rows: 3,
-      required: true,
     },
-    { name: "recruiter", label: "Recruiter", type: "text" as const, required: true },
+    { name: "recruiter", label: "Recruiter", type: "text" as const },
     {
       name: "msgToRecruiter",
       label: "Message to Recruiter",
       type: "textarea" as const,
       rows: 3,
-      required: true,
     },
     { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
   ];
@@ -137,7 +133,9 @@ export default function ApplicationsWithOutreachPage() {
         notes: "",
         status: "applied",
       });
-      fetchApplications();
+      await fetchApplications();
+      // Refresh dashboard metrics after creating a new application
+      await refreshMetrics();
     } catch (error) {
       console.error("Error creating application:", error);
     }
@@ -166,7 +164,9 @@ export default function ApplicationsWithOutreachPage() {
 
       setShowEditModal(false);
       setEditApplication(null);
-      fetchApplications();
+      await fetchApplications();
+      // Refresh dashboard metrics after updating application
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating application:", error);
     }
@@ -201,6 +201,8 @@ export default function ApplicationsWithOutreachPage() {
           app.id === id ? { ...app, status } : app
         )
       );
+      // Refresh dashboard metrics after updating status
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating application status:", error);
       // No need to revert the UI as the DragAndDropBoard will handle that
@@ -246,7 +248,9 @@ export default function ApplicationsWithOutreachPage() {
       setShowDeleteModal(false);
       setShowEditModal(false);
       setEditApplication(null);
-      fetchApplications();
+      await fetchApplications();
+      // Refresh dashboard metrics after deleting application
+      await refreshMetrics();
     } catch (error) {
       console.error("Error deleting application:", error);
     }

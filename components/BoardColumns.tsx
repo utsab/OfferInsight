@@ -16,17 +16,27 @@ export const getBoardColumns = (boardType: BoardType): ColumnConfig[] => {
         {
           id: "applied",
           title: "Applied",
-          color: "bg-blue-500",
+          color: "bg-orange-500",
+        },
+        {
+          id: "messageRecruiter",
+          title: "Message to Recruiter",
+          color: "bg-yellow-500",
+        },
+        {
+          id: "messageHiringManager",
+          title: "Message to Hiring Manager",
+          color: "bg-green-500",
         },
         {
           id: "interview",
           title: "Interview",
-          color: "bg-yellow-500",
+          color: "bg-blue-500",
         },
         {
           id: "offer",
           title: "Offer",
-          color: "bg-green-500",
+          color: "bg-violet-500",
         },
       ];
     case "careerFairs":
@@ -40,6 +50,11 @@ export const getBoardColumns = (boardType: BoardType): ColumnConfig[] => {
           id: "attended",
           title: "Attended",
           color: "bg-green-500",
+        },
+        {
+          id: "followUp",
+          title: "Follow Up",
+          color: "bg-yellow-500",
         },
       ];
     case "inPersonEvents":
@@ -59,24 +74,36 @@ export const getBoardColumns = (boardType: BoardType): ColumnConfig[] => {
           title: "Connected Online",
           color: "bg-purple-500",
         },
+        {
+          id: "followUp",
+          title: "Follow Up",
+          color: "bg-yellow-500",
+        },
       ];
     case "linkedinOutreach":
       return [
         {
-          id: "contacted",
-          title: "Contacted",
+          id: "linkedInRequestSent",
+          title: "LinkedIn Request Sent",
           color: "bg-yellow-500",
         },
         {
-          id: "responded",
-          title: "Responded",
+          id: "requestAccepted",
+          title: "Request Accepted",
           color: "bg-green-500",
         },
         {
-          id: "meeting",
-          title: "Meeting Scheduled",
+          id: "followUpMessage",
+          title: "Follow Up Message",
           color: "bg-purple-500",
         },
+        {
+          id: "informationalInterview",
+          title: "Informational Interview",
+          color: "bg-blue-500",
+        },
+        
+        
       ];
     default:
       return [];

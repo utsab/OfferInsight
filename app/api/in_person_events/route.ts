@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     const newEvent = await prisma.in_Person_Events.create({
       data: {
         event,
-        date,
+        date: new Date(date),
         location,
         url,
         notes,
@@ -68,6 +68,63 @@ export async function POST(request: Request) {
     console.error("Error creating event:", error);
     return NextResponse.json(
       { error: "Failed to create event" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH to update just the status (more efficient for drag and drop updates)
+export async function PATCH(request: Request) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { status } = body;
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Event ID is required" },
+        { status: 400 }
+      );
+    }
+
+    if (status === undefined) {
+      return NextResponse.json(
+        { error: "Status is required" },
+        { status: 400 }
+      );
+    }
+
+    // Ensure the event belongs to the user
+    const existingEvent = await prisma.in_Person_Events.findFirst({
+      where: {
+        id: parseInt(id),
+        userId: session.user.id,
+      },
+    });
+
+    if (!existingEvent) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // Update just the status
+    const updatedEvent = await prisma.in_Person_Events.update({
+      where: { id: parseInt(id) },
+      data: { status },
+    });
+
+    return NextResponse.json(updatedEvent);
+  } catch (error) {
+    console.error("Error updating event status:", error);
+    return NextResponse.json(
+      { error: "Failed to update event status" },
       { status: 500 }
     );
   }
@@ -119,7 +176,7 @@ export async function PUT(request: Request) {
 
     if (status !== undefined) updateData.status = status;
     if (eventName !== undefined) updateData.event = eventName;
-    if (date !== undefined) updateData.date = date;
+    if (date !== undefined) updateData.date = new Date(date);
     if (location !== undefined) updateData.location = location;
     if (url !== undefined) updateData.url = url;
     if (notes !== undefined) updateData.notes = notes;

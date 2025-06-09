@@ -3,8 +3,9 @@ import React from "react";
 type CardField = {
   key: string;
   label: string;
-  type?: "text" | "url" | "notes";
+  type?: "text" | "url" | "notes" | "boolean";
   linkText?: string;
+  formatter?: (value: any) => string;
 };
 
 type CardContentProps = {
@@ -19,7 +20,8 @@ export default function CardContent({ title, item, fields }: CardContentProps) {
       <h3 className="font-medium text-gray-800">{item[title]}</h3>
 
       {fields.map((field) => {
-        if (!item[field.key]) return null;
+        if (!item[field.key] && field.type !== "boolean") return null;
+        if (field.type === "boolean" && item[field.key] === false) return null;
 
         if (field.type === "url") {
           return (
@@ -41,10 +43,20 @@ export default function CardContent({ title, item, fields }: CardContentProps) {
               <p>{item[field.key]}</p>
             </div>
           );
+        } else if (field.type === "boolean" && item[field.key] === true) {
+          return (
+            <p key={field.key} className="text-sm text-green-600">
+              ✓ {field.label}
+            </p>
+          );
         } else {
+          const displayValue = field.formatter
+            ? field.formatter(item[field.key])
+            : item[field.key];
+
           return (
             <p key={field.key} className="text-sm text-gray-600">
-              {field.label}: {item[field.key]}
+              {field.label}: {displayValue}
             </p>
           );
         }

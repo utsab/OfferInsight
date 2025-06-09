@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
         message: data.message || null,
         linkedInUrl: data.linkedInUrl || null,
         notes: data.notes || null,
-        status: data.status || "contacted",
+        status: data.status || "linkedInRequestSent", // TODO: This is apart of default status. eliminate redundancy (1/3)
+        recievedReferral: data.recievedReferral || false,
         userId: user.id,
       },
     });
@@ -73,6 +74,71 @@ export async function POST(request: NextRequest) {
     console.error("Error creating LinkedIn outreach:", error);
     return NextResponse.json(
       { error: "Failed to create LinkedIn outreach" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH: Update just the status of a LinkedIn outreach (more efficient for drag and drop updates)
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { status } = body;
+
+    if (status === undefined) {
+      return NextResponse.json(
+        { error: "Status is required" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Check if the outreach belongs to the user
+    const outreach = await prisma.linkedin_Outreach.findFirst({
+      where: {
+        id: parseInt(id),
+        userId: user.id,
+      },
+    });
+
+    if (!outreach) {
+      return NextResponse.json(
+        { error: "LinkedIn outreach not found or not owned by user" },
+        { status: 404 }
+      );
+    }
+
+    // Update only the status
+    const updatedOutreach = await prisma.linkedin_Outreach.update({
+      where: { id: parseInt(id) },
+      data: { status },
+    });
+
+    return NextResponse.json(updatedOutreach);
+  } catch (error) {
+    console.error("Error updating LinkedIn outreach status:", error);
+    return NextResponse.json(
+      { error: "Failed to update LinkedIn outreach status" },
       { status: 500 }
     );
   }
@@ -129,6 +195,10 @@ export async function PUT(request: NextRequest) {
             : outreach.linkedInUrl,
         notes: data.notes !== undefined ? data.notes : outreach.notes,
         status: data.status !== undefined ? data.status : outreach.status,
+        recievedReferral:
+          data.recievedReferral !== undefined
+            ? data.recievedReferral
+            : outreach.recievedReferral,
       },
     });
 

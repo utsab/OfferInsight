@@ -2,17 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
-import {
-  DragAndDropBoard,
-  ColumnConfig,
-  DraggableItem,
-} from "@/components/DragAndDrop";
+import { DragStartEvent } from "@dnd-kit/core";
+import { DragAndDropBoard, DraggableItem } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
 import CardCreationModal from "@/components/CardCreationModal";
 import CardContent from "@/components/CardContent";
 import CardEditModal from "@/components/CardEditModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { useDashboardMetrics } from "@/app/contexts/DashboardMetricsContext";
 
 type Outreach = {
   id: number;
@@ -22,10 +19,12 @@ type Outreach = {
   linkedInUrl: string | null;
   notes: string | null;
   status: string;
+  recievedReferral: boolean;
 };
 
 export default function LinkedInOutreachPage() {
   const router = useRouter();
+  const { refreshMetrics } = useDashboardMetrics();
   const [outreaches, setOutreaches] = useState<Outreach[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeOutreach, setActiveOutreach] = useState<Outreach | null>(null);
@@ -38,7 +37,8 @@ export default function LinkedInOutreachPage() {
     message: "",
     linkedInUrl: "",
     notes: "",
-    status: "responded",
+    status: "linkedInRequestSent", // TODO: This is apart of default status. eliminate redundancy (2/3)
+    recievedReferral: false,
   });
   const [editOutreach, setEditOutreach] = useState<Outreach | null>(null);
 
@@ -57,6 +57,11 @@ export default function LinkedInOutreachPage() {
     { name: "linkedInUrl", label: "LinkedIn URL", type: "url" as const },
     { name: "message", label: "Message", type: "textarea" as const, rows: 3 },
     { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
+    {
+      name: "recievedReferral",
+      label: "Received Referral",
+      type: "checkbox" as const,
+    },
   ];
 
   // Define fields for the card content
@@ -70,6 +75,11 @@ export default function LinkedInOutreachPage() {
     },
     { key: "message", label: "Message", type: "notes" as const },
     { key: "notes", label: "Notes", type: "notes" as const },
+    {
+      key: "recievedReferral",
+      label: "Received Referral",
+      type: "boolean" as const,
+    },
   ];
 
   useEffect(() => {
@@ -112,9 +122,12 @@ export default function LinkedInOutreachPage() {
         message: "",
         linkedInUrl: "",
         notes: "",
-        status: "contacted",
+        status: "linkedInRequestSent", // TODO: This is apart of default status. eliminate redundancy (3/3)
+        recievedReferral: false,
       });
-      fetchOutreaches();
+      await fetchOutreaches();
+      // Refresh dashboard metrics after creating a new outreach
+      await refreshMetrics();
     } catch (error) {
       console.error("Error creating outreach:", error);
     }
@@ -122,7 +135,6 @@ export default function LinkedInOutreachPage() {
 
   const handleUpdateOutreach = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!editOutreach) return;
 
     try {
@@ -143,58 +155,59 @@ export default function LinkedInOutreachPage() {
 
       setShowEditModal(false);
       setEditOutreach(null);
-      fetchOutreaches();
+      await fetchOutreaches();
+      // Refresh dashboard metrics after updating outreach
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating outreach:", error);
     }
   };
 
-  const handleUpdateStatus = async (id: number, status: string) => {
+  const handleUpdateStatus = async (id: number, newStatus: string) => {
+    if (!id) return;
+
     try {
-      const outreach = outreaches.find((out) => out.id === id);
-      if (!outreach) return;
-
-      const updatedOutreach = { ...outreach, status };
-
-      // Note: The UI is already updated by the DragAndDropBoard component
-      // We just need to make the API call here
-
       const response = await fetch(`/api/linkedin_outreach?id=${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedOutreach),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to update outreach status");
       }
 
-      // If successful, update our app state to match
-      // The UI is already updated, but we need to keep our state in sync
-      setOutreaches((prevOutreaches) =>
-        prevOutreaches.map((out) => (out.id === id ? { ...out, status } : out))
-      );
+      await fetchOutreaches();
+      // Refresh dashboard metrics after updating status
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating outreach status:", error);
-      // No need to revert the UI as the DragAndDropBoard will handle that
     }
   };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
-    setNewOutreach((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+    if (type === "checkbox") {
+      setNewOutreach((prev) => ({ ...prev, [name]: checked }));
+    } else {
+      setNewOutreach((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleEditInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     if (editOutreach) {
-      setEditOutreach({ ...editOutreach, [name]: value });
+      if (type === "checkbox") {
+        setEditOutreach({ ...editOutreach, [name]: checked });
+      } else {
+        setEditOutreach({ ...editOutreach, [name]: value });
+      }
     }
   };
 
@@ -221,7 +234,9 @@ export default function LinkedInOutreachPage() {
       setShowDeleteModal(false);
       setShowEditModal(false);
       setEditOutreach(null);
-      fetchOutreaches();
+      await fetchOutreaches();
+      // Refresh dashboard metrics after deleting outreach
+      await refreshMetrics();
     } catch (error) {
       console.error("Error deleting outreach:", error);
     }

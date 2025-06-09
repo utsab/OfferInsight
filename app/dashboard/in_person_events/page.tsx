@@ -2,22 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
-import {
-  DragAndDropBoard,
-  ColumnConfig,
-  DraggableItem,
-} from "@/components/DragAndDrop";
+import { DragStartEvent } from "@dnd-kit/core";
+import { DragAndDropBoard, DraggableItem } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
 import CardCreationModal from "@/components/CardCreationModal";
 import CardContent from "@/components/CardContent";
 import CardEditModal from "@/components/CardEditModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { useDashboardMetrics } from "@/app/contexts/DashboardMetricsContext";
 
 type Event = {
   id: number;
   event: string;
-  date: string;
+  date: Date | string;
   location: string | null;
   url: string | null;
   notes: string | null;
@@ -28,6 +25,7 @@ type Event = {
 
 export default function InPersonEventsPage() {
   const router = useRouter();
+  const { refreshMetrics } = useDashboardMetrics();
   const [events, setEvents] = useState<Event[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeEvent, setActiveEvent] = useState<Event | null>(null);
@@ -75,7 +73,28 @@ export default function InPersonEventsPage() {
 
   // Define fields for the card content
   const contentFields = [
-    { key: "date", label: "Date", type: "text" as const },
+    {
+      key: "date",
+      label: "Date",
+      type: "text" as const,
+      formatter: (date: Date | string) => {
+        let dateObj: Date;
+
+        if (date instanceof Date) {
+          dateObj = date;
+        } else {
+          dateObj = new Date(date);
+        }
+
+        // Fix date display by using UTC methods
+        const year = dateObj.getUTCFullYear();
+        const month = dateObj.getUTCMonth() + 1; // getUTCMonth() returns 0-11
+        const day = dateObj.getUTCDate();
+
+        // Format as MM/DD/YYYY
+        return `${month}/${day}/${year}`;
+      },
+    },
     { key: "location", label: "Location", type: "text" as const },
     {
       key: "url",
@@ -107,7 +126,15 @@ export default function InPersonEventsPage() {
         throw new Error("Failed to fetch events");
       }
       const data = await response.json();
-      setEvents(data);
+
+      // Ensure dates are properly handled as UTC
+      const formattedData = data.map((event: any) => ({
+        ...event,
+        // Store the date as an ISO string for consistent handling
+        date: new Date(event.date),
+      }));
+
+      setEvents(formattedData);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -117,12 +144,22 @@ export default function InPersonEventsPage() {
     e.preventDefault();
 
     try {
+      // Ensure date is in the correct format - HTML date inputs provide YYYY-MM-DD
+      // which should be interpreted as UTC to avoid timezone issues
+      const dateString = newEvent.date as string;
+
+      const eventData = {
+        ...newEvent,
+        // Keep the date as is - the API will handle the conversion properly
+        date: dateString,
+      };
+
       const response = await fetch("/api/in_person_events", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newEvent),
+        body: JSON.stringify(eventData),
       });
 
       if (!response.ok) {
@@ -140,7 +177,9 @@ export default function InPersonEventsPage() {
         numPeopleSpokenTo: null,
         numLinkedInRequests: null,
       });
-      fetchEvents();
+      await fetchEvents();
+      // Refresh dashboard metrics after creating a new event
+      await refreshMetrics();
     } catch (error) {
       console.error("Error creating event:", error);
     }
@@ -152,6 +191,8 @@ export default function InPersonEventsPage() {
     if (!editEvent) return;
 
     try {
+      // The date is already formatted correctly from handleEditEvent
+      // Just send as is - the API will convert to DateTime
       const response = await fetch(`/api/in_person_events?id=${editEvent.id}`, {
         method: "PUT",
         headers: {
@@ -166,44 +207,35 @@ export default function InPersonEventsPage() {
 
       setShowEditModal(false);
       setEditEvent(null);
-      fetchEvents();
+      await fetchEvents();
+      // Refresh dashboard metrics after updating an event
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating event:", error);
     }
   };
 
-  const handleUpdateStatus = async (id: number, status: string) => {
+  const handleUpdateStatus = async (id: number, newStatus: string) => {
+    if (!id) return;
+
     try {
-      const event = events.find((event) => event.id === id);
-      if (!event) return;
-
-      const updatedEvent = { ...event, status };
-
-      // Note: The UI is already updated by the DragAndDropBoard component
-      // We just need to make the API call here
-
       const response = await fetch(`/api/in_person_events?id=${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedEvent),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to update event status");
       }
 
-      // If successful, update our app state to match
-      // The UI is already updated, but we need to keep our state in sync
-      setEvents((prevEvents) =>
-        prevEvents.map((event) =>
-          event.id === id ? { ...event, status } : event
-        )
-      );
+      await fetchEvents();
+      // Refresh dashboard metrics after updating status
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating event status:", error);
-      // No need to revert the UI as the DragAndDropBoard will handle that
     }
   };
 
@@ -224,7 +256,15 @@ export default function InPersonEventsPage() {
   };
 
   const handleEditEvent = (event: Event) => {
-    setEditEvent(event);
+    // Format the date as YYYY-MM-DD for the HTML date input
+    const formattedEvent = {
+      ...event,
+      date:
+        event.date instanceof Date
+          ? event.date.toISOString().substring(0, 10)
+          : new Date(event.date).toISOString().substring(0, 10),
+    };
+    setEditEvent(formattedEvent);
     setShowEditModal(true);
   };
 
@@ -243,7 +283,9 @@ export default function InPersonEventsPage() {
       setShowDeleteModal(false);
       setShowEditModal(false);
       setEditEvent(null);
-      fetchEvents();
+      await fetchEvents();
+      // Refresh dashboard metrics after deleting an event
+      await refreshMetrics();
     } catch (error) {
       console.error("Error deleting event:", error);
     }

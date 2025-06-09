@@ -11,7 +11,6 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  DragOverEvent,
   useDraggable,
   useDroppable,
 } from "@dnd-kit/core";

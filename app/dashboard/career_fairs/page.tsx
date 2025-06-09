@@ -2,30 +2,29 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
-import {
-  DragAndDropBoard,
-  ColumnConfig,
-  DraggableItem,
-} from "@/components/DragAndDrop";
+import { DragStartEvent } from "@dnd-kit/core";
+import { DragAndDropBoard, DraggableItem } from "@/components/DragAndDrop";
 import { getBoardColumns } from "@/components/BoardColumns";
 import CardCreationModal from "@/components/CardCreationModal";
 import CardContent from "@/components/CardContent";
 import CardEditModal from "@/components/CardEditModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { useDashboardMetrics } from "@/app/contexts/DashboardMetricsContext";
 
 type CareerFair = {
   id: number;
   event: string;
-  date: string;
+  date: Date | string;
   location: string | null;
   url: string | null;
   notes: string | null;
   status: string;
+  numOfInterviews: number | null;
 };
 
 export default function CareerFairsPage() {
   const router = useRouter();
+  const { refreshMetrics } = useDashboardMetrics();
   const [careerFairs, setCareerFairs] = useState<CareerFair[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeCareerFair, setActiveCareerFair] = useState<CareerFair | null>(
@@ -41,6 +40,7 @@ export default function CareerFairsPage() {
     url: "",
     notes: "",
     status: "scheduled",
+    numOfInterviews: null,
   });
   const [editCareerFair, setEditCareerFair] = useState<CareerFair | null>(null);
 
@@ -59,11 +59,37 @@ export default function CareerFairsPage() {
     { name: "location", label: "Location", type: "text" as const },
     { name: "url", label: "URL", type: "url" as const },
     { name: "notes", label: "Notes", type: "textarea" as const, rows: 3 },
+    {
+      name: "numOfInterviews",
+      label: "Number of Interviews",
+      type: "number" as const,
+    },
   ];
 
   // Define fields for the card content
   const contentFields = [
-    { key: "date", label: "Date", type: "text" as const },
+    {
+      key: "date",
+      label: "Date",
+      type: "text" as const,
+      formatter: (date: Date | string) => {
+        let dateObj: Date;
+
+        if (date instanceof Date) {
+          dateObj = date;
+        } else {
+          dateObj = new Date(date);
+        }
+
+        // Fix date display by using UTC methods
+        const year = dateObj.getUTCFullYear();
+        const month = dateObj.getUTCMonth() + 1; // getUTCMonth() returns 0-11
+        const day = dateObj.getUTCDate();
+
+        // Format as MM/DD/YYYY
+        return `${month}/${day}/${year}`;
+      },
+    },
     { key: "location", label: "Location", type: "text" as const },
     {
       key: "url",
@@ -71,6 +97,7 @@ export default function CareerFairsPage() {
       type: "url" as const,
       linkText: "Event Link",
     },
+    { key: "numOfInterviews", label: "Interviews", type: "text" as const },
     { key: "notes", label: "Notes", type: "notes" as const },
   ];
 
@@ -85,7 +112,15 @@ export default function CareerFairsPage() {
         throw new Error("Failed to fetch career fairs");
       }
       const data = await response.json();
-      setCareerFairs(data);
+
+      // Ensure dates are properly handled as UTC
+      const formattedData = data.map((fair: any) => ({
+        ...fair,
+        // Store the date as an ISO string for consistent handling
+        date: new Date(fair.date),
+      }));
+
+      setCareerFairs(formattedData);
     } catch (error) {
       console.error("Error fetching career fairs:", error);
     }
@@ -95,12 +130,22 @@ export default function CareerFairsPage() {
     e.preventDefault();
 
     try {
+      // Ensure date is in the correct format - HTML date inputs provide YYYY-MM-DD
+      // which should be interpreted as UTC to avoid timezone issues
+      const dateString = newCareerFair.date as string;
+
+      const fairData = {
+        ...newCareerFair,
+        // Keep the date as is - the API will handle the conversion properly
+        date: dateString,
+      };
+
       const response = await fetch("/api/career_fairs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newCareerFair),
+        body: JSON.stringify(fairData),
       });
 
       if (!response.ok) {
@@ -115,8 +160,11 @@ export default function CareerFairsPage() {
         url: "",
         notes: "",
         status: "scheduled",
+        numOfInterviews: null,
       });
-      fetchCareerFairs();
+      await fetchCareerFairs();
+      // Refresh dashboard metrics after creating a new career fair
+      await refreshMetrics();
     } catch (error) {
       console.error("Error creating career fair:", error);
     }
@@ -128,6 +176,8 @@ export default function CareerFairsPage() {
     if (!editCareerFair) return;
 
     try {
+      // The date is already formatted correctly from handleEditCareerFair
+      // Just send as is - the API will convert to DateTime
       const response = await fetch(
         `/api/career_fairs?id=${editCareerFair.id}`,
         {
@@ -145,42 +195,35 @@ export default function CareerFairsPage() {
 
       setShowEditModal(false);
       setEditCareerFair(null);
-      fetchCareerFairs();
+      await fetchCareerFairs();
+      // Refresh dashboard metrics after updating a career fair
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating career fair:", error);
     }
   };
 
-  const handleUpdateStatus = async (id: number, status: string) => {
+  const handleUpdateStatus = async (id: number, newStatus: string) => {
+    if (!id) return;
+
     try {
-      const careerFair = careerFairs.find((cf) => cf.id === id);
-      if (!careerFair) return;
-
-      const updatedCareerFair = { ...careerFair, status };
-
-      // Note: The UI is already updated by the DragAndDropBoard component
-      // We just need to make the API call here
-
       const response = await fetch(`/api/career_fairs?id=${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedCareerFair),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to update career fair status");
       }
 
-      // If successful, update our app state to match
-      // The UI is already updated, but we need to keep our state in sync
-      setCareerFairs((prevCareerFairs) =>
-        prevCareerFairs.map((cf) => (cf.id === id ? { ...cf, status } : cf))
-      );
+      await fetchCareerFairs();
+      // Refresh dashboard metrics after updating status
+      await refreshMetrics();
     } catch (error) {
       console.error("Error updating career fair status:", error);
-      // No need to revert the UI as the DragAndDropBoard will handle that
     }
   };
 
@@ -201,7 +244,15 @@ export default function CareerFairsPage() {
   };
 
   const handleEditCareerFair = (careerFair: CareerFair) => {
-    setEditCareerFair(careerFair);
+    // Format the date as YYYY-MM-DD for the HTML date input
+    const formattedCareerFair = {
+      ...careerFair,
+      date:
+        careerFair.date instanceof Date
+          ? careerFair.date.toISOString().substring(0, 10)
+          : new Date(careerFair.date).toISOString().substring(0, 10),
+    };
+    setEditCareerFair(formattedCareerFair);
     setShowEditModal(true);
   };
 
@@ -223,7 +274,9 @@ export default function CareerFairsPage() {
       setShowDeleteModal(false);
       setShowEditModal(false);
       setEditCareerFair(null);
-      fetchCareerFairs();
+      await fetchCareerFairs();
+      // Refresh dashboard metrics after deleting a career fair
+      await refreshMetrics();
     } catch (error) {
       console.error("Error deleting career fair:", error);
     }

@@ -32,43 +32,47 @@ model Applications_with_Outreach {
   msgToRecruiter        String?
   notes                 String?
   status                String  @default("applied")
+  dateCreated           DateTime @default(now())
   userId                String
   user                  User    @relation(fields: [userId], references: [id])
 }
 
 model Linkedin_Outreach {
-  id           Int     @id @default(autoincrement())
-  name         String
-  company      String
-  message      String?
-  linkedInUrl  String?
-  notes        String?
-  status       String  @default("contacted")
-  userId       String
-  user         User    @relation(fields: [userId], references: [id])
+  id                  Int     @id @default(autoincrement())
+  name                String
+  company             String
+  message             String?
+  linkedInUrl         String?
+  notes               String?
+  status              String  @default("linkedInRequestSent")
+  dateCreated         DateTime @default(now())
+  recievedReferral    Boolean @default(false)
+  userId              String
+  user                User    @relation(fields: [userId], references: [id])
 }
 
 model In_Person_Events {
-  id                  Int     @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
   event               String
-  date                String
+  date                DateTime
   location            String?
   url                 String?
   notes               String?
   numPeopleSpokenTo   Int?
   numLinkedInRequests Int?
   userId              String
-  user                User    @relation(fields: [userId], references: [id])
-  status              String  @default("scheduled")
+  user                User     @relation(fields: [userId], references: [id])
+  status              String   @default("scheduled")
 }
 
 model Career_Fairs {
   id                  Int     @id @default(autoincrement())
   event               String
-  date                String
+  date                DateTime
   location            String?
   url                 String?
   notes               String?
+  numOfInterviews     Int?
   userId              String
   user                User    @relation(fields: [userId], references: [id])
   status              String  @default("scheduled")
@@ -95,10 +99,9 @@ model User {
   commitment                          Int?
   applications_per_week               Int?
   apps_with_outreach_per_week         Int?
-  apps_with_outreach_tracker          Int                          @default(0)
-  lastTrackerResetDate                DateTime?
   info_interview_outreach_per_week    Int?
-  in_person_events_per_month           Int?
+  in_person_events_per_month          Int?
+  career_fairs_quota                  Int?                         @default(1)                        
 }
 
 model VerificationToken {
