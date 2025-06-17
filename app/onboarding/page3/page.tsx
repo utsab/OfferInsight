@@ -132,7 +132,7 @@ function usePage3Data() {
     if (response.ok) {
       // Handle successful submission
       console.log('User plan updated successfully');
-      router.push('/onboarding/page4'); // Redirect to Page 4
+      router.push('/dashboard'); // Redirect to Dashboard
     } else {
       // Handle error
       console.error('Failed to update user plan');
@@ -364,7 +364,6 @@ export default function Page3() {
           <div className="dot"></div>
           <div className="dot"></div>
           <div className="dot active"></div>
-          <div className="dot"></div>
         </div>
       </div>
     </div>

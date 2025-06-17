@@ -189,7 +189,6 @@ export default function Page1() {
         <div className="dot active"></div>
         <div className="dot"></div>
         <div className="dot"></div>
-        <div className="dot"></div>
       </div>
     </div>
   );
