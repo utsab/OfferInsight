@@ -1,5 +1,6 @@
 .navbar {
   width: 100%;
+  height: 50px;
   background-color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -8,13 +9,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0.25rem 1rem;
+  width: 100%;
+  height: 100%;
+  padding: 0;
 }
 
 .logo-container {
   display: flex;
   align-items: center;
   height: 50px;
+  padding-left: 2rem;
+  flex-shrink: 0;
+}
+
+.user-button-container {
+  display: flex;
+  align-items: center;
+  padding-right: 1rem;
 }
