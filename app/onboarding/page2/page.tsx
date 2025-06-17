@@ -30,10 +30,6 @@ export default function Page2() {
         }
       }
       setLoading(false);
-
-      if (session?.user?.onboarding_progress >= 2) {
-        redirect('/onboarding/page3');
-      } 
     }
     authenticate();
   }, []);
