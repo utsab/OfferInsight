@@ -144,22 +144,12 @@ export default function InPersonEventsPage() {
     e.preventDefault();
 
     try {
-      // Ensure date is in the correct format - HTML date inputs provide YYYY-MM-DD
-      // which should be interpreted as UTC to avoid timezone issues
-      const dateString = newEvent.date as string;
-
-      const eventData = {
-        ...newEvent,
-        // Keep the date as is - the API will handle the conversion properly
-        date: dateString,
-      };
-
       const response = await fetch("/api/in_person_events", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(eventData),
+        body: JSON.stringify(newEvent),
       });
 
       if (!response.ok) {
@@ -191,8 +181,6 @@ export default function InPersonEventsPage() {
     if (!editEvent) return;
 
     try {
-      // The date is already formatted correctly from handleEditEvent
-      // Just send as is - the API will convert to DateTime
       const response = await fetch(`/api/in_person_events?id=${editEvent.id}`, {
         method: "PUT",
         headers: {
@@ -215,23 +203,28 @@ export default function InPersonEventsPage() {
     }
   };
 
-  const handleUpdateStatus = async (id: number, newStatus: string) => {
-    if (!id) return;
-
+  const handleUpdateStatus = async (id: number, status: string) => {
     try {
+      const event = events.find((e) => e.id === id);
+      if (!event) return;
+
+      const updatedEvent = { ...event, status };
+
       const response = await fetch(`/api/in_person_events?id=${id}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(updatedEvent),
       });
 
       if (!response.ok) {
         throw new Error("Failed to update event status");
       }
 
-      await fetchEvents();
+      setEvents((prevEvents) =>
+        prevEvents.map((e) => (e.id === id ? { ...e, status } : e))
+      );
       // Refresh dashboard metrics after updating status
       await refreshMetrics();
     } catch (error) {
@@ -269,10 +262,10 @@ export default function InPersonEventsPage() {
   };
 
   const handleDeleteEvent = async () => {
-    if (!editEvent) return;
+    if (!activeEvent) return;
 
     try {
-      const response = await fetch(`/api/in_person_events?id=${editEvent.id}`, {
+      const response = await fetch(`/api/in_person_events?id=${activeEvent.id}`, {
         method: "DELETE",
       });
 
@@ -281,8 +274,7 @@ export default function InPersonEventsPage() {
       }
 
       setShowDeleteModal(false);
-      setShowEditModal(false);
-      setEditEvent(null);
+      setActiveEvent(null);
       await fetchEvents();
       // Refresh dashboard metrics after deleting an event
       await refreshMetrics();

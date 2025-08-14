@@ -231,11 +231,11 @@ export default function ApplicationsWithOutreachPage() {
   };
 
   const handleDeleteApplication = async () => {
-    if (!editApplication) return;
+    if (!activeApplication) return;
 
     try {
       const response = await fetch(
-        `/api/applications_with_outreach?id=${editApplication.id}`,
+        `/api/applications_with_outreach?id=${activeApplication.id}`,
         {
           method: "DELETE",
         }
@@ -246,8 +246,7 @@ export default function ApplicationsWithOutreachPage() {
       }
 
       setShowDeleteModal(false);
-      setShowEditModal(false);
-      setEditApplication(null);
+      setActiveApplication(null);
       await fetchApplications();
       // Refresh dashboard metrics after deleting application
       await refreshMetrics();

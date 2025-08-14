@@ -1,4 +1,3 @@
-import { AnalyticsCard } from "@/app/ui/dashboard/analytics-card";
 import { lusitana } from "@/app/ui/fonts";
 import { redirect } from "next/navigation";
 import { auth } from "auth";

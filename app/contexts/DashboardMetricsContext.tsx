@@ -41,7 +41,6 @@ export function DashboardMetricsProvider({
 }) {
   const [metricsData, setMetricsData] = useState<MetricsData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
 
   // Function to fetch metrics data
   const refreshMetrics = useCallback(async () => {
@@ -78,9 +77,6 @@ export function DashboardMetricsProvider({
       ];
 
       setMetricsData(metrics);
-
-      // Update the timestamp to trigger re-renders in dependent components
-      setRefreshTimestamp(Date.now());
     } catch (error) {
       console.error("Error fetching metrics:", error);
     } finally {
@@ -88,17 +84,9 @@ export function DashboardMetricsProvider({
     }
   }, []);
 
-  // Fetch metrics on initial load
+  // Fetch metrics on initial load only
   useEffect(() => {
     refreshMetrics();
-
-    // Set up a polling interval to refresh metrics every 30 seconds
-    // This ensures data stays fresh even if user actions don't trigger refreshes
-    const intervalId = setInterval(() => {
-      refreshMetrics();
-    }, 30000);
-
-    return () => clearInterval(intervalId);
   }, [refreshMetrics]);
 
   // Create a memoized context value to prevent unnecessary re-renders
@@ -108,7 +96,7 @@ export function DashboardMetricsProvider({
       refreshMetrics,
       isLoading,
     }),
-    [metricsData, refreshMetrics, isLoading, refreshTimestamp]
+    [metricsData, refreshMetrics, isLoading]
   );
 
   return (
