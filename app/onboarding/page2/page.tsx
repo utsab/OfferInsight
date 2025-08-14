@@ -64,10 +64,10 @@ export default function Page2() {
       body: JSON.stringify({
         monthsToSecureInternship,
         commitment: plan.commitment,
-        applications_per_week: plan.applications_per_week,
         apps_with_outreach_per_week: plan.apps_with_outreach_per_week,
         info_interview_outreach_per_week: plan.info_interview_outreach_per_week,
-        in_person_events_per_month: plan.in_person_events_per_month
+        in_person_events_per_month: plan.in_person_events_per_month,
+        career_fairs_quota: plan.career_fairs_quota
       }),
     });
 
@@ -91,60 +91,60 @@ export default function Page2() {
       timeline_display: getTimelineDisplay(monthsToSecureInternship),
       commitment: 0,
       commitment_display: '?',
-      applications_per_week: 0,
-      applications_per_week_display: '?',
       apps_with_outreach_per_week: 0,
       apps_with_outreach_per_week_display: '?',
       info_interview_outreach_per_week: 0,
       info_interview_outreach_per_week_display: '?',
       in_person_events_per_month: 0,
       in_person_events_per_month_display: '?',
+      career_fairs_quota: 0,
+      career_fairs_quota_display: '?',
     };
 
     if (monthsToSecureInternship === 3) {
       plan.commitment = 23;
       plan.commitment_display = '23 Hours';
-      plan.applications_per_week = 3;
-      plan.applications_per_week_display = '3 Weekly';
       plan.apps_with_outreach_per_week = 3;
       plan.apps_with_outreach_per_week_display = '3 Weekly';
       plan.info_interview_outreach_per_week = 21;
       plan.info_interview_outreach_per_week_display = '21 Weekly';
       plan.in_person_events_per_month = 8;
       plan.in_person_events_per_month_display = '8 Monthly';
+      plan.career_fairs_quota = 3;
+      plan.career_fairs_quota_display = '3 Yearly';
     } else if (monthsToSecureInternship === 6) {
       plan.commitment = 11;
       plan.commitment_display = '11 Hours';
-      plan.applications_per_week = 2;
-      plan.applications_per_week_display = '2 Weekly';
       plan.apps_with_outreach_per_week = 2;
       plan.apps_with_outreach_per_week_display = '2 Weekly';
       plan.info_interview_outreach_per_week = 10;
       plan.info_interview_outreach_per_week_display = '10 Weekly';
       plan.in_person_events_per_month = 4;
       plan.in_person_events_per_month_display = '4 Monthly';
+      plan.career_fairs_quota = 2;
+      plan.career_fairs_quota_display = '2 Yearly';
     } else if (monthsToSecureInternship === 9) {
       plan.commitment = 8;
       plan.commitment_display = '8 Hours';
-      plan.applications_per_week = 1;
-      plan.applications_per_week_display = '1 Weekly';
       plan.apps_with_outreach_per_week = 1;
       plan.apps_with_outreach_per_week_display = '1 Weekly';
       plan.info_interview_outreach_per_week = 7;
       plan.info_interview_outreach_per_week_display = '7 Weekly';
       plan.in_person_events_per_month = 2;
       plan.in_person_events_per_month_display = '2 Monthly';
+      plan.career_fairs_quota = 1;
+      plan.career_fairs_quota_display = '1 Yearly';
     } else if (monthsToSecureInternship === 12) {
       plan.commitment = 6;
       plan.commitment_display = '6 Hours';
-      plan.applications_per_week = 1;
-      plan.applications_per_week_display = '1 Weekly';
       plan.apps_with_outreach_per_week = 1;
       plan.apps_with_outreach_per_week_display = '1 Weekly';
       plan.info_interview_outreach_per_week = 5;
       plan.info_interview_outreach_per_week_display = '5 Weekly';
       plan.in_person_events_per_month = 2;
       plan.in_person_events_per_month_display = '2 Monthly';
+      plan.career_fairs_quota = 1;
+      plan.career_fairs_quota_display = '1 Yearly';
     } 
 
     return plan;
@@ -200,7 +200,7 @@ export default function Page2() {
           </form>
 
           <div className="progress-dots">
-            <div className="dot"></div>
+            <div className="dot completed"></div>
             <div className="dot active"></div>
             <div className="dot"></div>
           </div>
@@ -235,10 +235,6 @@ export default function Page2() {
           <div className="sidebar-section">
             <h3>Actions</h3>
             <div className="sidebar-item">
-              <span>Applications</span>
-              <span className="value"> {plan.applications_per_week_display} </span>
-            </div>
-            <div className="sidebar-item">
               <span>Applications with Outreach</span>
               <span className="value"> {plan.apps_with_outreach_per_week_display} </span>
             </div>
@@ -249,6 +245,10 @@ export default function Page2() {
             <div className="sidebar-item">
               <span>In-person Events</span>
               <span className="value"> {plan.in_person_events_per_month_display} </span>
+            </div>
+            <div className="sidebar-item">
+              <span>Career Fairs</span>
+              <span className="value"> {plan.career_fairs_quota_display} </span>
             </div>
           </div>
           
