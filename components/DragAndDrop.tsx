@@ -59,9 +59,16 @@ export const DraggableCard = <T extends DraggableItem>({
       };
 
   const handleClick = (e: React.MouseEvent) => {
+<<<<<<< HEAD
     e.preventDefault();
     e.stopPropagation();
     onEdit(item);
+=======
+    // Only handle click if not dragging
+    if (!isDragging) {
+      onEdit(item);
+    }
+>>>>>>> b2b8387 (Tried to improve the feeling of moving the cards.)
   };
 
   return (
