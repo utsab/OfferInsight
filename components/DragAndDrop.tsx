@@ -59,10 +59,9 @@ export const DraggableCard = <T extends DraggableItem>({
       };
 
   const handleClick = (e: React.MouseEvent) => {
-    // Only handle click if not dragging
-    if (!isDragging) {
-      onEdit(item);
-    }
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit(item);
   };
 
   return (
