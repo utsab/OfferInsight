@@ -31,7 +31,7 @@ export type ColumnConfig = {
   color: string;
 };
 
-// Draggable card component
+// Draggable card component - simplified for better responsiveness
 export const DraggableCard = <T extends DraggableItem>({
   item,
   onEdit,
@@ -47,120 +47,21 @@ export const DraggableCard = <T extends DraggableItem>({
       data: { item },
     });
 
-  // Track if we have a pending click
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isClicking, setIsClicking] = useState(false);
-  const [mouseDownTime, setMouseDownTime] = useState<number | null>(null);
-
   const style = transform
     ? {
         transform: CSS.Translate.toString(transform),
-        opacity: isDragging ? 1 : 0,
+        opacity: isDragging ? 0.8 : 1,
         zIndex: isDragging ? 1000 : 1,
-        cursor: isDragging ? "grabbing" : "pointer",
+        cursor: isDragging ? "grabbing" : "grab",
       }
     : {
-        cursor: "pointer",
+        cursor: "grab",
       };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Clear any existing timeouts
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
-    }
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-    }
-
-    // Set clicking state to true
-    setIsClicking(true);
-    setMouseDownTime(Date.now());
-
-    // Start a timer to initiate drag if the mouse is held down
-    longPressTimeoutRef.current = setTimeout(() => {
-      // This will initiate the drag after the delay
-      if (listeners && listeners.onMouseDown) {
-        const syntheticEvent = new MouseEvent("mousedown", {
-          bubbles: true,
-          cancelable: true,
-          clientX: e.clientX,
-          clientY: e.clientY,
-        });
-
-        // Now we're ready to start dragging
-        e.target.dispatchEvent(syntheticEvent);
-      }
-    }, 100); // 100ms delay for faster drag initiation
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    // Clear the long press timer
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-      longPressTimeoutRef.current = null;
-    }
-
-    const mouseUpTime = Date.now();
-    const mouseDownDuration = mouseDownTime ? mouseUpTime - mouseDownTime : 0;
-
-    // If press was short (less than 100ms), consider it a click
-    if (isClicking && mouseDownDuration < 100 && !isDragging) {
-      clickTimeoutRef.current = setTimeout(() => {
-        onEdit(item);
-      }, 50);
-    }
-
-    // Reset clicking state
-    setIsClicking(false);
-    setMouseDownTime(null);
-  };
-
-  // Touch handling for mobile devices
-  const handleTouchStart = (e: React.TouchEvent) => {
-    // Track touch start time
-    setMouseDownTime(Date.now());
-    setIsClicking(true);
-
-    // Set a timeout to distinguish between tap and drag
-    longPressTimeoutRef.current = setTimeout(() => {
-      // Add visual feedback for long press
-      const target = e.currentTarget as HTMLElement;
-      target.classList.add("touch-dragging");
-
-      // Haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-    }, 100);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    // Clear the long press timer
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-      longPressTimeoutRef.current = null;
-    }
-
-    const touchEndTime = Date.now();
-    const touchDuration = mouseDownTime ? touchEndTime - mouseDownTime : 0;
-
-    // If it was a short tap (not a drag), open the edit modal
-    if (isClicking && touchDuration < 100 && !isDragging) {
-      e.currentTarget.classList.remove("touch-dragging");
+  const handleClick = (e: React.MouseEvent) => {
+    // Only handle click if not dragging
+    if (!isDragging) {
       onEdit(item);
-    }
-
-    // Reset state
-    setIsClicking(false);
-    setMouseDownTime(null);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    // If finger moves significantly, cancel the click and let dnd-kit handle the drag
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-      longPressTimeoutRef.current = null;
     }
   };
 
@@ -170,16 +71,12 @@ export const DraggableCard = <T extends DraggableItem>({
       style={style}
       {...attributes}
       {...listeners}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchMove}
-      className="bg-white p-3 mb-2 rounded shadow hover:shadow-md transition-shadow relative group"
+      onClick={handleClick}
+      className="bg-white p-3 mb-2 rounded shadow hover:shadow-md transition-shadow relative group select-none"
     >
       {/* Drag handle icon that appears on hover */}
-      <div className="absolute -left-1 top-0 bottom-0 w-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <GripVertical size={16} className="text-gray-400 drag-handle" />
+      <div className="absolute -left-1 top-0 bottom-0 w-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+        <GripVertical size={16} className="text-gray-400" />
       </div>
 
       {renderContent(item)}
@@ -194,11 +91,14 @@ export const StaticCard = <T extends DraggableItem>({
 }: {
   item: T;
   renderContent: (item: T) => React.ReactNode;
-}) => (
-  <div className="bg-white p-3 mb-2 rounded shadow">{renderContent(item)}</div>
-);
+}) => {
+  return (
+    <div className="bg-white p-3 rounded shadow opacity-90 transform rotate-3">
+      {renderContent(item)}
+    </div>
+  );
+};
 
-// Column component with droppable area
 export const Column = <T extends DraggableItem>({
   id,
   title,
@@ -214,26 +114,20 @@ export const Column = <T extends DraggableItem>({
   onEditItem: (item: T) => void;
   renderContent: (item: T) => React.ReactNode;
 }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id,
+  const { setNodeRef } = useDroppable({
+    id: id,
   });
 
   return (
-    <div className="w-full md:w-80 flex-shrink-0 p-2">
+    <div className="flex flex-col min-w-[280px] max-w-[300px] flex-shrink-0">
       <div
-        className={`rounded-t-lg p-2 ${color} text-white text-center font-semibold`}
+        className={`px-4 py-2 rounded-t-lg text-white font-semibold text-center ${color}`}
       >
-        <h2 className="text-sm md:text-base lg:text-lg">{title}</h2>
-        <div className="mt-1 text-xs md:text-sm">
-          {items.length} {items.length === 1 ? "item" : "items"}
-        </div>
+        {title} ({items.length})
       </div>
       <div
         ref={setNodeRef}
-        className={`bg-gray-100 p-2 rounded-b-lg min-h-[10rem] transition-colors ${
-          isOver ? "bg-gray-200" : ""
-        }`}
-        style={{ minHeight: "200px" }}
+        className="flex-1 min-h-[200px] p-3 bg-gray-100 rounded-b-lg"
       >
         {items.map((item) => (
           <DraggableCard
@@ -278,11 +172,11 @@ export const DragAndDropBoard = <T extends DraggableItem>({
     setLocalItems(items);
   }, [items]);
 
+  // Optimized sensor configuration for smooth dragging like Trello
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 100,
-        tolerance: 5,
+        distance: 8, // Start drag after 8px movement - responsive like Trello
       },
     }),
     useSensor(KeyboardSensor)
