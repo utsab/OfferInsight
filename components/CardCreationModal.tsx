@@ -26,8 +26,8 @@ export default function CardCreationModal({
   onChange,
 }: CardCreationModalProps) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md my-8">
         <h2 className="text-xl font-bold mb-4">{title}</h2>
         <form onSubmit={onSubmit}>
           {fields.map((field) => (
