@@ -68,8 +68,15 @@ export default function Page1() {
     { value: '12', label: 'December' },
   ];
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 41 }, (_, i) => currentYear - 20 + i);
+  const [currentYear, setCurrentYear] = useState<number>(2024); // Default fallback
+  const [years, setYears] = useState<number[]>([]);
+
+  useEffect(() => {
+    // Set the current year on client side to avoid hydration mismatch
+    const year = new Date().getFullYear();
+    setCurrentYear(year);
+    setYears(Array.from({ length: 41 }, (_, i) => year - 20 + i));
+  }, []);
 
   if (loading) {
     return <div className="onboarding-container">Loading...</div>;

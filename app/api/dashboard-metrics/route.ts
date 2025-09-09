@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
 import { prisma } from "@/db";
+import { getCurrentMonthDateRange } from "@/app/lib/date-utils";
 
 export async function GET() {
   // Get the user's session
@@ -28,14 +29,7 @@ export async function GET() {
     }
 
     // Define date range for current month
-    const firstDayOfMonth = new Date();
-    firstDayOfMonth.setDate(1);
-    firstDayOfMonth.setHours(0, 0, 0, 0);
-
-    const lastDayOfMonth = new Date();
-    lastDayOfMonth.setMonth(lastDayOfMonth.getMonth() + 1);
-    lastDayOfMonth.setDate(0);
-    lastDayOfMonth.setHours(23, 59, 59, 999);
+    const { firstDayOfMonth, lastDayOfMonth } = getCurrentMonthDateRange();
 
     // Count applications with outreach created this month
     const appWithOutreachCount = await prisma.applications_with_Outreach.count({

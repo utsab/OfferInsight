@@ -41,6 +41,7 @@ export function DashboardMetricsProvider({
 }) {
   const [metricsData, setMetricsData] = useState<MetricsData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
 
   // Function to fetch metrics data
   const refreshMetrics = useCallback(async () => {
@@ -84,10 +85,17 @@ export function DashboardMetricsProvider({
     }
   }, []);
 
-  // Fetch metrics on initial load only
+  // Handle client-side mounting to prevent hydration mismatches
   useEffect(() => {
-    refreshMetrics();
-  }, [refreshMetrics]);
+    setHasMounted(true);
+  }, []);
+
+  // Fetch metrics on initial load only, but only after component has mounted
+  useEffect(() => {
+    if (hasMounted) {
+      refreshMetrics();
+    }
+  }, [refreshMetrics, hasMounted]);
 
   // Create a memoized context value to prevent unnecessary re-renders
   const contextValue = React.useMemo(

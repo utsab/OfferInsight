@@ -2,28 +2,8 @@
 
 import { auth } from "auth";
 import { prisma } from "@/db";
+import { getCurrentWeekDateRange, getCurrentMonthDateRange } from "@/app/lib/date-utils";
 
-// Helper function to get the start and end of the current week (Monday to Sunday)
-function getCurrentWeekDateRange() {
-  const now = new Date();
-  // Get the current day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-  const currentDay = now.getDay();
-
-  // Calculate days to Monday (if today is Sunday, we need to go back 6 days)
-  const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
-
-  // Create a new date for Monday (start of the week)
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - daysToMonday);
-  monday.setHours(0, 0, 0, 0);
-
-  // Create a new date for Sunday (end of the week)
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-
-  return { monday, sunday };
-}
 
 export async function getDashboardMetrics() {
   // Get the user's session
@@ -51,14 +31,7 @@ export async function getDashboardMetrics() {
     }
 
     // Define date range for current month
-    const firstDayOfMonth = new Date();
-    firstDayOfMonth.setDate(1);
-    firstDayOfMonth.setHours(0, 0, 0, 0);
-
-    const lastDayOfMonth = new Date();
-    lastDayOfMonth.setMonth(lastDayOfMonth.getMonth() + 1);
-    lastDayOfMonth.setDate(0);
-    lastDayOfMonth.setHours(23, 59, 59, 999);
+    const { firstDayOfMonth, lastDayOfMonth } = getCurrentMonthDateRange();
 
     // Count applications with outreach created this month
     const appWithOutreachCount = await prisma.applications_with_Outreach.count({

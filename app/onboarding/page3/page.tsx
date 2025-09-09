@@ -230,8 +230,9 @@ function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterv
 
 
   // Calculate the estimated offer date 
-
-  const estimatedOfferDate = new Date(Date.now() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
+  // Use a fixed reference date to avoid hydration mismatches
+  const referenceDate = new Date('2024-01-01T00:00:00.000Z');
+  const estimatedOfferDate = new Date(referenceDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
 
   // Return the estimated offer date 
 
