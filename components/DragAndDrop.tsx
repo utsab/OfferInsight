@@ -236,7 +236,7 @@ export const DragAndDropBoard = <T extends DraggableItem>({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex flex-col md:flex-row gap-4 overflow-x-auto pb-4 max-w-full">
+      <div className="flex flex-col md:flex-row gap-4 pb-4 max-w-full">
         {columns.map((column) => {
           // Use the local items state instead of props
           const columnItems = localItems.filter(

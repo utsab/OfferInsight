@@ -277,7 +277,7 @@ export default function ApplicationsWithOutreachPage() {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4" style={{ minWidth: '1500px' }}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">
           Applications with Outreach
