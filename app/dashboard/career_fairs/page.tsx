@@ -27,9 +27,7 @@ export default function CareerFairsPage() {
   const { refreshMetrics } = useDashboardMetrics();
   const [careerFairs, setCareerFairs] = useState<CareerFair[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeCareerFair, setActiveCareerFair] = useState<CareerFair | null>(
-    null
-  );
+  const [activeCareerFair, setActiveCareerFair] = useState<CareerFair | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -130,22 +128,12 @@ export default function CareerFairsPage() {
     e.preventDefault();
 
     try {
-      // Ensure date is in the correct format - HTML date inputs provide YYYY-MM-DD
-      // which should be interpreted as UTC to avoid timezone issues
-      const dateString = newCareerFair.date as string;
-
-      const fairData = {
-        ...newCareerFair,
-        // Keep the date as is - the API will handle the conversion properly
-        date: dateString,
-      };
-
       const response = await fetch("/api/career_fairs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(fairData),
+        body: JSON.stringify(newCareerFair),
       });
 
       if (!response.ok) {
@@ -176,8 +164,6 @@ export default function CareerFairsPage() {
     if (!editCareerFair) return;
 
     try {
-      // The date is already formatted correctly from handleEditCareerFair
-      // Just send as is - the API will convert to DateTime
       const response = await fetch(
         `/api/career_fairs?id=${editCareerFair.id}`,
         {
@@ -203,23 +189,30 @@ export default function CareerFairsPage() {
     }
   };
 
-  const handleUpdateStatus = async (id: number, newStatus: string) => {
-    if (!id) return;
-
+  const handleUpdateStatus = async (id: number, status: string) => {
     try {
+      const careerFair = careerFairs.find((cf) => cf.id === id);
+      if (!careerFair) return;
+
+      const updatedCareerFair = { ...careerFair, status };
+
       const response = await fetch(`/api/career_fairs?id=${id}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(updatedCareerFair),
       });
 
       if (!response.ok) {
         throw new Error("Failed to update career fair status");
       }
 
-      await fetchCareerFairs();
+      setCareerFairs((prevCareerFairs) =>
+        prevCareerFairs.map((cf) =>
+          cf.id === id ? { ...cf, status } : cf
+        )
+      );
       // Refresh dashboard metrics after updating status
       await refreshMetrics();
     } catch (error) {
@@ -257,11 +250,11 @@ export default function CareerFairsPage() {
   };
 
   const handleDeleteCareerFair = async () => {
-    if (!editCareerFair) return;
+    if (!activeCareerFair) return;
 
     try {
       const response = await fetch(
-        `/api/career_fairs?id=${editCareerFair.id}`,
+        `/api/career_fairs?id=${activeCareerFair.id}`,
         {
           method: "DELETE",
         }
@@ -272,8 +265,7 @@ export default function CareerFairsPage() {
       }
 
       setShowDeleteModal(false);
-      setShowEditModal(false);
-      setEditCareerFair(null);
+      setActiveCareerFair(null);
       await fetchCareerFairs();
       // Refresh dashboard metrics after deleting a career fair
       await refreshMetrics();

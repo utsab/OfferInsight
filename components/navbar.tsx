@@ -7,19 +7,18 @@ export function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <div className="logo-container">
-          <Link href="/">
-            <Image
-              src="/images/logo-dark.png"
-              alt="Company Logo"
-              width={200}
-              height={50}
-              priority
-              style={{ height: "auto" }}
-            />
-          </Link>
+        <Link href="/" className="logo-container">
+          <Image
+            src="/images/logo-dark.png"
+            alt="Company Logo"
+            width={200}
+            height={50}
+            priority
+          />
+        </Link>
+        <div className="user-button-container">
+          <UserButton />
         </div>
-        <UserButton />
       </div>
     </nav>
   );

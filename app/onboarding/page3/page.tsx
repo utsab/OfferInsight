@@ -30,10 +30,21 @@ function parseRangeToInt(range: string): number {
 function parseEventsToInt(events: string): number {
   switch (events) {
     case '0': return 0;
-    case '1': return 1; // 1/4 per week
+    case '1': return 1;
     case '2': return 2;
     case '4': return 4;
     case '8': return 8;
+    default: return 0;
+  }
+}
+
+function parseCareerFairsToInt(careerFairs: string): number {
+  switch (careerFairs) {
+    case '0': return 0;
+    case '1': return 1;
+    case '2': return 2;
+    case '3': return 3;
+    case '4': return 4;
     default: return 0;
   }
 }
@@ -64,13 +75,17 @@ function intToEventsString(value: number): string {
   return value.toString();
 }
 
+function intToCareerFairsString(value: number): string {
+  return value.toString();
+}
+
 // Data layer hook
 function usePage3Data() {
   const [commitment, setCommitment] = useState('');
-  const [applicationsPerWeek, setApplicationsPerWeek] = useState('');
   const [appsWithOutreachPerWeek, setAppsWithOutreachPerWeek] = useState('');
   const [infoInterviewOutreachPerWeek, setInfoInterviewOutreachPerWeek] = useState('');
   const [inPersonEventsPerMonth, setInPersonEventsPerMonth] = useState('');
+  const [careerFairsPerYear, setCareerFairsPerYear] = useState('');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -86,9 +101,6 @@ function usePage3Data() {
           if (userData.commitment !== null && userData.commitment !== undefined) {
             setCommitment(intToCommitmentString(userData.commitment));
           }
-          if (userData.applications_per_week !== null && userData.applications_per_week !== undefined) {
-            setApplicationsPerWeek(intToRangeString(userData.applications_per_week, 'applications'));
-          }
           if (userData.apps_with_outreach_per_week !== null && userData.apps_with_outreach_per_week !== undefined) {
             setAppsWithOutreachPerWeek(intToRangeString(userData.apps_with_outreach_per_week, 'outreach'));
           }
@@ -97,6 +109,9 @@ function usePage3Data() {
           }
           if (userData.in_person_events_per_month !== null && userData.in_person_events_per_month !== undefined) {
             setInPersonEventsPerMonth(intToEventsString(userData.in_person_events_per_month));
+          }
+          if (userData.career_fairs_quota !== null && userData.career_fairs_quota !== undefined) {
+            setCareerFairsPerYear(intToCareerFairsString(userData.career_fairs_quota));
           }
         }
       }
@@ -110,10 +125,10 @@ function usePage3Data() {
     
     // Convert string values to integers for the API call
     const commitmentValue = parseCommitmentToInt(commitment);
-    const applicationsValue = parseRangeToInt(applicationsPerWeek);
     const outreachValue = parseRangeToInt(appsWithOutreachPerWeek);
     const infoInterviewValue = parseRangeToInt(infoInterviewOutreachPerWeek);
     const inPersonValue = parseEventsToInt(inPersonEventsPerMonth);
+    const careerFairsValue = parseCareerFairsToInt(careerFairsPerYear);
     
     const response = await fetch('/api/users/onboarding3', {
       method: 'POST',
@@ -122,17 +137,17 @@ function usePage3Data() {
       },
       body: JSON.stringify({
         commitment: commitmentValue,
-        applications_per_week: applicationsValue,
         apps_with_outreach_per_week: outreachValue,
         info_interview_outreach_per_week: infoInterviewValue,
-        in_person_events_per_month: inPersonValue
+        in_person_events_per_month: inPersonValue,
+        career_fairs_quota: careerFairsValue
       }),
     });
 
     if (response.ok) {
       // Handle successful submission
       console.log('User plan updated successfully');
-      router.push('/onboarding/page4'); // Redirect to Page 4
+      router.push('/dashboard'); // Redirect to Dashboard
     } else {
       // Handle error
       console.error('Failed to update user plan');
@@ -142,28 +157,27 @@ function usePage3Data() {
   return {
     commitment,
     setCommitment,
-    applicationsPerWeek,
-    setApplicationsPerWeek,
     appsWithOutreachPerWeek,
     setAppsWithOutreachPerWeek,
     infoInterviewOutreachPerWeek,
     setInfoInterviewOutreachPerWeek,
     inPersonEventsPerMonth,
     setInPersonEventsPerMonth,
+    careerFairsPerYear,
+    setCareerFairsPerYear,
     loading,
     handleSubmit
   };
 }
 
 
-function calculateEstimatedOfferDate(applicationsPerWeek: number, appsWithOutreachPerWeek: number, infoInterviewOutreachPerWeek: number, inPersonEventsPerMonth: number) {
+function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterviewOutreachPerWeek: number, inPersonEventsPerMonth: number) {
   
   
-  console.log("applicationsPerWeek: ", applicationsPerWeek, "appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
+  console.log("appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
   
-  // Hardocde the ROI percentages for each habit 
+  // Hardcode the ROI percentages for each habit 
 
-  let offersPerApplication = 0.001;
   let offersPerAppWithOutreach = 0.0025;
   let offersPerInfoInterviewAttempt = 0.00075;
   let offersPerInPersonEvent = 0.0075;
@@ -200,7 +214,6 @@ function calculateEstimatedOfferDate(applicationsPerWeek: number, appsWithOutrea
   console.log("bonusPoints: ", bonusPoints, "multiplier: ", multiplier)
   console.log("************************************************")
 
-  offersPerApplication *= multiplier;
   offersPerAppWithOutreach *= multiplier;
   offersPerInfoInterviewAttempt *= multiplier;
   offersPerInPersonEvent *= multiplier;
@@ -209,7 +222,7 @@ function calculateEstimatedOfferDate(applicationsPerWeek: number, appsWithOutrea
 
   // Calculate the total number of job offers per week 
 
-  const totalOffersPerWeek = (applicationsPerWeek * offersPerApplication) + (appsWithOutreachPerWeek * offersPerAppWithOutreach) + (infoInterviewOutreachPerWeek * offersPerInfoInterviewAttempt) + (inPersonEventsPerMonth * offersPerInPersonEvent);
+  const totalOffersPerWeek = (appsWithOutreachPerWeek * offersPerAppWithOutreach) + (infoInterviewOutreachPerWeek * offersPerInfoInterviewAttempt) + (inPersonEventsPerMonth * offersPerInPersonEvent);
 
   // Calculate the total number of weeks
 
@@ -232,14 +245,14 @@ export default function Page3() {
   const {
     commitment,
     setCommitment,
-    applicationsPerWeek,
-    setApplicationsPerWeek,
     appsWithOutreachPerWeek,
     setAppsWithOutreachPerWeek,
     infoInterviewOutreachPerWeek,
     setInfoInterviewOutreachPerWeek,
     inPersonEventsPerMonth,
     setInPersonEventsPerMonth,
+    careerFairsPerYear,
+    setCareerFairsPerYear,
     loading,
     handleSubmit
   } = usePage3Data();
@@ -251,7 +264,6 @@ export default function Page3() {
   //console.log("Recalculating estimated date...: ", "applicationsPerWeek: ", applicationsPerWeek, "appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
 
   const estimatedOfferDate = calculateEstimatedOfferDate(
-    parseInt(applicationsPerWeek), 
     parseInt(appsWithOutreachPerWeek), 
     parseInt(infoInterviewOutreachPerWeek), 
     parseInt(inPersonEventsPerMonth)
@@ -286,23 +298,7 @@ export default function Page3() {
               </div>
               
               <div className="form-group">
-                <label className="form-label">How many applications you'll submit per week?</label>
-                <div className="options-container">
-                  {['1 - 2', '3 - 5', '6 - 10', '11 - 20'].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setApplicationsPerWeek(option)}
-                      className={`btn-option ${applicationsPerWeek === option ? 'btn-option-selected' : ''}`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">How many applications will you follow up with additional outreach? <br /><i>Reach out to <u>one</u> recruiter and <u>one</u> hiring manager per application</i></label>
+                <label className="form-label">How many applications you'll submit per week? <br /><i>Each application should include outreach to <u>one</u> recruiter and <u>one</u> hiring manager</i></label>
                 <div className="options-container">
                   {['1 - 2', '3 - 5', '6 - 10', '11 - 20'].map((option) => (
                     <button
@@ -334,7 +330,7 @@ export default function Page3() {
               </div>
               
               <div className="form-group">
-                <label className="form-label">How many in-person events you'll attend <b>per month</b>?</label>
+                <label className="form-label">How many networking events you'll attend <b>per month</b>? <br/><i>This includes meetups, company events, workshops, etc.</i></label>
                 <div className="options-container">
                   {['0', '1', '2', '4', '8'].map((option) => (
                     <button
@@ -342,6 +338,22 @@ export default function Page3() {
                       type="button"
                       onClick={() => setInPersonEventsPerMonth(option)}
                       className={`btn-option ${inPersonEventsPerMonth === option ? 'btn-option-selected' : ''}`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label">How many career fairs you'll attend <b>per year</b>?</label>
+                <div className="options-container">
+                  {['0', '1', '2', '3', '4'].map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setCareerFairsPerYear(option)}
+                      className={`btn-option ${careerFairsPerYear === option ? 'btn-option-selected' : ''}`}
                     >
                       {option}
                     </button>
@@ -361,10 +373,9 @@ export default function Page3() {
         </div>
 
         <div className="progress-dots">
-          <div className="dot"></div>
-          <div className="dot"></div>
+          <div className="dot completed"></div>
+          <div className="dot completed"></div>
           <div className="dot active"></div>
-          <div className="dot"></div>
         </div>
       </div>
     </div>

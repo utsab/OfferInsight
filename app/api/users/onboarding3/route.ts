@@ -11,20 +11,20 @@ export async function POST(request: Request) {
 
     const { 
       commitment, 
-      applications_per_week, 
       apps_with_outreach_per_week, 
       info_interview_outreach_per_week, 
-      in_person_events_per_month 
+      in_person_events_per_month,
+      career_fairs_quota
     } = await request.json();
 
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
       data: {
         commitment,
-        applications_per_week,
         apps_with_outreach_per_week,
         info_interview_outreach_per_week,
         in_person_events_per_month,
+        career_fairs_quota,
         onboarding_progress: 3,
       },
     });

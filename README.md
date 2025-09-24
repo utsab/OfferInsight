@@ -19,7 +19,7 @@ Setting up oAuth to allow Github authentication:
 7. For NEXTAUTH_URL, it should either be http://localhost:3000 or your custom Github codespace public url
 
    
-Commands used to install and start Prisma/PostgreSQL:
+Commands used to install dependencies:
 ---
 ```
 pnpm install
@@ -27,8 +27,13 @@ pnpm install
 npx auth secret
 |_
 	say yes to install
+```
 
-(Note: the following 4 commands will not work on Mac.  Find an alternative. ) 
+Installing and starting PostgreSQL:
+---
+```
+Linux commands to install and start POSTGRESQL:
+
 sudo apt-get update  
 sudo apt-get install postgresql postgresql-contrib
 sudo service postgresql start
@@ -38,7 +43,21 @@ sudo vim /etc/sudoers.d/codespace
     change root to ALL in the first line (lookup VIM cheatsheet)
 
 sudo -i -u postgres
+
+Mac:
+brew install postgresql
+brew services start postgresql
+```
+
+After starting the service, commands to setup postgresql:
+---
+```
+Linux:
 psql
+
+Mac:
+psql -d postgres
+
 postgres=# CREATE USER <your_name> WITH PASSWORD '<your_password>';
 postgres=# ALTER USER <your_name> WITH SUPERUSER;
 postgres=# CREATE DATABASE offer_insight;
@@ -64,10 +83,24 @@ pnpm prisma studio
 Commands to start every instance of codespace:
 ---
 ```
+If postgresql not already running:
+
+Linux:
 sudo service postgresql start
-sudo service postgresql status
-pnpm prisma generate (maybe not needed, seems only if made changes to schema)
-pnpm prisma migrate dev (also maybe not needed if no changes made to database??)
+
+Mac:
+brew services start postgresql
+
+If major changes were pulled with new dependencies:
+pnpm install
+
+If changes were made to database:
+pnpm prisma migrate dev 
+pnpm prisma generate
+
+If you want GUI for databasae ala Prisma:
 pnpm prisma studio (optional if I want GUI)
+
+Starts the website:
 pnpm dev
 ```
