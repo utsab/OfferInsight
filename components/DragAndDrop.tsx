@@ -60,6 +60,7 @@ export const DraggableCard = <T extends DraggableItem>({
 
   const handleClick = (e: React.MouseEvent) => {
 <<<<<<< HEAD
+<<<<<<< HEAD
     e.preventDefault();
     e.stopPropagation();
     onEdit(item);
@@ -69,6 +70,11 @@ export const DraggableCard = <T extends DraggableItem>({
       onEdit(item);
     }
 >>>>>>> b2b8387 (Tried to improve the feeling of moving the cards.)
+=======
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit(item);
+>>>>>>> 45dc61b (Tried to fix a bug with the editing modal.)
   };
 
   return (
