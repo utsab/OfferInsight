@@ -1,6 +1,1 @@
-.user-button-container {
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
-  padding: 1rem;
-} 
+/* User button styles are now handled by Tailwind classes */ 

@@ -17,6 +17,9 @@ const config: Config = {
           500: '#0070F3',
           600: '#2F6FEB',
         },
+        'midnight-blue': '#003366',
+        'electric-blue': '#007ACC',
+        'light-steel-blue': '#b0c4de',
       },
     },
     keyframes: {
