@@ -30,7 +30,8 @@ export default function Page() {
 
   const handleOnboarding3Submit = (e: React.FormEvent) => {
     e.preventDefault();
-    showStep('dashboard');
+    // Redirect to the actual dashboard page
+    window.location.href = '/dashboard';
   };
 
   return (
@@ -249,136 +250,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* Dashboard */}
-      {currentStep === 'dashboard' && (
-        <div className="min-h-screen bg-gray-900">
-          <header className="bg-gray-800 border-b border-light-steel-blue">
-            <div className="max-w-7xl mx-auto px-8 py-4 flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <i className="fas fa-chart-line text-electric-blue text-xl"></i>
-                <h1 className="text-xl font-bold text-white">OfferInsight</h1>
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-300">Welcome back, John</span>
-                <img 
-                  src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg" 
-                  className="w-8 h-8 rounded-full"
-                  alt="User avatar"
-                />
-              </div>
-            </div>
-          </header>
-
-          <div className="max-w-7xl mx-auto px-8 py-8">
-            <div className="bg-gradient-to-r from-electric-blue to-blue-600 rounded-lg p-8 mb-8 text-center">
-              <h2 className="text-3xl font-bold text-white mb-2">Projected Offer Date</h2>
-              <p className="text-5xl font-bold text-white">March 15, 2024</p>
-              <p className="text-blue-100 mt-2">Based on your current progress and habits</p>
-            </div>
-
-            <div className="grid grid-cols-4 gap-6 mb-8">
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-semibold">Applications</h3>
-                  <i className="fas fa-file-alt text-electric-blue"></i>
-                </div>
-                <div className="text-3xl font-bold text-white mb-2">23</div>
-                <div className="text-sm text-gray-400">This month</div>
-              </div>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-semibold">Interviews</h3>
-                  <i className="fas fa-comments text-electric-blue"></i>
-                </div>
-                <div className="text-3xl font-bold text-white mb-2">8</div>
-                <div className="text-sm text-gray-400">This month</div>
-              </div>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-semibold">Events</h3>
-                  <i className="fas fa-users text-electric-blue"></i>
-                </div>
-                <div className="text-3xl font-bold text-white mb-2">4</div>
-                <div className="text-sm text-gray-400">This month</div>
-              </div>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-semibold">LeetCode</h3>
-                  <i className="fas fa-code text-electric-blue"></i>
-                </div>
-                <div className="text-3xl font-bold text-white mb-2">47</div>
-                <div className="text-sm text-gray-400">This month</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-800 border border-light-steel-blue rounded-lg">
-              <div className="flex border-b border-light-steel-blue">
-                <button className="flex-1 py-4 px-6 text-center font-semibold border-r border-light-steel-blue bg-electric-blue text-white">
-                  <i className="fas fa-file-alt mr-2"></i>Applications
-                </button>
-                <button className="flex-1 py-4 px-6 text-center font-semibold border-r border-light-steel-blue text-gray-400 hover:text-white">
-                  <i className="fas fa-comments mr-2"></i>Interviews
-                </button>
-                <button className="flex-1 py-4 px-6 text-center font-semibold border-r border-light-steel-blue text-gray-400 hover:text-white">
-                  <i className="fas fa-users mr-2"></i>Events
-                </button>
-                <button className="flex-1 py-4 px-6 text-center font-semibold text-gray-400 hover:text-white">
-                  <i className="fas fa-code mr-2"></i>LeetCode
-                </button>
-              </div>
-
-              <div className="p-6">
-                <div className="grid grid-cols-3 gap-6">
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h4 className="text-white font-semibold mb-4 flex items-center">
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                      To Do
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="bg-gray-600 border border-light-steel-blue rounded p-3">
-                        <div className="text-white font-medium mb-1">Google Software Engineer</div>
-                        <div className="text-gray-400 text-sm">Application deadline: Dec 15</div>
-                      </div>
-                      <div className="bg-gray-600 border border-light-steel-blue rounded p-3">
-                        <div className="text-white font-medium mb-1">Microsoft Product Manager</div>
-                        <div className="text-gray-400 text-sm">Application deadline: Dec 20</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h4 className="text-white font-semibold mb-4 flex items-center">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                      In Progress
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="bg-gray-600 border border-light-steel-blue rounded p-3">
-                        <div className="text-white font-medium mb-1">Meta Data Scientist</div>
-                        <div className="text-gray-400 text-sm">Resume customization</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h4 className="text-white font-semibold mb-4 flex items-center">
-                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                      Completed
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="bg-gray-600 border border-light-steel-blue rounded p-3">
-                        <div className="text-white font-medium mb-1">Amazon SDE Intern</div>
-                        <div className="text-gray-400 text-sm">Submitted Dec 10</div>
-                      </div>
-                      <div className="bg-gray-600 border border-light-steel-blue rounded p-3">
-                        <div className="text-white font-medium mb-1">Netflix Engineering</div>
-                        <div className="text-gray-400 text-sm">Submitted Dec 8</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       </div>
   );
 }
