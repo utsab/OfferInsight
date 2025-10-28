@@ -18,7 +18,8 @@ export default function Page() {
 
   const handleOnboarding1Submit = (e: React.FormEvent) => {
     e.preventDefault();
-    showStep('onboarding-step2');
+    // Redirect to the actual page1-v2
+    window.location.href = '/onboarding/page1-v2';
   };
 
   const handleOnboarding2Submit = (e: React.FormEvent) => {
@@ -49,7 +50,7 @@ export default function Page() {
                 OfferInsight tracks your job-seeking habits and provides data-driven insights to project when you'll receive your first job offer. Master the four key habits that lead to success.
               </p>
               <button 
-                onClick={() => showStep('onboarding-step1')}
+                onClick={() => (window.location.href = '/onboarding/page1-v2')}
                 className="bg-electric-blue hover:bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-colors"
               >
                 Get Started

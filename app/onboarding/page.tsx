@@ -14,7 +14,7 @@ export default async function Onboarding() {
       <p>Select a page to start the onboarding process:</p>
       <ul>
         <li>
-          <Link href="/onboarding/page1">
+          <Link href="/onboarding/page1-v2">
             Go to Page 1
           </Link>
         </li>

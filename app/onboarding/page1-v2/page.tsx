@@ -9,6 +9,7 @@ export default function Page1V2() {
   const [name, setName] = useState('');
   const [school, setSchool] = useState('');
   const [major, setMajor] = useState('');
+  const [graduationMonth, setGraduationMonth] = useState('');
   const [graduationYear, setGraduationYear] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,7 +36,7 @@ export default function Page1V2() {
         name,
         school,
         major,
-        expectedGraduationDate: `${graduationYear}-01-01`,
+        expectedGraduationDate: `${graduationYear}-${graduationMonth.padStart(2, '0')}-01`,
       }),
     });
 
@@ -54,7 +55,24 @@ export default function Page1V2() {
     }
   };
 
-  const years = [2024, 2025, 2026, 2027, 2028, 2029];
+  // Generate years from current year - 30 to current year + 10
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 41 }, (_, i) => currentYear - 30 + i);
+  
+  const months = [
+    { value: '01', label: 'January' },
+    { value: '02', label: 'February' },
+    { value: '03', label: 'March' },
+    { value: '04', label: 'April' },
+    { value: '05', label: 'May' },
+    { value: '06', label: 'June' },
+    { value: '07', label: 'July' },
+    { value: '08', label: 'August' },
+    { value: '09', label: 'September' },
+    { value: '10', label: 'October' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'December' }
+  ];
 
   if (loading) {
     return (
@@ -135,22 +153,44 @@ export default function Page1V2() {
           <div className="form-group">
             <label className="block text-white font-semibold mb-3 text-lg">
               <i className="fas fa-calendar-alt text-electric-blue mr-2"></i>
-              Expected Graduation Year
+              Expected Graduation Date
             </label>
-            <select 
-              name="graduationYear"
-              value={graduationYear}
-              onChange={(e) => setGraduationYear(e.target.value)}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue focus:ring-opacity-50 transition-all"
-              required
-            >
-              <option value="">Select graduation year</option>
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-300 text-sm mb-2">Month</label>
+                <select 
+                  name="graduationMonth"
+                  value={graduationMonth}
+                  onChange={(e) => setGraduationMonth(e.target.value)}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue focus:ring-opacity-50 transition-all"
+                  required
+                >
+                  <option value="">Select month</option>
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-gray-300 text-sm mb-2">Year</label>
+                <select 
+                  name="graduationYear"
+                  value={graduationYear}
+                  onChange={(e) => setGraduationYear(e.target.value)}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue focus:ring-opacity-50 transition-all"
+                  required
+                >
+                  <option value="">Select year</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
           <div className="pt-6">
