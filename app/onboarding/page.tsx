@@ -19,7 +19,7 @@ export default async function Onboarding() {
           </Link>
         </li>
         <li>
-          <Link href="/onboarding/page2">
+          <Link href="/onboarding/page2-v2">
             Go to Page 2
           </Link>
         </li>
