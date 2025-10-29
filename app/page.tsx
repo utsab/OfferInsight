@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Page() {
   const [currentStep, setCurrentStep] = useState<'homepage' | 'onboarding-step1' | 'onboarding-step2' | 'onboarding-step3' | 'dashboard'>('homepage');
   const [selectedTimeline, setSelectedTimeline] = useState<string>('');
+  const [onboardingProgress, setOnboardingProgress] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const showStep = (stepId: 'homepage' | 'onboarding-step1' | 'onboarding-step2' | 'onboarding-step3' | 'dashboard') => {
     setCurrentStep(stepId as any);
@@ -13,6 +15,48 @@ export default function Page() {
 
   const handleTimelineSelect = (months: string) => {
     setSelectedTimeline(months);
+  };
+
+  // Fetch user's onboarding progress on component mount
+  useEffect(() => {
+    const fetchOnboardingProgress = async () => {
+      try {
+        const response = await fetch('/api/users/onboarding2');
+        if (response.ok) {
+          const user = await response.json();
+          setOnboardingProgress(user.onboarding_progress);
+        }
+      } catch (error) {
+        console.error('Failed to fetch onboarding progress:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOnboardingProgress();
+  }, []);
+
+  const handleGetStarted = () => {
+    if (loading) return;
+    
+    // Redirect based on onboarding progress
+    switch (onboardingProgress) {
+      case 0:
+        window.location.href = '/onboarding/page1-v2';
+        break;
+      case 1:
+        window.location.href = '/onboarding/page2-v2';
+        break;
+      case 2:
+        window.location.href = '/onboarding/page3-v2';
+        break;
+      case 3:
+        window.location.href = '/dashboard';
+        break;
+      default:
+        // If no progress or error, start from the beginning
+        window.location.href = '/onboarding/page1-v2';
+    }
   };
 
 
@@ -50,10 +94,11 @@ export default function Page() {
                 OfferInsight tracks your job-seeking habits and provides data-driven insights to project when you'll receive your first job offer. Master the four key habits that lead to success.
               </p>
               <button 
-                onClick={() => (window.location.href = '/onboarding/page1-v2')}
-                className="bg-electric-blue hover:bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-colors"
+                onClick={handleGetStarted}
+                disabled={loading}
+                className="bg-electric-blue hover:bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Get Started
+                {loading ? 'Loading...' : 'Get Started'}
               </button>
             </div>
           </section>
