@@ -23,17 +23,29 @@ export default function Page3V2() {
 
   const handleBack = () => router.back();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      localStorage.setItem('userGoals', JSON.stringify({
-        applications: appsPerWeek,
-        interviews: interviewsPerWeek,
-        events: eventsPerMonth,
-        fairs: fairsPerYear,
-      }));
-    } catch {}
-    router.push('/dashboard');
+    
+    const response = await fetch('/api/users/onboarding3', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        commitment: weeklyHours,
+        apps_with_outreach_per_week: appsPerWeek,
+        info_interview_outreach_per_week: interviewsPerWeek,
+        in_person_events_per_month: eventsPerMonth,
+        career_fairs_quota: fairsPerYear
+      }),
+    });
+
+    if (response.ok) {
+      console.log('User plan updated successfully');
+      router.push('/dashboard');
+    } else {
+      console.error('Failed to update user plan');
+    }
   };
 
   return (

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 export default function Page() {
-  const [activeTab, setActiveTab] = useState('applications');
+  const [activeTab, setActiveTab] = useState('overview');
 
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);

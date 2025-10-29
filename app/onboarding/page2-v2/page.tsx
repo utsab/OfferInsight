@@ -34,12 +34,34 @@ export default function Page2V2() {
     setSelectedTimeline(value);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTimeline) return;
-    // Persist selection temporarily if needed by next page
-    try { localStorage.setItem('onboarding.timelineMonths', selectedTimeline); } catch {}
-    router.push('/onboarding/page3-v2');
+    
+    // Generate the plan based on the selected timeline
+    const plan = calculator!;
+    
+    const response = await fetch('/api/users/onboarding2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        monthsToSecureInternship: parseInt(selectedTimeline),
+        commitment: plan.commitment,
+        apps_with_outreach_per_week: parseInt(plan.apps.split(' ')[0]),
+        info_interview_outreach_per_week: parseInt(plan.interviewsOutreach.split(' ')[0]),
+        in_person_events_per_month: parseInt(plan.events.split(' ')[0]),
+        career_fairs_quota: parseInt(plan.fairs.split(' ')[0])
+      }),
+    });
+
+    if (response.ok) {
+      console.log('User information updated successfully');
+      router.push('/onboarding/page3-v2');
+    } else {
+      console.error('Failed to update user information');
+    }
   };
 
   return (
