@@ -3,9 +3,38 @@
 import { useState, useEffect, useRef } from 'react';
 import { SignOut } from "./auth-components"
 
+interface UserData {
+  name: string | null;
+  image: string | null;
+}
+
 export function AuthenticatedUserButton() {
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+  const [userData, setUserData] = useState<UserData>({ name: null, image: null });
+  const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Fetch user data
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/users/onboarding2');
+        if (response.ok) {
+          const user = await response.json();
+          setUserData({
+            name: user.name,
+            image: user.image
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -57,9 +86,13 @@ export function AuthenticatedUserButton() {
         </div>
       </nav>
       <div className="flex items-center space-x-3">
-        <span className="text-gray-300">Welcome back, John</span>
+        {loading ? (
+          <span className="text-gray-300">Loading...</span>
+        ) : (
+          <span className="text-gray-300">{userData.name || 'User'}</span>
+        )}
         <img 
-          src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg" 
+          src={userData.image || "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"} 
           className="w-8 h-8 rounded-full"
           alt="User avatar"
         />
