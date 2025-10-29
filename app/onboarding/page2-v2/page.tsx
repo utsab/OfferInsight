@@ -39,7 +39,7 @@ export default function Page2V2() {
     if (!selectedTimeline) return;
     // Persist selection temporarily if needed by next page
     try { localStorage.setItem('onboarding.timelineMonths', selectedTimeline); } catch {}
-    router.push('/onboarding/page3');
+    router.push('/onboarding/page3-v2');
   };
 
   return (
