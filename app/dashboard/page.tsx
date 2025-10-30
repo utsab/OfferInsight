@@ -19,25 +19,25 @@ export default function Page() {
     rightLabel: string;
   };
 
-  type ColumnId = 'todo' | 'inprogress' | 'submitted' | 'completed';
+  type ColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
   const [appColumns, setAppColumns] = useState<Record<ColumnId, AppCard[]>>({
-    todo: [
-      { id: 'google-swe', title: 'Google Software Engineer', location: 'Mountain View, CA', leftLabel: 'Due: Dec 15', rightLabel: 'High Priority' },
-      { id: 'microsoft-pm', title: 'Microsoft Product Manager', location: 'Seattle, WA', leftLabel: 'Due: Dec 20', rightLabel: 'Medium Priority' },
-      { id: 'tesla-swe', title: 'Tesla Software Engineer', location: 'Austin, TX', leftLabel: 'Due: Dec 18', rightLabel: 'High Priority' },
+    applied: [
+      { id: 'google-swe', title: 'Google Software Engineer', location: 'Mountain View, CA', leftLabel: 'Applied Dec 12', rightLabel: 'High Priority' },
+      { id: 'microsoft-pm', title: 'Microsoft Product Manager', location: 'Seattle, WA', leftLabel: 'Applied Dec 11', rightLabel: 'Medium Priority' },
+      { id: 'tesla-swe', title: 'Tesla Software Engineer', location: 'Austin, TX', leftLabel: 'Applied Dec 10', rightLabel: 'High Priority' },
     ],
-    inprogress: [
-      { id: 'meta-ds', title: 'Meta Data Scientist', location: 'Menlo Park, CA', leftLabel: 'Resume customization', rightLabel: '75%' },
-      { id: 'stripe-backend', title: 'Stripe Backend Engineer', location: 'San Francisco, CA', leftLabel: 'Cover letter draft', rightLabel: '60%' },
+    messagedRecruiter: [
+      { id: 'meta-ds', title: 'Meta Data Scientist', location: 'Menlo Park, CA', leftLabel: 'Messaged recruiter', rightLabel: 'Dec 9' },
     ],
-    submitted: [
-      { id: 'amazon-intern', title: 'Amazon SDE Intern', location: 'Seattle, WA', leftLabel: 'Submitted Dec 10', rightLabel: 'Pending' },
-      { id: 'netflix-eng', title: 'Netflix Engineering', location: 'Los Gatos, CA', leftLabel: 'Submitted Dec 8', rightLabel: 'Under Review' },
-      { id: 'uber-swe', title: 'Uber Software Engineer', location: 'San Francisco, CA', leftLabel: 'Submitted Dec 5', rightLabel: 'Under Review' },
+    messagedHiringManager: [
+      { id: 'stripe-backend', title: 'Stripe Backend Engineer', location: 'San Francisco, CA', leftLabel: 'Messaged hiring manager', rightLabel: 'Dec 8' },
     ],
-    completed: [
-      { id: 'apple-ios', title: 'Apple iOS Developer', location: 'Cupertino, CA', leftLabel: 'Interview Scheduled', rightLabel: 'Success' },
-      { id: 'shopify-backend', title: 'Shopify Backend Engineer', location: 'Ottawa, ON', leftLabel: 'Interview Scheduled', rightLabel: 'Success' },
+    followedUp: [
+      { id: 'netflix-eng', title: 'Netflix Engineering', location: 'Los Gatos, CA', leftLabel: 'Followed up', rightLabel: 'Dec 7' },
+    ],
+    interview: [
+      { id: 'apple-ios', title: 'Apple iOS Developer', location: 'Cupertino, CA', leftLabel: 'Interview Scheduled', rightLabel: 'Dec 15' },
+      { id: 'uber-swe', title: 'Uber Software Engineer', location: 'San Francisco, CA', leftLabel: 'Interview Scheduled', rightLabel: 'Dec 16' },
     ],
   });
 
@@ -60,7 +60,7 @@ export default function Page() {
     const overId = String(over.id);
 
     const fromCol = getColumnOfItem(activeId);
-    const toCol = (['todo','inprogress','submitted','completed'] as ColumnId[]).includes(overId as ColumnId)
+    const toCol = (['applied','messagedRecruiter','messagedHiringManager','followedUp','interview'] as ColumnId[]).includes(overId as ColumnId)
       ? (overId as ColumnId)
       : getColumnOfItem(overId);
     if (!fromCol || !toCol) return;
@@ -97,7 +97,7 @@ export default function Page() {
     const activeId = String(active.id);
     const overId = String(over.id);
     const fromCol = getColumnOfItem(activeId);
-    const toCol = (['todo','inprogress','submitted','completed'] as ColumnId[]).includes(overId as ColumnId)
+    const toCol = (['applied','messagedRecruiter','messagedHiringManager','followedUp','interview'] as ColumnId[]).includes(overId as ColumnId)
       ? (overId as ColumnId)
       : getColumnOfItem(overId);
     if (!fromCol || !toCol || fromCol === toCol) return;
@@ -157,21 +157,20 @@ export default function Page() {
     leftClass?: string;
     rightClass?: string;
   };
-  type InterviewsColumnId = 'scheduled' | 'inprogressInt' | 'completedInt' | 'offers';
+  type InterviewsColumnId = 'outreach' | 'accepted' | 'followedUpCoffee' | 'coffeeChat';
   const [interviewColumns, setInterviewColumns] = useState<Record<InterviewsColumnId, PipelineCard[]>>({
-    scheduled: [
-      { id: 'google-swe-int', title: 'Google SWE Interview', subtitle: 'Dec 20, 2:00 PM', leftLabel: 'Technical Round', rightLabel: '1 hour', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
-      { id: 'meta-ds-int', title: 'Meta Data Scientist', subtitle: 'Dec 22, 10:00 AM', leftLabel: 'Behavioral Round', rightLabel: '45 min', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+    outreach: [
+      { id: 'google-outreach', title: 'Googler SWE', subtitle: 'Dec 20, 2:00 PM', leftLabel: 'Outreach sent', rightLabel: 'Awaiting reply', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+      { id: 'meta-outreach', title: 'Meta DS', subtitle: 'Dec 22, 10:00 AM', leftLabel: 'Outreach sent', rightLabel: 'Awaiting reply', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
     ],
-    inprogressInt: [
-      { id: 'ms-pm-live', title: 'Microsoft PM Interview', subtitle: 'Currently in progress', leftLabel: 'Case Study', rightLabel: 'Live', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
+    accepted: [
+      { id: 'ms-accepted', title: 'Microsoft PM', subtitle: 'Accepted', leftLabel: 'Next: schedule', rightLabel: 'Pending', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
     ],
-    completedInt: [
-      { id: 'apple-ios-int', title: 'Apple iOS Interview', subtitle: 'Completed Dec 12', leftLabel: 'Passed to next round', rightLabel: 'Success', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
-      { id: 'netflix-eng-int', title: 'Netflix Engineering', subtitle: 'Completed Dec 10', leftLabel: 'Awaiting results', rightLabel: 'Pending', leftClass: 'text-purple-400', rightClass: 'text-gray-500' },
+    followedUpCoffee: [
+      { id: 'apple-followed', title: 'Apple iOS', subtitle: 'Followed up Dec 12', leftLabel: 'Nudge sent', rightLabel: 'Waiting', leftClass: 'text-purple-400', rightClass: 'text-gray-500' },
     ],
-    offers: [
-      { id: 'shopify-backend-offer', title: 'Shopify Backend', subtitle: 'Offer received Dec 8', leftLabel: '$120k + equity', rightLabel: 'Accepted', leftClass: 'text-green-400', rightClass: 'text-green-500' },
+    coffeeChat: [
+      { id: 'shopify-chat', title: 'Shopify Backend', subtitle: 'Coffee chat on Dec 8', leftLabel: '15 min', rightLabel: 'Done', leftClass: 'text-green-400', rightClass: 'text-green-500' },
     ],
   });
 
@@ -321,23 +320,21 @@ export default function Page() {
   };
 
   // dnd-kit: LeetCode board
-  type LeetColumnId = 'toPractice' | 'inProgressLC' | 'completedLC' | 'mastered';
+  type LeetColumnId = 'planned' | 'solved' | 'reflected';
   const [leetColumns, setLeetColumns] = useState<Record<LeetColumnId, PipelineCard[]>>({
-    toPractice: [
-      { id: 'two-sum', title: 'Two Sum', subtitle: 'Easy - Arrays', leftLabel: 'Not started', rightLabel: 'Easy', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
-      { id: 'valid-paren', title: 'Valid Parentheses', subtitle: 'Easy - Stack', leftLabel: 'Not started', rightLabel: 'Easy', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+    planned: [
+      { id: 'two-sum', title: 'Two Sum', subtitle: 'Easy - Arrays', leftLabel: 'Planned', rightLabel: 'Easy', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+      { id: 'valid-paren', title: 'Valid Parentheses', subtitle: 'Easy - Stack', leftLabel: 'Planned', rightLabel: 'Easy', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+      { id: 'merge-intervals', title: 'Merge Intervals', subtitle: 'Medium - Arrays', leftLabel: 'Planned', rightLabel: 'Medium', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
     ],
-    inProgressLC: [
-      { id: 'bt-inorder', title: 'Binary Tree Inorder', subtitle: 'Medium - Trees', leftLabel: 'Working on it', rightLabel: '60%', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
-      { id: 'merge-intervals', title: 'Merge Intervals', subtitle: 'Medium - Arrays', leftLabel: 'Working on it', rightLabel: '40%', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
+    solved: [
+      { id: 'bt-inorder', title: 'Binary Tree Inorder', subtitle: 'Medium - Trees', leftLabel: 'Solved', rightLabel: 'Dec 12', leftClass: 'text-green-400', rightClass: 'text-gray-500' },
+      { id: 'reverse-ll', title: 'Reverse Linked List', subtitle: 'Easy - Linked Lists', leftLabel: 'Solved', rightLabel: 'Dec 10', leftClass: 'text-green-400', rightClass: 'text-gray-500' },
+      { id: 'max-subarray', title: 'Maximum Subarray', subtitle: 'Medium - Arrays', leftLabel: 'Solved', rightLabel: 'Dec 8', leftClass: 'text-green-400', rightClass: 'text-gray-500' },
     ],
-    completedLC: [
-      { id: 'reverse-ll', title: 'Reverse Linked List', subtitle: 'Easy - Linked Lists', leftLabel: 'Completed Dec 10', rightLabel: 'Solved', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
-      { id: 'max-subarray', title: 'Maximum Subarray', subtitle: 'Medium - Arrays', leftLabel: 'Completed Dec 8', rightLabel: 'Solved', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
-    ],
-    mastered: [
-      { id: 'climbing-stairs', title: 'Climbing Stairs', subtitle: 'Easy - DP', leftLabel: 'Multiple solutions', rightLabel: 'Mastered', leftClass: 'text-green-400', rightClass: 'text-green-500' },
-      { id: 'lcs', title: 'Longest Common Subsequence', subtitle: 'Medium - DP', leftLabel: 'Multiple solutions', rightLabel: 'Mastered', leftClass: 'text-green-400', rightClass: 'text-green-500' },
+    reflected: [
+      { id: 'climbing-stairs', title: 'Climbing Stairs', subtitle: 'Easy - DP', leftLabel: 'Reflected', rightLabel: 'Patterns noted', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
+      { id: 'lcs', title: 'Longest Common Subsequence', subtitle: 'Medium - DP', leftLabel: 'Reflected', rightLabel: 'Patterns noted', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
     ],
   });
 
@@ -494,7 +491,7 @@ export default function Page() {
                   : 'text-gray-400 hover:text-white hover:bg-gray-700'
               }`}
             >
-              <i className="fas fa-comments mr-2"></i>Interviews
+              <i className="fas fa-comments mr-2"></i>Coffee Chats
             </button>
             <button 
               onClick={() => handleTabClick('events')}
@@ -647,29 +644,15 @@ export default function Page() {
               </button>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleApplicationsDragStart} onDragOver={handleApplicationsDragOver} onDragEnd={handleApplicationsDragEnd}>
-              <div className="grid grid-cols-4 gap-6">
+              <div className="grid grid-cols-5 gap-6">
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    To Do ({appColumns.todo.length})
+                    Applied ({appColumns.applied.length})
                   </h5>
-                  <SortableContext items={appColumns.todo.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="todo">
-                      {appColumns.todo.map(card => (
-                        <SortableAppCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    In Progress ({appColumns.inprogress.length})
-                  </h5>
-                  <SortableContext items={appColumns.inprogress.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="inprogress">
-                      {appColumns.inprogress.map(card => (
+                  <SortableContext items={appColumns.applied.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="applied">
+                      {appColumns.applied.map(card => (
                         <SortableAppCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -679,11 +662,25 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Submitted ({appColumns.submitted.length})
+                    Messaged Hiring Manager ({appColumns.messagedHiringManager.length})
                   </h5>
-                  <SortableContext items={appColumns.submitted.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="submitted">
-                      {appColumns.submitted.map(card => (
+                  <SortableContext items={appColumns.messagedHiringManager.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="messagedHiringManager">
+                      {appColumns.messagedHiringManager.map(card => (
+                        <SortableAppCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
+                </div>
+
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    Messaged Recruiter ({appColumns.messagedRecruiter.length})
+                  </h5>
+                  <SortableContext items={appColumns.messagedRecruiter.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="messagedRecruiter">
+                      {appColumns.messagedRecruiter.map(card => (
                         <SortableAppCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -693,11 +690,25 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Completed ({appColumns.completed.length})
+                    Followed Up ({appColumns.followedUp.length})
                   </h5>
-                  <SortableContext items={appColumns.completed.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="completed">
-                      {appColumns.completed.map(card => (
+                  <SortableContext items={appColumns.followedUp.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="followedUp">
+                      {appColumns.followedUp.map(card => (
+                        <SortableAppCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
+                </div>
+
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-pink-500 rounded-full mr-2"></div>
+                    Interview ({appColumns.interview.length})
+                  </h5>
+                  <SortableContext items={appColumns.interview.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="interview">
+                      {appColumns.interview.map(card => (
                         <SortableAppCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -730,9 +741,9 @@ export default function Page() {
         {activeTab === 'interviews' && (
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
-              <h4 className="text-xl font-bold text-white">Interview Pipeline</h4>
+              <h4 className="text-xl font-bold text-white">Coffee Chats</h4>
               <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
-                <i className="fas fa-plus mr-2"></i>Schedule Interview
+                <i className="fas fa-plus mr-2"></i>New Outreach
               </button>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleInterviewsDragStart} onDragOver={handleInterviewsDragOver} onDragEnd={handleInterviewsDragEnd}>
@@ -740,11 +751,11 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Scheduled ({interviewColumns.scheduled.length})
+                    Outreach Request Sent ({interviewColumns.outreach.length})
                   </h5>
-                  <SortableContext items={interviewColumns.scheduled.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="scheduled">
-                      {interviewColumns.scheduled.map(card => (
+                  <SortableContext items={interviewColumns.outreach.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="outreach">
+                      {interviewColumns.outreach.map(card => (
                         <SortablePipelineCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -754,11 +765,11 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    In Progress ({interviewColumns.inprogressInt.length})
+                    Request Accepted ({interviewColumns.accepted.length})
                   </h5>
-                  <SortableContext items={interviewColumns.inprogressInt.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="inprogressInt">
-                      {interviewColumns.inprogressInt.map(card => (
+                  <SortableContext items={interviewColumns.accepted.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="accepted">
+                      {interviewColumns.accepted.map(card => (
                         <SortablePipelineCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -768,11 +779,11 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Completed ({interviewColumns.completedInt.length})
+                    Followed Up ({interviewColumns.followedUpCoffee.length})
                   </h5>
-                  <SortableContext items={interviewColumns.completedInt.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="completedInt">
-                      {interviewColumns.completedInt.map(card => (
+                  <SortableContext items={interviewColumns.followedUpCoffee.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="followedUpCoffee">
+                      {interviewColumns.followedUpCoffee.map(card => (
                         <SortablePipelineCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -782,11 +793,11 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Offers ({interviewColumns.offers.length})
+                    Coffee Chat ({interviewColumns.coffeeChat.length})
                   </h5>
-                  <SortableContext items={interviewColumns.offers.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="offers">
-                      {interviewColumns.offers.map(card => (
+                  <SortableContext items={interviewColumns.coffeeChat.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="coffeeChat">
+                      {interviewColumns.coffeeChat.map(card => (
                         <SortablePipelineCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -830,7 +841,7 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Upcoming ({eventColumns.upcoming.length})
+                    Scheduled ({eventColumns.upcoming.length})
                   </h5>
                   <SortableContext items={eventColumns.upcoming.map(c => c.id)} strategy={rectSortingStrategy}>
                     <DroppableColumn id="upcoming">
@@ -844,7 +855,7 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Attending ({eventColumns.attending.length})
+                    Attended ({eventColumns.attending.length})
                   </h5>
                   <SortableContext items={eventColumns.attending.map(c => c.id)} strategy={rectSortingStrategy}>
                     <DroppableColumn id="attending">
@@ -858,7 +869,7 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Attended ({eventColumns.attended.length})
+                    Connected Online ({eventColumns.attended.length})
                   </h5>
                   <SortableContext items={eventColumns.attended.map(c => c.id)} strategy={rectSortingStrategy}>
                     <DroppableColumn id="attended">
@@ -872,7 +883,7 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Follow-ups ({eventColumns.followups.length})
+                    Followed Up ({eventColumns.followups.length})
                   </h5>
                   <SortableContext items={eventColumns.followups.map(c => c.id)} strategy={rectSortingStrategy}>
                     <DroppableColumn id="followups">
@@ -916,43 +927,15 @@ export default function Page() {
               </button>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLeetDragStart} onDragOver={handleLeetDragOver} onDragEnd={handleLeetDragEnd}>
-              <div className="grid grid-cols-4 gap-6">
+              <div className="grid grid-cols-3 gap-6">
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    To Practice ({leetColumns.toPractice.length})
+                    Planned ({leetColumns.planned.length})
                   </h5>
-                  <SortableContext items={leetColumns.toPractice.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="toPractice">
-                      {leetColumns.toPractice.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    In Progress ({leetColumns.inProgressLC.length})
-                  </h5>
-                  <SortableContext items={leetColumns.inProgressLC.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="inProgressLC">
-                      {leetColumns.inProgressLC.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Completed ({leetColumns.completedLC.length})
-                  </h5>
-                  <SortableContext items={leetColumns.completedLC.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="completedLC">
-                      {leetColumns.completedLC.map(card => (
+                  <SortableContext items={leetColumns.planned.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="planned">
+                      {leetColumns.planned.map(card => (
                         <SortablePipelineCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -962,11 +945,25 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Mastered ({leetColumns.mastered.length})
+                    Solved ({leetColumns.solved.length})
                   </h5>
-                  <SortableContext items={leetColumns.mastered.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="mastered">
-                      {leetColumns.mastered.map(card => (
+                  <SortableContext items={leetColumns.solved.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="solved">
+                      {leetColumns.solved.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
+                </div>
+
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                    Reflected ({leetColumns.reflected.length})
+                  </h5>
+                  <SortableContext items={leetColumns.reflected.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="reflected">
+                      {leetColumns.reflected.map(card => (
                         <SortablePipelineCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
