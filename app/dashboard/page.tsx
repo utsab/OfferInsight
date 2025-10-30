@@ -1,9 +1,455 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent, DragOverlay, useDroppable } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [projectedOfferDate, setProjectedOfferDate] = useState<Date | null>(null);
+
+  // dnd-kit: Applications board state
+  type AppCard = {
+    id: string;
+    title: string;
+    location: string;
+    leftLabel: string;
+    rightLabel: string;
+  };
+
+  type ColumnId = 'todo' | 'inprogress' | 'submitted' | 'completed';
+  const [appColumns, setAppColumns] = useState<Record<ColumnId, AppCard[]>>({
+    todo: [
+      { id: 'google-swe', title: 'Google Software Engineer', location: 'Mountain View, CA', leftLabel: 'Due: Dec 15', rightLabel: 'High Priority' },
+      { id: 'microsoft-pm', title: 'Microsoft Product Manager', location: 'Seattle, WA', leftLabel: 'Due: Dec 20', rightLabel: 'Medium Priority' },
+      { id: 'tesla-swe', title: 'Tesla Software Engineer', location: 'Austin, TX', leftLabel: 'Due: Dec 18', rightLabel: 'High Priority' },
+    ],
+    inprogress: [
+      { id: 'meta-ds', title: 'Meta Data Scientist', location: 'Menlo Park, CA', leftLabel: 'Resume customization', rightLabel: '75%' },
+      { id: 'stripe-backend', title: 'Stripe Backend Engineer', location: 'San Francisco, CA', leftLabel: 'Cover letter draft', rightLabel: '60%' },
+    ],
+    submitted: [
+      { id: 'amazon-intern', title: 'Amazon SDE Intern', location: 'Seattle, WA', leftLabel: 'Submitted Dec 10', rightLabel: 'Pending' },
+      { id: 'netflix-eng', title: 'Netflix Engineering', location: 'Los Gatos, CA', leftLabel: 'Submitted Dec 8', rightLabel: 'Under Review' },
+      { id: 'uber-swe', title: 'Uber Software Engineer', location: 'San Francisco, CA', leftLabel: 'Submitted Dec 5', rightLabel: 'Under Review' },
+    ],
+    completed: [
+      { id: 'apple-ios', title: 'Apple iOS Developer', location: 'Cupertino, CA', leftLabel: 'Interview Scheduled', rightLabel: 'Success' },
+      { id: 'shopify-backend', title: 'Shopify Backend Engineer', location: 'Ottawa, ON', leftLabel: 'Interview Scheduled', rightLabel: 'Success' },
+    ],
+  });
+
+  const [activeAppId, setActiveAppId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
+  );
+
+  const getColumnOfItem = (id: string): ColumnId | null => {
+    const entry = (Object.keys(appColumns) as ColumnId[]).find(col => appColumns[col].some(c => c.id === id));
+    return entry ?? null;
+  };
+
+  const handleApplicationsDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    const fromCol = getColumnOfItem(activeId);
+    const toCol = (['todo','inprogress','submitted','completed'] as ColumnId[]).includes(overId as ColumnId)
+      ? (overId as ColumnId)
+      : getColumnOfItem(overId);
+    if (!fromCol || !toCol) return;
+
+    if (fromCol === toCol) {
+      const items = appColumns[fromCol];
+      const oldIndex = items.findIndex(i => i.id === activeId);
+      const newIndex = items.findIndex(i => i.id === overId);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      const newItems = arrayMove(items, oldIndex, newIndex);
+      setAppColumns(prev => ({ ...prev, [fromCol]: newItems }));
+    } else {
+      const fromItems = appColumns[fromCol];
+      const toItems = appColumns[toCol];
+      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      if (movingIndex === -1) return;
+      const movingItem = fromItems[movingIndex];
+      const overIndex = toItems.findIndex(i => i.id === overId);
+      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
+      const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
+      setAppColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+    }
+    setActiveAppId(null);
+  };
+
+  const handleApplicationsDragStart = (event: DragStartEvent) => {
+    setActiveAppId(String(event.active.id));
+  };
+
+  const handleApplicationsDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const fromCol = getColumnOfItem(activeId);
+    const toCol = (['todo','inprogress','submitted','completed'] as ColumnId[]).includes(overId as ColumnId)
+      ? (overId as ColumnId)
+      : getColumnOfItem(overId);
+    if (!fromCol || !toCol || fromCol === toCol) return;
+    setAppColumns(prev => {
+      const fromItems = prev[fromCol];
+      const toItems = prev[toCol];
+      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      if (movingIndex === -1) return prev;
+      const movingItem = fromItems[movingIndex];
+      const overIndex = toItems.findIndex(i => i.id === overId);
+      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      return {
+        ...prev,
+        [fromCol]: [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)],
+        [toCol]: [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)],
+      };
+    });
+  };
+
+  function SortableAppCard(props: { card: AppCard }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.card.id });
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0 : undefined,
+    } as React.CSSProperties;
+    return (
+      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
+        <div className="text-white font-medium mb-1">{props.card.title}</div>
+        <div className="text-gray-400 text-sm mb-2">{props.card.location}</div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-yellow-400">{props.card.leftLabel}</span>
+          <span className="text-gray-500">{props.card.rightLabel}</span>
+        </div>
+      </div>
+    );
+  }
+
+  function DroppableColumn(props: { id: string; children: React.ReactNode }) {
+    const { setNodeRef, isOver } = useDroppable({ id: props.id });
+    return (
+      <div ref={setNodeRef} className={`space-y-3 min-h-32 ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-650/40' : ''}`}>
+        {props.children}
+        {/* When empty, provide space to drop */}
+        <div className="h-2"></div>
+      </div>
+    );
+  }
+
+  // dnd-kit: Interviews board
+  type PipelineCard = {
+    id: string;
+    title: string;
+    subtitle: string;
+    leftLabel: string;
+    rightLabel: string;
+    leftClass?: string;
+    rightClass?: string;
+  };
+  type InterviewsColumnId = 'scheduled' | 'inprogressInt' | 'completedInt' | 'offers';
+  const [interviewColumns, setInterviewColumns] = useState<Record<InterviewsColumnId, PipelineCard[]>>({
+    scheduled: [
+      { id: 'google-swe-int', title: 'Google SWE Interview', subtitle: 'Dec 20, 2:00 PM', leftLabel: 'Technical Round', rightLabel: '1 hour', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+      { id: 'meta-ds-int', title: 'Meta Data Scientist', subtitle: 'Dec 22, 10:00 AM', leftLabel: 'Behavioral Round', rightLabel: '45 min', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+    ],
+    inprogressInt: [
+      { id: 'ms-pm-live', title: 'Microsoft PM Interview', subtitle: 'Currently in progress', leftLabel: 'Case Study', rightLabel: 'Live', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
+    ],
+    completedInt: [
+      { id: 'apple-ios-int', title: 'Apple iOS Interview', subtitle: 'Completed Dec 12', leftLabel: 'Passed to next round', rightLabel: 'Success', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
+      { id: 'netflix-eng-int', title: 'Netflix Engineering', subtitle: 'Completed Dec 10', leftLabel: 'Awaiting results', rightLabel: 'Pending', leftClass: 'text-purple-400', rightClass: 'text-gray-500' },
+    ],
+    offers: [
+      { id: 'shopify-backend-offer', title: 'Shopify Backend', subtitle: 'Offer received Dec 8', leftLabel: '$120k + equity', rightLabel: 'Accepted', leftClass: 'text-green-400', rightClass: 'text-green-500' },
+    ],
+  });
+
+  const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
+
+  const handleInterviewsDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const columns = interviewColumns;
+    const colKeys = Object.keys(columns) as InterviewsColumnId[];
+    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
+    const overCol: InterviewsColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as InterviewsColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
+    if (!fromCol || !overCol) return;
+    if (fromCol === overCol) {
+      const items = columns[fromCol];
+      const oldIndex = items.findIndex(i => i.id === activeId);
+      const newIndex = items.findIndex(i => i.id === overId);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      setInterviewColumns(prev => ({ ...prev, [fromCol]: arrayMove(prev[fromCol], oldIndex, newIndex) }));
+    } else {
+      const fromItems = columns[fromCol];
+      const toItems = columns[overCol];
+      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      if (movingIndex === -1) return;
+      const movingItem = fromItems[movingIndex];
+      const overIndex = toItems.findIndex(i => i.id === overId);
+      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
+      const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
+      setInterviewColumns(prev => ({ ...prev, [fromCol]: newFrom, [overCol]: newTo }));
+    }
+    setActiveInterviewId(null);
+  };
+
+  const handleInterviewsDragStart = (event: DragStartEvent) => {
+    setActiveInterviewId(String(event.active.id));
+  };
+
+  const handleInterviewsDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const columns = interviewColumns;
+    const colKeys = Object.keys(columns) as InterviewsColumnId[];
+    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
+    const overCol: InterviewsColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as InterviewsColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
+    if (!fromCol || !overCol || fromCol === overCol) return;
+    setInterviewColumns(prev => {
+      const fromItems = prev[fromCol];
+      const toItems = prev[overCol];
+      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      if (movingIndex === -1) return prev;
+      const movingItem = fromItems[movingIndex];
+      const overIndex = toItems.findIndex(i => i.id === overId);
+      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      return {
+        ...prev,
+        [fromCol]: [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)],
+        [overCol]: [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)],
+      };
+    });
+  };
+
+  // dnd-kit: Events board
+  type EventsColumnId = 'upcoming' | 'attending' | 'attended' | 'followups';
+  const [eventColumns, setEventColumns] = useState<Record<EventsColumnId, PipelineCard[]>>({
+    upcoming: [
+      { id: 'career-fair', title: 'Tech Career Fair', subtitle: 'Dec 18, 10:00 AM', leftLabel: 'San Francisco', rightLabel: 'In-person', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+      { id: 'startup-networking', title: 'Startup Networking', subtitle: 'Dec 20, 6:00 PM', leftLabel: 'Palo Alto', rightLabel: 'Networking', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+    ],
+    attending: [
+      { id: 'aiml-meetup', title: 'AI/ML Meetup', subtitle: 'Currently attending', leftLabel: 'Live now', rightLabel: 'Online', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
+    ],
+    attended: [
+      { id: 'google-talk', title: 'Google Tech Talk', subtitle: 'Attended Dec 10', leftLabel: '3 connections made', rightLabel: 'Success', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
+      { id: 'startup-demo', title: 'Startup Demo Day', subtitle: 'Attended Dec 5', leftLabel: '2 connections made', rightLabel: 'Success', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
+    ],
+    followups: [
+      { id: 'netflix-recruiter', title: 'Netflix Recruiter', subtitle: 'Follow-up scheduled', leftLabel: 'LinkedIn message sent', rightLabel: 'Active', leftClass: 'text-green-400', rightClass: 'text-green-500' },
+    ],
+  });
+
+  const [activeEventId, setActiveEventId] = useState<string | null>(null);
+
+  const handleEventsDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const columns = eventColumns;
+    const colKeys = Object.keys(columns) as EventsColumnId[];
+    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
+    const overCol: EventsColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as EventsColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
+    if (!fromCol || !overCol) return;
+    if (fromCol === overCol) {
+      const items = columns[fromCol];
+      const oldIndex = items.findIndex(i => i.id === activeId);
+      const newIndex = items.findIndex(i => i.id === overId);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      setEventColumns(prev => ({ ...prev, [fromCol]: arrayMove(prev[fromCol], oldIndex, newIndex) }));
+    } else {
+      const fromItems = columns[fromCol];
+      const toItems = columns[overCol];
+      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      if (movingIndex === -1) return;
+      const movingItem = fromItems[movingIndex];
+      const overIndex = toItems.findIndex(i => i.id === overId);
+      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
+      const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
+      setEventColumns(prev => ({ ...prev, [fromCol]: newFrom, [overCol]: newTo }));
+    }
+    setActiveEventId(null);
+  };
+
+  const handleEventsDragStart = (event: DragStartEvent) => {
+    setActiveEventId(String(event.active.id));
+  };
+
+  const handleEventsDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const columns = eventColumns;
+    const colKeys = Object.keys(columns) as EventsColumnId[];
+    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
+    const overCol: EventsColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as EventsColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
+    if (!fromCol || !overCol || fromCol === overCol) return;
+    setEventColumns(prev => {
+      const fromItems = prev[fromCol];
+      const toItems = prev[overCol];
+      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      if (movingIndex === -1) return prev;
+      const movingItem = fromItems[movingIndex];
+      const overIndex = toItems.findIndex(i => i.id === overId);
+      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      return {
+        ...prev,
+        [fromCol]: [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)],
+        [overCol]: [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)],
+      };
+    });
+  };
+
+  // dnd-kit: LeetCode board
+  type LeetColumnId = 'toPractice' | 'inProgressLC' | 'completedLC' | 'mastered';
+  const [leetColumns, setLeetColumns] = useState<Record<LeetColumnId, PipelineCard[]>>({
+    toPractice: [
+      { id: 'two-sum', title: 'Two Sum', subtitle: 'Easy - Arrays', leftLabel: 'Not started', rightLabel: 'Easy', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+      { id: 'valid-paren', title: 'Valid Parentheses', subtitle: 'Easy - Stack', leftLabel: 'Not started', rightLabel: 'Easy', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
+    ],
+    inProgressLC: [
+      { id: 'bt-inorder', title: 'Binary Tree Inorder', subtitle: 'Medium - Trees', leftLabel: 'Working on it', rightLabel: '60%', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
+      { id: 'merge-intervals', title: 'Merge Intervals', subtitle: 'Medium - Arrays', leftLabel: 'Working on it', rightLabel: '40%', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
+    ],
+    completedLC: [
+      { id: 'reverse-ll', title: 'Reverse Linked List', subtitle: 'Easy - Linked Lists', leftLabel: 'Completed Dec 10', rightLabel: 'Solved', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
+      { id: 'max-subarray', title: 'Maximum Subarray', subtitle: 'Medium - Arrays', leftLabel: 'Completed Dec 8', rightLabel: 'Solved', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
+    ],
+    mastered: [
+      { id: 'climbing-stairs', title: 'Climbing Stairs', subtitle: 'Easy - DP', leftLabel: 'Multiple solutions', rightLabel: 'Mastered', leftClass: 'text-green-400', rightClass: 'text-green-500' },
+      { id: 'lcs', title: 'Longest Common Subsequence', subtitle: 'Medium - DP', leftLabel: 'Multiple solutions', rightLabel: 'Mastered', leftClass: 'text-green-400', rightClass: 'text-green-500' },
+    ],
+  });
+
+  const [activeLeetId, setActiveLeetId] = useState<string | null>(null);
+
+  const handleLeetDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const columns = leetColumns;
+    const colKeys = Object.keys(columns) as LeetColumnId[];
+    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
+    const overCol: LeetColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as LeetColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
+    if (!fromCol || !overCol) return;
+    if (fromCol === overCol) {
+      const items = columns[fromCol];
+      const oldIndex = items.findIndex(i => i.id === activeId);
+      const newIndex = items.findIndex(i => i.id === overId);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      setLeetColumns(prev => ({ ...prev, [fromCol]: arrayMove(prev[fromCol], oldIndex, newIndex) }));
+    } else {
+      const fromItems = columns[fromCol];
+      const toItems = columns[overCol];
+      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      if (movingIndex === -1) return;
+      const movingItem = fromItems[movingIndex];
+      const overIndex = toItems.findIndex(i => i.id === overId);
+      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
+      const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
+      setLeetColumns(prev => ({ ...prev, [fromCol]: newFrom, [overCol]: newTo }));
+    }
+    setActiveLeetId(null);
+  };
+
+  const handleLeetDragStart = (event: DragStartEvent) => {
+    setActiveLeetId(String(event.active.id));
+  };
+
+  const handleLeetDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const columns = leetColumns;
+    const colKeys = Object.keys(columns) as LeetColumnId[];
+    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
+    const overCol: LeetColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as LeetColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
+    if (!fromCol || !overCol || fromCol === overCol) return;
+    setLeetColumns(prev => {
+      const fromItems = prev[fromCol];
+      const toItems = prev[overCol];
+      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      if (movingIndex === -1) return prev;
+      const movingItem = fromItems[movingIndex];
+      const overIndex = toItems.findIndex(i => i.id === overId);
+      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      return {
+        ...prev,
+        [fromCol]: [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)],
+        [overCol]: [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)],
+      };
+    });
+  };
+
+  function SortablePipelineCard(props: { card: PipelineCard }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.card.id });
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0 : undefined,
+    } as React.CSSProperties;
+    return (
+      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
+        <div className="text-white font-medium mb-1">{props.card.title}</div>
+        <div className="text-gray-400 text-sm mb-2">{props.card.subtitle}</div>
+        <div className="flex items-center justify-between text-xs">
+          <span className={props.card.leftClass ?? 'text-yellow-400'}>{props.card.leftLabel}</span>
+          <span className={props.card.rightClass ?? 'text-gray-500'}>{props.card.rightLabel}</span>
+        </div>
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/users/onboarding2');
+        if (!res.ok) return;
+        const user = await res.json();
+        if (user?.projected_offer_date) {
+          const d = new Date(user.projected_offer_date);
+          if (isMounted && !isNaN(d.getTime())) setProjectedOfferDate(d);
+        }
+      } catch (e) {
+        // non-fatal: leave as null
+      }
+    };
+    fetchUser();
+    return () => { isMounted = false; };
+  }, []);
+
+  const projectedOfferDateText = useMemo(() => {
+    if (!projectedOfferDate) return '—';
+    try {
+      return projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch {
+      return '—';
+    }
+  }, [projectedOfferDate]);
 
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
@@ -76,20 +522,22 @@ export default function Page() {
         {/* Overview Content */}
         {activeTab === 'overview' && (
           <div>
-            {/* Projected Offer Section */}
-            <section className="bg-gradient-to-r from-electric-blue to-blue-600 rounded-lg p-8 mb-8 text-center">
-              <h2 className="text-2xl font-bold text-white mb-2">Projected Offer Date</h2>
-              <div className="text-6xl font-bold text-white mb-2">March 15, 2024</div>
-              <p className="text-blue-100 text-lg">Based on your current progress and habits</p>
-              <div className="mt-4 flex justify-center space-x-8 text-blue-100">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">67%</div>
-                  <div className="text-sm">Confidence Level</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">89</div>
-                  <div className="text-sm">Days Remaining</div>
-                </div>
+            {/* Projected Offer Date (question-box styling) */
+            }
+            <section className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-white font-bold text-lg flex items-center">
+                  <i className="fas fa-calendar-check text-electric-blue mr-3"></i>
+                  Projected Offer Date
+                </h2>
+              </div>
+              <div className="flex items-center justify-center">
+                <div className="text-5xl font-bold text-electric-blue text-center">{projectedOfferDateText}</div>
+              </div>
+              <div className="mt-2 text-left">
+                <Link href="/onboarding/page3-v2" className="text-sm text-gray-300 hover:text-white underline underline-offset-2">
+                  Fine-tune your plan
+                </Link>
               </div>
             </section>
 
@@ -198,123 +646,83 @@ export default function Page() {
                 <i className="fas fa-plus mr-2"></i>Add Application
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-6">
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                  To Do (5)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Google Software Engineer</div>
-                    <div className="text-gray-400 text-sm mb-2">Mountain View, CA</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-400">Due: Dec 15</span>
-                      <span className="text-gray-500">High Priority</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Microsoft Product Manager</div>
-                    <div className="text-gray-400 text-sm mb-2">Seattle, WA</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-400">Due: Dec 20</span>
-                      <span className="text-gray-500">Medium Priority</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Tesla Software Engineer</div>
-                    <div className="text-gray-400 text-sm mb-2">Austin, TX</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-400">Due: Dec 18</span>
-                      <span className="text-gray-500">High Priority</span>
-                    </div>
-                  </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleApplicationsDragStart} onDragOver={handleApplicationsDragOver} onDragEnd={handleApplicationsDragEnd}>
+              <div className="grid grid-cols-4 gap-6">
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                    To Do ({appColumns.todo.length})
+                  </h5>
+                  <SortableContext items={appColumns.todo.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="todo">
+                      {appColumns.todo.map(card => (
+                        <SortableAppCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                  In Progress (3)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Meta Data Scientist</div>
-                    <div className="text-gray-400 text-sm mb-2">Menlo Park, CA</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-blue-400">Resume customization</span>
-                      <span className="text-gray-500">75%</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Stripe Backend Engineer</div>
-                    <div className="text-gray-400 text-sm mb-2">San Francisco, CA</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-blue-400">Cover letter draft</span>
-                      <span className="text-gray-500">60%</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    In Progress ({appColumns.inprogress.length})
+                  </h5>
+                  <SortableContext items={appColumns.inprogress.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="inprogress">
+                      {appColumns.inprogress.map(card => (
+                        <SortableAppCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                  Submitted (8)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Amazon SDE Intern</div>
-                    <div className="text-gray-400 text-sm mb-2">Seattle, WA</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-purple-400">Submitted Dec 10</span>
-                      <span className="text-gray-500">Pending</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Netflix Engineering</div>
-                    <div className="text-gray-400 text-sm mb-2">Los Gatos, CA</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-purple-400">Submitted Dec 8</span>
-                      <span className="text-gray-500">Under Review</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Uber Software Engineer</div>
-                    <div className="text-gray-400 text-sm mb-2">San Francisco, CA</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-purple-400">Submitted Dec 5</span>
-                      <span className="text-gray-500">Under Review</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                    Submitted ({appColumns.submitted.length})
+                  </h5>
+                  <SortableContext items={appColumns.submitted.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="submitted">
+                      {appColumns.submitted.map(card => (
+                        <SortableAppCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                  Completed (7)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Apple iOS Developer</div>
-                    <div className="text-gray-400 text-sm mb-2">Cupertino, CA</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-green-400">Interview Scheduled</span>
-                      <span className="text-green-500">Success</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Shopify Backend Engineer</div>
-                    <div className="text-gray-400 text-sm mb-2">Ottawa, ON</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-green-400">Interview Scheduled</span>
-                      <span className="text-green-500">Success</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    Completed ({appColumns.completed.length})
+                  </h5>
+                  <SortableContext items={appColumns.completed.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="completed">
+                      {appColumns.completed.map(card => (
+                        <SortableAppCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
               </div>
-            </div>
+              <DragOverlay>
+                {activeAppId ? (() => {
+                  const col = getColumnOfItem(activeAppId);
+                  if (!col) return null;
+                  const card = appColumns[col].find(c => c.id === activeAppId);
+                  if (!card) return null;
+                  return (
+                    <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
+                      <div className="text-white font-medium mb-1">{card.title}</div>
+                      <div className="text-gray-400 text-sm mb-2">{card.location}</div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-yellow-400">{card.leftLabel}</span>
+                        <span className="text-gray-500">{card.rightLabel}</span>
+                      </div>
+                    </div>
+                  );
+                })() : null}
+              </DragOverlay>
+            </DndContext>
           </section>
         )}
 
@@ -327,91 +735,84 @@ export default function Page() {
                 <i className="fas fa-plus mr-2"></i>Schedule Interview
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-6">
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                  Scheduled (3)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Google SWE Interview</div>
-                    <div className="text-gray-400 text-sm mb-2">Dec 20, 2:00 PM</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-400">Technical Round</span>
-                      <span className="text-gray-500">1 hour</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Meta Data Scientist</div>
-                    <div className="text-gray-400 text-sm mb-2">Dec 22, 10:00 AM</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-400">Behavioral Round</span>
-                      <span className="text-gray-500">45 min</span>
-                    </div>
-                  </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleInterviewsDragStart} onDragOver={handleInterviewsDragOver} onDragEnd={handleInterviewsDragEnd}>
+              <div className="grid grid-cols-4 gap-6">
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                    Scheduled ({interviewColumns.scheduled.length})
+                  </h5>
+                  <SortableContext items={interviewColumns.scheduled.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="scheduled">
+                      {interviewColumns.scheduled.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                  In Progress (2)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Microsoft PM Interview</div>
-                    <div className="text-gray-400 text-sm mb-2">Currently in progress</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-blue-400">Case Study</span>
-                      <span className="text-gray-500">Live</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    In Progress ({interviewColumns.inprogressInt.length})
+                  </h5>
+                  <SortableContext items={interviewColumns.inprogressInt.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="inprogressInt">
+                      {interviewColumns.inprogressInt.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                  Completed (5)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Apple iOS Interview</div>
-                    <div className="text-gray-400 text-sm mb-2">Completed Dec 12</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-purple-400">Passed to next round</span>
-                      <span className="text-green-500">Success</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Netflix Engineering</div>
-                    <div className="text-gray-400 text-sm mb-2">Completed Dec 10</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-purple-400">Awaiting results</span>
-                      <span className="text-gray-500">Pending</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                    Completed ({interviewColumns.completedInt.length})
+                  </h5>
+                  <SortableContext items={interviewColumns.completedInt.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="completedInt">
+                      {interviewColumns.completedInt.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                  Offers (2)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Shopify Backend</div>
-                    <div className="text-gray-400 text-sm mb-2">Offer received Dec 8</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-green-400">$120k + equity</span>
-                      <span className="text-green-500">Accepted</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    Offers ({interviewColumns.offers.length})
+                  </h5>
+                  <SortableContext items={interviewColumns.offers.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="offers">
+                      {interviewColumns.offers.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
               </div>
-            </div>
+              <DragOverlay>
+                {activeInterviewId ? (() => {
+                  const columns = interviewColumns;
+                  const col = (Object.keys(columns) as InterviewsColumnId[]).find(k => columns[k].some(c => c.id === activeInterviewId));
+                  if (!col) return null;
+                  const card = columns[col].find(c => c.id === activeInterviewId);
+                  if (!card) return null;
+                  return (
+                    <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
+                      <div className="text-white font-medium mb-1">{card.title}</div>
+                      <div className="text-gray-400 text-sm mb-2">{card.subtitle}</div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className={card.leftClass ?? 'text-yellow-400'}>{card.leftLabel}</span>
+                        <span className={card.rightClass ?? 'text-gray-500'}>{card.rightLabel}</span>
+                      </div>
+                    </div>
+                  );
+                })() : null}
+              </DragOverlay>
+            </DndContext>
           </section>
         )}
 
@@ -424,91 +825,84 @@ export default function Page() {
                 <i className="fas fa-plus mr-2"></i>Add Event
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-6">
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                  Upcoming (4)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Tech Career Fair</div>
-                    <div className="text-gray-400 text-sm mb-2">Dec 18, 10:00 AM</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-400">San Francisco</span>
-                      <span className="text-gray-500">In-person</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Startup Networking</div>
-                    <div className="text-gray-400 text-sm mb-2">Dec 20, 6:00 PM</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-400">Palo Alto</span>
-                      <span className="text-gray-500">Networking</span>
-                    </div>
-                  </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleEventsDragStart} onDragOver={handleEventsDragOver} onDragEnd={handleEventsDragEnd}>
+              <div className="grid grid-cols-4 gap-6">
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                    Upcoming ({eventColumns.upcoming.length})
+                  </h5>
+                  <SortableContext items={eventColumns.upcoming.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="upcoming">
+                      {eventColumns.upcoming.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                  Attending (2)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">AI/ML Meetup</div>
-                    <div className="text-gray-400 text-sm mb-2">Currently attending</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-blue-400">Live now</span>
-                      <span className="text-gray-500">Online</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    Attending ({eventColumns.attending.length})
+                  </h5>
+                  <SortableContext items={eventColumns.attending.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="attending">
+                      {eventColumns.attending.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                  Attended (6)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Google Tech Talk</div>
-                    <div className="text-gray-400 text-sm mb-2">Attended Dec 10</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-purple-400">3 connections made</span>
-                      <span className="text-green-500">Success</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Startup Demo Day</div>
-                    <div className="text-gray-400 text-sm mb-2">Attended Dec 5</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-purple-400">2 connections made</span>
-                      <span className="text-green-500">Success</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                    Attended ({eventColumns.attended.length})
+                  </h5>
+                  <SortableContext items={eventColumns.attended.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="attended">
+                      {eventColumns.attended.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                  Follow-ups (3)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Netflix Recruiter</div>
-                    <div className="text-gray-400 text-sm mb-2">Follow-up scheduled</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-green-400">LinkedIn message sent</span>
-                      <span className="text-green-500">Active</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    Follow-ups ({eventColumns.followups.length})
+                  </h5>
+                  <SortableContext items={eventColumns.followups.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="followups">
+                      {eventColumns.followups.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
               </div>
-            </div>
+              <DragOverlay>
+                {activeEventId ? (() => {
+                  const columns = eventColumns;
+                  const col = (Object.keys(columns) as EventsColumnId[]).find(k => columns[k].some(c => c.id === activeEventId));
+                  if (!col) return null;
+                  const card = columns[col].find(c => c.id === activeEventId);
+                  if (!card) return null;
+                  return (
+                    <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
+                      <div className="text-white font-medium mb-1">{card.title}</div>
+                      <div className="text-gray-400 text-sm mb-2">{card.subtitle}</div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className={card.leftClass ?? 'text-yellow-400'}>{card.leftLabel}</span>
+                        <span className={card.rightClass ?? 'text-gray-500'}>{card.rightLabel}</span>
+                      </div>
+                    </div>
+                  );
+                })() : null}
+              </DragOverlay>
+            </DndContext>
           </section>
         )}
 
@@ -521,107 +915,84 @@ export default function Page() {
                 <i className="fas fa-plus mr-2"></i>Log Practice
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-6">
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                  To Practice (8)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Two Sum</div>
-                    <div className="text-gray-400 text-sm mb-2">Easy - Arrays</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-400">Not started</span>
-                      <span className="text-gray-500">Easy</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Valid Parentheses</div>
-                    <div className="text-gray-400 text-sm mb-2">Easy - Stack</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-yellow-400">Not started</span>
-                      <span className="text-gray-500">Easy</span>
-                    </div>
-                  </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLeetDragStart} onDragOver={handleLeetDragOver} onDragEnd={handleLeetDragEnd}>
+              <div className="grid grid-cols-4 gap-6">
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                    To Practice ({leetColumns.toPractice.length})
+                  </h5>
+                  <SortableContext items={leetColumns.toPractice.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="toPractice">
+                      {leetColumns.toPractice.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                  In Progress (5)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Binary Tree Inorder</div>
-                    <div className="text-gray-400 text-sm mb-2">Medium - Trees</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-blue-400">Working on it</span>
-                      <span className="text-gray-500">60%</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Merge Intervals</div>
-                    <div className="text-gray-400 text-sm mb-2">Medium - Arrays</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-blue-400">Working on it</span>
-                      <span className="text-gray-500">40%</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    In Progress ({leetColumns.inProgressLC.length})
+                  </h5>
+                  <SortableContext items={leetColumns.inProgressLC.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="inProgressLC">
+                      {leetColumns.inProgressLC.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                  Completed (12)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Reverse Linked List</div>
-                    <div className="text-gray-400 text-sm mb-2">Easy - Linked Lists</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-purple-400">Completed Dec 10</span>
-                      <span className="text-green-500">Solved</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Maximum Subarray</div>
-                    <div className="text-gray-400 text-sm mb-2">Medium - Arrays</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-purple-400">Completed Dec 8</span>
-                      <span className="text-green-500">Solved</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                    Completed ({leetColumns.completedLC.length})
+                  </h5>
+                  <SortableContext items={leetColumns.completedLC.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="completedLC">
+                      {leetColumns.completedLC.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
 
-              <div className="bg-gray-700 rounded-lg p-4">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                  Mastered (8)
-                </h5>
-                <div className="space-y-3">
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Climbing Stairs</div>
-                    <div className="text-gray-400 text-sm mb-2">Easy - DP</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-green-400">Multiple solutions</span>
-                      <span className="text-green-500">Mastered</span>
-                    </div>
-                  </div>
-                  <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-                    <div className="text-white font-medium mb-1">Longest Common Subsequence</div>
-                    <div className="text-gray-400 text-sm mb-2">Medium - DP</div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-green-400">Multiple solutions</span>
-                      <span className="text-green-500">Mastered</span>
-                    </div>
-                  </div>
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <h5 className="text-white font-semibold mb-4 flex items-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    Mastered ({leetColumns.mastered.length})
+                  </h5>
+                  <SortableContext items={leetColumns.mastered.map(c => c.id)} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="mastered">
+                      {leetColumns.mastered.map(card => (
+                        <SortablePipelineCard key={card.id} card={card} />
+                      ))}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
               </div>
-            </div>
+              <DragOverlay>
+                {activeLeetId ? (() => {
+                  const columns = leetColumns;
+                  const col = (Object.keys(columns) as LeetColumnId[]).find(k => columns[k].some(c => c.id === activeLeetId));
+                  if (!col) return null;
+                  const card = columns[col].find(c => c.id === activeLeetId);
+                  if (!card) return null;
+                  return (
+                    <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
+                      <div className="text-white font-medium mb-1">{card.title}</div>
+                      <div className="text-gray-400 text-sm mb-2">{card.subtitle}</div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className={card.leftClass ?? 'text-yellow-400'}>{card.leftLabel}</span>
+                        <span className={card.rightClass ?? 'text-gray-500'}>{card.rightLabel}</span>
+                      </div>
+                    </div>
+                  );
+                })() : null}
+              </DragOverlay>
+            </DndContext>
           </section>
         )}
     </main>
