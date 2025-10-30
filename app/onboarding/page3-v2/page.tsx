@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Page3V2() {
@@ -11,15 +11,55 @@ export default function Page3V2() {
   const [interviewsPerWeek, setInterviewsPerWeek] = useState<number>(2);
   const [eventsPerMonth, setEventsPerMonth] = useState<number>(3);
   const [fairsPerYear, setFairsPerYear] = useState<number>(1);
+  const [hoursPerWeek, setHoursPerWeek] = useState<number>(12);
+
+  // Initialize values from server (based on selections saved in page2-v2)
+  useEffect(() => {
+    const fetchInitial = async () => {
+      try {
+        const res = await fetch('/api/users/onboarding2');
+        if (!res.ok) return;
+        const user = await res.json();
+        if (typeof user.apps_with_outreach_per_week === 'number') {
+          setAppsPerWeek(user.apps_with_outreach_per_week);
+        }
+        if (typeof user.info_interview_outreach_per_week === 'number') {
+          setInterviewsPerWeek(user.info_interview_outreach_per_week);
+        }
+        if (typeof user.in_person_events_per_month === 'number') {
+          setEventsPerMonth(user.in_person_events_per_month);
+        }
+        if (typeof user.career_fairs_quota === 'number') {
+          setFairsPerYear(user.career_fairs_quota);
+        }
+        if (typeof user.commitment === 'number') {
+          setHoursPerWeek(user.commitment);
+        }
+      } catch (e) {
+        console.error('Failed to load initial onboarding values:', e);
+      }
+    };
+    fetchInitial();
+  }, []);
 
   // Projection calculations (adapted from original page3, with fairs instead of LeetCode)
-  const { successRate, timeToOffer, weeklyHours } = useMemo(() => {
-    const totalScore = appsPerWeek * 2 + interviewsPerWeek * 3 + eventsPerMonth * 1.5 + fairsPerYear * 1.0;
+  const { successRate, timeToOffer, weeklyHours, projectedOfferDate } = useMemo(() => {
+    const totalScore =
+      appsPerWeek * 2 +
+      interviewsPerWeek * 3 +
+      eventsPerMonth * 1.5 +
+      fairsPerYear * 1.0 +
+      hoursPerWeek * 1.0;
     const sr = Math.min(95, Math.max(45, 45 + totalScore * 1.2));
+    // Time to offer in months (float)
     const tto = Math.max(2.5, 6.5 - totalScore * 0.15);
-    const wh = appsPerWeek * 1.5 + interviewsPerWeek * 2 + eventsPerMonth * 0.5 + fairsPerYear * 0.75;
-    return { successRate: Math.round(sr), timeToOffer: Number(tto.toFixed(1)), weeklyHours: Math.round(wh) };
-  }, [appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear]);
+    const wh = hoursPerWeek;
+    // Compute a more responsive projected date by adding days based on fractional months
+    const base = new Date();
+    const daysToAdd = Math.round(tto * 30); // approximate month length
+    const projDate = new Date(base.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+    return { successRate: Math.round(sr), timeToOffer: Number(tto.toFixed(1)), weeklyHours: Math.round(wh), projectedOfferDate: projDate };
+  }, [appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear, hoursPerWeek]);
 
   const handleBack = () => router.back();
 
@@ -36,7 +76,8 @@ export default function Page3V2() {
         apps_with_outreach_per_week: appsPerWeek,
         info_interview_outreach_per_week: interviewsPerWeek,
         in_person_events_per_month: eventsPerMonth,
-        career_fairs_quota: fairsPerYear
+        career_fairs_quota: fairsPerYear,
+        projected_offer_date: projectedOfferDate.toISOString()
       }),
     });
 
@@ -51,15 +92,10 @@ export default function Page3V2() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
       <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="flex items-center justify-center mb-4">
-            <i className="fas fa-chart-line text-electric-blue text-3xl mr-3"></i>
-            <h1 className="text-2xl font-bold text-white">OfferInsight</h1>
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-3">Fine-tune Your Action Plan</h2>
-          <p className="text-gray-300 text-lg">Customize your weekly and monthly goals for each habit to maximize your success</p>
-          <div className="flex items-center justify-center mt-4">
+        {/* Header (condensed) */}
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-bold text-white">Fine-tune Your Action Plan</h2>
+          <div className="flex items-center justify-center mt-3">
             <div className="flex space-x-2">
               <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
               <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
@@ -91,6 +127,34 @@ export default function Page3V2() {
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-6 mb-8">
+            {/* Hours per Week (wide and short) */}
+            <div className="col-span-2 bg-gray-700 border border-light-steel-blue rounded-lg p-4 hover:border-electric-blue/50 transition-colors">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-white font-bold text-lg flex items-center">
+                  <i className="fas fa-clock text-electric-blue mr-3"></i>
+                  Hours per Week
+                </h4>
+                <div className="text-electric-blue text-sm font-semibold">0 - 40</div>
+              </div>
+              <div className="mb-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-300">Weekly commitment:</span>
+                  <span className="text-white font-bold text-xl">{hoursPerWeek}</span>
+                </div>
+                <input
+                  type="range"
+                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  min={0}
+                  max={40}
+                  value={hoursPerWeek}
+                  onChange={(e) => setHoursPerWeek(Number(e.target.value))}
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>0</span>
+                  <span>40</span>
+                </div>
+              </div>
+            </div>
             {/* Applications */}
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
@@ -124,12 +188,12 @@ export default function Page3V2() {
               </div>
             </div>
 
-            {/* Interviews */}
+            {/* Coffee Chats */}
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-white font-bold text-lg flex items-center">
-                  <i className="fas fa-comments text-electric-blue mr-3"></i>
-                  Informational Interviews
+                  <i className="fas fa-mug-hot text-electric-blue mr-3"></i>
+                  Coffee Chats
                 </h4>
                 <div className="text-electric-blue text-sm font-semibold">WEEKLY</div>
               </div>
@@ -224,24 +288,15 @@ export default function Page3V2() {
             </div>
           </div>
 
-          {/* Projections */}
+          {/* Projected Offer Date (reverted to original lighter style) */}
           <div className="bg-gray-700/30 border border-light-steel-blue rounded-lg p-6 mb-8">
             <h3 className="text-white font-bold text-lg mb-4 flex items-center">
-              <i className="fas fa-target text-electric-blue mr-3"></i>
-              Projected Outcome with Your Custom Plan
+              <i className="fas fa-calendar-check text-electric-blue mr-3"></i>
+              Projected Offer Date
             </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-electric-blue mb-1">{successRate}%</div>
-                <div className="text-gray-300 text-sm">Success Rate</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-electric-blue mb-1">{timeToOffer}</div>
-                <div className="text-gray-300 text-sm">Months to Offer</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-electric-blue mb-1">{weeklyHours}</div>
-                <div className="text-gray-300 text-sm">Hours per Week</div>
+            <div className="flex flex-col items-center justify-center">
+              <div className="text-3xl font-bold text-electric-blue text-center">
+                {projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
             </div>
           </div>

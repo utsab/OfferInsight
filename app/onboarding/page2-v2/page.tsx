@@ -48,7 +48,7 @@ export default function Page2V2() {
       },
       body: JSON.stringify({
         monthsToSecureInternship: parseInt(selectedTimeline),
-        commitment: plan.commitment,
+        commitment: parseInt(plan.commitment),
         apps_with_outreach_per_week: parseInt(plan.apps.split(' ')[0]),
         info_interview_outreach_per_week: parseInt(plan.interviewsOutreach.split(' ')[0]),
         in_person_events_per_month: parseInt(plan.events.split(' ')[0]),
@@ -187,7 +187,7 @@ export default function Page2V2() {
                   <span className="ml-auto text-right font-bold">{calculator ? calculator.apps : '-'}</span>
                 </div>
                 <div className="flex justify-start items-center text-lg whitespace-nowrap gap-6">
-                  <p>Informational Interview Outreach</p>
+                  <p>Coffee Chat Outreach</p>
                   <span className="ml-auto text-right font-bold">{calculator ? calculator.interviewsOutreach : '-'}</span>
                 </div>
                 <div className="flex justify-start items-center text-lg whitespace-nowrap gap-6">

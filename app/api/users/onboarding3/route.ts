@@ -14,7 +14,8 @@ export async function POST(request: Request) {
       apps_with_outreach_per_week, 
       info_interview_outreach_per_week, 
       in_person_events_per_month,
-      career_fairs_quota
+      career_fairs_quota,
+      projected_offer_date
     } = await request.json();
 
     const updatedUser = await prisma.user.update({
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
         info_interview_outreach_per_week,
         in_person_events_per_month,
         career_fairs_quota,
+        projected_offer_date: projected_offer_date ? new Date(projected_offer_date) : undefined,
         onboarding_progress: 3,
       },
     });

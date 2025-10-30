@@ -25,6 +25,7 @@ export async function GET() {
         info_interview_outreach_per_week: true,
         in_person_events_per_month: true,
         career_fairs_quota: true,
+        projected_offer_date: true,
         onboarding_progress: true,
       },
     });
