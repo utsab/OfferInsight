@@ -13,15 +13,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Applications {
-  id          Int     @id @default(autoincrement())
-  company     String
-  firstRound  Boolean
-  finalRound  Boolean
-  offer       Boolean
-  userId      String
-  user        User    @relation(fields: [userId], references: [id])
-}
+// model Applications removed – consolidated into Applications_with_Outreach
 
 model Applications_with_Outreach {
   id                    Int     @id @default(autoincrement())
@@ -60,23 +52,14 @@ model In_Person_Events {
   notes               String?
   numPeopleSpokenTo   Int?
   numLinkedInRequests Int?
+  careerFair          Boolean  @default(false)
+  numOfInterviews     Int?
   userId              String
   user                User     @relation(fields: [userId], references: [id])
   status              String   @default("scheduled")
 }
 
-model Career_Fairs {
-  id                  Int     @id @default(autoincrement())
-  event               String
-  date                DateTime
-  location            String?
-  url                 String?
-  notes               String?
-  numOfInterviews     Int?
-  userId              String
-  user                User    @relation(fields: [userId], references: [id])
-  status              String  @default("scheduled")
-}
+// model Career_Fairs removed – merged into In_Person_Events
 
 model User {
   id                                  String                        @id @default(cuid())
@@ -84,11 +67,10 @@ model User {
   email                               String?                       @unique
   image                               String?
   createdAt                           DateTime                      @default(now())
-  applications                        Applications[]
+  // applications removed – use applicationsWithOutreach instead
   applicationsWithOutreach            Applications_with_Outreach[]
   linkedinOutreach                    Linkedin_Outreach[]
   inPersonEvents                      In_Person_Events[]
-  careerFairs                         Career_Fairs[]
   emailVerified                       DateTime?
   accounts                            Account[]
   onboarding_progress                 Int                          @default(0)
@@ -98,7 +80,6 @@ model User {
   projected_offer_date                DateTime?
   monthsToSecureInternship            Int?
   commitment                          Int?
-  applications_per_week               Int?
   apps_with_outreach_per_week         Int?
   info_interview_outreach_per_week    Int?
   in_person_events_per_month          Int?
