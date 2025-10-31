@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { SignOut } from "./auth-components"
+import { Settings, ChevronDown, User, Cog } from "lucide-react";
 
 interface UserData {
   name: string | null;
@@ -57,8 +58,8 @@ export function AuthenticatedUserButton() {
             onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
             className="text-gray-400 hover:text-white font-semibold flex items-center"
           >
-            <i className="fas fa-gear mr-2"></i>Settings
-            <i className="fas fa-chevron-down ml-2 text-xs"></i>
+            <Settings className="mr-2" />Settings
+            <ChevronDown className="ml-2 text-xs" />
           </button>
           
           {showSettingsDropdown && (
@@ -66,15 +67,15 @@ export function AuthenticatedUserButton() {
               <div className="py-2">
                 <button 
                   onClick={() => setShowSettingsDropdown(false)}
-                  className="w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                  className="w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center"
                 >
-                  <i className="fas fa-user mr-2"></i>Profile
+                  <User className="mr-2" />Profile
                 </button>
                 <button 
                   onClick={() => setShowSettingsDropdown(false)}
-                  className="w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                  className="w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center"
                 >
-                  <i className="fas fa-cog mr-2"></i>Preferences
+                  <Cog className="mr-2" />Preferences
                 </button>
                 <hr className="border-light-steel-blue my-1" />
                 <div className="px-4 py-2">

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Lightbulb, Clock, FileText, Info, Coffee, Users, Building2, CalendarCheck, ArrowLeft, Rocket } from 'lucide-react';
 
 export default function Page3V2() {
   const router = useRouter();
@@ -108,7 +109,7 @@ export default function Page3V2() {
         {/* Plan recommendation */}
         <div className="bg-gradient-to-r from-electric-blue/20 to-blue-600/20 border border-electric-blue/30 rounded-lg p-6 mb-8">
           <div className="flex items-center mb-3">
-            <i className="fas fa-lightbulb text-electric-blue text-xl mr-3"></i>
+            <Lightbulb className="text-electric-blue text-xl mr-3" />
             <h3 className="text-white font-bold text-lg">Recommended Plan Based on Your Timeline</h3>
           </div>
           <p className="text-gray-300 mb-4">Based on your timeline, here's our data-driven recommendation to maximize your chances of success:</p>
@@ -131,7 +132,7 @@ export default function Page3V2() {
             <div className="col-span-2 bg-gray-700 border border-light-steel-blue rounded-lg p-4 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-white font-bold text-lg flex items-center">
-                  <i className="fas fa-clock text-electric-blue mr-3"></i>
+                  <Clock className="text-electric-blue mr-3" />
                   Hours per Week
                 </h4>
                 <div className="text-electric-blue text-sm font-semibold">0 - 40</div>
@@ -159,7 +160,7 @@ export default function Page3V2() {
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-white font-bold text-lg flex items-center">
-                  <i className="fas fa-file-alt text-electric-blue mr-3"></i>
+                  <FileText className="text-electric-blue mr-3" />
                   High Quality Applications
                 </h4>
                 <div className="text-electric-blue text-sm font-semibold">WEEKLY</div>
@@ -182,8 +183,8 @@ export default function Page3V2() {
                   <span>15</span>
                 </div>
               </div>
-              <div className="text-gray-400 text-sm">
-                <i className="fas fa-info-circle mr-1"></i>
+              <div className="text-gray-400 text-sm flex items-center">
+                <Info className="mr-1" />
                 Focus on quality over quantity for better results
               </div>
             </div>
@@ -192,7 +193,7 @@ export default function Page3V2() {
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-white font-bold text-lg flex items-center">
-                  <i className="fas fa-mug-hot text-electric-blue mr-3"></i>
+                  <Coffee className="text-electric-blue mr-3" />
                   Coffee Chats
                 </h4>
                 <div className="text-electric-blue text-sm font-semibold">WEEKLY</div>
@@ -215,8 +216,8 @@ export default function Page3V2() {
                   <span>8</span>
                 </div>
               </div>
-              <div className="text-gray-400 text-sm">
-                <i className="fas fa-info-circle mr-1"></i>
+              <div className="text-gray-400 text-sm flex items-center">
+                <Info className="mr-1" />
                 Build meaningful connections in your industry
               </div>
             </div>
@@ -225,7 +226,7 @@ export default function Page3V2() {
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-white font-bold text-lg flex items-center">
-                  <i className="fas fa-users text-electric-blue mr-3"></i>
+                  <Users className="text-electric-blue mr-3" />
                   In-Person Events
                 </h4>
                 <div className="text-electric-blue text-sm font-semibold">MONTHLY</div>
@@ -248,8 +249,8 @@ export default function Page3V2() {
                   <span>10</span>
                 </div>
               </div>
-              <div className="text-gray-400 text-sm">
-                <i className="fas fa-info-circle mr-1"></i>
+              <div className="text-gray-400 text-sm flex items-center">
+                <Info className="mr-1" />
                 Career fairs, meetups, and networking events
               </div>
             </div>
@@ -258,7 +259,7 @@ export default function Page3V2() {
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-white font-bold text-lg flex items-center">
-                  <i className="fas fa-building-columns text-electric-blue mr-3"></i>
+                  <Building2 className="text-electric-blue mr-3" />
                   Career Fairs
                 </h4>
                 <div className="text-electric-blue text-sm font-semibold">YEARLY</div>
@@ -281,8 +282,8 @@ export default function Page3V2() {
                   <span>8</span>
                 </div>
               </div>
-              <div className="text-gray-400 text-sm">
-                <i className="fas fa-info-circle mr-1"></i>
+              <div className="text-gray-400 text-sm flex items-center">
+                <Info className="mr-1" />
                 Large events to meet many employers in one place
               </div>
             </div>
@@ -291,7 +292,7 @@ export default function Page3V2() {
           {/* Projected Offer Date (reverted to original lighter style) */}
           <div className="bg-gray-700/30 border border-light-steel-blue rounded-lg p-6 mb-8">
             <h3 className="text-white font-bold text-lg mb-4 flex items-center">
-              <i className="fas fa-calendar-check text-electric-blue mr-3"></i>
+              <CalendarCheck className="text-electric-blue mr-3" />
               Projected Offer Date
             </h3>
             <div className="flex flex-col items-center justify-center">
@@ -303,12 +304,12 @@ export default function Page3V2() {
 
           {/* Buttons */}
           <div className="flex space-x-4">
-            <button type="button" onClick={handleBack} className="flex-1 bg-gray-700 hover:bg-gray-600 border border-light-steel-blue text-white py-4 rounded-lg font-semibold transition-colors">
-              <i className="fas fa-arrow-left mr-2"></i>
+            <button type="button" onClick={handleBack} className="flex-1 bg-gray-700 hover:bg-gray-600 border border-light-steel-blue text-white py-4 rounded-lg font-semibold transition-colors flex items-center justify-center">
+              <ArrowLeft className="mr-2" />
               Back
             </button>
-            <button type="submit" className="flex-2 bg-electric-blue hover:bg-blue-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors">
-              <i className="fas fa-rocket mr-2"></i>
+            <button type="submit" className="flex-2 bg-electric-blue hover:bg-blue-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors flex items-center justify-center">
+              <Rocket className="mr-2" />
               Start Tracking My Progress
             </button>
           </div>

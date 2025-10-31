@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { FileText, MessageCircle, Users, Code } from 'lucide-react';
 
 export default function Page() {
   const [currentStep, setCurrentStep] = useState<'homepage' | 'onboarding-step1' | 'onboarding-step2' | 'onboarding-step3' | 'dashboard'>('homepage');
@@ -108,22 +109,22 @@ export default function Page() {
               <h3 className="text-3xl font-bold text-center mb-16 text-white">Four Habits to Success</h3>
               <div className="grid grid-cols-4 gap-8">
                 <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-8 text-center">
-                  <i className="fas fa-file-alt text-white text-4xl mb-4"></i>
+                  <FileText className="text-white text-4xl mb-4 mx-auto" />
                   <h4 className="text-lg font-bold mb-3 text-white">High Quality Applications</h4>
                   <p className="text-gray-300 text-sm">Track and optimize your job application process for maximum impact.</p>
                 </div>
                 <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-8 text-center">
-                  <i className="fas fa-comments text-white text-4xl mb-4"></i>
+                  <MessageCircle className="text-white text-4xl mb-4 mx-auto" />
                   <h4 className="text-lg font-bold mb-3 text-white">Informational Interviews</h4>
                   <p className="text-gray-300 text-sm">Build meaningful connections through strategic networking conversations.</p>
                 </div>
                 <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-8 text-center">
-                  <i className="fas fa-users text-white text-4xl mb-4"></i>
+                  <Users className="text-white text-4xl mb-4 mx-auto" />
                   <h4 className="text-lg font-bold mb-3 text-white">In-Person Events</h4>
                   <p className="text-gray-300 text-sm">Attend career fairs, meetups, and networking events to expand your reach.</p>
                 </div>
                 <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-8 text-center">
-                  <i className="fas fa-code text-white text-4xl mb-4"></i>
+                  <Code className="text-white text-4xl mb-4 mx-auto" />
                   <h4 className="text-lg font-bold mb-3 text-white">LeetCode Practice</h4>
                   <p className="text-gray-300 text-sm">Sharpen your technical skills with consistent coding practice.</p>
                 </div>
@@ -238,7 +239,7 @@ export default function Page() {
               <div className="grid grid-cols-2 gap-6 mb-8">
                 <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
                   <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <i className="fas fa-file-alt text-electric-blue mr-2"></i>
+                    <FileText className="text-electric-blue mr-2" />
                     Applications per Week
                   </h4>
                   <input 
@@ -250,7 +251,7 @@ export default function Page() {
                 </div>
                 <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
                   <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <i className="fas fa-comments text-electric-blue mr-2"></i>
+                    <MessageCircle className="text-electric-blue mr-2" />
                     Interviews per Week
                   </h4>
                   <input 
@@ -262,7 +263,7 @@ export default function Page() {
                 </div>
                 <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
                   <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <i className="fas fa-users text-electric-blue mr-2"></i>
+                    <Users className="text-electric-blue mr-2" />
                     Events per Month
                   </h4>
                   <input 
@@ -274,7 +275,7 @@ export default function Page() {
                 </div>
                 <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
                   <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <i className="fas fa-code text-electric-blue mr-2"></i>
+                    <Code className="text-electric-blue mr-2" />
                     LeetCode per Week
                   </h4>
                   <input 

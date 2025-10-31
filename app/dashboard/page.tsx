@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus } from 'lucide-react';
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -471,7 +472,7 @@ export default function Page() {
                   : 'text-gray-400 hover:text-white hover:bg-gray-700'
               }`}
             >
-              <i className="fas fa-gauge-high mr-2"></i>Overview
+              <Gauge className="inline mr-2" />Overview
             </button>
             <button 
               onClick={() => handleTabClick('applications')}
@@ -481,7 +482,7 @@ export default function Page() {
                   : 'text-gray-400 hover:text-white hover:bg-gray-700'
               }`}
             >
-              <i className="fas fa-file-lines mr-2"></i>Applications
+              <FileText className="inline mr-2" />Applications
             </button>
             <button 
               onClick={() => handleTabClick('interviews')}
@@ -491,7 +492,7 @@ export default function Page() {
                   : 'text-gray-400 hover:text-white hover:bg-gray-700'
               }`}
             >
-              <i className="fas fa-comments mr-2"></i>Coffee Chats
+              <MessageCircle className="inline mr-2" />Coffee Chats
             </button>
             <button 
               onClick={() => handleTabClick('events')}
@@ -501,7 +502,7 @@ export default function Page() {
                   : 'text-gray-400 hover:text-white hover:bg-gray-700'
               }`}
             >
-              <i className="fas fa-users mr-2"></i>Events
+              <Users className="inline mr-2" />Events
             </button>
             <button 
               onClick={() => handleTabClick('leetcode')}
@@ -511,7 +512,7 @@ export default function Page() {
                   : 'text-gray-400 hover:text-white hover:bg-gray-700'
               }`}
             >
-              <i className="fas fa-code mr-2"></i>LeetCode
+              <Code className="inline mr-2" />LeetCode
             </button>
           </div>
         </section>
@@ -524,7 +525,7 @@ export default function Page() {
             <section className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 mb-8">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-white font-bold text-lg flex items-center">
-                  <i className="fas fa-calendar-check text-electric-blue mr-3"></i>
+                  <CalendarCheck className="text-electric-blue mr-3" />
                   Projected Offer Date
                 </h2>
               </div>
@@ -548,7 +549,7 @@ export default function Page() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <i className="fas fa-file-lines text-electric-blue text-xl"></i>
+                      <FileText className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">Applications</h4>
                     </div>
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -570,7 +571,7 @@ export default function Page() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <i className="fas fa-comments text-electric-blue text-xl"></i>
+                      <MessageCircle className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">Interviews</h4>
                     </div>
                     <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
@@ -592,7 +593,7 @@ export default function Page() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <i className="fas fa-users text-electric-blue text-xl"></i>
+                      <Users className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">Events</h4>
                     </div>
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -614,7 +615,7 @@ export default function Page() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <i className="fas fa-code text-electric-blue text-xl"></i>
+                      <Code className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">LeetCode</h4>
                     </div>
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -639,8 +640,8 @@ export default function Page() {
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h4 className="text-xl font-bold text-white">High Quality Applications</h4>
-              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
-                <i className="fas fa-plus mr-2"></i>Add Application
+              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
+                <Plus className="mr-2" />Add Application
               </button>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleApplicationsDragStart} onDragOver={handleApplicationsDragOver} onDragEnd={handleApplicationsDragEnd}>
@@ -742,8 +743,8 @@ export default function Page() {
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h4 className="text-xl font-bold text-white">Coffee Chats</h4>
-              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
-                <i className="fas fa-plus mr-2"></i>New Outreach
+              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
+                <Plus className="mr-2" />New Outreach
               </button>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleInterviewsDragStart} onDragOver={handleInterviewsDragOver} onDragEnd={handleInterviewsDragEnd}>
@@ -832,8 +833,8 @@ export default function Page() {
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h4 className="text-xl font-bold text-white">Event Tracking</h4>
-              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
-                <i className="fas fa-plus mr-2"></i>Add Event
+              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
+                <Plus className="mr-2" />Add Event
               </button>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleEventsDragStart} onDragOver={handleEventsDragOver} onDragEnd={handleEventsDragEnd}>
@@ -922,8 +923,8 @@ export default function Page() {
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h4 className="text-xl font-bold text-white">LeetCode Progress</h4>
-              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
-                <i className="fas fa-plus mr-2"></i>Log Practice
+              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
+                <Plus className="mr-2" />Log Practice
               </button>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLeetDragStart} onDragOver={handleLeetDragOver} onDragEnd={handleLeetDragEnd}>
