@@ -59,6 +59,18 @@ model In_Person_Events {
   status              String   @default("scheduled")
 }
 
+model LeetCode {
+  id          Int      @id @default(autoincrement())
+  problem     String?
+  problemType String?
+  difficulty  String?
+  url         String?
+  reflection  String?
+  status      String   @default("planned")
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
 // model Career_Fairs removed – merged into In_Person_Events
 
 model User {
@@ -71,6 +83,7 @@ model User {
   applicationsWithOutreach            Applications_with_Outreach[]
   linkedinOutreach                    Linkedin_Outreach[]
   inPersonEvents                      In_Person_Events[]
+  leetCode                            LeetCode[]
   emailVerified                       DateTime?
   accounts                            Account[]
   onboarding_progress                 Int                          @default(0)
