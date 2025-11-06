@@ -18,7 +18,7 @@ export async function GET() {
       select: {
         id: true,
         apps_with_outreach_per_week: true,
-        info_interview_outreach_per_week: true,
+        info_interview_outreach_per_month: true,
         in_person_events_per_month: true,
         career_fairs_quota: true,
       },
@@ -100,8 +100,8 @@ export async function GET() {
       inPersonEventsCount,
       careerFairsCount,
       apps_with_outreach_per_week: user.apps_with_outreach_per_week || 10,
-      info_interview_outreach_per_week:
-        user.info_interview_outreach_per_week || 10,
+      info_interview_outreach_per_month:
+        user.info_interview_outreach_per_month || 10,
       in_person_events_per_month: user.in_person_events_per_month || 5,
       career_fairs_quota: user.career_fairs_quota || 5,
     });

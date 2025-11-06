@@ -36,7 +36,7 @@ model Linkedin_Outreach {
   message             String?
   linkedInUrl         String?
   notes               String?
-  status              String  @default("linkedInRequestSent")
+  status              String  @default("outreachRequestSent")
   dateCreated         DateTime @default(now())
   recievedReferral    Boolean @default(false)
   userId              String
@@ -94,7 +94,7 @@ model User {
   monthsToSecureInternship            Int?
   commitment                          Int?
   apps_with_outreach_per_week         Int?
-  info_interview_outreach_per_week    Int?
+  info_interview_outreach_per_month   Int?
   in_person_events_per_month          Int?
   career_fairs_quota                  Int?                         @default(1)                        
 }

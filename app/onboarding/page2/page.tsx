@@ -65,7 +65,7 @@ export default function Page2() {
         monthsToSecureInternship,
         commitment: plan.commitment,
         apps_with_outreach_per_week: plan.apps_with_outreach_per_week,
-        info_interview_outreach_per_week: plan.info_interview_outreach_per_week,
+        info_interview_outreach_per_month: plan.info_interview_outreach_per_month,
         in_person_events_per_month: plan.in_person_events_per_month,
         career_fairs_quota: plan.career_fairs_quota
       }),
@@ -93,8 +93,8 @@ export default function Page2() {
       commitment_display: '?',
       apps_with_outreach_per_week: 0,
       apps_with_outreach_per_week_display: '?',
-      info_interview_outreach_per_week: 0,
-      info_interview_outreach_per_week_display: '?',
+      info_interview_outreach_per_month: 0,
+      info_interview_outreach_per_month_display: '?',
       in_person_events_per_month: 0,
       in_person_events_per_month_display: '?',
       career_fairs_quota: 0,
@@ -106,8 +106,8 @@ export default function Page2() {
       plan.commitment_display = '23 Hours';
       plan.apps_with_outreach_per_week = 3;
       plan.apps_with_outreach_per_week_display = '3 Weekly';
-      plan.info_interview_outreach_per_week = 21;
-      plan.info_interview_outreach_per_week_display = '21 Weekly';
+      plan.info_interview_outreach_per_month = 21;
+      plan.info_interview_outreach_per_month_display = '21 Monthly';
       plan.in_person_events_per_month = 8;
       plan.in_person_events_per_month_display = '8 Monthly';
       plan.career_fairs_quota = 3;
@@ -117,8 +117,8 @@ export default function Page2() {
       plan.commitment_display = '11 Hours';
       plan.apps_with_outreach_per_week = 2;
       plan.apps_with_outreach_per_week_display = '2 Weekly';
-      plan.info_interview_outreach_per_week = 10;
-      plan.info_interview_outreach_per_week_display = '10 Weekly';
+      plan.info_interview_outreach_per_month = 10;
+      plan.info_interview_outreach_per_month_display = '10 Monthly';
       plan.in_person_events_per_month = 4;
       plan.in_person_events_per_month_display = '4 Monthly';
       plan.career_fairs_quota = 2;
@@ -128,8 +128,8 @@ export default function Page2() {
       plan.commitment_display = '8 Hours';
       plan.apps_with_outreach_per_week = 1;
       plan.apps_with_outreach_per_week_display = '1 Weekly';
-      plan.info_interview_outreach_per_week = 7;
-      plan.info_interview_outreach_per_week_display = '7 Weekly';
+      plan.info_interview_outreach_per_month = 7;
+      plan.info_interview_outreach_per_month_display = '7 Monthly';
       plan.in_person_events_per_month = 2;
       plan.in_person_events_per_month_display = '2 Monthly';
       plan.career_fairs_quota = 1;
@@ -139,8 +139,8 @@ export default function Page2() {
       plan.commitment_display = '6 Hours';
       plan.apps_with_outreach_per_week = 1;
       plan.apps_with_outreach_per_week_display = '1 Weekly';
-      plan.info_interview_outreach_per_week = 5;
-      plan.info_interview_outreach_per_week_display = '5 Weekly';
+      plan.info_interview_outreach_per_month = 5;
+      plan.info_interview_outreach_per_month_display = '5 Monthly';
       plan.in_person_events_per_month = 2;
       plan.in_person_events_per_month_display = '2 Monthly';
       plan.career_fairs_quota = 1;
@@ -240,7 +240,7 @@ export default function Page2() {
             </div>
             <div className="sidebar-item">
               <span>Informational Interview Outreach</span>
-              <span className="value"> {plan.info_interview_outreach_per_week_display} </span>
+              <span className="value"> {plan.info_interview_outreach_per_month_display} </span>
             </div>
             <div className="sidebar-item">
               <span>In-person Events</span>

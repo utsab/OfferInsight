@@ -104,8 +104,8 @@ function usePage3Data() {
           if (userData.apps_with_outreach_per_week !== null && userData.apps_with_outreach_per_week !== undefined) {
             setAppsWithOutreachPerWeek(intToRangeString(userData.apps_with_outreach_per_week, 'outreach'));
           }
-          if (userData.info_interview_outreach_per_week !== null && userData.info_interview_outreach_per_week !== undefined) {
-            setInfoInterviewOutreachPerWeek(intToRangeString(userData.info_interview_outreach_per_week, 'info'));
+          if (userData.info_interview_outreach_per_month !== null && userData.info_interview_outreach_per_month !== undefined) {
+            setInfoInterviewOutreachPerWeek(intToRangeString(userData.info_interview_outreach_per_month, 'info'));
           }
           if (userData.in_person_events_per_month !== null && userData.in_person_events_per_month !== undefined) {
             setInPersonEventsPerMonth(intToEventsString(userData.in_person_events_per_month));
@@ -138,7 +138,7 @@ function usePage3Data() {
       body: JSON.stringify({
         commitment: commitmentValue,
         apps_with_outreach_per_week: outreachValue,
-        info_interview_outreach_per_week: infoInterviewValue,
+        info_interview_outreach_per_month: infoInterviewValue,
         in_person_events_per_month: inPersonValue,
         career_fairs_quota: careerFairsValue
       }),

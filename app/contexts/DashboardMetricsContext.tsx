@@ -63,7 +63,7 @@ export function DashboardMetricsProvider({
         {
           name: "LinkedIn",
           current: data.linkedInOutreachCount,
-          total: data.info_interview_outreach_per_week || 10,
+          total: data.info_interview_outreach_per_month || 10,
         },
         {
           name: "Events",

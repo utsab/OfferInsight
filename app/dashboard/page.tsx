@@ -23,6 +23,22 @@ type Application = {
 
 type ColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
 
+// Coffee Chat type definition
+type CoffeeChat = {
+  id: number;
+  name: string;
+  company: string;
+  message?: string | null;
+  linkedInUrl?: string | null;
+  notes?: string | null;
+  status: string;
+  dateCreated: string;
+  recievedReferral: boolean;
+  userId: string;
+};
+
+type CoffeeChatColumnId = 'outreach' | 'accepted' | 'followedUpCoffee' | 'coffeeChat';
+
 // Map status values to column IDs (moved outside component to prevent re-renders)
 const statusToColumn: Record<string, ColumnId> = {
   'applied': 'applied',
@@ -38,6 +54,21 @@ const columnToStatus: Record<ColumnId, string> = {
   'messagedHiringManager': 'messagedHiringManager',
   'followedUp': 'followedUp',
   'interview': 'interview',
+};
+
+// Coffee Chat status mappings
+const coffeeChatStatusToColumn: Record<string, CoffeeChatColumnId> = {
+  'outreachRequestSent': 'outreach',
+  'accepted': 'accepted',
+  'followedUp': 'followedUpCoffee',
+  'coffeeChat': 'coffeeChat',
+};
+
+const coffeeChatColumnToStatus: Record<CoffeeChatColumnId, string> = {
+  'outreach': 'outreachRequestSent',
+  'accepted': 'accepted',
+  'followedUpCoffee': 'followedUp',
+  'coffeeChat': 'coffeeChat',
 };
 
 export default function Page() {
@@ -272,7 +303,23 @@ export default function Page() {
     );
   }
 
-  // dnd-kit: Interviews board
+  // dnd-kit: Coffee Chats board (Linkedin_Outreach)
+
+  const [coffeeChats, setCoffeeChats] = useState<CoffeeChat[]>([]);
+  const [coffeeChatColumns, setCoffeeChatColumns] = useState<Record<CoffeeChatColumnId, CoffeeChat[]>>({
+    outreach: [],
+    accepted: [],
+    followedUpCoffee: [],
+    coffeeChat: [],
+  });
+  const [activeCoffeeChatId, setActiveCoffeeChatId] = useState<string | null>(null);
+  const [isCoffeeChatModalOpen, setIsCoffeeChatModalOpen] = useState(false);
+  const [editingCoffeeChat, setEditingCoffeeChat] = useState<CoffeeChat | null>(null);
+  const [isDeletingCoffeeChat, setIsDeletingCoffeeChat] = useState<number | null>(null);
+  const [isLoadingCoffeeChats, setIsLoadingCoffeeChats] = useState(true);
+  const isFetchingCoffeeChatsRef = useRef(false);
+
+  // dnd-kit: Events board (keeping for other boards)
   type PipelineCard = {
     id: string;
     title: string;
@@ -282,84 +329,118 @@ export default function Page() {
     leftClass?: string;
     rightClass?: string;
   };
-  type InterviewsColumnId = 'outreach' | 'accepted' | 'followedUpCoffee' | 'coffeeChat';
-  const [interviewColumns, setInterviewColumns] = useState<Record<InterviewsColumnId, PipelineCard[]>>({
-    outreach: [
-      { id: 'google-outreach', title: 'Googler SWE', subtitle: 'Dec 20, 2:00 PM', leftLabel: 'Outreach sent', rightLabel: 'Awaiting reply', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
-      { id: 'meta-outreach', title: 'Meta DS', subtitle: 'Dec 22, 10:00 AM', leftLabel: 'Outreach sent', rightLabel: 'Awaiting reply', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
-    ],
-    accepted: [
-      { id: 'ms-accepted', title: 'Microsoft PM', subtitle: 'Accepted', leftLabel: 'Next: schedule', rightLabel: 'Pending', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
-    ],
-    followedUpCoffee: [
-      { id: 'apple-followed', title: 'Apple iOS', subtitle: 'Followed up Dec 12', leftLabel: 'Nudge sent', rightLabel: 'Waiting', leftClass: 'text-purple-400', rightClass: 'text-gray-500' },
-    ],
-    coffeeChat: [
-      { id: 'shopify-chat', title: 'Shopify Backend', subtitle: 'Coffee chat on Dec 8', leftLabel: '15 min', rightLabel: 'Done', leftClass: 'text-green-400', rightClass: 'text-green-500' },
-    ],
-  });
 
-  const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
+  // Fetch LinkedIn outreach (Coffee Chats) from API
+  const fetchCoffeeChats = useCallback(async () => {
+    if (isFetchingCoffeeChatsRef.current) return;
+    
+    try {
+      isFetchingCoffeeChatsRef.current = true;
+      setIsLoadingCoffeeChats(true);
+      const response = await fetch('/api/linkedin_outreach');
+      if (!response.ok) throw new Error('Failed to fetch LinkedIn outreach');
+      const data = await response.json();
+      setCoffeeChats(data);
+      
+      // Group LinkedIn outreach by status
+      const grouped: Record<CoffeeChatColumnId, CoffeeChat[]> = {
+        outreach: [],
+        accepted: [],
+        followedUpCoffee: [],
+        coffeeChat: [],
+      };
+      
+      data.forEach((chat: CoffeeChat) => {
+        const column = coffeeChatStatusToColumn[chat.status] || 'outreach';
+        grouped[column].push(chat);
+      });
+      
+      setCoffeeChatColumns(grouped);
+    } catch (error) {
+      console.error('Error fetching LinkedIn outreach:', error);
+    } finally {
+      setIsLoadingCoffeeChats(false);
+      isFetchingCoffeeChatsRef.current = false;
+    }
+  }, []);
 
-  const handleInterviewsDragEnd = (event: DragEndEvent) => {
+  // Fetch LinkedIn outreach when tab is active or when overview tab is active (needed for metrics)
+  useEffect(() => {
+    if ((activeTab === 'interviews' || activeTab === 'overview') && !isFetchingCoffeeChatsRef.current) {
+      fetchCoffeeChats();
+    }
+  }, [activeTab, fetchCoffeeChats]);
+
+  const getCoffeeChatColumnOfItem = (id: string): CoffeeChatColumnId | null => {
+    const entry = (Object.keys(coffeeChatColumns) as CoffeeChatColumnId[]).find(col => 
+      coffeeChatColumns[col].some(c => String(c.id) === id)
+    );
+    return entry ?? null;
+  };
+
+  const handleCoffeeChatsDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
+
     const activeId = String(active.id);
     const overId = String(over.id);
-    const columns = interviewColumns;
-    const colKeys = Object.keys(columns) as InterviewsColumnId[];
-    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
-    const overCol: InterviewsColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as InterviewsColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
-    if (!fromCol || !overCol) return;
-    if (fromCol === overCol) {
-      const items = columns[fromCol];
-      const oldIndex = items.findIndex(i => i.id === activeId);
-      const newIndex = items.findIndex(i => i.id === overId);
+
+    const fromCol = getCoffeeChatColumnOfItem(activeId);
+    const toCol = (['outreach', 'accepted', 'followedUpCoffee', 'coffeeChat'] as CoffeeChatColumnId[]).includes(overId as CoffeeChatColumnId)
+      ? (overId as CoffeeChatColumnId)
+      : getCoffeeChatColumnOfItem(overId);
+    if (!fromCol || !toCol) return;
+
+    // Update UI optimistically
+    if (fromCol === toCol) {
+      const items = coffeeChatColumns[fromCol];
+      const oldIndex = items.findIndex(i => String(i.id) === activeId);
+      const newIndex = items.findIndex(i => String(i.id) === overId);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
-      setInterviewColumns(prev => ({ ...prev, [fromCol]: arrayMove(prev[fromCol], oldIndex, newIndex) }));
+      const newItems = arrayMove(items, oldIndex, newIndex);
+      setCoffeeChatColumns(prev => ({ ...prev, [fromCol]: newItems }));
     } else {
-      const fromItems = columns[fromCol];
-      const toItems = columns[overCol];
-      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      const fromItems = coffeeChatColumns[fromCol];
+      const toItems = coffeeChatColumns[toCol];
+      const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
       if (movingIndex === -1) return;
       const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => i.id === overId);
+      const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
-      setInterviewColumns(prev => ({ ...prev, [fromCol]: newFrom, [overCol]: newTo }));
+      setCoffeeChatColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+      
+      // Update status in database
+      try {
+        const newStatus = coffeeChatColumnToStatus[toCol];
+        const response = await fetch(`/api/linkedin_outreach?id=${movingItem.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!response.ok) throw new Error('Failed to update status');
+        
+        // Update the coffee chat in the main list
+        setCoffeeChats(prev => prev.map(chat => 
+          chat.id === movingItem.id ? { ...chat, status: newStatus } : chat
+        ));
+      } catch (error) {
+        console.error('Error updating status:', error);
+        // Revert on error
+        fetchCoffeeChats();
+      }
     }
-    setActiveInterviewId(null);
+    setActiveCoffeeChatId(null);
   };
 
-  const handleInterviewsDragStart = (event: DragStartEvent) => {
-    setActiveInterviewId(String(event.active.id));
+  const handleCoffeeChatsDragStart = (event: DragStartEvent) => {
+    setActiveCoffeeChatId(String(event.active.id));
   };
 
-  const handleInterviewsDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    const columns = interviewColumns;
-    const colKeys = Object.keys(columns) as InterviewsColumnId[];
-    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
-    const overCol: InterviewsColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as InterviewsColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
-    if (!fromCol || !overCol || fromCol === overCol) return;
-    setInterviewColumns(prev => {
-      const fromItems = prev[fromCol];
-      const toItems = prev[overCol];
-      const movingIndex = fromItems.findIndex(i => i.id === activeId);
-      if (movingIndex === -1) return prev;
-      const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => i.id === overId);
-      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
-      return {
-        ...prev,
-        [fromCol]: [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)],
-        [overCol]: [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)],
-      };
-    });
+  const handleCoffeeChatsDragOver = (event: DragOverEvent) => {
+    // onDragOver is only for visual feedback via DroppableColumn
+    // State updates should only happen in onDragEnd to prevent infinite loops
   };
 
   // dnd-kit: Events board
@@ -526,6 +607,88 @@ export default function Page() {
     });
   };
 
+  function SortableCoffeeChatCard(props: { card: CoffeeChat }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0 : undefined,
+    } as React.CSSProperties;
+
+    const formatDate = (dateString: string) => {
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } catch {
+        return '';
+      }
+    };
+
+    const handleEdit = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setEditingCoffeeChat(props.card);
+      setIsCoffeeChatModalOpen(true);
+    };
+
+    const handleDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsDeletingCoffeeChat(props.card.id);
+    };
+
+    return (
+      <div 
+        ref={setNodeRef} 
+        style={style} 
+        {...attributes} 
+        {...listeners} 
+        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors group relative"
+      >
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <div className="text-white font-medium mb-1">{props.card.name}</div>
+            <div className="text-gray-400 text-xs mb-1">{props.card.company}</div>
+            {props.card.linkedInUrl && (
+              <div className="text-gray-500 text-xs mb-1">
+                <a href={props.card.linkedInUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-electric-blue underline">
+                  LinkedIn Profile
+                </a>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleEdit}
+              className="p-1 hover:bg-gray-500 rounded text-gray-300 hover:text-white"
+              title="Edit"
+            >
+              <Edit2 size={14} />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
+              title="Delete"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+        {props.card.message && (
+          <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.message}</div>
+        )}
+        {props.card.notes && (
+          <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
+        )}
+        {props.card.recievedReferral && (
+          <div className="text-green-400 text-xs mb-2">✓ Referral Received</div>
+        )}
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-yellow-400">{formatDate(props.card.dateCreated)}</span>
+          <span className="text-gray-500">ID: {props.card.id}</span>
+        </div>
+      </div>
+    );
+  }
+
   function SortablePipelineCard(props: { card: PipelineCard }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.card.id });
     const style = {
@@ -547,6 +710,7 @@ export default function Page() {
 
   const [userData, setUserData] = useState<{
     apps_with_outreach_per_week?: number | null;
+    info_interview_outreach_per_month?: number | null;
     projected_offer_date?: string | null;
   } | null>(null);
 
@@ -619,6 +783,44 @@ export default function Page() {
       statusTextColor,
     };
   }, [appColumns, userData]);
+
+  // Calculate coffee chats metrics for this month
+  const coffeeChatsMetrics = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Count all coffee chats from all 4 columns (outreach, accepted, followedUpCoffee, coffeeChat)
+    const allColumns: CoffeeChatColumnId[] = ['outreach', 'accepted', 'followedUpCoffee', 'coffeeChat'];
+    let count = 0;
+    
+    allColumns.forEach(col => {
+      coffeeChatColumns[col].forEach(chat => {
+        const chatDate = new Date(chat.dateCreated);
+        if (chatDate >= startOfMonth) {
+          count++;
+        }
+      });
+    });
+
+    // Goal is info_interview_outreach_per_month from user's onboarding data
+    const goal = userData?.info_interview_outreach_per_month ?? 0;
+    const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
+    const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
+    const statusColor = difference >= 0 ? 'green' : 'yellow';
+    const statusIcon = difference >= 0 ? 'bg-green-500' : 'bg-yellow-500';
+    const statusText = difference >= 0 ? `+${Math.round(difference)}%` : `${Math.round(difference)}%`;
+    const statusTextColor = difference >= 0 ? 'text-green-400' : 'text-yellow-400';
+
+    return {
+      count,
+      goal,
+      percentage,
+      statusColor,
+      statusIcon,
+      statusText,
+      statusTextColor,
+    };
+  }, [coffeeChatColumns, userData]);
 
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
@@ -748,18 +950,23 @@ export default function Page() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <MessageCircle className="text-electric-blue text-xl" />
-                      <h4 className="text-white font-semibold">Interviews</h4>
+                      <h4 className="text-white font-semibold">Coffee Chats</h4>
                     </div>
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className={`w-3 h-3 ${coffeeChatsMetrics.statusIcon} rounded-full`}></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">8</div>
+                  <div className="text-3xl font-bold text-white mb-1">{coffeeChatsMetrics.count}</div>
                   <div className="text-sm text-gray-400 mb-3">This month</div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Goal: 10</span>
-                    <span className="text-yellow-400">-20%</span>
+                    <span className="text-gray-400">Goal: {coffeeChatsMetrics.goal || '—'}</span>
+                    {coffeeChatsMetrics.goal > 0 && (
+                      <span className={coffeeChatsMetrics.statusTextColor}>{coffeeChatsMetrics.statusText}</span>
+                    )}
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-                    <div className="bg-yellow-500 h-2 rounded-full" style={{width: '80%'}}></div>
+                    <div 
+                      className={`${coffeeChatsMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
+                      style={{width: `${Math.min(Math.max(coffeeChatsMetrics.percentage, 0), 100)}%`}}
+                    ></div>
                   </div>
                 </div>
 
@@ -988,26 +1195,35 @@ export default function Page() {
           </section>
         )}
 
-        {/* Interviews Content */}
+        {/* Coffee Chats Content */}
         {activeTab === 'interviews' && (
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h4 className="text-xl font-bold text-white">Coffee Chats</h4>
-              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
+              <button 
+                onClick={() => {
+                  setEditingCoffeeChat(null);
+                  setIsCoffeeChatModalOpen(true);
+                }}
+                className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
+              >
                 <Plus className="mr-2" />New Outreach
               </button>
             </div>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleInterviewsDragStart} onDragOver={handleInterviewsDragOver} onDragEnd={handleInterviewsDragEnd}>
+            {isLoadingCoffeeChats ? (
+              <div className="text-center py-8 text-gray-400">Loading coffee chats...</div>
+            ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleCoffeeChatsDragStart} onDragOver={handleCoffeeChatsDragOver} onDragEnd={handleCoffeeChatsDragEnd}>
               <div className="grid grid-cols-4 gap-6">
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Outreach Request Sent ({interviewColumns.outreach.length})
+                    Outreach Request Sent ({coffeeChatColumns.outreach.length})
                   </h5>
-                  <SortableContext items={interviewColumns.outreach.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={coffeeChatColumns.outreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="outreach">
-                      {interviewColumns.outreach.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {coffeeChatColumns.outreach.map(card => (
+                        <SortableCoffeeChatCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1016,12 +1232,12 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Request Accepted ({interviewColumns.accepted.length})
+                    Request Accepted ({coffeeChatColumns.accepted.length})
                   </h5>
-                  <SortableContext items={interviewColumns.accepted.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={coffeeChatColumns.accepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="accepted">
-                      {interviewColumns.accepted.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {coffeeChatColumns.accepted.map(card => (
+                        <SortableCoffeeChatCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1030,12 +1246,12 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Followed Up ({interviewColumns.followedUpCoffee.length})
+                    Followed Up ({coffeeChatColumns.followedUpCoffee.length})
                   </h5>
-                  <SortableContext items={interviewColumns.followedUpCoffee.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={coffeeChatColumns.followedUpCoffee.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="followedUpCoffee">
-                      {interviewColumns.followedUpCoffee.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {coffeeChatColumns.followedUpCoffee.map(card => (
+                        <SortableCoffeeChatCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1044,37 +1260,96 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Coffee Chat ({interviewColumns.coffeeChat.length})
+                    Coffee Chat ({coffeeChatColumns.coffeeChat.length})
                   </h5>
-                  <SortableContext items={interviewColumns.coffeeChat.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={coffeeChatColumns.coffeeChat.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="coffeeChat">
-                      {interviewColumns.coffeeChat.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {coffeeChatColumns.coffeeChat.map(card => (
+                        <SortableCoffeeChatCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
                 </div>
               </div>
               <DragOverlay>
-                {activeInterviewId ? (() => {
-                  const columns = interviewColumns;
-                  const col = (Object.keys(columns) as InterviewsColumnId[]).find(k => columns[k].some(c => c.id === activeInterviewId));
+                {activeCoffeeChatId ? (() => {
+                  const col = getCoffeeChatColumnOfItem(activeCoffeeChatId);
                   if (!col) return null;
-                  const card = columns[col].find(c => c.id === activeInterviewId);
+                  const card = coffeeChatColumns[col].find(c => String(c.id) === activeCoffeeChatId);
                   if (!card) return null;
                   return (
                     <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
-                      <div className="text-white font-medium mb-1">{card.title}</div>
-                      <div className="text-gray-400 text-sm mb-2">{card.subtitle}</div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className={card.leftClass ?? 'text-yellow-400'}>{card.leftLabel}</span>
-                        <span className={card.rightClass ?? 'text-gray-500'}>{card.rightLabel}</span>
+                      <div className="text-white font-medium mb-1">{card.name}</div>
+                      <div className="text-gray-400 text-xs mb-1">{card.company}</div>
+                      <div className="flex items-center justify-between text-xs mt-2">
+                        <span className="text-yellow-400">{new Date(card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span className="text-gray-500">ID: {card.id}</span>
                       </div>
                     </div>
                   );
                 })() : null}
               </DragOverlay>
             </DndContext>
+            )}
+
+            {/* Create/Edit Modal */}
+            {isCoffeeChatModalOpen && (
+              <CoffeeChatModal
+                coffeeChat={editingCoffeeChat}
+                onClose={() => {
+                  setIsCoffeeChatModalOpen(false);
+                  setEditingCoffeeChat(null);
+                }}
+                onSave={async (data) => {
+                  try {
+                    if (editingCoffeeChat) {
+                      // Update existing
+                      const response = await fetch('/api/linkedin_outreach', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...data, id: editingCoffeeChat.id }),
+                      });
+                      if (!response.ok) throw new Error('Failed to update coffee chat');
+                    } else {
+                      // Create new
+                      const response = await fetch('/api/linkedin_outreach', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                      });
+                      if (!response.ok) throw new Error('Failed to create coffee chat');
+                    }
+                    await fetchCoffeeChats();
+                    setIsCoffeeChatModalOpen(false);
+                    setEditingCoffeeChat(null);
+                  } catch (error) {
+                    console.error('Error saving coffee chat:', error);
+                    alert('Failed to save coffee chat. Please try again.');
+                  }
+                }}
+              />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {isDeletingCoffeeChat !== null && (
+              <DeleteModal
+                onConfirm={async () => {
+                  try {
+                    const response = await fetch(`/api/linkedin_outreach?id=${isDeletingCoffeeChat}`, {
+                      method: 'DELETE',
+                    });
+                    if (!response.ok) throw new Error('Failed to delete coffee chat');
+                    await fetchCoffeeChats();
+                    setIsDeletingCoffeeChat(null);
+                  } catch (error) {
+                    console.error('Error deleting coffee chat:', error);
+                    alert('Failed to delete coffee chat. Please try again.');
+                    setIsDeletingCoffeeChat(null);
+                  }
+                }}
+                onCancel={() => setIsDeletingCoffeeChat(null)}
+              />
+            )}
           </section>
         )}
 
@@ -1420,6 +1695,181 @@ function ApplicationModal({
   );
 }
 
+// Coffee Chat Modal Component
+function CoffeeChatModal({ 
+  coffeeChat, 
+  onClose, 
+  onSave 
+}: { 
+  coffeeChat: CoffeeChat | null; 
+  onClose: () => void; 
+  onSave: (data: Partial<CoffeeChat>) => void;
+}) {
+  const [formData, setFormData] = useState({
+    name: coffeeChat?.name || '',
+    company: coffeeChat?.company || '',
+    message: coffeeChat?.message || '',
+    linkedInUrl: coffeeChat?.linkedInUrl || '',
+    notes: coffeeChat?.notes || '',
+    status: coffeeChat?.status || 'outreachRequestSent',
+    recievedReferral: coffeeChat?.recievedReferral || false,
+  });
+
+  // Update form data when coffeeChat changes
+  useEffect(() => {
+    if (coffeeChat) {
+      setFormData({
+        name: coffeeChat.name || '',
+        company: coffeeChat.company || '',
+        message: coffeeChat.message || '',
+        linkedInUrl: coffeeChat.linkedInUrl || '',
+        notes: coffeeChat.notes || '',
+        status: coffeeChat.status || 'outreachRequestSent',
+        recievedReferral: coffeeChat.recievedReferral || false,
+      });
+    } else {
+      setFormData({
+        name: '',
+        company: '',
+        message: '',
+        linkedInUrl: '',
+        notes: '',
+        status: 'outreachRequestSent',
+        recievedReferral: false,
+      });
+    }
+  }, [coffeeChat]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.company.trim()) {
+      alert('Name and company are required');
+      return;
+    }
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">
+            {coffeeChat ? 'Edit Coffee Chat' : 'Create New Coffee Chat'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white font-semibold mb-2">Name *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="Person's name"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-white font-semibold mb-2">Company *</label>
+              <input
+                type="text"
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="Company name"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">LinkedIn URL</label>
+            <input
+              type="url"
+              value={formData.linkedInUrl}
+              onChange={(e) => setFormData({ ...formData, linkedInUrl: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              placeholder="https://linkedin.com/in/..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Message</label>
+            <textarea
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+              placeholder="Message sent to the person"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+            >
+              <option value="outreachRequestSent">Outreach Request Sent</option>
+              <option value="accepted">Request Accepted</option>
+              <option value="followedUp">Followed Up</option>
+              <option value="coffeeChat">Coffee Chat</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+              placeholder="Additional notes"
+            />
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="recievedReferral"
+              checked={formData.recievedReferral}
+              onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
+              className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
+            />
+            <label htmlFor="recievedReferral" className="ml-2 text-white font-semibold">
+              Received Referral
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              {coffeeChat ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // Delete Confirmation Modal
 function DeleteModal({ 
   onConfirm, 
@@ -1431,8 +1881,8 @@ function DeleteModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onCancel}>
       <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-xl font-bold text-white mb-4">Delete Application</h3>
-        <p className="text-gray-300 mb-6">Are you sure you want to delete this application? This action cannot be undone.</p>
+        <h3 className="text-xl font-bold text-white mb-4">Delete Item</h3>
+        <p className="text-gray-300 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
         <div className="flex justify-end gap-3">
           <button
             onClick={onCancel}

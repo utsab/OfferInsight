@@ -9,7 +9,7 @@ export default function Page3V2() {
 
   // Goals (sliders)
   const [appsPerWeek, setAppsPerWeek] = useState<number>(5);
-  const [interviewsPerWeek, setInterviewsPerWeek] = useState<number>(2);
+  const [interviewsPerMonth, setInterviewsPerMonth] = useState<number>(2);
   const [eventsPerMonth, setEventsPerMonth] = useState<number>(3);
   const [fairsPerYear, setFairsPerYear] = useState<number>(1);
   const [hoursPerWeek, setHoursPerWeek] = useState<number>(12);
@@ -24,8 +24,8 @@ export default function Page3V2() {
         if (typeof user.apps_with_outreach_per_week === 'number') {
           setAppsPerWeek(user.apps_with_outreach_per_week);
         }
-        if (typeof user.info_interview_outreach_per_week === 'number') {
-          setInterviewsPerWeek(user.info_interview_outreach_per_week);
+        if (typeof user.info_interview_outreach_per_month === 'number') {
+          setInterviewsPerMonth(user.info_interview_outreach_per_month);
         }
         if (typeof user.in_person_events_per_month === 'number') {
           setEventsPerMonth(user.in_person_events_per_month);
@@ -47,7 +47,7 @@ export default function Page3V2() {
   const { successRate, timeToOffer, weeklyHours, projectedOfferDate } = useMemo(() => {
     const totalScore =
       appsPerWeek * 2 +
-      interviewsPerWeek * 3 +
+      interviewsPerMonth * 3 +
       eventsPerMonth * 1.5 +
       fairsPerYear * 1.0 +
       hoursPerWeek * 1.0;
@@ -60,7 +60,7 @@ export default function Page3V2() {
     const daysToAdd = Math.round(tto * 30); // approximate month length
     const projDate = new Date(base.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
     return { successRate: Math.round(sr), timeToOffer: Number(tto.toFixed(1)), weeklyHours: Math.round(wh), projectedOfferDate: projDate };
-  }, [appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear, hoursPerWeek]);
+  }, [appsPerWeek, interviewsPerMonth, eventsPerMonth, fairsPerYear, hoursPerWeek]);
 
   const handleBack = () => router.back();
 
@@ -75,7 +75,7 @@ export default function Page3V2() {
       body: JSON.stringify({
         commitment: weeklyHours,
         apps_with_outreach_per_week: appsPerWeek,
-        info_interview_outreach_per_week: interviewsPerWeek,
+        info_interview_outreach_per_month: interviewsPerMonth,
         in_person_events_per_month: eventsPerMonth,
         career_fairs_quota: fairsPerYear,
         projected_offer_date: projectedOfferDate.toISOString()
@@ -196,20 +196,20 @@ export default function Page3V2() {
                   <Coffee className="text-electric-blue mr-3" />
                   Coffee Chats
                 </h4>
-                <div className="text-electric-blue text-sm font-semibold">WEEKLY</div>
+                <div className="text-electric-blue text-sm font-semibold">MONTHLY</div>
               </div>
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300">Target per week:</span>
-                  <span className="text-white font-bold text-xl">{interviewsPerWeek}</span>
+                  <span className="text-gray-300">Target per month:</span>
+                  <span className="text-white font-bold text-xl">{interviewsPerMonth}</span>
                 </div>
                 <input
                   type="range"
                   className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
                   min={0}
                   max={8}
-                  value={interviewsPerWeek}
-                  onChange={(e) => setInterviewsPerWeek(Number(e.target.value))}
+                  value={interviewsPerMonth}
+                  onChange={(e) => setInterviewsPerMonth(Number(e.target.value))}
                 />
                 <div className="flex justify-between text-xs text-gray-400 mt-1">
                   <span>0</span>
