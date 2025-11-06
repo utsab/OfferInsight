@@ -2,7 +2,6 @@
 
 import { handleSignIn, handleSignOut } from "./auth-actions"
 import { Button } from "./ui/button"
-import { useRouter } from "next/navigation"
 
 export function SignIn({
   provider,
@@ -23,11 +22,9 @@ export function SignIn({
 }
 
 export function SignOut(props: React.ComponentPropsWithRef<typeof Button>) {
-  const router = useRouter();
-
   const onSignOut = async () => {
     await handleSignOut();
-    router.push("/");
+    window.location.href = "/";
   };
 
   return (
