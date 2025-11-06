@@ -1,59 +1,120 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus } from 'lucide-react';
+import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus, X, Edit2, Trash2 } from 'lucide-react';
+
+// Application type definition
+type Application = {
+  id: number;
+  company: string;
+  hiringManager?: string | null;
+  msgToManager?: string | null;
+  recruiter?: string | null;
+  msgToRecruiter?: string | null;
+  notes?: string | null;
+  status: string;
+  dateCreated: string;
+  userId: string;
+};
+
+type ColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
+
+// Map status values to column IDs (moved outside component to prevent re-renders)
+const statusToColumn: Record<string, ColumnId> = {
+  'applied': 'applied',
+  'messagedRecruiter': 'messagedRecruiter',
+  'messagedHiringManager': 'messagedHiringManager',
+  'followedUp': 'followedUp',
+  'interview': 'interview',
+};
+
+const columnToStatus: Record<ColumnId, string> = {
+  'applied': 'applied',
+  'messagedRecruiter': 'messagedRecruiter',
+  'messagedHiringManager': 'messagedHiringManager',
+  'followedUp': 'followedUp',
+  'interview': 'interview',
+};
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState('overview');
   const [projectedOfferDate, setProjectedOfferDate] = useState<Date | null>(null);
 
   // dnd-kit: Applications board state
-  type AppCard = {
-    id: string;
-    title: string;
-    location: string;
-    leftLabel: string;
-    rightLabel: string;
-  };
 
-  type ColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
-  const [appColumns, setAppColumns] = useState<Record<ColumnId, AppCard[]>>({
-    applied: [
-      { id: 'google-swe', title: 'Google Software Engineer', location: 'Mountain View, CA', leftLabel: 'Applied Dec 12', rightLabel: 'High Priority' },
-      { id: 'microsoft-pm', title: 'Microsoft Product Manager', location: 'Seattle, WA', leftLabel: 'Applied Dec 11', rightLabel: 'Medium Priority' },
-      { id: 'tesla-swe', title: 'Tesla Software Engineer', location: 'Austin, TX', leftLabel: 'Applied Dec 10', rightLabel: 'High Priority' },
-    ],
-    messagedRecruiter: [
-      { id: 'meta-ds', title: 'Meta Data Scientist', location: 'Menlo Park, CA', leftLabel: 'Messaged recruiter', rightLabel: 'Dec 9' },
-    ],
-    messagedHiringManager: [
-      { id: 'stripe-backend', title: 'Stripe Backend Engineer', location: 'San Francisco, CA', leftLabel: 'Messaged hiring manager', rightLabel: 'Dec 8' },
-    ],
-    followedUp: [
-      { id: 'netflix-eng', title: 'Netflix Engineering', location: 'Los Gatos, CA', leftLabel: 'Followed up', rightLabel: 'Dec 7' },
-    ],
-    interview: [
-      { id: 'apple-ios', title: 'Apple iOS Developer', location: 'Cupertino, CA', leftLabel: 'Interview Scheduled', rightLabel: 'Dec 15' },
-      { id: 'uber-swe', title: 'Uber Software Engineer', location: 'San Francisco, CA', leftLabel: 'Interview Scheduled', rightLabel: 'Dec 16' },
-    ],
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [appColumns, setAppColumns] = useState<Record<ColumnId, Application[]>>({
+    applied: [],
+    messagedRecruiter: [],
+    messagedHiringManager: [],
+    followedUp: [],
+    interview: [],
   });
-
   const [activeAppId, setActiveAppId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingApp, setEditingApp] = useState<Application | null>(null);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const isFetchingRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   );
 
+  const fetchApplications = useCallback(async () => {
+    // Prevent multiple simultaneous fetches
+    if (isFetchingRef.current) return;
+    
+    try {
+      isFetchingRef.current = true;
+      setIsLoading(true);
+      const response = await fetch('/api/applications_with_outreach');
+      if (!response.ok) throw new Error('Failed to fetch applications');
+      const data = await response.json();
+      setApplications(data);
+      
+      // Group applications by status
+      const grouped: Record<ColumnId, Application[]> = {
+        applied: [],
+        messagedRecruiter: [],
+        messagedHiringManager: [],
+        followedUp: [],
+        interview: [],
+      };
+      
+      data.forEach((app: Application) => {
+        const column = statusToColumn[app.status] || 'applied';
+        grouped[column].push(app);
+      });
+      
+      setAppColumns(grouped);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+    } finally {
+      setIsLoading(false);
+      isFetchingRef.current = false;
+    }
+  }, []);
+
+  // Fetch applications from API (needed for both overview metrics and applications tab)
+  useEffect(() => {
+    if ((activeTab === 'applications' || activeTab === 'overview') && !isFetchingRef.current) {
+      fetchApplications();
+    }
+  }, [activeTab, fetchApplications]);
+
   const getColumnOfItem = (id: string): ColumnId | null => {
-    const entry = (Object.keys(appColumns) as ColumnId[]).find(col => appColumns[col].some(c => c.id === id));
+    const entry = (Object.keys(appColumns) as ColumnId[]).find(col => 
+      appColumns[col].some(c => String(c.id) === id)
+    );
     return entry ?? null;
   };
 
-  const handleApplicationsDragEnd = (event: DragEndEvent) => {
+  const handleApplicationsDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
 
@@ -66,24 +127,45 @@ export default function Page() {
       : getColumnOfItem(overId);
     if (!fromCol || !toCol) return;
 
+    // Update UI optimistically
     if (fromCol === toCol) {
       const items = appColumns[fromCol];
-      const oldIndex = items.findIndex(i => i.id === activeId);
-      const newIndex = items.findIndex(i => i.id === overId);
+      const oldIndex = items.findIndex(i => String(i.id) === activeId);
+      const newIndex = items.findIndex(i => String(i.id) === overId);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
       const newItems = arrayMove(items, oldIndex, newIndex);
       setAppColumns(prev => ({ ...prev, [fromCol]: newItems }));
     } else {
       const fromItems = appColumns[fromCol];
       const toItems = appColumns[toCol];
-      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
       if (movingIndex === -1) return;
       const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => i.id === overId);
+      const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
       setAppColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+      
+      // Update status in database
+      try {
+        const newStatus = columnToStatus[toCol];
+        const response = await fetch(`/api/applications_with_outreach?id=${movingItem.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!response.ok) throw new Error('Failed to update status');
+        
+        // Update the application in the main list
+        setApplications(prev => prev.map(app => 
+          app.id === movingItem.id ? { ...app, status: newStatus } : app
+        ));
+      } catch (error) {
+        console.error('Error updating status:', error);
+        // Revert on error
+        fetchApplications();
+      }
     }
     setActiveAppId(null);
   };
@@ -93,45 +175,87 @@ export default function Page() {
   };
 
   const handleApplicationsDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    const fromCol = getColumnOfItem(activeId);
-    const toCol = (['applied','messagedRecruiter','messagedHiringManager','followedUp','interview'] as ColumnId[]).includes(overId as ColumnId)
-      ? (overId as ColumnId)
-      : getColumnOfItem(overId);
-    if (!fromCol || !toCol || fromCol === toCol) return;
-    setAppColumns(prev => {
-      const fromItems = prev[fromCol];
-      const toItems = prev[toCol];
-      const movingIndex = fromItems.findIndex(i => i.id === activeId);
-      if (movingIndex === -1) return prev;
-      const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => i.id === overId);
-      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
-      return {
-        ...prev,
-        [fromCol]: [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)],
-        [toCol]: [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)],
-      };
-    });
+    // onDragOver is only for visual feedback via DroppableColumn
+    // State updates should only happen in onDragEnd to prevent infinite loops
+    // No state updates here - just let the DroppableColumn handle visual feedback
   };
 
-  function SortableAppCard(props: { card: AppCard }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.card.id });
+  function SortableAppCard(props: { card: Application }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
       opacity: isDragging ? 0 : undefined,
     } as React.CSSProperties;
+
+    const formatDate = (dateString: string) => {
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } catch {
+        return '';
+      }
+    };
+
+    const handleEdit = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setEditingApp(props.card);
+      setIsModalOpen(true);
+    };
+
+    const handleDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsDeleting(props.card.id);
+    };
+
     return (
-      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-        <div className="text-white font-medium mb-1">{props.card.title}</div>
-        <div className="text-gray-400 text-sm mb-2">{props.card.location}</div>
+      <div 
+        ref={setNodeRef} 
+        style={style} 
+        {...attributes} 
+        {...listeners} 
+        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors group relative"
+      >
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <div className="text-white font-medium mb-1">{props.card.company}</div>
+            {props.card.hiringManager && (
+              <div className="text-gray-400 text-xs mb-1">HM: {props.card.hiringManager}</div>
+            )}
+            {props.card.recruiter && (
+              <div className="text-gray-400 text-xs mb-1">Recruiter: {props.card.recruiter}</div>
+            )}
+          </div>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleEdit}
+              className="p-1 hover:bg-gray-500 rounded text-gray-300 hover:text-white"
+              title="Edit"
+            >
+              <Edit2 size={14} />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
+              title="Delete"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+        {(props.card.msgToManager || props.card.msgToRecruiter) && (
+          <div className="text-gray-500 text-xs mb-2">
+            {props.card.msgToManager && '✓ Messaged HM'}
+            {props.card.msgToManager && props.card.msgToRecruiter && ' • '}
+            {props.card.msgToRecruiter && '✓ Messaged Recruiter'}
+          </div>
+        )}
+        {props.card.notes && (
+          <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
+        )}
         <div className="flex items-center justify-between text-xs">
-          <span className="text-yellow-400">{props.card.leftLabel}</span>
-          <span className="text-gray-500">{props.card.rightLabel}</span>
+          <span className="text-yellow-400">{formatDate(props.card.dateCreated)}</span>
+          <span className="text-gray-500">ID: {props.card.id}</span>
         </div>
       </div>
     );
@@ -421,6 +545,11 @@ export default function Page() {
     );
   }
 
+  const [userData, setUserData] = useState<{
+    apps_with_outreach_per_week?: number | null;
+    projected_offer_date?: string | null;
+  } | null>(null);
+
   useEffect(() => {
     let isMounted = true;
     const fetchUser = async () => {
@@ -428,9 +557,12 @@ export default function Page() {
         const res = await fetch('/api/users/onboarding2');
         if (!res.ok) return;
         const user = await res.json();
-        if (user?.projected_offer_date) {
-          const d = new Date(user.projected_offer_date);
-          if (isMounted && !isNaN(d.getTime())) setProjectedOfferDate(d);
+        if (isMounted) {
+          setUserData(user);
+          if (user?.projected_offer_date) {
+            const d = new Date(user.projected_offer_date);
+            if (!isNaN(d.getTime())) setProjectedOfferDate(d);
+          }
         }
       } catch (e) {
         // non-fatal: leave as null
@@ -448,6 +580,45 @@ export default function Page() {
       return '—';
     }
   }, [projectedOfferDate]);
+
+  // Calculate applications metrics for this month
+  const applicationsMetrics = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Count applications in columns: messagedHiringManager, messagedRecruiter, followedUp, interview
+    // (any column to the right of "applied")
+    const qualifyingColumns: ColumnId[] = ['messagedHiringManager', 'messagedRecruiter', 'followedUp', 'interview'];
+    let count = 0;
+    
+    qualifyingColumns.forEach(col => {
+      appColumns[col].forEach(app => {
+        const appDate = new Date(app.dateCreated);
+        if (appDate >= startOfMonth) {
+          count++;
+        }
+      });
+    });
+
+    // Goal is apps_with_outreach_per_week * 4 (4 weeks per month)
+    const goal = userData?.apps_with_outreach_per_week ? userData.apps_with_outreach_per_week * 4 : 0;
+    const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
+    const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
+    const statusColor = difference >= 0 ? 'green' : 'yellow';
+    const statusIcon = difference >= 0 ? 'bg-green-500' : 'bg-yellow-500';
+    const statusText = difference >= 0 ? `+${Math.round(difference)}%` : `${Math.round(difference)}%`;
+    const statusTextColor = difference >= 0 ? 'text-green-400' : 'text-yellow-400';
+
+    return {
+      count,
+      goal,
+      percentage,
+      statusColor,
+      statusIcon,
+      statusText,
+      statusTextColor,
+    };
+  }, [appColumns, userData]);
 
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
@@ -552,16 +723,21 @@ export default function Page() {
                       <FileText className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">Applications</h4>
                     </div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className={`w-3 h-3 ${applicationsMetrics.statusIcon} rounded-full`}></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">23</div>
+                  <div className="text-3xl font-bold text-white mb-1">{applicationsMetrics.count}</div>
                   <div className="text-sm text-gray-400 mb-3">This month</div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Goal: 20</span>
-                    <span className="text-green-400">+15%</span>
+                    <span className="text-gray-400">Goal: {applicationsMetrics.goal || '—'}</span>
+                    {applicationsMetrics.goal > 0 && (
+                      <span className={applicationsMetrics.statusTextColor}>{applicationsMetrics.statusText}</span>
+                    )}
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-                    <div className="bg-electric-blue h-2 rounded-full" style={{width: '115%'}}></div>
+                    <div 
+                      className={`${applicationsMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
+                      style={{width: `${Math.min(Math.max(applicationsMetrics.percentage, 0), 100)}%`}}
+                    ></div>
                   </div>
                 </div>
 
@@ -640,10 +816,19 @@ export default function Page() {
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h4 className="text-xl font-bold text-white">High Quality Applications</h4>
-              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
+              <button 
+                onClick={() => {
+                  setEditingApp(null);
+                  setIsModalOpen(true);
+                }}
+                className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
+              >
                 <Plus className="mr-2" />Add Application
               </button>
             </div>
+            {isLoading ? (
+              <div className="text-center py-8 text-gray-400">Loading applications...</div>
+            ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleApplicationsDragStart} onDragOver={handleApplicationsDragOver} onDragEnd={handleApplicationsDragEnd}>
               <div className="grid grid-cols-5 gap-6">
                 <div className="bg-gray-700 rounded-lg p-4">
@@ -720,21 +905,86 @@ export default function Page() {
                 {activeAppId ? (() => {
                   const col = getColumnOfItem(activeAppId);
                   if (!col) return null;
-                  const card = appColumns[col].find(c => c.id === activeAppId);
+                  const card = appColumns[col].find(c => String(c.id) === activeAppId);
                   if (!card) return null;
                   return (
                     <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
-                      <div className="text-white font-medium mb-1">{card.title}</div>
-                      <div className="text-gray-400 text-sm mb-2">{card.location}</div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-yellow-400">{card.leftLabel}</span>
-                        <span className="text-gray-500">{card.rightLabel}</span>
+                      <div className="text-white font-medium mb-1">{card.company}</div>
+                      {card.hiringManager && (
+                        <div className="text-gray-400 text-xs mb-1">HM: {card.hiringManager}</div>
+                      )}
+                      {card.recruiter && (
+                        <div className="text-gray-400 text-xs mb-1">Recruiter: {card.recruiter}</div>
+                      )}
+                      <div className="flex items-center justify-between text-xs mt-2">
+                        <span className="text-yellow-400">{new Date(card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span className="text-gray-500">ID: {card.id}</span>
                       </div>
                     </div>
                   );
                 })() : null}
               </DragOverlay>
             </DndContext>
+            )}
+            
+            {/* Create/Edit Modal */}
+            {isModalOpen && (
+              <ApplicationModal
+                application={editingApp}
+                onClose={() => {
+                  setIsModalOpen(false);
+                  setEditingApp(null);
+                }}
+                onSave={async (data) => {
+                  try {
+                    if (editingApp) {
+                      // Update existing
+                      const response = await fetch('/api/applications_with_outreach', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...data, id: editingApp.id }),
+                      });
+                      if (!response.ok) throw new Error('Failed to update application');
+                    } else {
+                      // Create new
+                      const response = await fetch('/api/applications_with_outreach', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                      });
+                      if (!response.ok) throw new Error('Failed to create application');
+                    }
+                    await fetchApplications();
+                    setIsModalOpen(false);
+                    setEditingApp(null);
+                  } catch (error) {
+                    console.error('Error saving application:', error);
+                    alert('Failed to save application. Please try again.');
+                  }
+                }}
+              />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {isDeleting !== null && (
+              <DeleteModal
+                onConfirm={async () => {
+                  try {
+                    const response = await fetch(`/api/applications_with_outreach?id=${isDeleting}`, {
+                      method: 'DELETE',
+                    });
+                    if (!response.ok) throw new Error('Failed to delete application');
+                    await fetchApplications();
+                    setIsDeleting(null);
+                  } catch (error) {
+                    console.error('Error deleting application:', error);
+                    alert('Failed to delete application. Please try again.');
+                    setIsDeleting(null);
+                  }
+                }}
+                onCancel={() => setIsDeleting(null)}
+              />
+            )}
           </section>
         )}
 
@@ -994,6 +1244,210 @@ export default function Page() {
           </section>
         )}
     </main>
+    </div>
+  );
+}
+
+// Application Modal Component
+function ApplicationModal({ 
+  application, 
+  onClose, 
+  onSave 
+}: { 
+  application: Application | null; 
+  onClose: () => void; 
+  onSave: (data: Partial<Application>) => void;
+}) {
+  const [formData, setFormData] = useState({
+    company: application?.company || '',
+    hiringManager: application?.hiringManager || '',
+    msgToManager: application?.msgToManager || '',
+    recruiter: application?.recruiter || '',
+    msgToRecruiter: application?.msgToRecruiter || '',
+    notes: application?.notes || '',
+    status: application?.status || 'applied',
+  });
+
+  // Update form data when application changes
+  useEffect(() => {
+    if (application) {
+      setFormData({
+        company: application.company || '',
+        hiringManager: application.hiringManager || '',
+        msgToManager: application.msgToManager || '',
+        recruiter: application.recruiter || '',
+        msgToRecruiter: application.msgToRecruiter || '',
+        notes: application.notes || '',
+        status: application.status || 'applied',
+      });
+    } else {
+      setFormData({
+        company: '',
+        hiringManager: '',
+        msgToManager: '',
+        recruiter: '',
+        msgToRecruiter: '',
+        notes: '',
+        status: 'applied',
+      });
+    }
+  }, [application]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.company.trim()) {
+      alert('Company name is required');
+      return;
+    }
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">
+            {application ? 'Edit Application' : 'Create New Application'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-white font-semibold mb-2">Company *</label>
+            <input
+              type="text"
+              value={formData.company}
+              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              placeholder="Enter company name"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white font-semibold mb-2">Hiring Manager</label>
+              <input
+                type="text"
+                value={formData.hiringManager}
+                onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="Hiring manager name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-white font-semibold mb-2">Recruiter</label>
+              <input
+                type="text"
+                value={formData.recruiter}
+                onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="Recruiter name"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Message to Hiring Manager</label>
+            <textarea
+              value={formData.msgToManager}
+              onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
+              placeholder="Enter message sent to hiring manager"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Message to Recruiter</label>
+            <textarea
+              value={formData.msgToRecruiter}
+              onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
+              placeholder="Enter message sent to recruiter"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+            >
+              <option value="applied">Applied</option>
+              <option value="messagedHiringManager">Messaged Hiring Manager</option>
+              <option value="messagedRecruiter">Messaged Recruiter</option>
+              <option value="followedUp">Followed Up</option>
+              <option value="interview">Interview</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+              placeholder="Additional notes"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              {application ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Delete Confirmation Modal
+function DeleteModal({ 
+  onConfirm, 
+  onCancel 
+}: { 
+  onConfirm: () => void; 
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onCancel}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-xl font-bold text-white mb-4">Delete Application</h3>
+        <p className="text-gray-300 mb-6">Are you sure you want to delete this application? This action cannot be undone.</p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
