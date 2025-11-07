@@ -7,6 +7,31 @@ import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@d
 import { CSS } from '@dnd-kit/utilities';
 import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus, X, Edit2, Trash2 } from 'lucide-react';
 
+const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+const toLocalTimeParts = (value: string) => {
+  try {
+    const date = new Date(value);
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const period = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+    return {
+      hour: String(hours).padStart(2, '0'),
+      minute: minutes,
+      period,
+    };
+  } catch {
+    return {
+      hour: '',
+      minute: '',
+      period: 'AM' as const,
+    };
+  }
+};
+
 // Application type definition
 type Application = {
   id: number;
@@ -69,6 +94,63 @@ const coffeeChatColumnToStatus: Record<CoffeeChatColumnId, string> = {
   'accepted': 'accepted',
   'followedUpCoffee': 'followedUp',
   'coffeeChat': 'coffeeChat',
+};
+
+type InPersonEvent = {
+  id: number;
+  event: string;
+  date: string;
+  location?: string | null;
+  url?: string | null;
+  notes?: string | null;
+  status: string;
+  numPeopleSpokenTo?: number | null;
+  numLinkedInRequests?: number | null;
+  careerFair: boolean;
+  numOfInterviews?: number | null;
+  userId: string;
+};
+
+type EventColumnId = 'upcoming' | 'attending' | 'attended' | 'followups';
+
+const eventStatusToColumn: Record<string, EventColumnId> = {
+  scheduled: 'upcoming',
+  attending: 'attending',
+  attended: 'attended',
+  followUp: 'followups',
+  followups: 'followups',
+};
+
+const eventColumnToStatus: Record<EventColumnId, string> = {
+  upcoming: 'scheduled',
+  attending: 'attending',
+  attended: 'attended',
+  followups: 'followUp',
+};
+
+type LeetEntry = {
+  id: number;
+  problem?: string | null;
+  problemType?: string | null;
+  difficulty?: string | null;
+  url?: string | null;
+  reflection?: string | null;
+  status: string;
+  userId: string;
+};
+
+type LeetColumnId = 'planned' | 'solved' | 'reflected';
+
+const leetStatusToColumn: Record<string, LeetColumnId> = {
+  planned: 'planned',
+  solved: 'solved',
+  reflected: 'reflected',
+};
+
+const leetColumnToStatus: Record<LeetColumnId, string> = {
+  planned: 'planned',
+  solved: 'solved',
+  reflected: 'reflected',
 };
 
 export default function Page() {
@@ -319,52 +401,38 @@ export default function Page() {
   const [isLoadingCoffeeChats, setIsLoadingCoffeeChats] = useState(true);
   const isFetchingCoffeeChatsRef = useRef(false);
 
-  // dnd-kit: Events board (keeping for other boards)
-  type PipelineCard = {
-    id: string;
-    title: string;
-    subtitle: string;
-    leftLabel: string;
-    rightLabel: string;
-    leftClass?: string;
-    rightClass?: string;
-  };
-
-  // Fetch LinkedIn outreach (Coffee Chats) from API
   const fetchCoffeeChats = useCallback(async () => {
     if (isFetchingCoffeeChatsRef.current) return;
-    
+
     try {
       isFetchingCoffeeChatsRef.current = true;
       setIsLoadingCoffeeChats(true);
       const response = await fetch('/api/linkedin_outreach');
-      if (!response.ok) throw new Error('Failed to fetch LinkedIn outreach');
+      if (!response.ok) throw new Error('Failed to fetch coffee chats');
       const data = await response.json();
       setCoffeeChats(data);
-      
-      // Group LinkedIn outreach by status
+
       const grouped: Record<CoffeeChatColumnId, CoffeeChat[]> = {
         outreach: [],
         accepted: [],
         followedUpCoffee: [],
         coffeeChat: [],
       };
-      
-      data.forEach((chat: CoffeeChat) => {
-        const column = coffeeChatStatusToColumn[chat.status] || 'outreach';
+
+      (data as CoffeeChat[]).forEach(chat => {
+        const column = coffeeChatStatusToColumn[chat.status] ?? 'outreach';
         grouped[column].push(chat);
       });
-      
+
       setCoffeeChatColumns(grouped);
     } catch (error) {
-      console.error('Error fetching LinkedIn outreach:', error);
+      console.error('Error fetching coffee chats:', error);
     } finally {
       setIsLoadingCoffeeChats(false);
       isFetchingCoffeeChatsRef.current = false;
     }
   }, []);
 
-  // Fetch LinkedIn outreach when tab is active or when overview tab is active (needed for metrics)
   useEffect(() => {
     if ((activeTab === 'interviews' || activeTab === 'overview') && !isFetchingCoffeeChatsRef.current) {
       fetchCoffeeChats();
@@ -372,8 +440,8 @@ export default function Page() {
   }, [activeTab, fetchCoffeeChats]);
 
   const getCoffeeChatColumnOfItem = (id: string): CoffeeChatColumnId | null => {
-    const entry = (Object.keys(coffeeChatColumns) as CoffeeChatColumnId[]).find(col => 
-      coffeeChatColumns[col].some(c => String(c.id) === id)
+    const entry = (Object.keys(coffeeChatColumns) as CoffeeChatColumnId[]).find(col =>
+      coffeeChatColumns[col].some(chat => String(chat.id) === id)
     );
     return entry ?? null;
   };
@@ -391,7 +459,6 @@ export default function Page() {
       : getCoffeeChatColumnOfItem(overId);
     if (!fromCol || !toCol) return;
 
-    // Update UI optimistically
     if (fromCol === toCol) {
       const items = coffeeChatColumns[fromCol];
       const oldIndex = items.findIndex(i => String(i.id) === activeId);
@@ -410,8 +477,7 @@ export default function Page() {
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
       setCoffeeChatColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
-      
-      // Update status in database
+
       try {
         const newStatus = coffeeChatColumnToStatus[toCol];
         const response = await fetch(`/api/linkedin_outreach?id=${movingItem.id}`, {
@@ -419,15 +485,13 @@ export default function Page() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: newStatus }),
         });
-        if (!response.ok) throw new Error('Failed to update status');
-        
-        // Update the coffee chat in the main list
-        setCoffeeChats(prev => prev.map(chat => 
+        if (!response.ok) throw new Error('Failed to update coffee chat status');
+
+        setCoffeeChats(prev => prev.map(chat =>
           chat.id === movingItem.id ? { ...chat, status: newStatus } : chat
         ));
       } catch (error) {
-        console.error('Error updating status:', error);
-        // Revert on error
+        console.error('Error updating coffee chat status:', error);
         fetchCoffeeChats();
       }
     }
@@ -440,57 +504,116 @@ export default function Page() {
 
   const handleCoffeeChatsDragOver = (event: DragOverEvent) => {
     // onDragOver is only for visual feedback via DroppableColumn
-    // State updates should only happen in onDragEnd to prevent infinite loops
   };
 
-  // dnd-kit: Events board
-  type EventsColumnId = 'upcoming' | 'attending' | 'attended' | 'followups';
-  const [eventColumns, setEventColumns] = useState<Record<EventsColumnId, PipelineCard[]>>({
-    upcoming: [
-      { id: 'career-fair', title: 'Tech Career Fair', subtitle: 'Dec 18, 10:00 AM', leftLabel: 'San Francisco', rightLabel: 'In-person', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
-      { id: 'startup-networking', title: 'Startup Networking', subtitle: 'Dec 20, 6:00 PM', leftLabel: 'Palo Alto', rightLabel: 'Networking', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
-    ],
-    attending: [
-      { id: 'aiml-meetup', title: 'AI/ML Meetup', subtitle: 'Currently attending', leftLabel: 'Live now', rightLabel: 'Online', leftClass: 'text-blue-400', rightClass: 'text-gray-500' },
-    ],
-    attended: [
-      { id: 'google-talk', title: 'Google Tech Talk', subtitle: 'Attended Dec 10', leftLabel: '3 connections made', rightLabel: 'Success', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
-      { id: 'startup-demo', title: 'Startup Demo Day', subtitle: 'Attended Dec 5', leftLabel: '2 connections made', rightLabel: 'Success', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
-    ],
-    followups: [
-      { id: 'netflix-recruiter', title: 'Netflix Recruiter', subtitle: 'Follow-up scheduled', leftLabel: 'LinkedIn message sent', rightLabel: 'Active', leftClass: 'text-green-400', rightClass: 'text-green-500' },
-    ],
+  // dnd-kit: Events board (In-Person Events)
+  const [events, setEvents] = useState<InPersonEvent[]>([]);
+  const [eventColumns, setEventColumns] = useState<Record<EventColumnId, InPersonEvent[]>>({
+    upcoming: [],
+    attending: [],
+    attended: [],
+    followups: [],
   });
-
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<InPersonEvent | null>(null);
+  const [isDeletingEvent, setIsDeletingEvent] = useState<number | null>(null);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const isFetchingEventsRef = useRef(false);
 
-  const handleEventsDragEnd = (event: DragEndEvent) => {
+  const fetchEvents = useCallback(async () => {
+    if (isFetchingEventsRef.current) return;
+
+    try {
+      isFetchingEventsRef.current = true;
+      setIsLoadingEvents(true);
+      const response = await fetch('/api/in_person_events');
+      if (!response.ok) throw new Error('Failed to fetch in-person events');
+      const data = await response.json();
+      setEvents(data);
+
+      const grouped: Record<EventColumnId, InPersonEvent[]> = {
+        upcoming: [],
+        attending: [],
+        attended: [],
+        followups: [],
+      };
+
+      data.forEach((event: InPersonEvent) => {
+        const column = eventStatusToColumn[event.status] ?? 'upcoming';
+        grouped[column].push(event);
+      });
+
+      setEventColumns(grouped);
+    } catch (error) {
+      console.error('Error fetching in-person events:', error);
+    } finally {
+      setIsLoadingEvents(false);
+      isFetchingEventsRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if ((activeTab === 'events' || activeTab === 'overview') && !isFetchingEventsRef.current) {
+      fetchEvents();
+    }
+  }, [activeTab, fetchEvents]);
+
+  const getEventColumnOfItem = (id: string): EventColumnId | null => {
+    const entry = (Object.keys(eventColumns) as EventColumnId[]).find(col =>
+      eventColumns[col].some(event => String(event.id) === id)
+    );
+    return entry ?? null;
+  };
+
+  const handleEventsDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
+
     const activeId = String(active.id);
     const overId = String(over.id);
-    const columns = eventColumns;
-    const colKeys = Object.keys(columns) as EventsColumnId[];
-    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
-    const overCol: EventsColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as EventsColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
-    if (!fromCol || !overCol) return;
-    if (fromCol === overCol) {
-      const items = columns[fromCol];
-      const oldIndex = items.findIndex(i => i.id === activeId);
-      const newIndex = items.findIndex(i => i.id === overId);
+
+    const fromCol = getEventColumnOfItem(activeId);
+    const toCol = (['upcoming', 'attending', 'attended', 'followups'] as EventColumnId[]).includes(overId as EventColumnId)
+      ? (overId as EventColumnId)
+      : getEventColumnOfItem(overId);
+    if (!fromCol || !toCol) return;
+
+    if (fromCol === toCol) {
+      const items = eventColumns[fromCol];
+      const oldIndex = items.findIndex(i => String(i.id) === activeId);
+      const newIndex = items.findIndex(i => String(i.id) === overId);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
-      setEventColumns(prev => ({ ...prev, [fromCol]: arrayMove(prev[fromCol], oldIndex, newIndex) }));
+      const newItems = arrayMove(items, oldIndex, newIndex);
+      setEventColumns(prev => ({ ...prev, [fromCol]: newItems }));
     } else {
-      const fromItems = columns[fromCol];
-      const toItems = columns[overCol];
-      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      const fromItems = eventColumns[fromCol];
+      const toItems = eventColumns[toCol];
+      const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
       if (movingIndex === -1) return;
       const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => i.id === overId);
+      const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
-      setEventColumns(prev => ({ ...prev, [fromCol]: newFrom, [overCol]: newTo }));
+      setEventColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+
+      try {
+        const newStatus = eventColumnToStatus[toCol] ?? 'scheduled';
+        const response = await fetch(`/api/in_person_events?id=${movingItem.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!response.ok) throw new Error('Failed to update event status');
+
+        setEvents(prev => prev.map(ev =>
+          ev.id === movingItem.id ? { ...ev, status: newStatus } : ev
+        ));
+      } catch (error) {
+        console.error('Error updating event status:', error);
+        fetchEvents();
+      }
     }
     setActiveEventId(null);
   };
@@ -500,79 +623,115 @@ export default function Page() {
   };
 
   const handleEventsDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    const columns = eventColumns;
-    const colKeys = Object.keys(columns) as EventsColumnId[];
-    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
-    const overCol: EventsColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as EventsColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
-    if (!fromCol || !overCol || fromCol === overCol) return;
-    setEventColumns(prev => {
-      const fromItems = prev[fromCol];
-      const toItems = prev[overCol];
-      const movingIndex = fromItems.findIndex(i => i.id === activeId);
-      if (movingIndex === -1) return prev;
-      const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => i.id === overId);
-      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
-      return {
-        ...prev,
-        [fromCol]: [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)],
-        [overCol]: [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)],
-      };
-    });
+    // onDragOver is only for visual feedback via DroppableColumn
   };
 
   // dnd-kit: LeetCode board
-  type LeetColumnId = 'planned' | 'solved' | 'reflected';
-  const [leetColumns, setLeetColumns] = useState<Record<LeetColumnId, PipelineCard[]>>({
-    planned: [
-      { id: 'two-sum', title: 'Two Sum', subtitle: 'Easy - Arrays', leftLabel: 'Planned', rightLabel: 'Easy', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
-      { id: 'valid-paren', title: 'Valid Parentheses', subtitle: 'Easy - Stack', leftLabel: 'Planned', rightLabel: 'Easy', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
-      { id: 'merge-intervals', title: 'Merge Intervals', subtitle: 'Medium - Arrays', leftLabel: 'Planned', rightLabel: 'Medium', leftClass: 'text-yellow-400', rightClass: 'text-gray-500' },
-    ],
-    solved: [
-      { id: 'bt-inorder', title: 'Binary Tree Inorder', subtitle: 'Medium - Trees', leftLabel: 'Solved', rightLabel: 'Dec 12', leftClass: 'text-green-400', rightClass: 'text-gray-500' },
-      { id: 'reverse-ll', title: 'Reverse Linked List', subtitle: 'Easy - Linked Lists', leftLabel: 'Solved', rightLabel: 'Dec 10', leftClass: 'text-green-400', rightClass: 'text-gray-500' },
-      { id: 'max-subarray', title: 'Maximum Subarray', subtitle: 'Medium - Arrays', leftLabel: 'Solved', rightLabel: 'Dec 8', leftClass: 'text-green-400', rightClass: 'text-gray-500' },
-    ],
-    reflected: [
-      { id: 'climbing-stairs', title: 'Climbing Stairs', subtitle: 'Easy - DP', leftLabel: 'Reflected', rightLabel: 'Patterns noted', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
-      { id: 'lcs', title: 'Longest Common Subsequence', subtitle: 'Medium - DP', leftLabel: 'Reflected', rightLabel: 'Patterns noted', leftClass: 'text-purple-400', rightClass: 'text-green-500' },
-    ],
+  const [leetEntries, setLeetEntries] = useState<LeetEntry[]>([]);
+  const [leetColumns, setLeetColumns] = useState<Record<LeetColumnId, LeetEntry[]>>({
+    planned: [],
+    solved: [],
+    reflected: [],
   });
-
   const [activeLeetId, setActiveLeetId] = useState<string | null>(null);
+  const [isLeetModalOpen, setIsLeetModalOpen] = useState(false);
+  const [editingLeet, setEditingLeet] = useState<LeetEntry | null>(null);
+  const [isDeletingLeet, setIsDeletingLeet] = useState<number | null>(null);
+  const [isLoadingLeet, setIsLoadingLeet] = useState(true);
+  const isFetchingLeetRef = useRef(false);
 
-  const handleLeetDragEnd = (event: DragEndEvent) => {
+  const fetchLeetEntries = useCallback(async () => {
+    if (isFetchingLeetRef.current) return;
+
+    try {
+      isFetchingLeetRef.current = true;
+      setIsLoadingLeet(true);
+      const response = await fetch('/api/leetcode');
+      if (!response.ok) throw new Error('Failed to fetch LeetCode entries');
+      const data = await response.json();
+      setLeetEntries(data);
+
+      const grouped: Record<LeetColumnId, LeetEntry[]> = {
+        planned: [],
+        solved: [],
+        reflected: [],
+      };
+
+      (data as LeetEntry[]).forEach(entry => {
+        const column = leetStatusToColumn[entry.status] ?? 'planned';
+        grouped[column].push(entry);
+      });
+
+      setLeetColumns(grouped);
+    } catch (error) {
+      console.error('Error fetching LeetCode entries:', error);
+    } finally {
+      setIsLoadingLeet(false);
+      isFetchingLeetRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if ((activeTab === 'leetcode' || activeTab === 'overview') && !isFetchingLeetRef.current) {
+      fetchLeetEntries();
+    }
+  }, [activeTab, fetchLeetEntries]);
+
+  const getLeetColumnOfItem = (id: string): LeetColumnId | null => {
+    const entry = (Object.keys(leetColumns) as LeetColumnId[]).find(col =>
+      leetColumns[col].some(item => String(item.id) === id)
+    );
+    return entry ?? null;
+  };
+
+  const handleLeetDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
+
     const activeId = String(active.id);
     const overId = String(over.id);
-    const columns = leetColumns;
-    const colKeys = Object.keys(columns) as LeetColumnId[];
-    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
-    const overCol: LeetColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as LeetColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
-    if (!fromCol || !overCol) return;
-    if (fromCol === overCol) {
-      const items = columns[fromCol];
-      const oldIndex = items.findIndex(i => i.id === activeId);
-      const newIndex = items.findIndex(i => i.id === overId);
+
+    const fromCol = getLeetColumnOfItem(activeId);
+    const toCol = (['planned', 'solved', 'reflected'] as LeetColumnId[]).includes(overId as LeetColumnId)
+      ? (overId as LeetColumnId)
+      : getLeetColumnOfItem(overId);
+    if (!fromCol || !toCol) return;
+
+    if (fromCol === toCol) {
+      const items = leetColumns[fromCol];
+      const oldIndex = items.findIndex(i => String(i.id) === activeId);
+      const newIndex = items.findIndex(i => String(i.id) === overId);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
-      setLeetColumns(prev => ({ ...prev, [fromCol]: arrayMove(prev[fromCol], oldIndex, newIndex) }));
+      const newItems = arrayMove(items, oldIndex, newIndex);
+      setLeetColumns(prev => ({ ...prev, [fromCol]: newItems }));
     } else {
-      const fromItems = columns[fromCol];
-      const toItems = columns[overCol];
-      const movingIndex = fromItems.findIndex(i => i.id === activeId);
+      const fromItems = leetColumns[fromCol];
+      const toItems = leetColumns[toCol];
+      const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
       if (movingIndex === -1) return;
       const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => i.id === overId);
+      const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
-      setLeetColumns(prev => ({ ...prev, [fromCol]: newFrom, [overCol]: newTo }));
+      setLeetColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+
+      try {
+        const newStatus = leetColumnToStatus[toCol];
+        const response = await fetch(`/api/leetcode?id=${movingItem.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!response.ok) throw new Error('Failed to update LeetCode status');
+
+        setLeetEntries(prev => prev.map(entry =>
+          entry.id === movingItem.id ? { ...entry, status: newStatus } : entry
+        ));
+      } catch (error) {
+        console.error('Error updating LeetCode status:', error);
+        fetchLeetEntries();
+      }
     }
     setActiveLeetId(null);
   };
@@ -582,29 +741,7 @@ export default function Page() {
   };
 
   const handleLeetDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    const columns = leetColumns;
-    const colKeys = Object.keys(columns) as LeetColumnId[];
-    const fromCol = colKeys.find(col => columns[col].some(c => c.id === activeId));
-    const overCol: LeetColumnId | undefined = (colKeys as string[]).includes(overId) ? (overId as LeetColumnId) : colKeys.find(col => columns[col].some(c => c.id === overId));
-    if (!fromCol || !overCol || fromCol === overCol) return;
-    setLeetColumns(prev => {
-      const fromItems = prev[fromCol];
-      const toItems = prev[overCol];
-      const movingIndex = fromItems.findIndex(i => i.id === activeId);
-      if (movingIndex === -1) return prev;
-      const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => i.id === overId);
-      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
-      return {
-        ...prev,
-        [fromCol]: [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)],
-        [overCol]: [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)],
-      };
-    });
+    // onDragOver is only for visual feedback via DroppableColumn
   };
 
   function SortableCoffeeChatCard(props: { card: CoffeeChat }) {
@@ -689,20 +826,171 @@ export default function Page() {
     );
   }
 
-  function SortablePipelineCard(props: { card: PipelineCard }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.card.id });
+  function SortableEventCard(props: { card: InPersonEvent }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
       opacity: isDragging ? 0 : undefined,
     } as React.CSSProperties;
+
+    const formatDateTime = (dateString: string) => {
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        });
+      } catch {
+        return '';
+      }
+    };
+
+    const handleEdit = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setEditingEvent(props.card);
+      setIsEventModalOpen(true);
+    };
+
+    const handleDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsDeletingEvent(props.card.id);
+    };
+
     return (
-      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors">
-        <div className="text-white font-medium mb-1">{props.card.title}</div>
-        <div className="text-gray-400 text-sm mb-2">{props.card.subtitle}</div>
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors group relative"
+      >
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <div className="text-white font-medium mb-1">{props.card.event}</div>
+            <div className="text-gray-400 text-xs mb-1">{formatDateTime(props.card.date)}</div>
+            {props.card.location && (
+              <div className="text-gray-400 text-xs mb-1">{props.card.location}</div>
+            )}
+            {props.card.url && (
+              <div className="text-gray-500 text-xs mb-1">
+                <a href={props.card.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-electric-blue underline">
+                  Event Link
+                </a>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleEdit}
+              className="p-1 hover:bg-gray-500 rounded text-gray-300 hover:text-white"
+              title="Edit"
+            >
+              <Edit2 size={14} />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
+              title="Delete"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+        {props.card.notes && (
+          <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
+        )}
+        <div className="flex flex-wrap gap-2 text-[10px] text-gray-300">
+          {props.card.careerFair && <span className="px-2 py-0.5 rounded-full bg-electric-blue/20 text-electric-blue">Career Fair</span>}
+          {typeof props.card.numPeopleSpokenTo === 'number' && (
+            <span className="px-2 py-0.5 rounded-full bg-gray-700">Spoke to {props.card.numPeopleSpokenTo}</span>
+          )}
+          {typeof props.card.numLinkedInRequests === 'number' && (
+            <span className="px-2 py-0.5 rounded-full bg-gray-700">LinkedIn {props.card.numLinkedInRequests}</span>
+          )}
+          {typeof props.card.numOfInterviews === 'number' && (
+            <span className="px-2 py-0.5 rounded-full bg-gray-700">Interviews {props.card.numOfInterviews}</span>
+          )}
+        </div>
+        <div className="flex items-center justify-between text-xs mt-2">
+          <span className="text-gray-500">ID: {props.card.id}</span>
+          <span className="text-gray-500 capitalize">Status: {props.card.status}</span>
+        </div>
+      </div>
+    );
+  }
+
+  function SortableLeetCard(props: { card: LeetEntry }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0 : undefined,
+    } as React.CSSProperties;
+
+    const handleEdit = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setEditingLeet(props.card);
+      setIsLeetModalOpen(true);
+    };
+
+    const handleDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsDeletingLeet(props.card.id);
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors group relative"
+      >
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <div className="text-white font-medium mb-1">{props.card.problem?.trim() || 'Untitled Problem'}</div>
+            <div className="text-gray-400 text-xs mb-1">
+              {props.card.problemType ? props.card.problemType : '—'}
+            </div>
+            {props.card.difficulty && (
+              <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-electric-blue/20 text-electric-blue uppercase tracking-wide">
+                {props.card.difficulty}
+              </span>
+            )}
+          </div>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleEdit}
+              className="p-1 hover:bg-gray-500 rounded text-gray-300 hover:text-white"
+              title="Edit"
+            >
+              <Edit2 size={14} />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
+              title="Delete"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+        {props.card.url && (
+          <div className="text-gray-500 text-xs mb-2">
+            <a href={props.card.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-electric-blue underline">
+              Problem Link
+            </a>
+          </div>
+        )}
+        {props.card.reflection && (
+          <div className="text-gray-400 text-xs mb-2 line-clamp-3">{props.card.reflection}</div>
+        )}
         <div className="flex items-center justify-between text-xs">
-          <span className={props.card.leftClass ?? 'text-yellow-400'}>{props.card.leftLabel}</span>
-          <span className={props.card.rightClass ?? 'text-gray-500'}>{props.card.rightLabel}</span>
+          <span className="text-gray-500">ID: {props.card.id}</span>
+          <span className="text-gray-500 capitalize">Status: {props.card.status}</span>
         </div>
       </div>
     );
@@ -712,6 +1000,7 @@ export default function Page() {
     apps_with_outreach_per_week?: number | null;
     info_interview_outreach_per_month?: number | null;
     projected_offer_date?: string | null;
+    in_person_events_per_month?: number | null;
   } | null>(null);
 
   useEffect(() => {
@@ -822,12 +1111,80 @@ export default function Page() {
     };
   }, [coffeeChatColumns, userData]);
 
+  const eventsMetrics = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const qualifyingColumns: EventColumnId[] = ['attended', 'followups'];
+    let count = 0;
+
+    qualifyingColumns.forEach(col => {
+      eventColumns[col].forEach(event => {
+        const eventDate = new Date(event.date);
+        if (!Number.isNaN(eventDate.getTime()) && eventDate >= startOfMonth) {
+          count++;
+        }
+      });
+    });
+
+    const goal = userData?.in_person_events_per_month ?? 0;
+    const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
+    const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
+    const statusColor = difference >= 0 ? 'green' : 'yellow';
+    const statusIcon = difference >= 0 ? 'bg-green-500' : 'bg-yellow-500';
+    const statusText = difference >= 0 ? `+${Math.round(difference)}%` : `${Math.round(difference)}%`;
+    const statusTextColor = difference >= 0 ? 'text-green-400' : 'text-yellow-400';
+
+    return {
+      count,
+      goal,
+      percentage,
+      statusColor,
+      statusIcon,
+      statusText,
+      statusTextColor,
+    };
+  }, [eventColumns, userData]);
+
+  const leetMetrics = useMemo(() => {
+    const count = leetColumns.reflected.length;
+    const goal = 4;
+    const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
+    const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
+    const statusColor = difference >= 0 ? 'green' : 'yellow';
+    const statusIcon = difference >= 0 ? 'bg-green-500' : 'bg-yellow-500';
+    const statusText = difference >= 0 ? `+${Math.round(difference)}%` : `${Math.round(difference)}%`;
+    const statusTextColor = difference >= 0 ? 'text-green-400' : 'text-yellow-400';
+
+    return {
+      count,
+      goal,
+      percentage,
+      statusColor,
+      statusIcon,
+      statusText,
+      statusTextColor,
+    };
+  }, [leetColumns]);
+
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
   };
 
   const handleHabitCardClick = (cardId: string) => {
     setActiveTab(cardId);
+  };
+
+  const toLocalDate = (value: string) => {
+    try {
+      const date = new Date(value);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
   };
 
   return (
@@ -979,16 +1336,21 @@ export default function Page() {
                       <Users className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">Events</h4>
                     </div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className={`w-3 h-3 ${eventsMetrics.statusIcon} rounded-full`}></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">4</div>
+                  <div className="text-3xl font-bold text-white mb-1">{eventsMetrics.count}</div>
                   <div className="text-sm text-gray-400 mb-3">This month</div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Goal: 3</span>
-                    <span className="text-green-400">+33%</span>
+                    <span className="text-gray-400">Goal: {eventsMetrics.goal || '—'}</span>
+                    {eventsMetrics.goal > 0 && (
+                      <span className={eventsMetrics.statusTextColor}>{eventsMetrics.statusText}</span>
+                    )}
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-                    <div className="bg-electric-blue h-2 rounded-full" style={{width: '133%'}}></div>
+                    <div 
+                      className={`${eventsMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
+                      style={{width: `${Math.min(Math.max(eventsMetrics.percentage, 0), 100)}%`}}
+                    ></div>
                   </div>
                 </div>
 
@@ -1001,16 +1363,19 @@ export default function Page() {
                       <Code className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">LeetCode</h4>
                     </div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className={`w-3 h-3 ${leetMetrics.statusIcon} rounded-full`}></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">47</div>
+                  <div className="text-3xl font-bold text-white mb-1">{leetMetrics.count}</div>
                   <div className="text-sm text-gray-400 mb-3">This month</div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Goal: 40</span>
-                    <span className="text-green-400">+18%</span>
+                    <span className="text-gray-400">Goal: {leetMetrics.goal}</span>
+                    <span className={leetMetrics.statusTextColor}>{leetMetrics.statusText}</span>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-                    <div className="bg-electric-blue h-2 rounded-full" style={{width: '118%'}}></div>
+                    <div 
+                      className={`${leetMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
+                      style={{width: `${Math.min(Math.max(leetMetrics.percentage, 0), 100)}%`}}
+                    ></div>
                   </div>
                 </div>
               </div>
@@ -1357,11 +1722,20 @@ export default function Page() {
         {activeTab === 'events' && (
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
-              <h4 className="text-xl font-bold text-white">Event Tracking</h4>
-              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
+              <h4 className="text-xl font-bold text-white">In-Person Events</h4>
+              <button
+                onClick={() => {
+                  setEditingEvent(null);
+                  setIsEventModalOpen(true);
+                }}
+                className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
+              >
                 <Plus className="mr-2" />Add Event
               </button>
             </div>
+            {isLoadingEvents ? (
+              <div className="text-center py-8 text-gray-400">Loading events...</div>
+            ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleEventsDragStart} onDragOver={handleEventsDragOver} onDragEnd={handleEventsDragEnd}>
               <div className="grid grid-cols-4 gap-6">
                 <div className="bg-gray-700 rounded-lg p-4">
@@ -1369,10 +1743,10 @@ export default function Page() {
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
                     Scheduled ({eventColumns.upcoming.length})
                   </h5>
-                  <SortableContext items={eventColumns.upcoming.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={eventColumns.upcoming.map(event => String(event.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="upcoming">
-                      {eventColumns.upcoming.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {eventColumns.upcoming.map(event => (
+                        <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1381,12 +1755,12 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Attended ({eventColumns.attending.length})
+                    Attending ({eventColumns.attending.length})
                   </h5>
-                  <SortableContext items={eventColumns.attending.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={eventColumns.attending.map(event => String(event.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="attending">
-                      {eventColumns.attending.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {eventColumns.attending.map(event => (
+                        <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1395,12 +1769,12 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Connected Online ({eventColumns.attended.length})
+                    Attended ({eventColumns.attended.length})
                   </h5>
-                  <SortableContext items={eventColumns.attended.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={eventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="attended">
-                      {eventColumns.attended.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {eventColumns.attended.map(event => (
+                        <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1411,10 +1785,10 @@ export default function Page() {
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
                     Followed Up ({eventColumns.followups.length})
                   </h5>
-                  <SortableContext items={eventColumns.followups.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={eventColumns.followups.map(event => String(event.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="followups">
-                      {eventColumns.followups.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {eventColumns.followups.map(event => (
+                        <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1422,24 +1796,92 @@ export default function Page() {
               </div>
               <DragOverlay>
                 {activeEventId ? (() => {
-                  const columns = eventColumns;
-                  const col = (Object.keys(columns) as EventsColumnId[]).find(k => columns[k].some(c => c.id === activeEventId));
+                  const col = getEventColumnOfItem(activeEventId);
                   if (!col) return null;
-                  const card = columns[col].find(c => c.id === activeEventId);
+                  const card = eventColumns[col].find(event => String(event.id) === activeEventId);
                   if (!card) return null;
+                  const formattedDate = (() => {
+                    try {
+                      return new Date(card.date).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      });
+                    } catch {
+                      return '';
+                    }
+                  })();
                   return (
                     <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
-                      <div className="text-white font-medium mb-1">{card.title}</div>
-                      <div className="text-gray-400 text-sm mb-2">{card.subtitle}</div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className={card.leftClass ?? 'text-yellow-400'}>{card.leftLabel}</span>
-                        <span className={card.rightClass ?? 'text-gray-500'}>{card.rightLabel}</span>
-                      </div>
+                      <div className="text-white font-medium mb-1">{card.event}</div>
+                      <div className="text-gray-400 text-xs mb-1">{formattedDate}</div>
+                      {card.location && (
+                        <div className="text-gray-400 text-xs mb-1">{card.location}</div>
+                      )}
                     </div>
                   );
                 })() : null}
               </DragOverlay>
             </DndContext>
+            )}
+
+            {/* Create/Edit Modal */}
+            {isEventModalOpen && (
+              <InPersonEventModal
+                eventItem={editingEvent}
+                onClose={() => {
+                  setIsEventModalOpen(false);
+                  setEditingEvent(null);
+                }}
+                onSave={async (data) => {
+                  try {
+                    if (editingEvent) {
+                      const response = await fetch('/api/in_person_events', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...data, id: editingEvent.id }),
+                      });
+                      if (!response.ok) throw new Error('Failed to update event');
+                    } else {
+                      const response = await fetch('/api/in_person_events', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                      });
+                      if (!response.ok) throw new Error('Failed to create event');
+                    }
+                    await fetchEvents();
+                    setIsEventModalOpen(false);
+                    setEditingEvent(null);
+                  } catch (error) {
+                    console.error('Error saving event:', error);
+                    alert('Failed to save event. Please try again.');
+                  }
+                }}
+              />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {isDeletingEvent !== null && (
+              <DeleteModal
+                onConfirm={async () => {
+                  try {
+                    const response = await fetch(`/api/in_person_events?id=${isDeletingEvent}`, {
+                      method: 'DELETE',
+                    });
+                    if (!response.ok) throw new Error('Failed to delete event');
+                    await fetchEvents();
+                    setIsDeletingEvent(null);
+                  } catch (error) {
+                    console.error('Error deleting event:', error);
+                    alert('Failed to delete event. Please try again.');
+                    setIsDeletingEvent(null);
+                  }
+                }}
+                onCancel={() => setIsDeletingEvent(null)}
+              />
+            )}
           </section>
         )}
 
@@ -1448,10 +1890,19 @@ export default function Page() {
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
               <h4 className="text-xl font-bold text-white">LeetCode Progress</h4>
-              <button className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center">
+              <button
+                onClick={() => {
+                  setEditingLeet(null);
+                  setIsLeetModalOpen(true);
+                }}
+                className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
+              >
                 <Plus className="mr-2" />Log Practice
               </button>
             </div>
+            {isLoadingLeet ? (
+              <div className="text-center py-8 text-gray-400">Loading problems...</div>
+            ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLeetDragStart} onDragOver={handleLeetDragOver} onDragEnd={handleLeetDragEnd}>
               <div className="grid grid-cols-3 gap-6">
                 <div className="bg-gray-700 rounded-lg p-4">
@@ -1459,10 +1910,10 @@ export default function Page() {
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
                     Planned ({leetColumns.planned.length})
                   </h5>
-                  <SortableContext items={leetColumns.planned.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={leetColumns.planned.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="planned">
-                      {leetColumns.planned.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {leetColumns.planned.map(entry => (
+                        <SortableLeetCard key={entry.id} card={entry} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1473,10 +1924,10 @@ export default function Page() {
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
                     Solved ({leetColumns.solved.length})
                   </h5>
-                  <SortableContext items={leetColumns.solved.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={leetColumns.solved.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="solved">
-                      {leetColumns.solved.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {leetColumns.solved.map(entry => (
+                        <SortableLeetCard key={entry.id} card={entry} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1487,10 +1938,10 @@ export default function Page() {
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
                     Reflected ({leetColumns.reflected.length})
                   </h5>
-                  <SortableContext items={leetColumns.reflected.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={leetColumns.reflected.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="reflected">
-                      {leetColumns.reflected.map(card => (
-                        <SortablePipelineCard key={card.id} card={card} />
+                      {leetColumns.reflected.map(entry => (
+                        <SortableLeetCard key={entry.id} card={entry} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1498,24 +1949,78 @@ export default function Page() {
               </div>
               <DragOverlay>
                 {activeLeetId ? (() => {
-                  const columns = leetColumns;
-                  const col = (Object.keys(columns) as LeetColumnId[]).find(k => columns[k].some(c => c.id === activeLeetId));
+                  const col = getLeetColumnOfItem(activeLeetId);
                   if (!col) return null;
-                  const card = columns[col].find(c => c.id === activeLeetId);
+                  const card = leetColumns[col].find(entry => String(entry.id) === activeLeetId);
                   if (!card) return null;
                   return (
                     <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
-                      <div className="text-white font-medium mb-1">{card.title}</div>
-                      <div className="text-gray-400 text-sm mb-2">{card.subtitle}</div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className={card.leftClass ?? 'text-yellow-400'}>{card.leftLabel}</span>
-                        <span className={card.rightClass ?? 'text-gray-500'}>{card.rightLabel}</span>
-                      </div>
+                      <div className="text-white font-medium mb-1">{card.problem?.trim() || 'Untitled Problem'}</div>
+                      <div className="text-gray-400 text-xs mb-1">{card.problemType || '—'}</div>
+                      {card.difficulty && (
+                        <div className="text-[10px] text-electric-blue uppercase">{card.difficulty}</div>
+                      )}
                     </div>
                   );
                 })() : null}
               </DragOverlay>
             </DndContext>
+            )}
+
+            {isLeetModalOpen && (
+              <LeetModal
+                entry={editingLeet}
+                onClose={() => {
+                  setIsLeetModalOpen(false);
+                  setEditingLeet(null);
+                }}
+                onSave={async (data) => {
+                  try {
+                    if (editingLeet) {
+                      const response = await fetch('/api/leetcode', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...data, id: editingLeet.id }),
+                      });
+                      if (!response.ok) throw new Error('Failed to update problem');
+                    } else {
+                      const response = await fetch('/api/leetcode', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                      });
+                      if (!response.ok) throw new Error('Failed to create problem');
+                    }
+                    await fetchLeetEntries();
+                    setIsLeetModalOpen(false);
+                    setEditingLeet(null);
+                  } catch (error) {
+                    console.error('Error saving LeetCode problem:', error);
+                    alert('Failed to save problem. Please try again.');
+                  }
+                }}
+              />
+            )}
+
+            {isDeletingLeet !== null && (
+              <DeleteModal
+                onConfirm={async () => {
+                  try {
+                    const response = await fetch(`/api/leetcode?id=${isDeletingLeet}`, {
+                      method: 'DELETE',
+                    });
+                    if (!response.ok) throw new Error('Failed to delete problem');
+                    await fetchLeetEntries();
+                    setIsDeletingLeet(null);
+                  } catch (error) {
+                    console.error('Error deleting LeetCode problem:', error);
+                    alert('Failed to delete problem. Please try again.');
+                    setIsDeletingLeet(null);
+                  }
+                }}
+                onCancel={() => setIsDeletingLeet(null)}
+              />
+            )}
           </section>
         )}
     </main>
@@ -1897,6 +2402,502 @@ function DeleteModal({
             Delete
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// In-Person Event Modal Component
+function InPersonEventModal({
+  eventItem,
+  onClose,
+  onSave,
+}: {
+  eventItem: InPersonEvent | null;
+  onClose: () => void;
+  onSave: (data: Partial<InPersonEvent> & { date?: string }) => void;
+}) {
+  const toLocalDate = (value: string) => {
+    try {
+      const date = new Date(value);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
+  const toLocalTime = (value: string) => {
+    try {
+      const date = new Date(value);
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    } catch {
+      return '';
+    }
+  };
+
+  const [formData, setFormData] = useState({
+    event: eventItem?.event ?? '',
+    date: eventItem?.date ? toLocalDate(eventItem.date) : '',
+    timeHour: eventItem?.date ? toLocalTimeParts(eventItem.date).hour : '',
+    timeMinute: eventItem?.date ? toLocalTimeParts(eventItem.date).minute : '',
+    timePeriod: eventItem?.date ? toLocalTimeParts(eventItem.date).period : 'AM',
+    location: eventItem?.location ?? '',
+    url: eventItem?.url ?? '',
+    notes: eventItem?.notes ?? '',
+    status: eventItem?.status ?? 'scheduled',
+    numPeopleSpokenTo: eventItem?.numPeopleSpokenTo?.toString() ?? '',
+    numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
+    numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
+    careerFair: eventItem?.careerFair ?? false,
+  });
+
+  useEffect(() => {
+    const timeParts = eventItem?.date ? toLocalTimeParts(eventItem.date) : { hour: '', minute: '', period: 'AM' as const };
+    setFormData({
+      event: eventItem?.event ?? '',
+      date: eventItem?.date ? toLocalDate(eventItem.date) : '',
+      timeHour: timeParts.hour,
+      timeMinute: timeParts.minute,
+      timePeriod: timeParts.period,
+      location: eventItem?.location ?? '',
+      url: eventItem?.url ?? '',
+      notes: eventItem?.notes ?? '',
+      status: eventItem?.status ?? 'scheduled',
+      numPeopleSpokenTo: eventItem?.numPeopleSpokenTo?.toString() ?? '',
+      numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
+      numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
+      careerFair: eventItem?.careerFair ?? false,
+    });
+  }, [eventItem]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.event.trim()) {
+      alert('Event name is required');
+      return;
+    }
+    if (!formData.date) {
+      alert('Event date is required');
+      return;
+    }
+
+    const combinedDate = (() => {
+      const datePart = formData.date;
+      const hasTimeSelection = formData.timeHour !== '' || formData.timeMinute !== '';
+
+      let hour24 = 0;
+      let minute = 0;
+
+      if (hasTimeSelection) {
+        let hour12 = parseInt(formData.timeHour || '12', 10);
+        if (Number.isNaN(hour12) || hour12 < 1 || hour12 > 12) {
+          hour12 = 12;
+        }
+
+        minute = parseInt(formData.timeMinute || '0', 10);
+        if (Number.isNaN(minute) || minute < 0 || minute > 59) {
+          minute = 0;
+        }
+
+        if (formData.timePeriod === 'PM') {
+          hour24 = hour12 === 12 ? 12 : hour12 + 12;
+        } else {
+          hour24 = hour12 === 12 ? 0 : hour12;
+        }
+      }
+
+      const timePart = `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      try {
+        const iso = new Date(`${datePart}T${timePart}`).toISOString();
+        return iso;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    if (!combinedDate) {
+      alert('Invalid date or time');
+      return;
+    }
+
+    onSave({
+      event: formData.event.trim(),
+      date: combinedDate,
+      location: formData.location ? formData.location.trim() : null,
+      url: formData.url ? formData.url.trim() : null,
+      notes: formData.notes ? formData.notes.trim() : null,
+      status: formData.status,
+      numPeopleSpokenTo: formData.numPeopleSpokenTo !== '' ? Number(formData.numPeopleSpokenTo) : null,
+      numLinkedInRequests: formData.numLinkedInRequests !== '' ? Number(formData.numLinkedInRequests) : null,
+      numOfInterviews: formData.numOfInterviews !== '' ? Number(formData.numOfInterviews) : null,
+      careerFair: formData.careerFair,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">
+            {eventItem ? 'Edit Event' : 'Create New Event'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white font-semibold mb-2">Event Name *</label>
+              <input
+                type="text"
+                value={formData.event}
+                onChange={(e) => setFormData(prev => ({ ...prev, event: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="Conference, Meetup, etc."
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-white font-semibold mb-2">Date *</label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white font-semibold mb-2">Time</label>
+              <div className="flex gap-2">
+                <select
+                  value={formData.timeHour}
+                  onChange={(e) => setFormData(prev => ({ ...prev, timeHour: e.target.value }))}
+                  className="bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                >
+                  {hourOptions.map(hour => (
+                    <option key={hour} value={hour}>{hour}</option>
+                  ))}
+                </select>
+                <select
+                  value={formData.timeMinute}
+                  onChange={(e) => setFormData(prev => ({ ...prev, timeMinute: e.target.value }))}
+                  className="bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                >
+                  {minuteOptions.map(minute => (
+                    <option key={minute} value={minute}>{minute}</option>
+                  ))}
+                </select>
+                <select
+                  value={formData.timePeriod}
+                  onChange={(e) => setFormData(prev => ({ ...prev, timePeriod: e.target.value as 'AM' | 'PM' }))}
+                  className="bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-white font-semibold mb-2">Location</label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="City, Online, etc."
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Event URL</label>
+            <input
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              placeholder="https://example.com/event"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+            >
+              <option value="scheduled">Scheduled</option>
+              <option value="attending">Attending</option>
+              <option value="attended">Attended</option>
+              <option value="followUp">Followed Up</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+              placeholder="Additional details or outcomes"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-white font-semibold mb-2">People Spoken To</label>
+              <input
+                type="number"
+                min={0}
+                value={formData.numPeopleSpokenTo}
+                onChange={(e) => setFormData(prev => ({ ...prev, numPeopleSpokenTo: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-white font-semibold mb-2">LinkedIn Requests</label>
+              <input
+                type="number"
+                min={0}
+                value={formData.numLinkedInRequests}
+                onChange={(e) => setFormData(prev => ({ ...prev, numLinkedInRequests: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-white font-semibold mb-2">Interviews from Event</label>
+              <input
+                type="number"
+                min={0}
+                value={formData.numOfInterviews}
+                onChange={(e) => setFormData(prev => ({ ...prev, numOfInterviews: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="careerFair"
+              checked={formData.careerFair}
+              onChange={(e) => setFormData(prev => ({ ...prev, careerFair: e.target.checked }))}
+              className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
+            />
+            <label htmlFor="careerFair" className="ml-2 text-white font-semibold">
+              This is a career fair
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              {eventItem ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function LeetModal({
+  entry,
+  onClose,
+  onSave,
+}: {
+  entry: LeetEntry | null;
+  onClose: () => void;
+  onSave: (data: Partial<LeetEntry>) => void;
+}) {
+  const [formData, setFormData] = useState({
+    problem: entry?.problem ?? '',
+    problemType: entry?.problemType ?? '',
+    difficulty: entry?.difficulty ?? '',
+    url: entry?.url ?? '',
+    reflection: entry?.reflection ?? '',
+    status: entry?.status ?? 'planned',
+  });
+  const [isLeetHelpOpen, setIsLeetHelpOpen] = useState(false);
+  const tooltipRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    if (!isLeetHelpOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
+        setIsLeetHelpOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLeetHelpOpen]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.problem.trim()) {
+      alert('Problem name is required');
+      return;
+    }
+
+    onSave({
+      problem: formData.problem.trim(),
+      problemType: formData.problemType ? formData.problemType.trim() : null,
+      difficulty: formData.difficulty ? formData.difficulty.trim() : null,
+      url: formData.url ? formData.url.trim() : null,
+      reflection: formData.reflection ? formData.reflection.trim() : null,
+      status: formData.status,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">{entry ? 'Edit Problem' : 'Log New Problem'}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-white font-semibold mb-2">Problem *</label>
+            <input
+              type="text"
+              value={formData.problem}
+              onChange={(e) => setFormData(prev => ({ ...prev, problem: e.target.value }))}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              placeholder="Problem title"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white font-semibold mb-2">
+                <span className="flex items-center gap-2">
+                  Data Structure / Algorithm
+                  <span ref={tooltipRef} className="relative inline-flex items-center">
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setIsLeetHelpOpen((prev: boolean) => !prev)}
+                      onFocus={() => setIsLeetHelpOpen(true)}
+                      onBlur={() => setIsLeetHelpOpen(false)}
+                      className="w-4 h-4 flex items-center justify-center rounded-full bg-electric-blue text-gray-900 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-electric-blue/60"
+                      aria-label="What data structure or algorithm was used?"
+                    >
+                      ?
+                    </button>
+                    {isLeetHelpOpen && (
+                      <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-72 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs shadow-lg z-10">
+                        What data structure, algorithm, or other problem solving technique was needed to solve this problem?
+                      </div>
+                    )}
+                  </span>
+                </span>
+              </label>
+              <input
+                type="text"
+                value={formData.problemType}
+                onChange={(e) => setFormData(prev => ({ ...prev, problemType: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="Arrays, DP, Graphs, ..."
+              />
+            </div>
+            <div>
+              <label className="block text-white font-semibold mb-2">Difficulty</label>
+              <select
+                value={formData.difficulty}
+                onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+              >
+                <option value="">Select difficulty</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Problem URL</label>
+            <input
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              placeholder="https://leetcode.com/problems/..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Signal / Cue</label>
+            <textarea
+              value={formData.reflection}
+              onChange={(e) => setFormData(prev => ({ ...prev, reflection: e.target.value }))}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[120px]"
+              placeholder="Was there anything in the original problem description that signaled to you that this problem requires the data structure/algorithm you listed above?"
+            />
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+            >
+              <option value="planned">Planned</option>
+              <option value="solved">Solved</option>
+              <option value="reflected">Reflected</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              {entry ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
