@@ -2,7 +2,85 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lightbulb, Clock, FileText, Info, Coffee, Users, Building2, CalendarCheck, ArrowLeft, Rocket } from 'lucide-react';
+import { FileText, Info, Coffee, Users, Building2, ArrowLeft, Rocket, Target } from 'lucide-react';
+
+function calculateEstimatedOfferDate(
+  appsWithOutreachPerWeek: number,
+  infoInterviewOutreachPerMonth: number,
+  inPersonEventsPerMonth: number,
+  careerFairsPerYear: number
+) {
+  let offersPerAppWithOutreach = 0.0025;
+  let offersPerInfoInterviewAttempt = 0.00075;
+  let offersPerInPersonEvent = 0.0075;
+  let offersPerCareerFair = 0.1;
+
+  const infoInterviewOutreachPerWeek = infoInterviewOutreachPerMonth / 4;
+
+  let bonusPoints = 0;
+
+  if (infoInterviewOutreachPerMonth >= 20) {
+    bonusPoints += 20;
+  } else if (infoInterviewOutreachPerMonth >= 12) {
+    bonusPoints += 11;
+  } else if (infoInterviewOutreachPerMonth >= 6) {
+    bonusPoints += 6;
+  } else if (infoInterviewOutreachPerMonth >= 1) {
+    bonusPoints += 1;
+  }
+
+  if (inPersonEventsPerMonth >= 8) {
+    bonusPoints += 80;
+  } else if (inPersonEventsPerMonth >= 4) {
+    bonusPoints += 40;
+  } else if (inPersonEventsPerMonth >= 2) {
+    bonusPoints += 20;
+  } else if (inPersonEventsPerMonth >= 1) {
+    bonusPoints += 10;
+  }
+
+  if (careerFairsPerYear >= 4) {
+    bonusPoints += 80;
+  } else if (careerFairsPerYear >= 3) {
+    bonusPoints += 40;
+  } else if (careerFairsPerYear >= 2) {
+    bonusPoints += 20;
+  } else if (careerFairsPerYear >= 1) {
+    bonusPoints += 10;
+  }
+
+  const a = 2.0;
+  const b = 0.01;
+  const multiplier = 3 - a * Math.exp(-b * bonusPoints);
+
+  offersPerAppWithOutreach *= multiplier;
+  offersPerInfoInterviewAttempt *= multiplier;
+  offersPerInPersonEvent *= multiplier;
+  offersPerCareerFair *= multiplier;
+
+  const totalOffersPerWeek =
+    appsWithOutreachPerWeek * offersPerAppWithOutreach +
+    infoInterviewOutreachPerWeek * offersPerInfoInterviewAttempt +
+    inPersonEventsPerMonth * offersPerInPersonEvent +
+    (careerFairsPerYear / 52) * offersPerCareerFair;
+
+  if (!Number.isFinite(totalOffersPerWeek) || totalOffersPerWeek <= 0) {
+    return new Date(); //to do: handle error case more gracefully
+  }
+
+  const totalWeeks = 3 + 1 / totalOffersPerWeek;
+  const referenceDate = new Date(); //to do: handle case where user comes back to this page at a later date to edit their plan, we may want to use a earlier reference date
+  return new Date(referenceDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
+}
+
+function calculateWeeklyHours(appsPerWeek: number, interviewsPerMonth: number, eventsPerMonth: number, fairsPerYear: number) {
+  let hoursPerAppWithOutreach = 1;
+  let hoursPerInfoInterviewAttempt = 0.5;
+  let hoursPerInPersonEvent = 4/4.33;
+  let hoursPerCareerFair = 10/26; //We are assuming that the average projected offer date is 6 months into the future, so they only have 26 weeks to attends the target number of career fairs
+
+  return Math.round(appsPerWeek * hoursPerAppWithOutreach + interviewsPerMonth * hoursPerInfoInterviewAttempt + eventsPerMonth * hoursPerInPersonEvent + fairsPerYear * hoursPerCareerFair);
+}
 
 export default function Page3V2() {
   const router = useRouter();
@@ -44,23 +122,18 @@ export default function Page3V2() {
   }, []);
 
   // Projection calculations (adapted from original page3, with fairs instead of LeetCode)
-  const { successRate, timeToOffer, weeklyHours, projectedOfferDate } = useMemo(() => {
-    const totalScore =
-      appsPerWeek * 2 +
-      interviewsPerMonth * 3 +
-      eventsPerMonth * 1.5 +
-      fairsPerYear * 1.0 +
-      hoursPerWeek * 1.0;
-    const sr = Math.min(95, Math.max(45, 45 + totalScore * 1.2));
-    // Time to offer in months (float)
-    const tto = Math.max(2.5, 6.5 - totalScore * 0.15);
-    const wh = hoursPerWeek;
-    // Compute a more responsive projected date by adding days based on fractional months
-    const base = new Date();
-    const daysToAdd = Math.round(tto * 30); // approximate month length
-    const projDate = new Date(base.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-    return { successRate: Math.round(sr), timeToOffer: Number(tto.toFixed(1)), weeklyHours: Math.round(wh), projectedOfferDate: projDate };
-  }, [appsPerWeek, interviewsPerMonth, eventsPerMonth, fairsPerYear, hoursPerWeek]);
+  const projectedOfferDate = useMemo(
+    () =>
+      calculateEstimatedOfferDate(
+        appsPerWeek,
+        interviewsPerMonth,
+        eventsPerMonth,
+        fairsPerYear
+      ),
+    [appsPerWeek, interviewsPerMonth, eventsPerMonth, fairsPerYear]
+  );
+
+  const weeklyHours = Math.round(hoursPerWeek);
 
   const handleBack = () => router.back();
 
@@ -106,56 +179,9 @@ export default function Page3V2() {
           </div>
         </div>
 
-        {/* Plan recommendation */}
-        <div className="bg-gradient-to-r from-electric-blue/20 to-blue-600/20 border border-electric-blue/30 rounded-lg p-6 mb-8">
-          <div className="flex items-center mb-3">
-            <Lightbulb className="text-electric-blue text-xl mr-3" />
-            <h3 className="text-white font-bold text-lg">Recommended Plan Based on Your Timeline</h3>
-          </div>
-          <p className="text-gray-300 mb-4">Based on your timeline, here's our data-driven recommendation to maximize your chances of success:</p>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-700/50 rounded-lg p-3">
-              <div className="text-electric-blue font-semibold">Success Rate: {successRate}%</div>
-              <div className="text-gray-300 text-sm">With this plan</div>
-            </div>
-            <div className="bg-gray-700/50 rounded-lg p-3">
-              <div className="text-electric-blue font-semibold">Avg. Time to Offer: {timeToOffer} months</div>
-              <div className="text-gray-300 text-sm">Based on similar profiles</div>
-            </div>
-          </div>
-        </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-6 mb-8">
-            {/* Hours per Week (wide and short) */}
-            <div className="col-span-2 bg-gray-700 border border-light-steel-blue rounded-lg p-4 hover:border-electric-blue/50 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-white font-bold text-lg flex items-center">
-                  <Clock className="text-electric-blue mr-3" />
-                  Hours per Week
-                </h4>
-                <div className="text-electric-blue text-sm font-semibold">0 - 40</div>
-              </div>
-              <div className="mb-1">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300">Weekly commitment:</span>
-                  <span className="text-white font-bold text-xl">{hoursPerWeek}</span>
-                </div>
-                <input
-                  type="range"
-                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
-                  min={0}
-                  max={40}
-                  value={hoursPerWeek}
-                  onChange={(e) => setHoursPerWeek(Number(e.target.value))}
-                />
-                <div className="flex justify-between text-xs text-gray-400 mt-1">
-                  <span>0</span>
-                  <span>40</span>
-                </div>
-              </div>
-            </div>
             {/* Applications */}
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
@@ -289,15 +315,22 @@ export default function Page3V2() {
             </div>
           </div>
 
-          {/* Projected Offer Date (reverted to original lighter style) */}
+          {/* Projected Outcome */}
           <div className="bg-gray-700/30 border border-light-steel-blue rounded-lg p-6 mb-8">
-            <h3 className="text-white font-bold text-lg mb-4 flex items-center">
-              <CalendarCheck className="text-electric-blue mr-3" />
-              Projected Offer Date
+            <h3 className="text-white font-bold text-lg mb-6 flex items-center justify-center">
+              <Target className="text-electric-blue mr-3" />
+              Projected Outcome with Your Custom Plan
             </h3>
-            <div className="flex flex-col items-center justify-center">
-              <div className="text-3xl font-bold text-electric-blue text-center">
-                {projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+            <div className="flex flex-col items-center justify-center gap-6 md:flex-row md:gap-12">
+              <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
+                <div className="text-3xl font-bold text-electric-blue mb-2">
+                  {projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+                <div className="text-gray-300 text-sm font-medium">Projected Offer Date</div>
+              </div>
+              <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
+                <div className="text-3xl font-bold text-electric-blue mb-2">{calculateWeeklyHours(appsPerWeek, interviewsPerMonth, eventsPerMonth, fairsPerYear)}</div>
+                <div className="text-gray-300 text-sm font-medium">Hours per Week</div>
               </div>
             </div>
           </div>

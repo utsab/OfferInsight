@@ -171,17 +171,20 @@ function usePage3Data() {
 }
 
 
-function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterviewOutreachPerWeek: number, inPersonEventsPerMonth: number) {
+function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterviewOutreachPerWeek: number, inPersonEventsPerMonth: number, careerFairsPerYear: number) {
   
   
-  console.log("appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
+  console.log("appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth, "careerFairsPerYear: ", careerFairsPerYear)
   
   // Hardcode the ROI percentages for each habit 
 
   let offersPerAppWithOutreach = 0.0025;
   let offersPerInfoInterviewAttempt = 0.00075;
   let offersPerInPersonEvent = 0.0075;
+  let offersPerCareerFair = 0.1;
 
+  // Bonus points captures the 'luck' factor. The more habits they do, the luckier they get, 
+  // in a way that goes beyond the base percentages listed above
   let bonusPoints = 0;
 
   if (infoInterviewOutreachPerWeek === 1) {
@@ -205,6 +208,16 @@ function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterv
     bonusPoints += 80; 
   }
 
+  if (careerFairsPerYear === 1) {
+    bonusPoints += 10; 
+  } else if (careerFairsPerYear === 2) {
+    bonusPoints += 20; 
+  } else if (careerFairsPerYear === 3) {
+    bonusPoints += 40; 
+  } else if (careerFairsPerYear === 4) {
+    bonusPoints += 80; 
+  }
+
   const a = 2.0;
   const b = 0.01;
   const x = bonusPoints; // Using bonusPoints as the x value
@@ -217,12 +230,12 @@ function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterv
   offersPerAppWithOutreach *= multiplier;
   offersPerInfoInterviewAttempt *= multiplier;
   offersPerInPersonEvent *= multiplier;
-
+  offersPerCareerFair *= multiplier;
 
 
   // Calculate the total number of job offers per week 
 
-  const totalOffersPerWeek = (appsWithOutreachPerWeek * offersPerAppWithOutreach) + (infoInterviewOutreachPerWeek * offersPerInfoInterviewAttempt) + (inPersonEventsPerMonth * offersPerInPersonEvent);
+  const totalOffersPerWeek = (appsWithOutreachPerWeek * offersPerAppWithOutreach) + (infoInterviewOutreachPerWeek * offersPerInfoInterviewAttempt) + (inPersonEventsPerMonth * offersPerInPersonEvent) + (careerFairsPerYear * offersPerCareerFair);
 
   // Calculate the total number of weeks
 
@@ -267,7 +280,8 @@ export default function Page3() {
   const estimatedOfferDate = calculateEstimatedOfferDate(
     parseInt(appsWithOutreachPerWeek), 
     parseInt(infoInterviewOutreachPerWeek), 
-    parseInt(inPersonEventsPerMonth)
+    parseInt(inPersonEventsPerMonth),
+    parseInt(careerFairsPerYear)
   );
   
   
