@@ -109,6 +109,7 @@ type InPersonEvent = {
   careerFair: boolean;
   numOfInterviews?: number | null;
   userId: string;
+  dateCreated?: string;
 };
 
 type EventColumnId = 'upcoming' | 'attending' | 'attended' | 'followups';
@@ -137,6 +138,7 @@ type LeetEntry = {
   reflection?: string | null;
   status: string;
   userId: string;
+  dateCreated?: string;
 };
 
 type LeetColumnId = 'planned' | 'solved' | 'reflected';
@@ -922,6 +924,17 @@ export default function Page() {
             <span className="px-2 py-0.5 rounded-full bg-gray-700">Interviews {props.card.numOfInterviews}</span>
           )}
         </div>
+        {props.card.dateCreated && (
+          <div className="text-xs text-yellow-400 mt-2">
+            {(() => {
+              try {
+                return new Date(props.card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              } catch {
+                return '';
+              }
+            })()}
+          </div>
+        )}
       </div>
     );
   }
@@ -997,6 +1010,17 @@ export default function Page() {
         )}
         {props.card.reflection && (
           <div className="text-gray-400 text-xs mb-2 line-clamp-3">{props.card.reflection}</div>
+        )}
+        {props.card.dateCreated && (
+          <div className="text-xs text-yellow-400">
+            {(() => {
+              try {
+                return new Date(props.card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              } catch {
+                return '';
+              }
+            })()}
+          </div>
         )}
       </div>
     );
@@ -2586,7 +2610,7 @@ function InPersonEventModal({
                 <select
                   value={formData.timeHour}
                   onChange={(e) => setFormData(prev => ({ ...prev, timeHour: e.target.value }))}
-                  className="bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                  className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
                 >
                   {hourOptions.map(hour => (
                     <option key={hour} value={hour}>{hour}</option>
@@ -2595,7 +2619,7 @@ function InPersonEventModal({
                 <select
                   value={formData.timeMinute}
                   onChange={(e) => setFormData(prev => ({ ...prev, timeMinute: e.target.value }))}
-                  className="bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                  className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
                 >
                   {minuteOptions.map(minute => (
                     <option key={minute} value={minute}>{minute}</option>
@@ -2604,7 +2628,7 @@ function InPersonEventModal({
                 <select
                   value={formData.timePeriod}
                   onChange={(e) => setFormData(prev => ({ ...prev, timePeriod: e.target.value as 'AM' | 'PM' }))}
-                  className="bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                  className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
                 >
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
