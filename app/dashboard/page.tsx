@@ -1031,6 +1031,7 @@ export default function Page() {
     linkedinOutreachPerWeek?: number | null;
     targetOfferDate?: string | null;
     inPersonEventsPerMonth?: number | null;
+    resetStartDate?: string | null;
   } | null>(null);
 
   useEffect(() => {

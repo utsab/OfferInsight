@@ -1,14 +1,30 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Info, Coffee, Users, Building2, ArrowLeft, Rocket, Target } from 'lucide-react';
+import { FileText, Info, Coffee, Users, Building2, ArrowLeft, Rocket, Target, CalendarCheck, Loader2 } from 'lucide-react';
+
+const MONTH_OPTIONS = [
+  { label: 'January', value: 0 },
+  { label: 'February', value: 1 },
+  { label: 'March', value: 2 },
+  { label: 'April', value: 3 },
+  { label: 'May', value: 4 },
+  { label: 'June', value: 5 },
+  { label: 'July', value: 6 },
+  { label: 'August', value: 7 },
+  { label: 'September', value: 8 },
+  { label: 'October', value: 9 },
+  { label: 'November', value: 10 },
+  { label: 'December', value: 11 },
+];
 
 function calculateEstimatedOfferDate(
   appsWithOutreachPerWeek: number,
   linkedinOutreachPerWeek: number,
   inPersonEventsPerMonth: number,
-  careerFairsPerYear: number
+  careerFairsPerYear: number,
+  referenceDate?: Date
 ) {
   let offersPerAppWithOutreach = 0.0025;
   let offersPerLinkedinOutreachAttempt = 0.00075;
@@ -67,8 +83,8 @@ function calculateEstimatedOfferDate(
   }
 
   const totalWeeks = 3 + 1 / totalOffersPerWeek;
-  const referenceDate = new Date(); //to do: handle case where user comes back to this page at a later date to edit their plan, we may want to use a earlier reference date
-  return new Date(referenceDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
+  const baseDate = referenceDate ?? new Date(); //to do: handle case where user comes back to this page at a later date to edit their plan, we may want to use a earlier reference date
+  return new Date(baseDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
 }
 
 function calculateWeeklyHours(appsPerWeek: number, interviewsPerWeek: number, eventsPerMonth: number, fairsPerYear: number) {
@@ -82,6 +98,7 @@ function calculateWeeklyHours(appsPerWeek: number, interviewsPerWeek: number, ev
 
 export default function Page3V2() {
   const router = useRouter();
+  const today = useMemo(() => new Date(), []);
 
   // Goals (sliders)
   const [appsPerWeek, setAppsPerWeek] = useState<number>(5);
@@ -89,6 +106,11 @@ export default function Page3V2() {
   const [eventsPerMonth, setEventsPerMonth] = useState<number>(3);
   const [fairsPerYear, setFairsPerYear] = useState<number>(1);
   const [hoursPerWeek, setHoursPerWeek] = useState<number>(12);
+  const [planStartDate, setPlanStartDate] = useState<Date | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth());
+  const [selectedDay, setSelectedDay] = useState<number>(today.getDate());
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Initialize values from server (based on selections saved in page2-v2)
   useEffect(() => {
@@ -112,12 +134,73 @@ export default function Page3V2() {
         if (typeof user.commitment === 'number') {
           setHoursPerWeek(user.commitment);
         }
+        if (user.resetStartDate) {
+          const parsed = new Date(user.resetStartDate);
+          if (!Number.isNaN(parsed.getTime())) {
+            setPlanStartDate(parsed);
+            setSelectedYear(parsed.getFullYear());
+            setSelectedMonth(parsed.getMonth());
+            setSelectedDay(parsed.getDate());
+          }
+        } else {
+          const fallback = new Date();
+          setPlanStartDate(fallback);
+          setSelectedYear(fallback.getFullYear());
+          setSelectedMonth(fallback.getMonth());
+          setSelectedDay(fallback.getDate());
+        }
       } catch (e) {
         console.error('Failed to load initial onboarding values:', e);
+        const fallback = new Date();
+        setPlanStartDate(fallback);
+        setSelectedYear(fallback.getFullYear());
+        setSelectedMonth(fallback.getMonth());
+        setSelectedDay(fallback.getDate());
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchInitial();
   }, []);
+
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, idx) => currentYear - 2 + idx);
+  }, []);
+
+  const daysInSelectedMonth = useMemo(() => new Date(selectedYear, selectedMonth + 1, 0).getDate(), [selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    if (selectedDay > daysInSelectedMonth) {
+      const clampedDay = daysInSelectedMonth;
+      setSelectedDay(clampedDay);
+      setPlanStartDate(new Date(selectedYear, selectedMonth, clampedDay));
+    }
+  }, [daysInSelectedMonth, selectedDay, selectedYear, selectedMonth]);
+
+  const handleYearChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const year = Number(event.target.value);
+    const maxDay = new Date(year, selectedMonth + 1, 0).getDate();
+    const day = Math.min(selectedDay, maxDay);
+    setSelectedYear(year);
+    setSelectedDay(day);
+    setPlanStartDate(new Date(year, selectedMonth, day));
+  };
+
+  const handleMonthChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const month = Number(event.target.value);
+    const maxDay = new Date(selectedYear, month + 1, 0).getDate();
+    const day = Math.min(selectedDay, maxDay);
+    setSelectedMonth(month);
+    setSelectedDay(day);
+    setPlanStartDate(new Date(selectedYear, month, day));
+  };
+
+  const handleDayChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const day = Number(event.target.value);
+    setSelectedDay(day);
+    setPlanStartDate(new Date(selectedYear, selectedMonth, day));
+  };
 
   // Target Offer Date calculations (adapted from original page3, with fairs instead of LeetCode)
   const targetOfferDate = useMemo(
@@ -126,9 +209,10 @@ export default function Page3V2() {
         appsPerWeek,
         interviewsPerWeek,
         eventsPerMonth,
-        fairsPerYear
+        fairsPerYear,
+        planStartDate ?? undefined
       ),
-    [appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear]
+    [appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear, planStartDate]
   );
 
   const weeklyHours = Math.round(hoursPerWeek);
@@ -149,7 +233,8 @@ export default function Page3V2() {
         linkedinOutreachPerWeek: interviewsPerWeek,
         inPersonEventsPerMonth: eventsPerMonth,
         careerFairsPerYear: fairsPerYear,
-        targetOfferDate: targetOfferDate.toISOString()
+        targetOfferDate: targetOfferDate.toISOString(),
+        resetStartDate: planStartDate ? planStartDate.toISOString().split('T')[0] : undefined,
       }),
     });
 
@@ -178,7 +263,13 @@ export default function Page3V2() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit}>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-32 text-gray-300">
+            <Loader2 className="h-12 w-12 animate-spin text-electric-blue" />
+            <p className="mt-4 text-sm">Loading your action plan...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-6 mb-8">
             {/* Applications */}
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
@@ -313,6 +404,61 @@ export default function Page3V2() {
             </div>
           </div>
 
+        {/* Plan Start Date */}
+        <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-white font-bold text-lg flex items-center">
+              <CalendarCheck className="text-electric-blue mr-3" />
+              Plan Start Date
+            </h4>
+            <span className="text-gray-400 text-sm">Adjust your baseline</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm text-gray-300 mb-2">Month</label>
+              <select
+                className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                value={selectedMonth}
+                onChange={handleMonthChange}
+              >
+                {MONTH_OPTIONS.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-300 mb-2">Day</label>
+              <select
+                className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                value={selectedDay}
+                onChange={handleDayChange}
+              >
+                {Array.from({ length: daysInSelectedMonth }, (_, idx) => idx + 1).map((day) => (
+                  <option key={day} value={day}>
+                    {day}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-300 mb-2">Year</label>
+              <select
+                className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                value={selectedYear}
+                onChange={handleYearChange}
+              >
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
           {/* Target Outcome */}
           <div className="bg-gray-700/30 border border-light-steel-blue rounded-lg p-6 mb-8">
             <h3 className="text-white font-bold text-lg mb-6 flex items-center justify-center">
@@ -344,7 +490,8 @@ export default function Page3V2() {
               Start Tracking My Progress
             </button>
           </div>
-        </form>
+          </form>
+        )}
       </div>
     </div>
   );

@@ -26,6 +26,7 @@ export async function GET() {
         inPersonEventsPerMonth: true,
         careerFairsPerYear: true,
         targetOfferDate: true,
+        resetStartDate: true,
         onboardingProgress: true,
       },
     });

@@ -48,6 +48,7 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
           linkedinOutreachPerWeek: dbUser.linkedinOutreachPerWeek,
           inPersonEventsPerMonth: dbUser.inPersonEventsPerMonth,
           careerFairsPerYear: dbUser.careerFairsPerYear,
+          resetStartDate: dbUser.resetStartDate,
         }
       }
 
