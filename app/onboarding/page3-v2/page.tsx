@@ -75,7 +75,7 @@ function calculateWeeklyHours(appsPerWeek: number, interviewsPerWeek: number, ev
   let hoursPerAppWithOutreach = 1;
   let hoursPerLinkedinOutreachAttempt = 0.5;
   let hoursPerInPersonEvent = 4/4.33;
-  let hoursPerCareerFair = 10/26; //We are assuming that the average projected offer date is 6 months into the future, so they only have 26 weeks to attends the target number of career fairs
+  let hoursPerCareerFair = 10/26; //We are assuming that the average target offer date is 6 months into the future, so they only have 26 weeks to attends the target number of career fairs
 
   return Math.round(appsPerWeek * hoursPerAppWithOutreach + interviewsPerWeek * hoursPerLinkedinOutreachAttempt + eventsPerMonth * hoursPerInPersonEvent + fairsPerYear * hoursPerCareerFair);
 }
@@ -119,8 +119,8 @@ export default function Page3V2() {
     fetchInitial();
   }, []);
 
-  // Projection calculations (adapted from original page3, with fairs instead of LeetCode)
-  const projectedOfferDate = useMemo(
+  // Target Offer Date calculations (adapted from original page3, with fairs instead of LeetCode)
+  const targetOfferDate = useMemo(
     () =>
       calculateEstimatedOfferDate(
         appsPerWeek,
@@ -149,7 +149,7 @@ export default function Page3V2() {
         linkedinOutreachPerWeek: interviewsPerWeek,
         inPersonEventsPerMonth: eventsPerMonth,
         careerFairsPerYear: fairsPerYear,
-        projectedOfferDate: projectedOfferDate.toISOString()
+        targetOfferDate: targetOfferDate.toISOString()
       }),
     });
 
@@ -313,18 +313,18 @@ export default function Page3V2() {
             </div>
           </div>
 
-          {/* Projected Outcome */}
+          {/* Target Outcome */}
           <div className="bg-gray-700/30 border border-light-steel-blue rounded-lg p-6 mb-8">
             <h3 className="text-white font-bold text-lg mb-6 flex items-center justify-center">
               <Target className="text-electric-blue mr-3" />
-              Projected Outcome with Your Custom Plan
+              Target Outcome with Your Custom Plan
             </h3>
             <div className="flex flex-col items-center justify-center gap-6 md:flex-row md:gap-12">
               <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
                 <div className="text-3xl font-bold text-electric-blue mb-2">
-                  {projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                  {targetOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
-                <div className="text-gray-300 text-sm font-medium">Projected Offer Date</div>
+                <div className="text-gray-300 text-sm font-medium">Target Offer Date</div>
               </div>
               <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
                 <div className="text-3xl font-bold text-electric-blue mb-2">{calculateWeeklyHours(appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear)}</div>

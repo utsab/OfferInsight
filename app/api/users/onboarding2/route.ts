@@ -25,7 +25,7 @@ export async function GET() {
         linkedinOutreachPerWeek: true,
         inPersonEventsPerMonth: true,
         careerFairsPerYear: true,
-        projectedOfferDate: true,
+        targetOfferDate: true,
         onboardingProgress: true,
       },
     });

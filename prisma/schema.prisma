@@ -93,6 +93,7 @@ model User {
   school                 String?
   major                  String?
   expectedGraduationDate DateTime?
+  targetOfferDate         DateTime?
   projectedOfferDate     DateTime?
   monthsToSecureInternship Int?
   commitment             Int?

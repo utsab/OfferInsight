@@ -157,7 +157,7 @@ const leetColumnToStatus: Record<LeetColumnId, string> = {
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [projectedOfferDate, setProjectedOfferDate] = useState<Date | null>(null);
+  const [targetOfferDate, setTargetOfferDate] = useState<Date | null>(null);
 
   // dnd-kit: Applications board state
 
@@ -1029,7 +1029,7 @@ export default function Page() {
   const [userData, setUserData] = useState<{
     appsWithOutreachPerWeek?: number | null;
     linkedinOutreachPerWeek?: number | null;
-    projectedOfferDate?: string | null;
+    targetOfferDate?: string | null;
     inPersonEventsPerMonth?: number | null;
   } | null>(null);
 
@@ -1042,9 +1042,9 @@ export default function Page() {
         const user = await res.json();
         if (isMounted) {
           setUserData(user);
-          if (user?.projectedOfferDate) {
-            const d = new Date(user.projectedOfferDate);
-            if (!isNaN(d.getTime())) setProjectedOfferDate(d);
+          if (user?.targetOfferDate) {
+            const d = new Date(user.targetOfferDate);
+            if (!isNaN(d.getTime())) setTargetOfferDate(d);
           }
         }
       } catch (e) {
@@ -1055,14 +1055,14 @@ export default function Page() {
     return () => { isMounted = false; };
   }, []);
 
-  const projectedOfferDateText = useMemo(() => {
-    if (!projectedOfferDate) return '—';
+  const targetOfferDateText = useMemo(() => {
+    if (!targetOfferDate) return '—';
     try {
-      return projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      return targetOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
     } catch {
       return '—';
     }
-  }, [projectedOfferDate]);
+  }, [targetOfferDate]);
 
   // Calculate applications metrics for this month
   const applicationsMetrics = useMemo(() => {
@@ -1280,17 +1280,17 @@ export default function Page() {
         {/* Overview Content */}
         {activeTab === 'overview' && (
           <div>
-            {/* Projected Offer Date (question-box styling) */
+            {/* Target Offer Date (question-box styling) */
             }
             <section className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 mb-8">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-white font-bold text-lg flex items-center">
                   <CalendarCheck className="text-electric-blue mr-3" />
-                  Projected Offer Date
+                  Target Offer Date
                 </h2>
               </div>
               <div className="flex items-center justify-center">
-                <div className="text-5xl font-bold text-electric-blue text-center">{projectedOfferDateText}</div>
+                <div className="text-5xl font-bold text-electric-blue text-center">{targetOfferDateText}</div>
               </div>
               <div className="mt-2 text-left">
                 <Link href="/onboarding/page3-v2" className="text-sm text-gray-300 hover:text-white underline underline-offset-2">

@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       linkedinOutreachPerWeek, 
       inPersonEventsPerMonth,
       careerFairsPerYear,
-      projectedOfferDate
+      targetOfferDate
     } = await request.json();
 
     const updatedUser = await prisma.user.update({
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
         linkedinOutreachPerWeek,
         inPersonEventsPerMonth,
         careerFairsPerYear,
-        projectedOfferDate: projectedOfferDate ? new Date(projectedOfferDate) : undefined,
+        targetOfferDate: targetOfferDate ? new Date(targetOfferDate) : undefined,
         onboardingProgress: 3,
       },
     });
