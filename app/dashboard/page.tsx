@@ -903,7 +903,9 @@ export default function Page() {
           <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
         )}
         <div className="flex flex-wrap gap-2 text-[10px] text-gray-300">
-          {props.card.careerFair && <span className="px-2 py-0.5 rounded-full bg-electric-blue/20 text-electric-blue">Career Fair</span>}
+          {props.card.careerFair && (
+            <span className="text-green-400 text-xs">✓ Career Fair</span>
+          )}
           {typeof props.card.numPeopleSpokenTo === 'number' && (
             <span className="px-2 py-0.5 rounded-full bg-gray-700">Spoke to {props.card.numPeopleSpokenTo}</span>
           )}

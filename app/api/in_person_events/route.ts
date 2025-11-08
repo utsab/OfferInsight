@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { event, date, location, url, notes, status } = body;
+    const { event, date, location, url, notes, status, careerFair, numPeopleSpokenTo, numLinkedInRequests, numOfInterviews } = body;
 
     if (!event || !date) {
       return NextResponse.json(
@@ -58,8 +58,10 @@ export async function POST(request: Request) {
         notes,
         userId: session.user.id,
         status: status || "scheduled",
-        numPeopleSpokenTo: null,
-        numLinkedInRequests: null,
+        careerFair: careerFair ?? false,
+        numPeopleSpokenTo: numPeopleSpokenTo ?? null,
+        numLinkedInRequests: numLinkedInRequests ?? null,
+        numOfInterviews: numOfInterviews ?? null,
       },
     });
 
@@ -150,6 +152,8 @@ export async function PUT(request: Request) {
       notes,
       numPeopleSpokenTo,
       numLinkedInRequests,
+      numOfInterviews,
+      careerFair,
     } = body;
 
     if (!id) {
@@ -184,6 +188,10 @@ export async function PUT(request: Request) {
       updateData.numPeopleSpokenTo = numPeopleSpokenTo;
     if (numLinkedInRequests !== undefined)
       updateData.numLinkedInRequests = numLinkedInRequests;
+    if (numOfInterviews !== undefined)
+      updateData.numOfInterviews = numOfInterviews;
+    if (careerFair !== undefined)
+      updateData.careerFair = careerFair;
 
     const updatedEvent = await prisma.in_Person_Events.update({
       where: { id },
