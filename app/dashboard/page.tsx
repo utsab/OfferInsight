@@ -357,7 +357,7 @@ export default function Page() {
           </div>
         </div>
         {(props.card.msgToManager || props.card.msgToRecruiter) && (
-          <div className="text-gray-500 text-xs mb-2">
+          <div className="text-green-400 text-xs mb-2">
             {props.card.msgToManager && '✓ Messaged HM'}
             {props.card.msgToManager && props.card.msgToRecruiter && ' • '}
             {props.card.msgToRecruiter && '✓ Messaged Recruiter'}
@@ -366,10 +366,7 @@ export default function Page() {
         {props.card.notes && (
           <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
         )}
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-yellow-400">{formatDate(props.card.dateCreated)}</span>
-          <span className="text-gray-500">ID: {props.card.id}</span>
-        </div>
+        <div className="text-xs text-yellow-400">{formatDate(props.card.dateCreated)}</div>
       </div>
     );
   }
@@ -785,8 +782,14 @@ export default function Page() {
             <div className="text-white font-medium mb-1">{props.card.name}</div>
             <div className="text-gray-400 text-xs mb-1">{props.card.company}</div>
             {props.card.linkedInUrl && (
-              <div className="text-gray-500 text-xs mb-1">
-                <a href={props.card.linkedInUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-electric-blue underline">
+              <div className="text-xs mb-1">
+                <a
+                  href={props.card.linkedInUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-electric-blue hover:text-sky-300 underline"
+                >
                   LinkedIn Profile
                 </a>
               </div>
@@ -818,10 +821,7 @@ export default function Page() {
         {props.card.recievedReferral && (
           <div className="text-green-400 text-xs mb-2">✓ Referral Received</div>
         )}
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-yellow-400">{formatDate(props.card.dateCreated)}</span>
-          <span className="text-gray-500">ID: {props.card.id}</span>
-        </div>
+        <div className="text-xs text-yellow-400">{formatDate(props.card.dateCreated)}</div>
       </div>
     );
   }
@@ -876,7 +876,13 @@ export default function Page() {
             )}
             {props.card.url && (
               <div className="text-gray-500 text-xs mb-1">
-                <a href={props.card.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-electric-blue underline">
+                <a
+                  href={props.card.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-electric-blue underline"
+                >
                   Event Link
                 </a>
               </div>
@@ -915,10 +921,6 @@ export default function Page() {
           {typeof props.card.numOfInterviews === 'number' && (
             <span className="px-2 py-0.5 rounded-full bg-gray-700">Interviews {props.card.numOfInterviews}</span>
           )}
-        </div>
-        <div className="flex items-center justify-between text-xs mt-2">
-          <span className="text-gray-500">ID: {props.card.id}</span>
-          <span className="text-gray-500 capitalize">Status: {props.card.status}</span>
         </div>
       </div>
     );
@@ -982,7 +984,13 @@ export default function Page() {
         </div>
         {props.card.url && (
           <div className="text-gray-500 text-xs mb-2">
-            <a href={props.card.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-electric-blue underline">
+            <a
+              href={props.card.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="hover:text-electric-blue underline"
+            >
               Problem Link
             </a>
           </div>
@@ -990,10 +998,6 @@ export default function Page() {
         {props.card.reflection && (
           <div className="text-gray-400 text-xs mb-2 line-clamp-3">{props.card.reflection}</div>
         )}
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-gray-500">ID: {props.card.id}</span>
-          <span className="text-gray-500 capitalize">Status: {props.card.status}</span>
-        </div>
       </div>
     );
   }
@@ -1490,10 +1494,7 @@ export default function Page() {
                       {card.recruiter && (
                         <div className="text-gray-400 text-xs mb-1">Recruiter: {card.recruiter}</div>
                       )}
-                      <div className="flex items-center justify-between text-xs mt-2">
-                        <span className="text-yellow-400">{new Date(card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                        <span className="text-gray-500">ID: {card.id}</span>
-                      </div>
+                      <div className="text-xs text-yellow-400">{new Date(card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                     </div>
                   );
                 })() : null}
@@ -1648,10 +1649,7 @@ export default function Page() {
                     <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
                       <div className="text-white font-medium mb-1">{card.name}</div>
                       <div className="text-gray-400 text-xs mb-1">{card.company}</div>
-                      <div className="flex items-center justify-between text-xs mt-2">
-                        <span className="text-yellow-400">{new Date(card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                        <span className="text-gray-500">ID: {card.id}</span>
-                      </div>
+                      <div className="text-xs text-yellow-400">{new Date(card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                     </div>
                   );
                 })() : null}
