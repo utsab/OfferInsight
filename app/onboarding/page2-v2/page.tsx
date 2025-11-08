@@ -15,10 +15,10 @@ const CALCULATOR_DATA: Record<TimelineKey, {
   interviews: number;
   offers: number;
 }> = {
-  '3': { range: '1-3 Months', commitment: '15 Hours', apps: '5 Weekly', interviewsOutreach: '15 Monthly', events: '4 Monthly', fairs: '1 Yearly', interviews: 25, offers: 2 },
-  '6': { range: '4-6 Months', commitment: '10 Hours', apps: '3 Weekly', interviewsOutreach: '10 Monthly', events: '3 Monthly', fairs: '1 Yearly', interviews: 20, offers: 1 },
-  '9': { range: '7-9 Months', commitment: '8 Hours', apps: '1 Weekly', interviewsOutreach: '7 Monthly', events: '2 Monthly', fairs: '1 Yearly', interviews: 15, offers: 1 },
-  '12': { range: '10-12 Months', commitment: '5 Hours', apps: '1 Weekly', interviewsOutreach: '5 Monthly', events: '1 Monthly', fairs: '1 Yearly', interviews: 10, offers: 1 },
+  '3': { range: '1-3 Months', commitment: '15 Hours', apps: '5 Weekly', interviewsOutreach: '15 Monthly', events: '4 Monthly', fairs: '1 Yearly', interviews: 10, offers: 1 },
+  '6': { range: '4-6 Months', commitment: '10 Hours', apps: '3 Weekly', interviewsOutreach: '10 Monthly', events: '3 Monthly', fairs: '1 Yearly', interviews: 15, offers: 1 },
+  '9': { range: '7-9 Months', commitment: '8 Hours', apps: '1 Weekly', interviewsOutreach: '7 Monthly', events: '2 Monthly', fairs: '1 Yearly', interviews: 20, offers: 1 },
+  '12': { range: '10-12 Months', commitment: '5 Hours', apps: '1 Weekly', interviewsOutreach: '5 Monthly', events: '1 Monthly', fairs: '1 Yearly', interviews: 25, offers: 1 },
 };
 
 export default function Page2V2() {
@@ -49,10 +49,10 @@ export default function Page2V2() {
       body: JSON.stringify({
         monthsToSecureInternship: parseInt(selectedTimeline),
         commitment: parseInt(plan.commitment),
-        apps_with_outreach_per_week: parseInt(plan.apps.split(' ')[0]),
-        info_interview_outreach_per_month: parseInt(plan.interviewsOutreach.split(' ')[0]),
-        in_person_events_per_month: parseInt(plan.events.split(' ')[0]),
-        career_fairs_quota: parseInt(plan.fairs.split(' ')[0])
+        appsWithOutreachPerWeek: parseInt(plan.apps.split(' ')[0]),
+        linkedinOutreachPerWeek: parseInt(plan.interviewsOutreach.split(' ')[0]),
+        inPersonEventsPerMonth: parseInt(plan.events.split(' ')[0]),
+        careerFairsPerYear: parseInt(plan.fairs.split(' ')[0])
       }),
     });
 

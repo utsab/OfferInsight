@@ -64,10 +64,10 @@ export default function Page2() {
       body: JSON.stringify({
         monthsToSecureInternship,
         commitment: plan.commitment,
-        apps_with_outreach_per_week: plan.apps_with_outreach_per_week,
-        info_interview_outreach_per_month: plan.info_interview_outreach_per_month,
-        in_person_events_per_month: plan.in_person_events_per_month,
-        career_fairs_quota: plan.career_fairs_quota
+        appsWithOutreachPerWeek: plan.appsWithOutreachPerWeek,
+        linkedinOutreachPerWeek: plan.linkedinOutreachPerWeek,
+        inPersonEventsPerMonth: plan.inPersonEventsPerMonth,
+        careerFairsPerYear: plan.careerFairsPerYear
       }),
     });
 
@@ -91,60 +91,60 @@ export default function Page2() {
       timeline_display: getTimelineDisplay(monthsToSecureInternship),
       commitment: 0,
       commitment_display: '?',
-      apps_with_outreach_per_week: 0,
-      apps_with_outreach_per_week_display: '?',
-      info_interview_outreach_per_month: 0,
-      info_interview_outreach_per_month_display: '?',
-      in_person_events_per_month: 0,
-      in_person_events_per_month_display: '?',
-      career_fairs_quota: 0,
-      career_fairs_quota_display: '?',
+      appsWithOutreachPerWeek: 0,
+      appsWithOutreachPerWeekDisplay: '?',
+      linkedinOutreachPerWeek: 0,
+      linkedinOutreachPerWeekDisplay: '?',
+      inPersonEventsPerMonth: 0,
+      inPersonEventsPerMonthDisplay: '?',
+      careerFairsPerYear: 0,
+      careerFairsPerYearDisplay: '?',
     };
 
     if (monthsToSecureInternship === 3) {
       plan.commitment = 23;
       plan.commitment_display = '23 Hours';
-      plan.apps_with_outreach_per_week = 3;
-      plan.apps_with_outreach_per_week_display = '3 Weekly';
-      plan.info_interview_outreach_per_month = 21;
-      plan.info_interview_outreach_per_month_display = '21 Monthly';
-      plan.in_person_events_per_month = 8;
-      plan.in_person_events_per_month_display = '8 Monthly';
-      plan.career_fairs_quota = 3;
-      plan.career_fairs_quota_display = '3 Yearly';
+      plan.appsWithOutreachPerWeek = 3;
+      plan.appsWithOutreachPerWeekDisplay = '3 Weekly';
+      plan.linkedinOutreachPerWeek = 21;
+      plan.linkedinOutreachPerWeekDisplay = '21 Monthly';
+      plan.inPersonEventsPerMonth = 8;
+      plan.inPersonEventsPerMonthDisplay = '8 Monthly';
+      plan.careerFairsPerYear = 3;
+      plan.careerFairsPerYearDisplay = '3 Yearly';
     } else if (monthsToSecureInternship === 6) {
       plan.commitment = 11;
       plan.commitment_display = '11 Hours';
-      plan.apps_with_outreach_per_week = 2;
-      plan.apps_with_outreach_per_week_display = '2 Weekly';
-      plan.info_interview_outreach_per_month = 10;
-      plan.info_interview_outreach_per_month_display = '10 Monthly';
-      plan.in_person_events_per_month = 4;
-      plan.in_person_events_per_month_display = '4 Monthly';
-      plan.career_fairs_quota = 2;
-      plan.career_fairs_quota_display = '2 Yearly';
+      plan.appsWithOutreachPerWeek = 2;
+      plan.appsWithOutreachPerWeekDisplay = '2 Weekly';
+      plan.linkedinOutreachPerWeek = 10;
+      plan.linkedinOutreachPerWeekDisplay = '10 Monthly';
+      plan.inPersonEventsPerMonth = 4;
+      plan.inPersonEventsPerMonthDisplay = '4 Monthly';
+      plan.careerFairsPerYear = 2;
+      plan.careerFairsPerYearDisplay = '2 Yearly';
     } else if (monthsToSecureInternship === 9) {
       plan.commitment = 8;
       plan.commitment_display = '8 Hours';
-      plan.apps_with_outreach_per_week = 1;
-      plan.apps_with_outreach_per_week_display = '1 Weekly';
-      plan.info_interview_outreach_per_month = 7;
-      plan.info_interview_outreach_per_month_display = '7 Monthly';
-      plan.in_person_events_per_month = 2;
-      plan.in_person_events_per_month_display = '2 Monthly';
-      plan.career_fairs_quota = 1;
-      plan.career_fairs_quota_display = '1 Yearly';
+      plan.appsWithOutreachPerWeek = 1;
+      plan.appsWithOutreachPerWeekDisplay = '1 Weekly';
+      plan.linkedinOutreachPerWeek = 7;
+      plan.linkedinOutreachPerWeekDisplay = '7 Monthly';
+      plan.inPersonEventsPerMonth = 2;
+      plan.inPersonEventsPerMonthDisplay = '2 Monthly';
+      plan.careerFairsPerYear = 1;
+      plan.careerFairsPerYearDisplay = '1 Yearly';
     } else if (monthsToSecureInternship === 12) {
       plan.commitment = 6;
       plan.commitment_display = '6 Hours';
-      plan.apps_with_outreach_per_week = 1;
-      plan.apps_with_outreach_per_week_display = '1 Weekly';
-      plan.info_interview_outreach_per_month = 5;
-      plan.info_interview_outreach_per_month_display = '5 Monthly';
-      plan.in_person_events_per_month = 2;
-      plan.in_person_events_per_month_display = '2 Monthly';
-      plan.career_fairs_quota = 1;
-      plan.career_fairs_quota_display = '1 Yearly';
+      plan.appsWithOutreachPerWeek = 1;
+      plan.appsWithOutreachPerWeekDisplay = '1 Weekly';
+      plan.linkedinOutreachPerWeek = 5;
+      plan.linkedinOutreachPerWeekDisplay = '5 Monthly';
+      plan.inPersonEventsPerMonth = 2;
+      plan.inPersonEventsPerMonthDisplay = '2 Monthly';
+      plan.careerFairsPerYear = 1;
+      plan.careerFairsPerYearDisplay = '1 Yearly';
     } 
 
     return plan;
@@ -236,19 +236,19 @@ export default function Page2() {
             <h3>Actions</h3>
             <div className="sidebar-item">
               <span>Applications with Outreach</span>
-              <span className="value"> {plan.apps_with_outreach_per_week_display} </span>
+              <span className="value"> {plan.appsWithOutreachPerWeekDisplay} </span>
             </div>
             <div className="sidebar-item">
               <span>Informational Interview Outreach</span>
-              <span className="value"> {plan.info_interview_outreach_per_month_display} </span>
+              <span className="value"> {plan.linkedinOutreachPerWeekDisplay} </span>
             </div>
             <div className="sidebar-item">
               <span>In-person Events</span>
-              <span className="value"> {plan.in_person_events_per_month_display} </span>
+              <span className="value"> {plan.inPersonEventsPerMonthDisplay} </span>
             </div>
             <div className="sidebar-item">
               <span>Career Fairs</span>
-              <span className="value"> {plan.career_fairs_quota_display} </span>
+              <span className="value"> {plan.careerFairsPerYearDisplay} </span>
             </div>
           </div>
           

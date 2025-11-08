@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         school,
         major,
         expectedGraduationDate: new Date(expectedGraduationDate),
-        onboarding_progress: 1,
+        onboardingProgress: 1,
       },
     });
 

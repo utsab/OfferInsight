@@ -58,22 +58,22 @@ export function DashboardMetricsProvider({
         {
           name: "Applications",
           current: data.appWithOutreachCount,
-          total: data.apps_with_outreach_per_week || 10,
+          total: data.appsWithOutreachPerWeek || 10,
         },
         {
           name: "LinkedIn",
           current: data.linkedInOutreachCount,
-          total: data.info_interview_outreach_per_month || 10,
+          total: (data.linkedinOutreachPerWeek || 10) * 4,
         },
         {
           name: "Events",
           current: data.inPersonEventsCount,
-          total: data.in_person_events_per_month || 5,
+          total: data.inPersonEventsPerMonth || 5,
         },
         {
           name: "Career Fairs",
           current: data.careerFairsCount,
-          total: data.career_fairs_quota || 5,
+          total: data.careerFairsPerYear || 5,
         },
       ];
 

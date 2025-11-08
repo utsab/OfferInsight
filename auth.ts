@@ -14,11 +14,17 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   callbacks: { 
     async redirect({ url, baseUrl }) {
-      return `${baseUrl}/dashboard`;
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`
+      }
+      if (url.startsWith(baseUrl)) {
+        return url
+      }
+      return baseUrl
     },
    
     async session({ session, user }) {
-      // Check if the user is new based on onboarding_progress
+      // Check if the user is new based on onboardingProgress
 
       console.log("In session.....user:  ", user)
       console.log("In session.....session:  ", session)
@@ -36,7 +42,12 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
           name: dbUser.name,
           email: dbUser.email,
           image: dbUser.image,
-          onboarding_progress: dbUser.onboarding_progress,
+          onboardingProgress: dbUser.onboardingProgress,
+          projectedOfferDate: dbUser.projectedOfferDate,
+          appsWithOutreachPerWeek: dbUser.appsWithOutreachPerWeek,
+          linkedinOutreachPerWeek: dbUser.linkedinOutreachPerWeek,
+          inPersonEventsPerMonth: dbUser.inPersonEventsPerMonth,
+          careerFairsPerYear: dbUser.careerFairsPerYear,
         }
       }
 

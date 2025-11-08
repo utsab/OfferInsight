@@ -83,7 +83,7 @@ function intToCareerFairsString(value: number): string {
 function usePage3Data() {
   const [commitment, setCommitment] = useState('');
   const [appsWithOutreachPerWeek, setAppsWithOutreachPerWeek] = useState('');
-  const [infoInterviewOutreachPerWeek, setInfoInterviewOutreachPerWeek] = useState('');
+  const [linkedinOutreachPerWeek, setLinkedinOutreachPerWeek] = useState('');
   const [inPersonEventsPerMonth, setInPersonEventsPerMonth] = useState('');
   const [careerFairsPerYear, setCareerFairsPerYear] = useState('');
   const [loading, setLoading] = useState(true);
@@ -101,17 +101,17 @@ function usePage3Data() {
           if (userData.commitment !== null && userData.commitment !== undefined) {
             setCommitment(intToCommitmentString(userData.commitment));
           }
-          if (userData.apps_with_outreach_per_week !== null && userData.apps_with_outreach_per_week !== undefined) {
-            setAppsWithOutreachPerWeek(intToRangeString(userData.apps_with_outreach_per_week, 'outreach'));
+          if (userData.appsWithOutreachPerWeek !== null && userData.appsWithOutreachPerWeek !== undefined) {
+            setAppsWithOutreachPerWeek(intToRangeString(userData.appsWithOutreachPerWeek, 'outreach'));
           }
-          if (userData.info_interview_outreach_per_month !== null && userData.info_interview_outreach_per_month !== undefined) {
-            setInfoInterviewOutreachPerWeek(intToRangeString(userData.info_interview_outreach_per_month, 'info'));
+          if (userData.linkedinOutreachPerWeek !== null && userData.linkedinOutreachPerWeek !== undefined) {
+            setLinkedinOutreachPerWeek(intToRangeString(userData.linkedinOutreachPerWeek, 'info'));
           }
-          if (userData.in_person_events_per_month !== null && userData.in_person_events_per_month !== undefined) {
-            setInPersonEventsPerMonth(intToEventsString(userData.in_person_events_per_month));
+          if (userData.inPersonEventsPerMonth !== null && userData.inPersonEventsPerMonth !== undefined) {
+            setInPersonEventsPerMonth(intToEventsString(userData.inPersonEventsPerMonth));
           }
-          if (userData.career_fairs_quota !== null && userData.career_fairs_quota !== undefined) {
-            setCareerFairsPerYear(intToCareerFairsString(userData.career_fairs_quota));
+          if (userData.careerFairsPerYear !== null && userData.careerFairsPerYear !== undefined) {
+            setCareerFairsPerYear(intToCareerFairsString(userData.careerFairsPerYear));
           }
         }
       }
@@ -126,7 +126,7 @@ function usePage3Data() {
     // Convert string values to integers for the API call
     const commitmentValue = parseCommitmentToInt(commitment);
     const outreachValue = parseRangeToInt(appsWithOutreachPerWeek);
-    const infoInterviewValue = parseRangeToInt(infoInterviewOutreachPerWeek);
+    const linkedinOutreachValue = parseRangeToInt(linkedinOutreachPerWeek);
     const inPersonValue = parseEventsToInt(inPersonEventsPerMonth);
     const careerFairsValue = parseCareerFairsToInt(careerFairsPerYear);
     
@@ -137,10 +137,10 @@ function usePage3Data() {
       },
       body: JSON.stringify({
         commitment: commitmentValue,
-        apps_with_outreach_per_week: outreachValue,
-        info_interview_outreach_per_month: infoInterviewValue,
-        in_person_events_per_month: inPersonValue,
-        career_fairs_quota: careerFairsValue
+        appsWithOutreachPerWeek: outreachValue,
+        linkedinOutreachPerWeek: linkedinOutreachValue,
+        inPersonEventsPerMonth: inPersonValue,
+        careerFairsPerYear: careerFairsValue
       }),
     });
 
@@ -159,8 +159,8 @@ function usePage3Data() {
     setCommitment,
     appsWithOutreachPerWeek,
     setAppsWithOutreachPerWeek,
-    infoInterviewOutreachPerWeek,
-    setInfoInterviewOutreachPerWeek,
+    linkedinOutreachPerWeek,
+    setLinkedinOutreachPerWeek,
     inPersonEventsPerMonth,
     setInPersonEventsPerMonth,
     careerFairsPerYear,
@@ -171,15 +171,15 @@ function usePage3Data() {
 }
 
 
-function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterviewOutreachPerWeek: number, inPersonEventsPerMonth: number, careerFairsPerYear: number) {
+function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, linkedinOutreachPerWeek: number, inPersonEventsPerMonth: number, careerFairsPerYear: number) {
   
   
-  console.log("appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth, "careerFairsPerYear: ", careerFairsPerYear)
+  console.log("appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "linkedinOutreachPerWeek: ", linkedinOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth, "careerFairsPerYear: ", careerFairsPerYear)
   
   // Hardcode the ROI percentages for each habit 
 
   let offersPerAppWithOutreach = 0.0025;
-  let offersPerInfoInterviewAttempt = 0.00075;
+  let offersPerLinkedinOutreachAttempt = 0.00075;
   let offersPerInPersonEvent = 0.0075;
   let offersPerCareerFair = 0.1;
 
@@ -187,13 +187,13 @@ function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterv
   // in a way that goes beyond the base percentages listed above
   let bonusPoints = 0;
 
-  if (infoInterviewOutreachPerWeek === 1) {
+  if (linkedinOutreachPerWeek === 1) {
     bonusPoints += 1;
-  } else if (infoInterviewOutreachPerWeek === 6) {
+  } else if (linkedinOutreachPerWeek === 6) {
     bonusPoints += 6;
-  } else if (infoInterviewOutreachPerWeek === 11) {
+  } else if (linkedinOutreachPerWeek === 11) {
     bonusPoints += 11;
-  } else if (infoInterviewOutreachPerWeek === 20) {
+  } else if (linkedinOutreachPerWeek === 20) {
     bonusPoints += 20;
   }
   
@@ -228,14 +228,14 @@ function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterv
   console.log("************************************************")
 
   offersPerAppWithOutreach *= multiplier;
-  offersPerInfoInterviewAttempt *= multiplier;
+  offersPerLinkedinOutreachAttempt *= multiplier;
   offersPerInPersonEvent *= multiplier;
   offersPerCareerFair *= multiplier;
 
 
   // Calculate the total number of job offers per week 
 
-  const totalOffersPerWeek = (appsWithOutreachPerWeek * offersPerAppWithOutreach) + (infoInterviewOutreachPerWeek * offersPerInfoInterviewAttempt) + (inPersonEventsPerMonth * offersPerInPersonEvent) + (careerFairsPerYear * offersPerCareerFair);
+  const totalOffersPerWeek = (appsWithOutreachPerWeek * offersPerAppWithOutreach) + (linkedinOutreachPerWeek * offersPerLinkedinOutreachAttempt) + (inPersonEventsPerMonth * offersPerInPersonEvent) + (careerFairsPerYear * offersPerCareerFair);
 
   // Calculate the total number of weeks
 
@@ -244,7 +244,7 @@ function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, infoInterv
 
   // Calculate the estimated offer date 
   // Use a fixed reference date to avoid hydration mismatches
-  const referenceDate = new Date('2024-01-01T00:00:00.000Z');
+  const referenceDate = new Date();
   const estimatedOfferDate = new Date(referenceDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
 
   // Return the estimated offer date 
@@ -261,8 +261,8 @@ export default function Page3() {
     setCommitment,
     appsWithOutreachPerWeek,
     setAppsWithOutreachPerWeek,
-    infoInterviewOutreachPerWeek,
-    setInfoInterviewOutreachPerWeek,
+    linkedinOutreachPerWeek,
+    setLinkedinOutreachPerWeek,
     inPersonEventsPerMonth,
     setInPersonEventsPerMonth,
     careerFairsPerYear,
@@ -275,11 +275,11 @@ export default function Page3() {
     return <p>Loading...</p>;
   }
 
-  //console.log("Recalculating estimated date...: ", "applicationsPerWeek: ", applicationsPerWeek, "appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "infoInterviewOutreachPerWeek: ", infoInterviewOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
+  //console.log("Recalculating estimated date...: ", "applicationsPerWeek: ", applicationsPerWeek, "appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "linkedinOutreachPerWeek: ", linkedinOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
 
   const estimatedOfferDate = calculateEstimatedOfferDate(
     parseInt(appsWithOutreachPerWeek), 
-    parseInt(infoInterviewOutreachPerWeek), 
+    parseInt(linkedinOutreachPerWeek), 
     parseInt(inPersonEventsPerMonth),
     parseInt(careerFairsPerYear)
   );
@@ -335,8 +335,8 @@ export default function Page3() {
                     <button
                       key={option}
                       type="button"
-                      onClick={() => setInfoInterviewOutreachPerWeek(option)}
-                      className={`btn-option ${infoInterviewOutreachPerWeek === option ? 'btn-option-selected' : ''}`}
+                      onClick={() => setLinkedinOutreachPerWeek(option)}
+                      className={`btn-option ${linkedinOutreachPerWeek === option ? 'btn-option-selected' : ''}`}
                     >
                       {option}
                     </button>

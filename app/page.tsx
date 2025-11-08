@@ -25,7 +25,7 @@ export default function Page() {
         const response = await fetch('/api/users/onboarding2');
         if (response.ok) {
           const user = await response.json();
-          setOnboardingProgress(user.onboarding_progress);
+          setOnboardingProgress(user.onboardingProgress);
         }
       } catch (error) {
         console.error('Failed to fetch onboarding progress:', error);

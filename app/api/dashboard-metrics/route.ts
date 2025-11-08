@@ -17,10 +17,10 @@ export async function GET() {
       where: { email: session.user.email || "" },
       select: {
         id: true,
-        apps_with_outreach_per_week: true,
-        info_interview_outreach_per_month: true,
-        in_person_events_per_month: true,
-        career_fairs_quota: true,
+        appsWithOutreachPerWeek: true,
+        linkedinOutreachPerWeek: true,
+        inPersonEventsPerMonth: true,
+        careerFairsPerYear: true,
       },
     });
 
@@ -32,7 +32,7 @@ export async function GET() {
     const { firstDayOfMonth, lastDayOfMonth } = getCurrentMonthDateRange();
 
     // Count applications with outreach created this month
-    const appWithOutreachCount = await prisma.applications_with_Outreach.count({
+    const appWithOutreachCount = await prisma.applications_With_Outreach.count({
       where: {
         userId: user.id,
         dateCreated: {
@@ -99,11 +99,10 @@ export async function GET() {
       linkedInOutreachCount,
       inPersonEventsCount,
       careerFairsCount,
-      apps_with_outreach_per_week: user.apps_with_outreach_per_week || 10,
-      info_interview_outreach_per_month:
-        user.info_interview_outreach_per_month || 10,
-      in_person_events_per_month: user.in_person_events_per_month || 5,
-      career_fairs_quota: user.career_fairs_quota || 5,
+      appsWithOutreachPerWeek: user.appsWithOutreachPerWeek || 10,
+      linkedinOutreachPerWeek: user.linkedinOutreachPerWeek || 10,
+      inPersonEventsPerMonth: user.inPersonEventsPerMonth || 5,
+      careerFairsPerYear: user.careerFairsPerYear || 5,
     });
   } catch (error) {
     console.error("Error fetching dashboard metrics:", error);

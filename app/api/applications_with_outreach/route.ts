@@ -13,7 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const applications = await prisma.applications_with_Outreach.findMany({
+    const applications = await prisma.applications_With_Outreach.findMany({
       where: {
         userId: session.user.id,
       },
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const newApplication = await prisma.applications_with_Outreach.create({
+    const newApplication = await prisma.applications_With_Outreach.create({
       data: {
         company,
         hiringManager: hiringManager || null,
@@ -115,7 +115,7 @@ export async function PATCH(request: Request) {
 
     // Ensure the application belongs to the user
     const existingApplication =
-      await prisma.applications_with_Outreach.findFirst({
+      await prisma.applications_With_Outreach.findFirst({
         where: {
           id: parseInt(id),
           userId: session.user.id,
@@ -130,7 +130,7 @@ export async function PATCH(request: Request) {
     }
 
     // Update just the status
-    const updatedApplication = await prisma.applications_with_Outreach.update({
+    const updatedApplication = await prisma.applications_With_Outreach.update({
       where: { id: parseInt(id) },
       data: { status },
     });
@@ -175,7 +175,7 @@ export async function PUT(request: Request) {
 
     // Ensure the application belongs to the user
     const existingApplication =
-      await prisma.applications_with_Outreach.findFirst({
+      await prisma.applications_With_Outreach.findFirst({
         where: {
           id,
           userId: session.user.id,
@@ -201,7 +201,7 @@ export async function PUT(request: Request) {
     if (notes !== undefined) updateData.notes = notes;
     if (status !== undefined) updateData.status = status;
 
-    const updatedApplication = await prisma.applications_with_Outreach.update({
+    const updatedApplication = await prisma.applications_With_Outreach.update({
       where: { id },
       data: updateData,
     });
@@ -236,7 +236,7 @@ export async function DELETE(request: Request) {
     }
 
     // Ensure the application belongs to the user
-    const application = await prisma.applications_with_Outreach.findFirst({
+    const application = await prisma.applications_With_Outreach.findFirst({
       where: {
         id: parseInt(id),
         userId: session.user.id,
@@ -250,7 +250,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.applications_with_Outreach.delete({
+    await prisma.applications_With_Outreach.delete({
       where: { id: parseInt(id) },
     });
 

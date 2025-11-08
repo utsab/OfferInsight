@@ -6,26 +6,24 @@ import { FileText, Info, Coffee, Users, Building2, ArrowLeft, Rocket, Target } f
 
 function calculateEstimatedOfferDate(
   appsWithOutreachPerWeek: number,
-  infoInterviewOutreachPerMonth: number,
+  linkedinOutreachPerWeek: number,
   inPersonEventsPerMonth: number,
   careerFairsPerYear: number
 ) {
   let offersPerAppWithOutreach = 0.0025;
-  let offersPerInfoInterviewAttempt = 0.00075;
+  let offersPerLinkedinOutreachAttempt = 0.00075;
   let offersPerInPersonEvent = 0.0075;
   let offersPerCareerFair = 0.1;
 
-  const infoInterviewOutreachPerWeek = infoInterviewOutreachPerMonth / 4;
-
   let bonusPoints = 0;
 
-  if (infoInterviewOutreachPerMonth >= 20) {
+  if (linkedinOutreachPerWeek >= 20) {
     bonusPoints += 20;
-  } else if (infoInterviewOutreachPerMonth >= 12) {
+  } else if (linkedinOutreachPerWeek >= 12) {
     bonusPoints += 11;
-  } else if (infoInterviewOutreachPerMonth >= 6) {
+  } else if (linkedinOutreachPerWeek >= 6) {
     bonusPoints += 6;
-  } else if (infoInterviewOutreachPerMonth >= 1) {
+  } else if (linkedinOutreachPerWeek >= 1) {
     bonusPoints += 1;
   }
 
@@ -54,13 +52,13 @@ function calculateEstimatedOfferDate(
   const multiplier = 3 - a * Math.exp(-b * bonusPoints);
 
   offersPerAppWithOutreach *= multiplier;
-  offersPerInfoInterviewAttempt *= multiplier;
+  offersPerLinkedinOutreachAttempt *= multiplier;
   offersPerInPersonEvent *= multiplier;
   offersPerCareerFair *= multiplier;
 
   const totalOffersPerWeek =
     appsWithOutreachPerWeek * offersPerAppWithOutreach +
-    infoInterviewOutreachPerWeek * offersPerInfoInterviewAttempt +
+    linkedinOutreachPerWeek * offersPerLinkedinOutreachAttempt +
     inPersonEventsPerMonth * offersPerInPersonEvent +
     (careerFairsPerYear / 52) * offersPerCareerFair;
 
@@ -73,13 +71,13 @@ function calculateEstimatedOfferDate(
   return new Date(referenceDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
 }
 
-function calculateWeeklyHours(appsPerWeek: number, interviewsPerMonth: number, eventsPerMonth: number, fairsPerYear: number) {
+function calculateWeeklyHours(appsPerWeek: number, interviewsPerWeek: number, eventsPerMonth: number, fairsPerYear: number) {
   let hoursPerAppWithOutreach = 1;
-  let hoursPerInfoInterviewAttempt = 0.5;
+  let hoursPerLinkedinOutreachAttempt = 0.5;
   let hoursPerInPersonEvent = 4/4.33;
   let hoursPerCareerFair = 10/26; //We are assuming that the average projected offer date is 6 months into the future, so they only have 26 weeks to attends the target number of career fairs
 
-  return Math.round(appsPerWeek * hoursPerAppWithOutreach + interviewsPerMonth * hoursPerInfoInterviewAttempt + eventsPerMonth * hoursPerInPersonEvent + fairsPerYear * hoursPerCareerFair);
+  return Math.round(appsPerWeek * hoursPerAppWithOutreach + interviewsPerWeek * hoursPerLinkedinOutreachAttempt + eventsPerMonth * hoursPerInPersonEvent + fairsPerYear * hoursPerCareerFair);
 }
 
 export default function Page3V2() {
@@ -87,7 +85,7 @@ export default function Page3V2() {
 
   // Goals (sliders)
   const [appsPerWeek, setAppsPerWeek] = useState<number>(5);
-  const [interviewsPerMonth, setInterviewsPerMonth] = useState<number>(2);
+  const [interviewsPerWeek, setInterviewsPerWeek] = useState<number>(2);
   const [eventsPerMonth, setEventsPerMonth] = useState<number>(3);
   const [fairsPerYear, setFairsPerYear] = useState<number>(1);
   const [hoursPerWeek, setHoursPerWeek] = useState<number>(12);
@@ -99,17 +97,17 @@ export default function Page3V2() {
         const res = await fetch('/api/users/onboarding2');
         if (!res.ok) return;
         const user = await res.json();
-        if (typeof user.apps_with_outreach_per_week === 'number') {
-          setAppsPerWeek(user.apps_with_outreach_per_week);
+        if (typeof user.appsWithOutreachPerWeek === 'number') {
+          setAppsPerWeek(user.appsWithOutreachPerWeek);
         }
-        if (typeof user.info_interview_outreach_per_month === 'number') {
-          setInterviewsPerMonth(user.info_interview_outreach_per_month);
+        if (typeof user.linkedinOutreachPerWeek === 'number') {
+          setInterviewsPerWeek(user.linkedinOutreachPerWeek);
         }
-        if (typeof user.in_person_events_per_month === 'number') {
-          setEventsPerMonth(user.in_person_events_per_month);
+        if (typeof user.inPersonEventsPerMonth === 'number') {
+          setEventsPerMonth(user.inPersonEventsPerMonth);
         }
-        if (typeof user.career_fairs_quota === 'number') {
-          setFairsPerYear(user.career_fairs_quota);
+        if (typeof user.careerFairsPerYear === 'number') {
+          setFairsPerYear(user.careerFairsPerYear);
         }
         if (typeof user.commitment === 'number') {
           setHoursPerWeek(user.commitment);
@@ -126,11 +124,11 @@ export default function Page3V2() {
     () =>
       calculateEstimatedOfferDate(
         appsPerWeek,
-        interviewsPerMonth,
+        interviewsPerWeek,
         eventsPerMonth,
         fairsPerYear
       ),
-    [appsPerWeek, interviewsPerMonth, eventsPerMonth, fairsPerYear]
+    [appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear]
   );
 
   const weeklyHours = Math.round(hoursPerWeek);
@@ -147,11 +145,11 @@ export default function Page3V2() {
       },
       body: JSON.stringify({
         commitment: weeklyHours,
-        apps_with_outreach_per_week: appsPerWeek,
-        info_interview_outreach_per_month: interviewsPerMonth,
-        in_person_events_per_month: eventsPerMonth,
-        career_fairs_quota: fairsPerYear,
-        projected_offer_date: projectedOfferDate.toISOString()
+        appsWithOutreachPerWeek: appsPerWeek,
+        linkedinOutreachPerWeek: interviewsPerWeek,
+        inPersonEventsPerMonth: eventsPerMonth,
+        careerFairsPerYear: fairsPerYear,
+        projectedOfferDate: projectedOfferDate.toISOString()
       }),
     });
 
@@ -222,20 +220,20 @@ export default function Page3V2() {
                   <Coffee className="text-electric-blue mr-3" />
                   Coffee Chats
                 </h4>
-                <div className="text-electric-blue text-sm font-semibold">MONTHLY</div>
+                <div className="text-electric-blue text-sm font-semibold">WEEKLY</div>
               </div>
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-300">Target per month:</span>
-                  <span className="text-white font-bold text-xl">{interviewsPerMonth}</span>
+                  <span className="text-gray-300">Target per week:</span>
+                  <span className="text-white font-bold text-xl">{interviewsPerWeek}</span>
                 </div>
                 <input
                   type="range"
                   className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
                   min={0}
                   max={8}
-                  value={interviewsPerMonth}
-                  onChange={(e) => setInterviewsPerMonth(Number(e.target.value))}
+                  value={interviewsPerWeek}
+                  onChange={(e) => setInterviewsPerWeek(Number(e.target.value))}
                 />
                 <div className="flex justify-between text-xs text-gray-400 mt-1">
                   <span>0</span>
@@ -329,7 +327,7 @@ export default function Page3V2() {
                 <div className="text-gray-300 text-sm font-medium">Projected Offer Date</div>
               </div>
               <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
-                <div className="text-3xl font-bold text-electric-blue mb-2">{calculateWeeklyHours(appsPerWeek, interviewsPerMonth, eventsPerMonth, fairsPerYear)}</div>
+                <div className="text-3xl font-bold text-electric-blue mb-2">{calculateWeeklyHours(appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear)}</div>
                 <div className="text-gray-300 text-sm font-medium">Hours per Week</div>
               </div>
             </div>

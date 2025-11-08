@@ -13,7 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const problems = await prisma.leetCode.findMany({
+    const problems = await prisma.leetcode_Practice.findMany({
       where: {
         userId: session.user.id,
       },
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Problem title is required" }, { status: 400 });
     }
 
-    const newProblem = await prisma.leetCode.create({
+    const newProblem = await prisma.leetcode_Practice.create({
       data: {
         problem: problem.trim(),
         problemType: problemType?.trim() || null,
@@ -85,7 +85,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Status is required" }, { status: 400 });
     }
 
-    const existing = await prisma.leetCode.findFirst({
+    const existing = await prisma.leetcode_Practice.findFirst({
       where: {
         id: parseInt(id, 10),
         userId: session.user.id,
@@ -96,7 +96,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
-    const updated = await prisma.leetCode.update({
+    const updated = await prisma.leetcode_Practice.update({
       where: { id: parseInt(id, 10) },
       data: { status },
     });
@@ -123,7 +123,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Problem ID is required" }, { status: 400 });
     }
 
-    const existing = await prisma.leetCode.findFirst({
+    const existing = await prisma.leetcode_Practice.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -134,7 +134,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
-    const updatedProblem = await prisma.leetCode.update({
+    const updatedProblem = await prisma.leetcode_Practice.update({
       where: { id },
       data: {
         ...(problem !== undefined ? { problem: problem?.trim() || existing.problem } : {}),
@@ -169,7 +169,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Problem ID is required" }, { status: 400 });
     }
 
-    const existing = await prisma.leetCode.findFirst({
+    const existing = await prisma.leetcode_Practice.findFirst({
       where: {
         id: parseInt(id, 10),
         userId: session.user.id,
@@ -180,7 +180,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
-    await prisma.leetCode.delete({ where: { id: parseInt(id, 10) } });
+    await prisma.leetcode_Practice.delete({ where: { id: parseInt(id, 10) } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

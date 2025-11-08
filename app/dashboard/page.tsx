@@ -1003,10 +1003,10 @@ export default function Page() {
   }
 
   const [userData, setUserData] = useState<{
-    apps_with_outreach_per_week?: number | null;
-    info_interview_outreach_per_month?: number | null;
-    projected_offer_date?: string | null;
-    in_person_events_per_month?: number | null;
+    appsWithOutreachPerWeek?: number | null;
+    linkedinOutreachPerWeek?: number | null;
+    projectedOfferDate?: string | null;
+    inPersonEventsPerMonth?: number | null;
   } | null>(null);
 
   useEffect(() => {
@@ -1018,8 +1018,8 @@ export default function Page() {
         const user = await res.json();
         if (isMounted) {
           setUserData(user);
-          if (user?.projected_offer_date) {
-            const d = new Date(user.projected_offer_date);
+          if (user?.projectedOfferDate) {
+            const d = new Date(user.projectedOfferDate);
             if (!isNaN(d.getTime())) setProjectedOfferDate(d);
           }
         }
@@ -1059,8 +1059,8 @@ export default function Page() {
       });
     });
 
-    // Goal is apps_with_outreach_per_week * 4 (4 weeks per month)
-    const goal = userData?.apps_with_outreach_per_week ? userData.apps_with_outreach_per_week * 4 : 0;
+    // Goal is appsWithOutreachPerWeek * 4 (4 weeks per month)
+    const goal = userData?.appsWithOutreachPerWeek ? userData.appsWithOutreachPerWeek * 4 : 0;
     const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
     const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
     const statusColor = difference >= 0 ? 'green' : 'yellow';
@@ -1097,8 +1097,8 @@ export default function Page() {
       });
     });
 
-    // Goal is info_interview_outreach_per_month from user's onboarding data
-    const goal = userData?.info_interview_outreach_per_month ?? 0;
+    // Goal is linkedinOutreachPerWeek (converted to monthly) from user's onboarding data
+    const goal = userData?.linkedinOutreachPerWeek ? userData.linkedinOutreachPerWeek * 4 : 0;
     const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
     const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
     const statusColor = difference >= 0 ? 'green' : 'yellow';
@@ -1133,7 +1133,7 @@ export default function Page() {
       });
     });
 
-    const goal = userData?.in_person_events_per_month ?? 0;
+    const goal = userData?.inPersonEventsPerMonth ?? 0;
     const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
     const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
     const statusColor = difference >= 0 ? 'green' : 'yellow';
