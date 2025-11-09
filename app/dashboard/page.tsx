@@ -10,7 +10,13 @@ import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus, X, Ed
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
-const toLocalTimeParts = (value: string) => {
+type TimeParts = {
+  hour: string;
+  minute: string;
+  period: 'AM' | 'PM';
+};
+
+const toLocalTimeParts = (value: string): TimeParts => {
   try {
     const date = new Date(value);
     let hours = date.getHours();
@@ -27,10 +33,22 @@ const toLocalTimeParts = (value: string) => {
     return {
       hour: '',
       minute: '',
-      period: 'AM' as const,
+      period: 'AM',
     };
   }
 };
+
+type ApplicationStatus = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
+type ApplicationColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
+
+type LinkedinOutreachStatus = 'outreachRequestSent' | 'accepted' | 'followedUp' | 'linkedinOutreach';
+type LinkedinOutreachColumnId = 'outreach' | 'accepted' | 'followedUpLinkedin' | 'linkedinOutreach';
+
+type InPersonEventStatus = 'scheduled' | 'attending' | 'attended' | 'followUp';
+type EventColumnId = 'upcoming' | 'attending' | 'attended' | 'followups';
+
+type LeetStatus = 'planned' | 'solved' | 'reflected';
+type LeetColumnId = 'planned' | 'solved' | 'reflected';
 
 // Application type definition
 type Application = {
@@ -41,59 +59,23 @@ type Application = {
   recruiter?: string | null;
   msgToRecruiter?: string | null;
   notes?: string | null;
-  status: string;
+  status: ApplicationStatus;
   dateCreated: string;
   userId: string;
 };
 
-type ColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
-
-// Coffee Chat type definition
-type CoffeeChat = {
+// Linkedin outreach type definition
+type LinkedinOutreach = {
   id: number;
   name: string;
   company: string;
   message?: string | null;
   linkedInUrl?: string | null;
   notes?: string | null;
-  status: string;
+  status: LinkedinOutreachStatus;
   dateCreated: string;
   recievedReferral: boolean;
   userId: string;
-};
-
-type CoffeeChatColumnId = 'outreach' | 'accepted' | 'followedUpCoffee' | 'coffeeChat';
-
-// Map status values to column IDs (moved outside component to prevent re-renders)
-const statusToColumn: Record<string, ColumnId> = {
-  'applied': 'applied',
-  'messagedRecruiter': 'messagedRecruiter',
-  'messagedHiringManager': 'messagedHiringManager',
-  'followedUp': 'followedUp',
-  'interview': 'interview',
-};
-
-const columnToStatus: Record<ColumnId, string> = {
-  'applied': 'applied',
-  'messagedRecruiter': 'messagedRecruiter',
-  'messagedHiringManager': 'messagedHiringManager',
-  'followedUp': 'followedUp',
-  'interview': 'interview',
-};
-
-// Coffee Chat status mappings
-const coffeeChatStatusToColumn: Record<string, CoffeeChatColumnId> = {
-  'outreachRequestSent': 'outreach',
-  'accepted': 'accepted',
-  'followedUp': 'followedUpCoffee',
-  'coffeeChat': 'coffeeChat',
-};
-
-const coffeeChatColumnToStatus: Record<CoffeeChatColumnId, string> = {
-  'outreach': 'outreachRequestSent',
-  'accepted': 'accepted',
-  'followedUpCoffee': 'followedUp',
-  'coffeeChat': 'coffeeChat',
 };
 
 type InPersonEvent = {
@@ -103,30 +85,13 @@ type InPersonEvent = {
   location?: string | null;
   url?: string | null;
   notes?: string | null;
-  status: string;
+  status: InPersonEventStatus;
   numPeopleSpokenTo?: number | null;
   numLinkedInRequests?: number | null;
   careerFair: boolean;
   numOfInterviews?: number | null;
   userId: string;
   dateCreated?: string;
-};
-
-type EventColumnId = 'upcoming' | 'attending' | 'attended' | 'followups';
-
-const eventStatusToColumn: Record<string, EventColumnId> = {
-  scheduled: 'upcoming',
-  attending: 'attending',
-  attended: 'attended',
-  followUp: 'followups',
-  followups: 'followups',
-};
-
-const eventColumnToStatus: Record<EventColumnId, string> = {
-  upcoming: 'scheduled',
-  attending: 'attending',
-  attended: 'attended',
-  followups: 'followUp',
 };
 
 type LeetEntry = {
@@ -136,20 +101,64 @@ type LeetEntry = {
   difficulty?: string | null;
   url?: string | null;
   reflection?: string | null;
-  status: string;
+  status: LeetStatus;
   userId: string;
   dateCreated?: string;
 };
 
-type LeetColumnId = 'planned' | 'solved' | 'reflected';
+// Map status values to column IDs (moved outside component to prevent re-renders)
+const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
+  applied: 'applied',
+  messagedRecruiter: 'messagedRecruiter',
+  messagedHiringManager: 'messagedHiringManager',
+  followedUp: 'followedUp',
+  interview: 'interview',
+};
 
-const leetStatusToColumn: Record<string, LeetColumnId> = {
+const applicationColumnToStatus: Record<ApplicationColumnId, ApplicationStatus> = {
+  applied: 'applied',
+  messagedRecruiter: 'messagedRecruiter',
+  messagedHiringManager: 'messagedHiringManager',
+  followedUp: 'followedUp',
+  interview: 'interview',
+};
+
+// Linkedin outreach status mappings
+const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, LinkedinOutreachColumnId> = {
+  outreachRequestSent: 'outreach',
+  accepted: 'accepted',
+  followedUp: 'followedUpLinkedin',
+  linkedinOutreach: 'linkedinOutreach',
+};
+
+const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinOutreachStatus> = {
+  outreach: 'outreachRequestSent',
+  accepted: 'accepted',
+  followedUpLinkedin: 'followedUp',
+  linkedinOutreach: 'linkedinOutreach',
+};
+
+const eventStatusToColumn: Record<InPersonEventStatus, EventColumnId> = {
+  scheduled: 'upcoming',
+  attending: 'attending',
+  attended: 'attended',
+  followUp: 'followups',
+};
+
+const eventColumnToStatus: Record<EventColumnId, InPersonEventStatus> = {
+  upcoming: 'scheduled',
+  attending: 'attending',
+  attended: 'attended',
+  followups: 'followUp',
+};
+
+const leetStatusToColumn: Record<LeetStatus, LeetColumnId> = {
   planned: 'planned',
   solved: 'solved',
   reflected: 'reflected',
 };
 
-const leetColumnToStatus: Record<LeetColumnId, string> = {
+const leetColumnToStatus: Record<LeetColumnId, LeetStatus> = {
   planned: 'planned',
   solved: 'solved',
   reflected: 'reflected',
@@ -161,8 +170,7 @@ export default function Page() {
 
   // dnd-kit: Applications board state
 
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [appColumns, setAppColumns] = useState<Record<ColumnId, Application[]>>({
+  const [appColumns, setAppColumns] = useState<Record<ApplicationColumnId, Application[]>>({
     applied: [],
     messagedRecruiter: [],
     messagedHiringManager: [],
@@ -189,11 +197,10 @@ export default function Page() {
       setIsLoading(true);
       const response = await fetch('/api/applications_with_outreach');
       if (!response.ok) throw new Error('Failed to fetch applications');
-      const data = await response.json();
-      setApplications(data);
+      const data = await response.json() as Application[];
       
       // Group applications by status
-      const grouped: Record<ColumnId, Application[]> = {
+      const grouped: Record<ApplicationColumnId, Application[]> = {
         applied: [],
         messagedRecruiter: [],
         messagedHiringManager: [],
@@ -202,7 +209,7 @@ export default function Page() {
       };
       
       data.forEach((app: Application) => {
-        const column = statusToColumn[app.status] || 'applied';
+        const column = applicationStatusToColumn[app.status] || 'applied';
         grouped[column].push(app);
       });
       
@@ -222,8 +229,8 @@ export default function Page() {
     }
   }, [activeTab, fetchApplications]);
 
-  const getColumnOfItem = (id: string): ColumnId | null => {
-    const entry = (Object.keys(appColumns) as ColumnId[]).find(col => 
+  const getApplicationColumnOfItem = (id: string): ApplicationColumnId | null => {
+    const entry = (Object.keys(appColumns) as ApplicationColumnId[]).find(col => 
       appColumns[col].some(c => String(c.id) === id)
     );
     return entry ?? null;
@@ -236,10 +243,10 @@ export default function Page() {
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    const fromCol = getColumnOfItem(activeId);
-    const toCol = (['applied','messagedRecruiter','messagedHiringManager','followedUp','interview'] as ColumnId[]).includes(overId as ColumnId)
-      ? (overId as ColumnId)
-      : getColumnOfItem(overId);
+    const fromCol = getApplicationColumnOfItem(activeId);
+    const toCol = (['applied','messagedRecruiter','messagedHiringManager','followedUp','interview'] as ApplicationColumnId[]).includes(overId as ApplicationColumnId)
+      ? (overId as ApplicationColumnId)
+      : getApplicationColumnOfItem(overId);
     if (!fromCol || !toCol) return;
 
     // Update UI optimistically
@@ -264,7 +271,7 @@ export default function Page() {
       
       // Update status in database
       try {
-        const newStatus = columnToStatus[toCol];
+        const newStatus = applicationColumnToStatus[toCol];
         const response = await fetch(`/api/applications_with_outreach?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -273,9 +280,6 @@ export default function Page() {
         if (!response.ok) throw new Error('Failed to update status');
         
         // Update the application in the main list
-        setApplications(prev => prev.map(app => 
-          app.id === movingItem.id ? { ...app, status: newStatus } : app
-        ));
       } catch (error) {
         console.error('Error updating status:', error);
         // Revert on error
@@ -384,129 +388,123 @@ export default function Page() {
     );
   }
 
-  // dnd-kit: Coffee Chats board (Linkedin_Outreach)
+  // dnd-kit: Linkedin outreach board (Linkedin_Outreach)
 
-  const [coffeeChats, setCoffeeChats] = useState<CoffeeChat[]>([]);
-  const [coffeeChatColumns, setCoffeeChatColumns] = useState<Record<CoffeeChatColumnId, CoffeeChat[]>>({
-    outreach: [],
-    accepted: [],
-    followedUpCoffee: [],
-    coffeeChat: [],
-  });
-  const [activeCoffeeChatId, setActiveCoffeeChatId] = useState<string | null>(null);
-  const [isCoffeeChatModalOpen, setIsCoffeeChatModalOpen] = useState(false);
-  const [editingCoffeeChat, setEditingCoffeeChat] = useState<CoffeeChat | null>(null);
-  const [isDeletingCoffeeChat, setIsDeletingCoffeeChat] = useState<number | null>(null);
-  const [isLoadingCoffeeChats, setIsLoadingCoffeeChats] = useState(true);
-  const isFetchingCoffeeChatsRef = useRef(false);
+const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<LinkedinOutreachColumnId, LinkedinOutreach[]>>({
+  outreach: [],
+  accepted: [],
+  followedUpLinkedin: [],
+  linkedinOutreach: [],
+});
+  const [activeLinkedinOutreachId, setActiveLinkedinOutreachId] = useState<string | null>(null);
+  const [isLinkedinOutreachModalOpen, setIsLinkedinOutreachModalOpen] = useState(false);
+  const [editingLinkedinOutreach, setEditingLinkedinOutreach] = useState<LinkedinOutreach | null>(null);
+  const [isDeletingLinkedinOutreach, setIsDeletingLinkedinOutreach] = useState<number | null>(null);
+  const [isLoadingLinkedinOutreach, setIsLoadingLinkedinOutreach] = useState(true);
+  const isFetchingLinkedinOutreachRef = useRef(false);
 
-  const fetchCoffeeChats = useCallback(async () => {
-    if (isFetchingCoffeeChatsRef.current) return;
+  const fetchLinkedinOutreach = useCallback(async () => {
+    if (isFetchingLinkedinOutreachRef.current) return;
 
     try {
-      isFetchingCoffeeChatsRef.current = true;
-      setIsLoadingCoffeeChats(true);
+      isFetchingLinkedinOutreachRef.current = true;
+      setIsLoadingLinkedinOutreach(true);
       const response = await fetch('/api/linkedin_outreach');
-      if (!response.ok) throw new Error('Failed to fetch coffee chats');
-      const data = await response.json();
-      setCoffeeChats(data);
+      if (!response.ok) throw new Error('Failed to fetch LinkedIn outreach entries');
+      const data = await response.json() as LinkedinOutreach[];
 
-      const grouped: Record<CoffeeChatColumnId, CoffeeChat[]> = {
+      const grouped: Record<LinkedinOutreachColumnId, LinkedinOutreach[]> = {
         outreach: [],
         accepted: [],
-        followedUpCoffee: [],
-        coffeeChat: [],
+        followedUpLinkedin: [],
+        linkedinOutreach: [],
       };
 
-      (data as CoffeeChat[]).forEach(chat => {
-        const column = coffeeChatStatusToColumn[chat.status] ?? 'outreach';
+      (data as LinkedinOutreach[]).forEach(chat => {
+        const column = linkedinOutreachStatusToColumn[chat.status] ?? 'outreach';
         grouped[column].push(chat);
       });
 
-      setCoffeeChatColumns(grouped);
+      setLinkedinOutreachColumns(grouped);
     } catch (error) {
-      console.error('Error fetching coffee chats:', error);
+      console.error('Error fetching LinkedIn outreach entries:', error);
     } finally {
-      setIsLoadingCoffeeChats(false);
-      isFetchingCoffeeChatsRef.current = false;
+      setIsLoadingLinkedinOutreach(false);
+      isFetchingLinkedinOutreachRef.current = false;
     }
   }, []);
 
   useEffect(() => {
-    if ((activeTab === 'interviews' || activeTab === 'overview') && !isFetchingCoffeeChatsRef.current) {
-      fetchCoffeeChats();
+    if ((activeTab === 'interviews' || activeTab === 'overview') && !isFetchingLinkedinOutreachRef.current) {
+      fetchLinkedinOutreach();
     }
-  }, [activeTab, fetchCoffeeChats]);
+  }, [activeTab, fetchLinkedinOutreach]);
 
-  const getCoffeeChatColumnOfItem = (id: string): CoffeeChatColumnId | null => {
-    const entry = (Object.keys(coffeeChatColumns) as CoffeeChatColumnId[]).find(col =>
-      coffeeChatColumns[col].some(chat => String(chat.id) === id)
+  const getLinkedinOutreachColumnOfItem = (id: string): LinkedinOutreachColumnId | null => {
+    const entry = (Object.keys(linkedinOutreachColumns) as LinkedinOutreachColumnId[]).find(col =>
+      linkedinOutreachColumns[col].some(chat => String(chat.id) === id)
     );
     return entry ?? null;
   };
 
-  const handleCoffeeChatsDragEnd = async (event: DragEndEvent) => {
+  const handleLinkedinOutreachDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
 
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    const fromCol = getCoffeeChatColumnOfItem(activeId);
-    const toCol = (['outreach', 'accepted', 'followedUpCoffee', 'coffeeChat'] as CoffeeChatColumnId[]).includes(overId as CoffeeChatColumnId)
-      ? (overId as CoffeeChatColumnId)
-      : getCoffeeChatColumnOfItem(overId);
+    const fromCol = getLinkedinOutreachColumnOfItem(activeId);
+    const toCol = (['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach'] as LinkedinOutreachColumnId[]).includes(overId as LinkedinOutreachColumnId)
+      ? (overId as LinkedinOutreachColumnId)
+      : getLinkedinOutreachColumnOfItem(overId);
     if (!fromCol || !toCol) return;
 
     if (fromCol === toCol) {
-      const items = coffeeChatColumns[fromCol];
+      const items = linkedinOutreachColumns[fromCol];
       const oldIndex = items.findIndex(i => String(i.id) === activeId);
       const newIndex = items.findIndex(i => String(i.id) === overId);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
       const newItems = arrayMove(items, oldIndex, newIndex);
-      setCoffeeChatColumns(prev => ({ ...prev, [fromCol]: newItems }));
+      setLinkedinOutreachColumns(prev => ({ ...prev, [fromCol]: newItems }));
     } else {
-      const fromItems = coffeeChatColumns[fromCol];
-      const toItems = coffeeChatColumns[toCol];
+      const fromItems = linkedinOutreachColumns[fromCol];
+      const toItems = linkedinOutreachColumns[toCol];
       const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
       if (movingIndex === -1) return;
       const movingItem = fromItems[movingIndex];
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      const updatedItem: LinkedinOutreach = { ...movingItem, status: linkedinOutreachColumnToStatus[toCol] };
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
-      const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
-      setCoffeeChatColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+      const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
+      setLinkedinOutreachColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
 
       try {
-        const newStatus = coffeeChatColumnToStatus[toCol];
         const response = await fetch(`/api/linkedin_outreach?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ status: linkedinOutreachColumnToStatus[toCol] }),
         });
-        if (!response.ok) throw new Error('Failed to update coffee chat status');
+        if (!response.ok) throw new Error('Failed to update LinkedIn outreach status');
 
-        setCoffeeChats(prev => prev.map(chat =>
-          chat.id === movingItem.id ? { ...chat, status: newStatus } : chat
-        ));
       } catch (error) {
-        console.error('Error updating coffee chat status:', error);
-        fetchCoffeeChats();
+        console.error('Error updating LinkedIn outreach status:', error);
+        fetchLinkedinOutreach();
       }
     }
-    setActiveCoffeeChatId(null);
+    setActiveLinkedinOutreachId(null);
   };
 
-  const handleCoffeeChatsDragStart = (event: DragStartEvent) => {
-    setActiveCoffeeChatId(String(event.active.id));
+  const handleLinkedinOutreachDragStart = (event: DragStartEvent) => {
+    setActiveLinkedinOutreachId(String(event.active.id));
   };
 
-  const handleCoffeeChatsDragOver = (event: DragOverEvent) => {
+  const handleLinkedinOutreachDragOver = (event: DragOverEvent) => {
     // onDragOver is only for visual feedback via DroppableColumn
   };
 
   // dnd-kit: Events board (In-Person Events)
-  const [events, setEvents] = useState<InPersonEvent[]>([]);
   const [eventColumns, setEventColumns] = useState<Record<EventColumnId, InPersonEvent[]>>({
     upcoming: [],
     attending: [],
@@ -528,8 +526,7 @@ export default function Page() {
       setIsLoadingEvents(true);
       const response = await fetch('/api/in_person_events');
       if (!response.ok) throw new Error('Failed to fetch in-person events');
-      const data = await response.json();
-      setEvents(data);
+      const data = await response.json() as InPersonEvent[];
 
       const grouped: Record<EventColumnId, InPersonEvent[]> = {
         upcoming: [],
@@ -606,9 +603,6 @@ export default function Page() {
         });
         if (!response.ok) throw new Error('Failed to update event status');
 
-        setEvents(prev => prev.map(ev =>
-          ev.id === movingItem.id ? { ...ev, status: newStatus } : ev
-        ));
       } catch (error) {
         console.error('Error updating event status:', error);
         fetchEvents();
@@ -626,7 +620,6 @@ export default function Page() {
   };
 
   // dnd-kit: LeetCode board
-  const [leetEntries, setLeetEntries] = useState<LeetEntry[]>([]);
   const [leetColumns, setLeetColumns] = useState<Record<LeetColumnId, LeetEntry[]>>({
     planned: [],
     solved: [],
@@ -648,7 +641,6 @@ export default function Page() {
       const response = await fetch('/api/leetcode');
       if (!response.ok) throw new Error('Failed to fetch LeetCode entries');
       const data = await response.json();
-      setLeetEntries(data);
 
       const grouped: Record<LeetColumnId, LeetEntry[]> = {
         planned: [],
@@ -724,9 +716,6 @@ export default function Page() {
         });
         if (!response.ok) throw new Error('Failed to update LeetCode status');
 
-        setLeetEntries(prev => prev.map(entry =>
-          entry.id === movingItem.id ? { ...entry, status: newStatus } : entry
-        ));
       } catch (error) {
         console.error('Error updating LeetCode status:', error);
         fetchLeetEntries();
@@ -743,7 +732,7 @@ export default function Page() {
     // onDragOver is only for visual feedback via DroppableColumn
   };
 
-  function SortableCoffeeChatCard(props: { card: CoffeeChat }) {
+  function SortableLinkedinOutreachCard(props: { card: LinkedinOutreach }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
     const style = {
       transform: CSS.Transform.toString(transform),
@@ -762,13 +751,13 @@ export default function Page() {
 
     const handleEdit = (e: React.MouseEvent) => {
       e.stopPropagation();
-      setEditingCoffeeChat(props.card);
-      setIsCoffeeChatModalOpen(true);
+      setEditingLinkedinOutreach(props.card);
+      setIsLinkedinOutreachModalOpen(true);
     };
 
     const handleDelete = (e: React.MouseEvent) => {
       e.stopPropagation();
-      setIsDeletingCoffeeChat(props.card.id);
+      setIsDeletingLinkedinOutreach(props.card.id);
     };
 
     return (
@@ -1072,7 +1061,7 @@ export default function Page() {
     
     // Count applications in columns: messagedHiringManager, messagedRecruiter, followedUp, interview
     // (any column to the right of "applied")
-    const qualifyingColumns: ColumnId[] = ['messagedHiringManager', 'messagedRecruiter', 'followedUp', 'interview'];
+    const qualifyingColumns: ApplicationColumnId[] = ['messagedHiringManager', 'messagedRecruiter', 'followedUp', 'interview'];
     let count = 0;
     
     qualifyingColumns.forEach(col => {
@@ -1104,17 +1093,17 @@ export default function Page() {
     };
   }, [appColumns, userData]);
 
-  // Calculate coffee chats metrics for this month
-  const coffeeChatsMetrics = useMemo(() => {
+  // Calculate linkedin outreach metrics for this month
+  const linkedinOutreachMetrics = useMemo(() => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
-    // Count all coffee chats from all 4 columns (outreach, accepted, followedUpCoffee, coffeeChat)
-    const allColumns: CoffeeChatColumnId[] = ['outreach', 'accepted', 'followedUpCoffee', 'coffeeChat'];
+    // Count all linkedin outreach entries from all 4 columns (outreach, accepted, followedUpLinkedin, linkedinOutreach)
+    const allColumns: LinkedinOutreachColumnId[] = ['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach'];
     let count = 0;
     
     allColumns.forEach(col => {
-      coffeeChatColumns[col].forEach(chat => {
+      linkedinOutreachColumns[col].forEach(chat => {
         const chatDate = new Date(chat.dateCreated);
         if (chatDate >= startOfMonth) {
           count++;
@@ -1140,7 +1129,7 @@ export default function Page() {
       statusText,
       statusTextColor,
     };
-  }, [coffeeChatColumns, userData]);
+  }, [linkedinOutreachColumns, userData]);
 
   const eventsMetrics = useMemo(() => {
     const now = new Date();
@@ -1340,20 +1329,20 @@ export default function Page() {
                       <MessageCircle className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">Coffee Chats</h4>
                     </div>
-                    <div className={`w-3 h-3 ${coffeeChatsMetrics.statusIcon} rounded-full`}></div>
+                    <div className={`w-3 h-3 ${linkedinOutreachMetrics.statusIcon} rounded-full`}></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">{coffeeChatsMetrics.count}</div>
+                  <div className="text-3xl font-bold text-white mb-1">{linkedinOutreachMetrics.count}</div>
                   <div className="text-sm text-gray-400 mb-3">This month</div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Goal: {coffeeChatsMetrics.goal || '—'}</span>
-                    {coffeeChatsMetrics.goal > 0 && (
-                      <span className={coffeeChatsMetrics.statusTextColor}>{coffeeChatsMetrics.statusText}</span>
+                    <span className="text-gray-400">Goal: {linkedinOutreachMetrics.goal || '—'}</span>
+                    {linkedinOutreachMetrics.goal > 0 && (
+                      <span className={linkedinOutreachMetrics.statusTextColor}>{linkedinOutreachMetrics.statusText}</span>
                     )}
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
                     <div 
-                      className={`${coffeeChatsMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
-                      style={{width: `${Math.min(Math.max(coffeeChatsMetrics.percentage, 0), 100)}%`}}
+                      className={`${linkedinOutreachMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
+                      style={{width: `${Math.min(Math.max(linkedinOutreachMetrics.percentage, 0), 100)}%`}}
                     ></div>
                   </div>
                 </div>
@@ -1506,7 +1495,7 @@ export default function Page() {
               </div>
               <DragOverlay>
                 {activeAppId ? (() => {
-                  const col = getColumnOfItem(activeAppId);
+                  const col = getApplicationColumnOfItem(activeAppId);
                   if (!col) return null;
                   const card = appColumns[col].find(c => String(c.id) === activeAppId);
                   if (!card) return null;
@@ -1595,28 +1584,28 @@ export default function Page() {
               <h4 className="text-xl font-bold text-white">Coffee Chats</h4>
               <button 
                 onClick={() => {
-                  setEditingCoffeeChat(null);
-                  setIsCoffeeChatModalOpen(true);
+                  setEditingLinkedinOutreach(null);
+                  setIsLinkedinOutreachModalOpen(true);
                 }}
                 className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
               >
                 <Plus className="mr-2" />New Outreach
               </button>
             </div>
-            {isLoadingCoffeeChats ? (
+            {isLoadingLinkedinOutreach ? (
               <div className="text-center py-8 text-gray-400">Loading coffee chats...</div>
             ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleCoffeeChatsDragStart} onDragOver={handleCoffeeChatsDragOver} onDragEnd={handleCoffeeChatsDragEnd}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLinkedinOutreachDragStart} onDragOver={handleLinkedinOutreachDragOver} onDragEnd={handleLinkedinOutreachDragEnd}>
               <div className="grid grid-cols-4 gap-6">
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Outreach Request Sent ({coffeeChatColumns.outreach.length})
+                    Outreach Request Sent ({linkedinOutreachColumns.outreach.length})
                   </h5>
-                  <SortableContext items={coffeeChatColumns.outreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={linkedinOutreachColumns.outreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="outreach">
-                      {coffeeChatColumns.outreach.map(card => (
-                        <SortableCoffeeChatCard key={card.id} card={card} />
+                      {linkedinOutreachColumns.outreach.map(card => (
+                        <SortableLinkedinOutreachCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1625,12 +1614,12 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Request Accepted ({coffeeChatColumns.accepted.length})
+                    Request Accepted ({linkedinOutreachColumns.accepted.length})
                   </h5>
-                  <SortableContext items={coffeeChatColumns.accepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={linkedinOutreachColumns.accepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="accepted">
-                      {coffeeChatColumns.accepted.map(card => (
-                        <SortableCoffeeChatCard key={card.id} card={card} />
+                      {linkedinOutreachColumns.accepted.map(card => (
+                        <SortableLinkedinOutreachCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1639,12 +1628,12 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Followed Up ({coffeeChatColumns.followedUpCoffee.length})
+                    Followed Up ({linkedinOutreachColumns.followedUpLinkedin.length})
                   </h5>
-                  <SortableContext items={coffeeChatColumns.followedUpCoffee.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="followedUpCoffee">
-                      {coffeeChatColumns.followedUpCoffee.map(card => (
-                        <SortableCoffeeChatCard key={card.id} card={card} />
+                  <SortableContext items={linkedinOutreachColumns.followedUpLinkedin.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="followedUpLinkedin">
+                      {linkedinOutreachColumns.followedUpLinkedin.map(card => (
+                        <SortableLinkedinOutreachCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
@@ -1653,22 +1642,22 @@ export default function Page() {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Coffee Chat ({coffeeChatColumns.coffeeChat.length})
+                    Coffee Chat ({linkedinOutreachColumns.linkedinOutreach.length})
                   </h5>
-                  <SortableContext items={coffeeChatColumns.coffeeChat.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="coffeeChat">
-                      {coffeeChatColumns.coffeeChat.map(card => (
-                        <SortableCoffeeChatCard key={card.id} card={card} />
+                  <SortableContext items={linkedinOutreachColumns.linkedinOutreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="linkedinOutreach">
+                      {linkedinOutreachColumns.linkedinOutreach.map(card => (
+                        <SortableLinkedinOutreachCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
                   </SortableContext>
                 </div>
               </div>
               <DragOverlay>
-                {activeCoffeeChatId ? (() => {
-                  const col = getCoffeeChatColumnOfItem(activeCoffeeChatId);
+                {activeLinkedinOutreachId ? (() => {
+                  const col = getLinkedinOutreachColumnOfItem(activeLinkedinOutreachId);
                   if (!col) return null;
-                  const card = coffeeChatColumns[col].find(c => String(c.id) === activeCoffeeChatId);
+                  const card = linkedinOutreachColumns[col].find(c => String(c.id) === activeLinkedinOutreachId);
                   if (!card) return null;
                   return (
                     <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
@@ -1683,23 +1672,23 @@ export default function Page() {
             )}
 
             {/* Create/Edit Modal */}
-            {isCoffeeChatModalOpen && (
-              <CoffeeChatModal
-                coffeeChat={editingCoffeeChat}
+            {isLinkedinOutreachModalOpen && (
+              <LinkedinOutreachModal
+                linkedinOutreach={editingLinkedinOutreach}
                 onClose={() => {
-                  setIsCoffeeChatModalOpen(false);
-                  setEditingCoffeeChat(null);
+                  setIsLinkedinOutreachModalOpen(false);
+                  setEditingLinkedinOutreach(null);
                 }}
                 onSave={async (data) => {
                   try {
-                    if (editingCoffeeChat) {
+                    if (editingLinkedinOutreach) {
                       // Update existing
                       const response = await fetch('/api/linkedin_outreach', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...data, id: editingCoffeeChat.id }),
+                        body: JSON.stringify({ ...data, id: editingLinkedinOutreach.id }),
                       });
-                      if (!response.ok) throw new Error('Failed to update coffee chat');
+                      if (!response.ok) throw new Error('Failed to update LinkedIn outreach entry');
                     } else {
                       // Create new
                       const response = await fetch('/api/linkedin_outreach', {
@@ -1707,13 +1696,13 @@ export default function Page() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data),
                       });
-                      if (!response.ok) throw new Error('Failed to create coffee chat');
+                      if (!response.ok) throw new Error('Failed to create LinkedIn outreach entry');
                     }
-                    await fetchCoffeeChats();
-                    setIsCoffeeChatModalOpen(false);
-                    setEditingCoffeeChat(null);
+                    await fetchLinkedinOutreach();
+                    setIsLinkedinOutreachModalOpen(false);
+                    setEditingLinkedinOutreach(null);
                   } catch (error) {
-                    console.error('Error saving coffee chat:', error);
+                    console.error('Error saving LinkedIn outreach entry:', error);
                     alert('Failed to save coffee chat. Please try again.');
                   }
                 }}
@@ -1721,23 +1710,23 @@ export default function Page() {
             )}
 
             {/* Delete Confirmation Modal */}
-            {isDeletingCoffeeChat !== null && (
+            {isDeletingLinkedinOutreach !== null && (
               <DeleteModal
                 onConfirm={async () => {
                   try {
-                    const response = await fetch(`/api/linkedin_outreach?id=${isDeletingCoffeeChat}`, {
+                    const response = await fetch(`/api/linkedin_outreach?id=${isDeletingLinkedinOutreach}`, {
                       method: 'DELETE',
                     });
-                    if (!response.ok) throw new Error('Failed to delete coffee chat');
-                    await fetchCoffeeChats();
-                    setIsDeletingCoffeeChat(null);
+                    if (!response.ok) throw new Error('Failed to delete LinkedIn outreach entry');
+                    await fetchLinkedinOutreach();
+                    setIsDeletingLinkedinOutreach(null);
                   } catch (error) {
-                    console.error('Error deleting coffee chat:', error);
+                    console.error('Error deleting LinkedIn outreach entry:', error);
                     alert('Failed to delete coffee chat. Please try again.');
-                    setIsDeletingCoffeeChat(null);
+                    setIsDeletingLinkedinOutreach(null);
                   }
                 }}
-                onCancel={() => setIsDeletingCoffeeChat(null)}
+                onCancel={() => setIsDeletingLinkedinOutreach(null)}
               />
             )}
           </section>
@@ -2063,7 +2052,17 @@ function ApplicationModal({
   onClose: () => void; 
   onSave: (data: Partial<Application>) => void;
 }) {
-  const [formData, setFormData] = useState({
+  type ApplicationFormData = {
+    company: string;
+    hiringManager: string;
+    msgToManager: string;
+    recruiter: string;
+    msgToRecruiter: string;
+    notes: string;
+    status: ApplicationStatus;
+  };
+
+  const [formData, setFormData] = useState<ApplicationFormData>({
     company: application?.company || '',
     hiringManager: application?.hiringManager || '',
     msgToManager: application?.msgToManager || '',
@@ -2083,7 +2082,7 @@ function ApplicationModal({
         recruiter: application.recruiter || '',
         msgToRecruiter: application.msgToRecruiter || '',
         notes: application.notes || '',
-        status: application.status || 'applied',
+        status: application.status ?? 'applied',
       });
     } else {
       setFormData({
@@ -2183,7 +2182,7 @@ function ApplicationModal({
             <label className="block text-white font-semibold mb-2">Status</label>
             <select
               value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as ApplicationStatus })}
               className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
             >
               <option value="applied">Applied</option>
@@ -2225,37 +2224,47 @@ function ApplicationModal({
   );
 }
 
-// Coffee Chat Modal Component
-function CoffeeChatModal({ 
-  coffeeChat, 
+// Linkedin outreach modal component
+function LinkedinOutreachModal({ 
+  linkedinOutreach, 
   onClose, 
   onSave 
 }: { 
-  coffeeChat: CoffeeChat | null; 
+  linkedinOutreach: LinkedinOutreach | null; 
   onClose: () => void; 
-  onSave: (data: Partial<CoffeeChat>) => void;
+  onSave: (data: Partial<LinkedinOutreach>) => void;
 }) {
-  const [formData, setFormData] = useState({
-    name: coffeeChat?.name || '',
-    company: coffeeChat?.company || '',
-    message: coffeeChat?.message || '',
-    linkedInUrl: coffeeChat?.linkedInUrl || '',
-    notes: coffeeChat?.notes || '',
-    status: coffeeChat?.status || 'outreachRequestSent',
-    recievedReferral: coffeeChat?.recievedReferral || false,
+  type LinkedinOutreachFormData = {
+    name: string;
+    company: string;
+    message: string;
+    linkedInUrl: string;
+    notes: string;
+    status: LinkedinOutreachStatus;
+    recievedReferral: boolean;
+  };
+
+  const [formData, setFormData] = useState<LinkedinOutreachFormData>({
+    name: linkedinOutreach?.name || '',
+    company: linkedinOutreach?.company || '',
+    message: linkedinOutreach?.message || '',
+    linkedInUrl: linkedinOutreach?.linkedInUrl || '',
+    notes: linkedinOutreach?.notes || '',
+    status: linkedinOutreach ? linkedinOutreach.status : 'outreachRequestSent',
+    recievedReferral: linkedinOutreach?.recievedReferral || false,
   });
 
-  // Update form data when coffeeChat changes
+  // Update form data when linkedin outreach changes
   useEffect(() => {
-    if (coffeeChat) {
+    if (linkedinOutreach) {
       setFormData({
-        name: coffeeChat.name || '',
-        company: coffeeChat.company || '',
-        message: coffeeChat.message || '',
-        linkedInUrl: coffeeChat.linkedInUrl || '',
-        notes: coffeeChat.notes || '',
-        status: coffeeChat.status || 'outreachRequestSent',
-        recievedReferral: coffeeChat.recievedReferral || false,
+        name: linkedinOutreach.name || '',
+        company: linkedinOutreach.company || '',
+        message: linkedinOutreach.message || '',
+        linkedInUrl: linkedinOutreach.linkedInUrl || '',
+        notes: linkedinOutreach.notes || '',
+        status: linkedinOutreach.status,
+        recievedReferral: linkedinOutreach.recievedReferral || false,
       });
     } else {
       setFormData({
@@ -2268,7 +2277,7 @@ function CoffeeChatModal({
         recievedReferral: false,
       });
     }
-  }, [coffeeChat]);
+  }, [linkedinOutreach]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2284,7 +2293,7 @@ function CoffeeChatModal({
       <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-white">
-            {coffeeChat ? 'Edit Coffee Chat' : 'Create New Coffee Chat'}
+            {linkedinOutreach ? 'Edit Coffee Chat' : 'Create New Coffee Chat'}
           </h3>
           <button
             onClick={onClose}
@@ -2346,13 +2355,13 @@ function CoffeeChatModal({
             <label className="block text-white font-semibold mb-2">Status</label>
             <select
               value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as LinkedinOutreachStatus })}
               className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
             >
               <option value="outreachRequestSent">Outreach Request Sent</option>
               <option value="accepted">Request Accepted</option>
               <option value="followedUp">Followed Up</option>
-              <option value="coffeeChat">Coffee Chat</option>
+              <option value="linkedinOutreach">Coffee Chat</option>
             </select>
           </div>
 
@@ -2391,7 +2400,7 @@ function CoffeeChatModal({
               type="submit"
               className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
             >
-              {coffeeChat ? 'Update' : 'Create'}
+              {linkedinOutreach ? 'Update' : 'Create'}
             </button>
           </div>
         </form>
@@ -2465,7 +2474,23 @@ function InPersonEventModal({
     }
   };
 
-  const [formData, setFormData] = useState({
+  type EventFormData = {
+    event: string;
+    date: string;
+    timeHour: string;
+    timeMinute: string;
+    timePeriod: 'AM' | 'PM';
+    location: string;
+    url: string;
+    notes: string;
+    status: InPersonEventStatus;
+    numPeopleSpokenTo: string;
+    numLinkedInRequests: string;
+    numOfInterviews: string;
+    careerFair: boolean;
+  };
+
+  const [formData, setFormData] = useState<EventFormData>({
     event: eventItem?.event ?? '',
     date: eventItem?.date ? toLocalDate(eventItem.date) : '',
     timeHour: eventItem?.date ? toLocalTimeParts(eventItem.date).hour : '',
@@ -2663,7 +2688,7 @@ function InPersonEventModal({
             <label className="block text-white font-semibold mb-2">Status</label>
             <select
               value={formData.status}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as InPersonEventStatus }))}
               className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
             >
               <option value="scheduled">Scheduled</option>
@@ -2759,7 +2784,16 @@ function LeetModal({
   onClose: () => void;
   onSave: (data: Partial<LeetEntry>) => void;
 }) {
-  const [formData, setFormData] = useState({
+  type LeetFormData = {
+    problem: string;
+    problemType: string;
+    difficulty: string;
+    url: string;
+    reflection: string;
+    status: LeetStatus;
+  };
+
+  const [formData, setFormData] = useState<LeetFormData>({
     problem: entry?.problem ?? '',
     problemType: entry?.problemType ?? '',
     difficulty: entry?.difficulty ?? '',
@@ -2898,7 +2932,7 @@ function LeetModal({
             <label className="block text-white font-semibold mb-2">Status</label>
             <select
               value={formData.status}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as LeetStatus }))}
               className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
             >
               <option value="planned">Planned</option>

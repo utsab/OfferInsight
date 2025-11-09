@@ -304,12 +304,12 @@ export default function Page3V2() {
               </div>
             </div>
 
-            {/* Coffee Chats */}
+            {/* Linkedin Outreach */}
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-white font-bold text-lg flex items-center">
                   <Coffee className="text-electric-blue mr-3" />
-                  Coffee Chats
+                  LinkedIn Outreach
                 </h4>
                 <div className="text-electric-blue text-sm font-semibold">WEEKLY</div>
               </div>

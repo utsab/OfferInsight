@@ -83,27 +83,25 @@ export const getBoardColumns = (boardType: BoardType): ColumnConfig[] => {
     case "linkedinOutreach":
       return [
         {
-          id: "linkedInRequestSent",
+          id: "outreachRequestSent",
           title: "LinkedIn Request Sent",
           color: "bg-yellow-500",
         },
         {
-          id: "requestAccepted",
+          id: "accepted",
           title: "Request Accepted",
           color: "bg-green-500",
         },
         {
-          id: "followUpMessage",
+          id: "followedUp",
           title: "Follow Up Message",
           color: "bg-purple-500",
         },
         {
-          id: "informationalInterview",
+          id: "linkedinOutreach",
           title: "Informational Interview",
           color: "bg-blue-500",
         },
-        
-        
       ];
     default:
       return [];
