@@ -1055,9 +1055,21 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   }, [targetOfferDate]);
 
   // Calculate applications metrics for this month
-  const applicationsMetrics = useMemo(() => {
+  const metricsMonth = useMemo(() => {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    // For testing a specific month, replace the line above with something like:
+    // const start = new Date(2024, 0, 1); // January 2024
+    return start;
+  }, []);
+
+  const metricsMonthEnd = useMemo(() => {
+    const end = new Date(metricsMonth);
+    end.setMonth(end.getMonth() + 1);
+    return end;
+  }, [metricsMonth]);
+
+  const applicationsMetrics = useMemo(() => {
     
     // Count applications in columns: messagedHiringManager, messagedRecruiter, followedUp, interview
     // (any column to the right of "applied")
@@ -1067,7 +1079,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     qualifyingColumns.forEach(col => {
       appColumns[col].forEach(app => {
         const appDate = new Date(app.dateCreated);
-        if (appDate >= startOfMonth) {
+        if (!Number.isNaN(appDate.getTime()) && appDate >= metricsMonth && appDate < metricsMonthEnd) {
           count++;
         }
       });
@@ -1091,13 +1103,10 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       statusText,
       statusTextColor,
     };
-  }, [appColumns, userData]);
+  }, [appColumns, userData, metricsMonth, metricsMonthEnd]);
 
   // Calculate linkedin outreach metrics for this month
   const linkedinOutreachMetrics = useMemo(() => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
     // Count all linkedin outreach entries from all 4 columns (outreach, accepted, followedUpLinkedin, linkedinOutreach)
     const allColumns: LinkedinOutreachColumnId[] = ['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach'];
     let count = 0;
@@ -1105,7 +1114,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     allColumns.forEach(col => {
       linkedinOutreachColumns[col].forEach(chat => {
         const chatDate = new Date(chat.dateCreated);
-        if (chatDate >= startOfMonth) {
+        if (!Number.isNaN(chatDate.getTime()) && chatDate >= metricsMonth && chatDate < metricsMonthEnd) {
           count++;
         }
       });
@@ -1129,19 +1138,16 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       statusText,
       statusTextColor,
     };
-  }, [linkedinOutreachColumns, userData]);
+  }, [linkedinOutreachColumns, userData, metricsMonth, metricsMonthEnd]);
 
   const eventsMetrics = useMemo(() => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
     const qualifyingColumns: EventColumnId[] = ['attended', 'followups'];
     let count = 0;
 
     qualifyingColumns.forEach(col => {
       eventColumns[col].forEach(event => {
         const eventDate = new Date(event.date);
-        if (!Number.isNaN(eventDate.getTime()) && eventDate >= startOfMonth) {
+        if (!Number.isNaN(eventDate.getTime()) && eventDate >= metricsMonth && eventDate < metricsMonthEnd) {
           count++;
         }
       });
@@ -1164,10 +1170,18 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       statusText,
       statusTextColor,
     };
-  }, [eventColumns, userData]);
+  }, [eventColumns, userData, metricsMonth, metricsMonthEnd]);
 
   const leetMetrics = useMemo(() => {
-    const count = leetColumns.reflected.length;
+    let count = 0;
+    leetColumns.reflected.forEach(entry => {
+      if (!entry.dateCreated) return;
+      const entryDate = new Date(entry.dateCreated);
+      if (!Number.isNaN(entryDate.getTime()) && entryDate >= metricsMonth && entryDate < metricsMonthEnd) {
+        count += 1;
+      }
+    });
+
     const goal = 4;
     const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
     const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
@@ -1185,7 +1199,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       statusText,
       statusTextColor,
     };
-  }, [leetColumns]);
+  }, [leetColumns, metricsMonth, metricsMonthEnd]);
 
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
