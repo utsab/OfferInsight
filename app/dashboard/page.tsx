@@ -10,6 +10,11 @@ import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus, X, Ed
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
+// ===== MOCK DATA FEATURE TOGGLE START =====
+// Toggle this flag or comment out the seeding effect below to disable mock data.
+const ENABLE_DASHBOARD_MOCKS = true;
+// ===== MOCK DATA FEATURE TOGGLE END =====
+
 type TimeParts = {
   hour: string;
   minute: string;
@@ -189,6 +194,9 @@ export default function Page() {
   );
 
   const fetchApplications = useCallback(async () => {
+    // --- MOCK DATA BYPASS FOR APPLICATIONS FETCH START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR APPLICATIONS FETCH END ---
     // Prevent multiple simultaneous fetches
     if (isFetchingRef.current) return;
     
@@ -224,6 +232,9 @@ export default function Page() {
 
   // Fetch applications from API (needed for both overview metrics and applications tab)
   useEffect(() => {
+    // --- MOCK DATA BYPASS FOR APPLICATIONS EFFECT START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR APPLICATIONS EFFECT END ---
     if ((activeTab === 'applications' || activeTab === 'overview') && !isFetchingRef.current) {
       fetchApplications();
     }
@@ -404,6 +415,9 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const isFetchingLinkedinOutreachRef = useRef(false);
 
   const fetchLinkedinOutreach = useCallback(async () => {
+    // --- MOCK DATA BYPASS FOR OUTREACH FETCH START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR OUTREACH FETCH END ---
     if (isFetchingLinkedinOutreachRef.current) return;
 
     try {
@@ -435,6 +449,9 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   }, []);
 
   useEffect(() => {
+    // --- MOCK DATA BYPASS FOR OUTREACH EFFECT START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR OUTREACH EFFECT END ---
     if ((activeTab === 'interviews' || activeTab === 'overview') && !isFetchingLinkedinOutreachRef.current) {
       fetchLinkedinOutreach();
     }
@@ -519,6 +536,9 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const isFetchingEventsRef = useRef(false);
 
   const fetchEvents = useCallback(async () => {
+    // --- MOCK DATA BYPASS FOR EVENTS FETCH START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR EVENTS FETCH END ---
     if (isFetchingEventsRef.current) return;
 
     try {
@@ -550,6 +570,9 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   }, []);
 
   useEffect(() => {
+    // --- MOCK DATA BYPASS FOR EVENTS EFFECT START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR EVENTS EFFECT END ---
     if ((activeTab === 'events' || activeTab === 'overview') && !isFetchingEventsRef.current) {
       fetchEvents();
     }
@@ -628,11 +651,17 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [activeLeetId, setActiveLeetId] = useState<string | null>(null);
   const [isLeetModalOpen, setIsLeetModalOpen] = useState(false);
   const [editingLeet, setEditingLeet] = useState<LeetEntry | null>(null);
-  const [isDeletingLeet, setIsDeletingLeet] = useState<number | null>(null);
-  const [isLoadingLeet, setIsLoadingLeet] = useState(true);
-  const isFetchingLeetRef = useRef(false);
+const [isDeletingLeet, setIsDeletingLeet] = useState<number | null>(null);
+const [isLoadingLeet, setIsLoadingLeet] = useState(true);
+const isFetchingLeetRef = useRef(false);
+// ----- MOCK DATA SEED TRACKER START -----
+const hasSeededMockDataRef = useRef(false);
+// ----- MOCK DATA SEED TRACKER END -----
 
   const fetchLeetEntries = useCallback(async () => {
+    // --- MOCK DATA BYPASS FOR LEET FETCH START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR LEET FETCH END ---
     if (isFetchingLeetRef.current) return;
 
     try {
@@ -663,6 +692,9 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   }, []);
 
   useEffect(() => {
+    // --- MOCK DATA BYPASS FOR LEET EFFECT START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR LEET EFFECT END ---
     if ((activeTab === 'leetcode' || activeTab === 'overview') && !isFetchingLeetRef.current) {
       fetchLeetEntries();
     }
@@ -1023,7 +1055,260 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     resetStartDate?: string | null;
   } | null>(null);
 
+  // <<<<< MOCK DATA SEEDING EFFECT START >>>>>
   useEffect(() => {
+    if (!ENABLE_DASHBOARD_MOCKS || hasSeededMockDataRef.current) return;
+    hasSeededMockDataRef.current = true;
+
+    const now = new Date();
+    const isoWithDelta = ({
+      months = 0,
+      days = 0,
+      hour = 10,
+      minute = 0,
+    }: {
+      months?: number;
+      days?: number;
+      hour?: number;
+      minute?: number;
+    }) => {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() + months);
+      if (days !== 0) {
+        d.setDate(d.getDate() + days);
+      }
+      d.setHours(hour, minute, 0, 0);
+      return d.toISOString();
+    };
+
+    const mockApplications: Record<ApplicationColumnId, Application[]> = {
+      applied: [
+        {
+          id: 1001,
+          company: 'Acme Corp',
+          notes: 'Submitted via careers site',
+          status: 'applied',
+          dateCreated: isoWithDelta({ months: -1, days: -3, hour: 9 }),
+          userId: 'mock-user',
+        },
+        {
+          id: 1002,
+          company: 'Globex',
+          recruiter: 'Jordan Smith',
+          status: 'applied',
+          dateCreated: isoWithDelta({ months: -4, days: -12, hour: 14 }),
+          userId: 'mock-user',
+        },
+      ],
+      messagedRecruiter: [
+        {
+          id: 1003,
+          company: 'Initech',
+          recruiter: 'Ava Chen',
+          msgToRecruiter: 'Followed up with recruiter on LinkedIn.',
+          status: 'messagedRecruiter',
+          dateCreated: isoWithDelta({ months: -2, days: -6, hour: 11 }),
+          userId: 'mock-user',
+        },
+      ],
+      messagedHiringManager: [
+        {
+          id: 1004,
+          company: 'Vandelay Industries',
+          hiringManager: 'Art Vandelay',
+          msgToManager: 'Sent tailored cover letter and message.',
+          status: 'messagedHiringManager',
+          dateCreated: isoWithDelta({ months: -5, days: -9, hour: 16 }),
+          userId: 'mock-user',
+        },
+      ],
+      followedUp: [
+        {
+          id: 1005,
+          company: 'Stark Industries',
+          notes: 'Submitted product sense assignment.',
+          status: 'followedUp',
+          dateCreated: isoWithDelta({ months: -7, days: -4, hour: 13 }),
+          userId: 'mock-user',
+        },
+      ],
+      interview: [
+        {
+          id: 1006,
+          company: 'Wayne Enterprises',
+          hiringManager: 'Lucius Fox',
+          status: 'interview',
+          dateCreated: isoWithDelta({ months: -10, days: -15, hour: 10 }),
+          userId: 'mock-user',
+        },
+      ],
+    };
+
+    const mockLinkedinOutreach: Record<LinkedinOutreachColumnId, LinkedinOutreach[]> = {
+      outreach: [
+        {
+          id: 2001,
+          name: 'Priya Patel',
+          company: 'Globex',
+          message: 'Introduced myself and shared interest in the team.',
+          status: 'outreachRequestSent',
+          dateCreated: isoWithDelta({ months: -1, days: -8, hour: 12 }),
+          recievedReferral: false,
+          userId: 'mock-user',
+        },
+      ],
+      accepted: [
+        {
+          id: 2002,
+          name: 'Leo Johnson',
+          company: 'Initech',
+          status: 'accepted',
+          dateCreated: isoWithDelta({ months: -3, days: -10, hour: 15 }),
+          recievedReferral: false,
+          userId: 'mock-user',
+        },
+      ],
+      followedUpLinkedin: [
+        {
+          id: 2003,
+          name: 'Mia Garcia',
+          company: 'Acme Corp',
+          notes: 'Scheduled time to reconnect in two weeks.',
+          status: 'followedUp',
+          dateCreated: isoWithDelta({ months: -6, days: -5, hour: 9 }),
+          recievedReferral: false,
+          userId: 'mock-user',
+        },
+      ],
+      linkedinOutreach: [
+        {
+          id: 2004,
+          name: 'Noah Kim',
+          company: 'Wayne Enterprises',
+          notes: 'Coffee chat went well — discussed upcoming team initiatives.',
+          status: 'linkedinOutreach',
+          dateCreated: isoWithDelta({ months: -8, days: -11, hour: 10 }),
+          recievedReferral: true,
+          userId: 'mock-user',
+        },
+      ],
+    };
+
+    const mockEvents: Record<EventColumnId, InPersonEvent[]> = {
+      upcoming: [
+        {
+          id: 3001,
+          event: 'ProductCon',
+          date: isoWithDelta({ months: 1, days: 5, hour: 9, minute: 30 }),
+          location: 'San Francisco',
+          status: 'scheduled',
+          careerFair: false,
+          userId: 'mock-user',
+        },
+      ],
+      attending: [
+        {
+          id: 3002,
+          event: 'Tech Mixer',
+          date: isoWithDelta({ months: -2, days: -2, hour: 18 }),
+          location: 'Seattle',
+          status: 'attending',
+          careerFair: false,
+          userId: 'mock-user',
+        },
+      ],
+      attended: [
+        {
+          id: 3003,
+          event: 'AI Hiring Fair',
+          date: isoWithDelta({ months: -5, days: -7, hour: 13 }),
+          location: 'Virtual',
+          status: 'attended',
+          numPeopleSpokenTo: 6,
+          numLinkedInRequests: 4,
+          careerFair: true,
+          userId: 'mock-user',
+        },
+      ],
+      followups: [
+        {
+          id: 3004,
+          event: 'Startup Expo',
+          date: isoWithDelta({ months: -9, days: -3, hour: 15 }),
+          location: 'Austin',
+          notes: 'Need to send thank-you emails.',
+          status: 'followUp',
+          numPeopleSpokenTo: 3,
+          numOfInterviews: 1,
+          careerFair: false,
+          userId: 'mock-user',
+        },
+      ],
+    };
+
+    const mockLeetEntries: Record<LeetColumnId, LeetEntry[]> = {
+      planned: [
+        {
+          id: 4001,
+          problem: 'Binary Tree Zigzag Level Order Traversal',
+          problemType: 'Trees, BFS',
+          difficulty: 'Medium',
+          status: 'planned',
+          userId: 'mock-user',
+          dateCreated: isoWithDelta({ months: -1, days: -4, hour: 8 }),
+        },
+      ],
+      solved: [
+        {
+          id: 4002,
+          problem: 'Two Sum',
+          problemType: 'Hash Map',
+          difficulty: 'Easy',
+          url: 'https://leetcode.com/problems/two-sum/',
+          status: 'solved',
+          userId: 'mock-user',
+          dateCreated: isoWithDelta({ months: -4, days: -6, hour: 7 }),
+        },
+      ],
+      reflected: [
+        {
+          id: 4003,
+          problem: 'Word Ladder',
+          problemType: 'Graphs, BFS',
+          difficulty: 'Hard',
+          reflection: 'Notice the transformation count hints at BFS on word graph.',
+          status: 'reflected',
+          userId: 'mock-user',
+          dateCreated: isoWithDelta({ months: -9, days: -2, hour: 20 }),
+        },
+      ],
+    };
+
+    const mockTargetOfferDate = new Date(now);
+    mockTargetOfferDate.setMonth(mockTargetOfferDate.getMonth() + 3);
+
+    setAppColumns(mockApplications);
+    setLinkedinOutreachColumns(mockLinkedinOutreach);
+    setEventColumns(mockEvents);
+    setLeetColumns(mockLeetEntries);
+    setIsLoading(false);
+    setIsLoadingLinkedinOutreach(false);
+    setIsLoadingEvents(false);
+    setIsLoadingLeet(false);
+    setActiveTab('overview');
+    setTargetOfferDate(mockTargetOfferDate);
+    setUserData({
+      appsWithOutreachPerWeek: 6,
+      linkedinOutreachPerWeek: 8,
+      targetOfferDate: mockTargetOfferDate.toISOString(),
+      inPersonEventsPerMonth: 3,
+      resetStartDate: isoWithDelta({ months: -1, days: -18, hour: 8 }),
+    });
+  }, []);
+  // <<<<< MOCK DATA SEEDING EFFECT END >>>>>
+
+  useEffect(() => {
+    if (ENABLE_DASHBOARD_MOCKS) return;
     let isMounted = true;
     const fetchUser = async () => {
       try {
