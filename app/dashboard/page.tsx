@@ -1360,6 +1360,43 @@ const hasSeededMockDataRef = useRef(false);
     return end;
   }, [metricsMonth]);
 
+  const getHabitStatusStyles = useCallback((
+    count: number,
+    goal: number,
+    percentage: number
+  ): {
+    dotClass: string;
+    textClass: string;
+    barClass: string;
+  } => {
+    if (goal > 0 && percentage >= 100) {
+      return {
+        dotClass: 'bg-purple-500',
+        textClass: 'text-purple-400',
+        barClass: 'bg-purple-500',
+      };
+    }
+    if (count <= 0) {
+      return {
+        dotClass: 'bg-red-500',
+        textClass: 'text-red-400',
+        barClass: 'bg-red-500',
+      };
+    }
+    if (count === 1) {
+      return {
+        dotClass: 'bg-yellow-500',
+        textClass: 'text-yellow-400',
+        barClass: 'bg-yellow-500',
+      };
+    }
+    return {
+      dotClass: 'bg-green-500',
+      textClass: 'text-green-400',
+      barClass: 'bg-green-500',
+    };
+  }, []);
+
   const applicationsMetrics = useMemo(() => {
     
     // Count applications in columns: messagedHiringManager, messagedRecruiter, followedUp, interview
@@ -1378,23 +1415,21 @@ const hasSeededMockDataRef = useRef(false);
 
     // Goal is appsWithOutreachPerWeek * 4 (4 weeks per month)
     const goal = userData?.appsWithOutreachPerWeek ? userData.appsWithOutreachPerWeek * 4 : 0;
-    const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
-    const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
-    const statusColor = difference >= 0 ? 'green' : 'yellow';
-    const statusIcon = difference >= 0 ? 'bg-green-500' : 'bg-yellow-500';
-    const statusText = difference >= 0 ? `+${Math.round(difference)}%` : `${Math.round(difference)}%`;
-    const statusTextColor = difference >= 0 ? 'text-green-400' : 'text-yellow-400';
+    const rawPercentage = goal > 0 ? (count / goal) * 100 : 0;
+    const clampedPercentage = Math.min(Math.max(rawPercentage, 0), 100);
+    const styles = getHabitStatusStyles(count, goal, clampedPercentage);
+    const statusText = `${Math.round(clampedPercentage)}%`;
 
     return {
       count,
       goal,
-      percentage,
-      statusColor,
-      statusIcon,
+      percentage: clampedPercentage,
       statusText,
-      statusTextColor,
+      statusTextColor: styles.textClass,
+      statusDotClass: styles.dotClass,
+      statusBarClass: styles.barClass,
     };
-  }, [appColumns, userData, metricsMonth, metricsMonthEnd]);
+  }, [appColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
 
   // Calculate linkedin outreach metrics for this month
   const linkedinOutreachMetrics = useMemo(() => {
@@ -1413,23 +1448,21 @@ const hasSeededMockDataRef = useRef(false);
 
     // Goal is linkedinOutreachPerWeek (converted to monthly) from user's onboarding data
     const goal = userData?.linkedinOutreachPerWeek ? userData.linkedinOutreachPerWeek * 4 : 0;
-    const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
-    const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
-    const statusColor = difference >= 0 ? 'green' : 'yellow';
-    const statusIcon = difference >= 0 ? 'bg-green-500' : 'bg-yellow-500';
-    const statusText = difference >= 0 ? `+${Math.round(difference)}%` : `${Math.round(difference)}%`;
-    const statusTextColor = difference >= 0 ? 'text-green-400' : 'text-yellow-400';
+    const rawPercentage = goal > 0 ? (count / goal) * 100 : 0;
+    const clampedPercentage = Math.min(Math.max(rawPercentage, 0), 100);
+    const styles = getHabitStatusStyles(count, goal, clampedPercentage);
+    const statusText = `${Math.round(clampedPercentage)}%`;
 
     return {
       count,
       goal,
-      percentage,
-      statusColor,
-      statusIcon,
+      percentage: clampedPercentage,
       statusText,
-      statusTextColor,
+      statusTextColor: styles.textClass,
+      statusDotClass: styles.dotClass,
+      statusBarClass: styles.barClass,
     };
-  }, [linkedinOutreachColumns, userData, metricsMonth, metricsMonthEnd]);
+  }, [linkedinOutreachColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
 
   const eventsMetrics = useMemo(() => {
     const qualifyingColumns: EventColumnId[] = ['attended', 'followups'];
@@ -1445,23 +1478,21 @@ const hasSeededMockDataRef = useRef(false);
     });
 
     const goal = userData?.inPersonEventsPerMonth ?? 0;
-    const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
-    const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
-    const statusColor = difference >= 0 ? 'green' : 'yellow';
-    const statusIcon = difference >= 0 ? 'bg-green-500' : 'bg-yellow-500';
-    const statusText = difference >= 0 ? `+${Math.round(difference)}%` : `${Math.round(difference)}%`;
-    const statusTextColor = difference >= 0 ? 'text-green-400' : 'text-yellow-400';
+    const rawPercentage = goal > 0 ? (count / goal) * 100 : 0;
+    const clampedPercentage = Math.min(Math.max(rawPercentage, 0), 100);
+    const styles = getHabitStatusStyles(count, goal, clampedPercentage);
+    const statusText = `${Math.round(clampedPercentage)}%`;
 
     return {
       count,
       goal,
-      percentage,
-      statusColor,
-      statusIcon,
+      percentage: clampedPercentage,
       statusText,
-      statusTextColor,
+      statusTextColor: styles.textClass,
+      statusDotClass: styles.dotClass,
+      statusBarClass: styles.barClass,
     };
-  }, [eventColumns, userData, metricsMonth, metricsMonthEnd]);
+  }, [eventColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
 
   const leetMetrics = useMemo(() => {
     let count = 0;
@@ -1474,23 +1505,21 @@ const hasSeededMockDataRef = useRef(false);
     });
 
     const goal = 4;
-    const percentage = goal > 0 ? Math.min((count / goal) * 100, 100) : 0;
-    const difference = goal > 0 ? ((count - goal) / goal) * 100 : 0;
-    const statusColor = difference >= 0 ? 'green' : 'yellow';
-    const statusIcon = difference >= 0 ? 'bg-green-500' : 'bg-yellow-500';
-    const statusText = difference >= 0 ? `+${Math.round(difference)}%` : `${Math.round(difference)}%`;
-    const statusTextColor = difference >= 0 ? 'text-green-400' : 'text-yellow-400';
+    const rawPercentage = goal > 0 ? (count / goal) * 100 : 0;
+    const clampedPercentage = Math.min(Math.max(rawPercentage, 0), 100);
+    const styles = getHabitStatusStyles(count, goal, clampedPercentage);
+    const statusText = `${Math.round(clampedPercentage)}%`;
 
     return {
       count,
       goal,
-      percentage,
-      statusColor,
-      statusIcon,
+      percentage: clampedPercentage,
       statusText,
-      statusTextColor,
+      statusTextColor: styles.textClass,
+      statusDotClass: styles.dotClass,
+      statusBarClass: styles.barClass,
     };
-  }, [leetColumns, metricsMonth, metricsMonthEnd]);
+  }, [leetColumns, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
 
   const isWithinCurrentMonth = useCallback(
     (value?: string | null) => {
@@ -1679,7 +1708,7 @@ const hasSeededMockDataRef = useRef(false);
                       <FileText className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">Applications</h4>
                     </div>
-                    <div className={`w-3 h-3 ${applicationsMetrics.statusIcon} rounded-full`}></div>
+                    <div className={`w-3 h-3 ${applicationsMetrics.statusDotClass} rounded-full`}></div>
                   </div>
                   <div className="text-3xl font-bold text-white mb-1">{applicationsMetrics.count}</div>
                   <div className="text-sm text-gray-400 mb-3">This month</div>
@@ -1691,8 +1720,8 @@ const hasSeededMockDataRef = useRef(false);
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
                     <div 
-                      className={`${applicationsMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
-                      style={{width: `${Math.min(Math.max(applicationsMetrics.percentage, 0), 100)}%`}}
+                      className={`${applicationsMetrics.statusBarClass} h-2 rounded-full`} 
+                      style={{width: `${applicationsMetrics.percentage}%`}}
                     ></div>
                   </div>
                 </div>
@@ -1706,7 +1735,7 @@ const hasSeededMockDataRef = useRef(false);
                       <MessageCircle className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">Coffee Chats</h4>
                     </div>
-                    <div className={`w-3 h-3 ${linkedinOutreachMetrics.statusIcon} rounded-full`}></div>
+                    <div className={`w-3 h-3 ${linkedinOutreachMetrics.statusDotClass} rounded-full`}></div>
                   </div>
                   <div className="text-3xl font-bold text-white mb-1">{linkedinOutreachMetrics.count}</div>
                   <div className="text-sm text-gray-400 mb-3">This month</div>
@@ -1718,8 +1747,8 @@ const hasSeededMockDataRef = useRef(false);
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
                     <div 
-                      className={`${linkedinOutreachMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
-                      style={{width: `${Math.min(Math.max(linkedinOutreachMetrics.percentage, 0), 100)}%`}}
+                      className={`${linkedinOutreachMetrics.statusBarClass} h-2 rounded-full`} 
+                      style={{width: `${linkedinOutreachMetrics.percentage}%`}}
                     ></div>
                   </div>
                 </div>
@@ -1733,7 +1762,7 @@ const hasSeededMockDataRef = useRef(false);
                       <Users className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">Events</h4>
                     </div>
-                    <div className={`w-3 h-3 ${eventsMetrics.statusIcon} rounded-full`}></div>
+                    <div className={`w-3 h-3 ${eventsMetrics.statusDotClass} rounded-full`}></div>
                   </div>
                   <div className="text-3xl font-bold text-white mb-1">{eventsMetrics.count}</div>
                   <div className="text-sm text-gray-400 mb-3">This month</div>
@@ -1745,8 +1774,8 @@ const hasSeededMockDataRef = useRef(false);
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
                     <div 
-                      className={`${eventsMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
-                      style={{width: `${Math.min(Math.max(eventsMetrics.percentage, 0), 100)}%`}}
+                      className={`${eventsMetrics.statusBarClass} h-2 rounded-full`} 
+                      style={{width: `${eventsMetrics.percentage}%`}}
                     ></div>
                   </div>
                 </div>
@@ -1760,7 +1789,7 @@ const hasSeededMockDataRef = useRef(false);
                       <Code className="text-electric-blue text-xl" />
                       <h4 className="text-white font-semibold">LeetCode</h4>
                     </div>
-                    <div className={`w-3 h-3 ${leetMetrics.statusIcon} rounded-full`}></div>
+                    <div className={`w-3 h-3 ${leetMetrics.statusDotClass} rounded-full`}></div>
                   </div>
                   <div className="text-3xl font-bold text-white mb-1">{leetMetrics.count}</div>
                   <div className="text-sm text-gray-400 mb-3">This month</div>
@@ -1770,8 +1799,8 @@ const hasSeededMockDataRef = useRef(false);
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
                     <div 
-                      className={`${leetMetrics.statusColor === 'green' ? 'bg-electric-blue' : 'bg-yellow-500'} h-2 rounded-full`} 
-                      style={{width: `${Math.min(Math.max(leetMetrics.percentage, 0), 100)}%`}}
+                      className={`${leetMetrics.statusBarClass} h-2 rounded-full`} 
+                      style={{width: `${leetMetrics.percentage}%`}}
                     ></div>
                   </div>
                 </div>
