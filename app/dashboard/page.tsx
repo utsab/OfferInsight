@@ -55,6 +55,8 @@ type EventColumnId = 'upcoming' | 'attending' | 'attended' | 'followups';
 type LeetStatus = 'planned' | 'solved' | 'reflected';
 type LeetColumnId = 'planned' | 'solved' | 'reflected';
 
+type BoardTimeFilter = 'currentMonth' | 'allTime';
+
 // Application type definition
 type Application = {
   id: number;
@@ -187,6 +189,7 @@ export default function Page() {
   const [editingApp, setEditingApp] = useState<Application | null>(null);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('currentMonth');
   const isFetchingRef = useRef(false);
 
   const sensors = useSensors(
@@ -412,6 +415,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [editingLinkedinOutreach, setEditingLinkedinOutreach] = useState<LinkedinOutreach | null>(null);
   const [isDeletingLinkedinOutreach, setIsDeletingLinkedinOutreach] = useState<number | null>(null);
   const [isLoadingLinkedinOutreach, setIsLoadingLinkedinOutreach] = useState(true);
+  const [linkedinOutreachFilter, setLinkedinOutreachFilter] = useState<BoardTimeFilter>('currentMonth');
   const isFetchingLinkedinOutreachRef = useRef(false);
 
   const fetchLinkedinOutreach = useCallback(async () => {
@@ -533,6 +537,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [editingEvent, setEditingEvent] = useState<InPersonEvent | null>(null);
   const [isDeletingEvent, setIsDeletingEvent] = useState<number | null>(null);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [eventsFilter, setEventsFilter] = useState<BoardTimeFilter>('currentMonth');
   const isFetchingEventsRef = useRef(false);
 
   const fetchEvents = useCallback(async () => {
@@ -653,6 +658,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [editingLeet, setEditingLeet] = useState<LeetEntry | null>(null);
 const [isDeletingLeet, setIsDeletingLeet] = useState<number | null>(null);
 const [isLoadingLeet, setIsLoadingLeet] = useState(true);
+  const [leetFilter, setLeetFilter] = useState<BoardTimeFilter>('currentMonth');
 const isFetchingLeetRef = useRef(false);
 // ----- MOCK DATA SEED TRACKER START -----
 const hasSeededMockDataRef = useRef(false);
@@ -1152,7 +1158,7 @@ const hasSeededMockDataRef = useRef(false);
           company: 'Globex',
           message: 'Introduced myself and shared interest in the team.',
           status: 'outreachRequestSent',
-          dateCreated: isoWithDelta({ months: -1, days: -8, hour: 12 }),
+          dateCreated: isoWithDelta({ months: 0, days: -8, hour: 12 }),
           recievedReferral: false,
           userId: 'mock-user',
         },
@@ -1486,6 +1492,78 @@ const hasSeededMockDataRef = useRef(false);
     };
   }, [leetColumns, metricsMonth, metricsMonthEnd]);
 
+  const isWithinCurrentMonth = useCallback(
+    (value?: string | null) => {
+      if (!value) return false;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return false;
+      return d >= metricsMonth && d < metricsMonthEnd;
+    },
+    [metricsMonth, metricsMonthEnd]
+  );
+
+  const filteredAppColumns = useMemo(() => {
+    if (applicationsFilter === 'allTime') return appColumns;
+    const filtered: Record<ApplicationColumnId, Application[]> = {
+      applied: [],
+      messagedRecruiter: [],
+      messagedHiringManager: [],
+      followedUp: [],
+      interview: [],
+    };
+    (Object.keys(appColumns) as ApplicationColumnId[]).forEach(columnId => {
+      filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateCreated));
+    });
+    return filtered;
+  }, [appColumns, applicationsFilter, isWithinCurrentMonth]);
+
+  const filteredLinkedinOutreachColumns = useMemo(() => {
+    if (linkedinOutreachFilter === 'allTime') return linkedinOutreachColumns;
+    const filtered: Record<LinkedinOutreachColumnId, LinkedinOutreach[]> = {
+      outreach: [],
+      accepted: [],
+      followedUpLinkedin: [],
+      linkedinOutreach: [],
+    };
+    (Object.keys(linkedinOutreachColumns) as LinkedinOutreachColumnId[]).forEach(columnId => {
+      filtered[columnId] = linkedinOutreachColumns[columnId].filter(entry =>
+        isWithinCurrentMonth(entry.dateCreated)
+      );
+    });
+    return filtered;
+  }, [linkedinOutreachColumns, linkedinOutreachFilter, isWithinCurrentMonth]);
+
+  const filteredEventColumns = useMemo(() => {
+    if (eventsFilter === 'allTime') return eventColumns;
+    const filtered: Record<EventColumnId, InPersonEvent[]> = {
+      upcoming: [],
+      attending: [],
+      attended: [],
+      followups: [],
+    };
+    (Object.keys(eventColumns) as EventColumnId[]).forEach(columnId => {
+      filtered[columnId] = eventColumns[columnId].filter(event =>
+        isWithinCurrentMonth(event.date)
+      );
+    });
+    return filtered;
+  }, [eventColumns, eventsFilter, isWithinCurrentMonth]);
+
+  const filteredLeetColumns = useMemo(() => {
+    if (leetFilter === 'allTime') return leetColumns;
+    const filtered: Record<LeetColumnId, LeetEntry[]> = {
+      planned: [],
+      solved: [],
+      reflected: [],
+    };
+    (Object.keys(leetColumns) as LeetColumnId[]).forEach(columnId => {
+      filtered[columnId] = leetColumns[columnId].filter(entry =>
+        isWithinCurrentMonth(entry.dateCreated)
+      );
+    });
+    return filtered;
+  }, [leetColumns, leetFilter, isWithinCurrentMonth]);
+
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
   };
@@ -1705,8 +1783,31 @@ const hasSeededMockDataRef = useRef(false);
         {/* Applications Content */}
         {activeTab === 'applications' && (
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <h4 className="text-xl font-bold text-white">High Quality Applications</h4>
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span>Show:</span>
+                <button
+                  onClick={() => setApplicationsFilter('currentMonth')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    applicationsFilter === 'currentMonth'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  Current Month
+                </button>
+                <button
+                  onClick={() => setApplicationsFilter('allTime')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    applicationsFilter === 'allTime'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  All Time
+                </button>
+              </div>
               <button 
                 onClick={() => {
                   setEditingApp(null);
@@ -1725,11 +1826,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Applied ({appColumns.applied.length})
+                    Applied ({filteredAppColumns.applied.length})
                   </h5>
-                  <SortableContext items={appColumns.applied.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredAppColumns.applied.map(c => c.id)} strategy={rectSortingStrategy}>
                     <DroppableColumn id="applied">
-                      {appColumns.applied.map(card => (
+                      {filteredAppColumns.applied.map(card => (
                         <SortableAppCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -1739,11 +1840,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Messaged Hiring Manager ({appColumns.messagedHiringManager.length})
+                    Messaged Hiring Manager ({filteredAppColumns.messagedHiringManager.length})
                   </h5>
-                  <SortableContext items={appColumns.messagedHiringManager.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredAppColumns.messagedHiringManager.map(c => c.id)} strategy={rectSortingStrategy}>
                     <DroppableColumn id="messagedHiringManager">
-                      {appColumns.messagedHiringManager.map(card => (
+                      {filteredAppColumns.messagedHiringManager.map(card => (
                         <SortableAppCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -1753,11 +1854,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Messaged Recruiter ({appColumns.messagedRecruiter.length})
+                    Messaged Recruiter ({filteredAppColumns.messagedRecruiter.length})
                   </h5>
-                  <SortableContext items={appColumns.messagedRecruiter.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredAppColumns.messagedRecruiter.map(c => c.id)} strategy={rectSortingStrategy}>
                     <DroppableColumn id="messagedRecruiter">
-                      {appColumns.messagedRecruiter.map(card => (
+                      {filteredAppColumns.messagedRecruiter.map(card => (
                         <SortableAppCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -1767,11 +1868,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Followed Up ({appColumns.followedUp.length})
+                    Followed Up ({filteredAppColumns.followedUp.length})
                   </h5>
-                  <SortableContext items={appColumns.followedUp.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredAppColumns.followedUp.map(c => c.id)} strategy={rectSortingStrategy}>
                     <DroppableColumn id="followedUp">
-                      {appColumns.followedUp.map(card => (
+                      {filteredAppColumns.followedUp.map(card => (
                         <SortableAppCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -1781,11 +1882,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-pink-500 rounded-full mr-2"></div>
-                    Interview ({appColumns.interview.length})
+                    Interview ({filteredAppColumns.interview.length})
                   </h5>
-                  <SortableContext items={appColumns.interview.map(c => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredAppColumns.interview.map(c => c.id)} strategy={rectSortingStrategy}>
                     <DroppableColumn id="interview">
-                      {appColumns.interview.map(card => (
+                      {filteredAppColumns.interview.map(card => (
                         <SortableAppCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -1879,8 +1980,31 @@ const hasSeededMockDataRef = useRef(false);
         {/* Coffee Chats Content */}
         {activeTab === 'interviews' && (
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <h4 className="text-xl font-bold text-white">Coffee Chats</h4>
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span>Show:</span>
+                <button
+                  onClick={() => setLinkedinOutreachFilter('currentMonth')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    linkedinOutreachFilter === 'currentMonth'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  Current Month
+                </button>
+                <button
+                  onClick={() => setLinkedinOutreachFilter('allTime')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    linkedinOutreachFilter === 'allTime'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  All Time
+                </button>
+              </div>
               <button 
                 onClick={() => {
                   setEditingLinkedinOutreach(null);
@@ -1899,11 +2023,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Outreach Request Sent ({linkedinOutreachColumns.outreach.length})
+                    Outreach Request Sent ({filteredLinkedinOutreachColumns.outreach.length})
                   </h5>
-                  <SortableContext items={linkedinOutreachColumns.outreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredLinkedinOutreachColumns.outreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="outreach">
-                      {linkedinOutreachColumns.outreach.map(card => (
+                      {filteredLinkedinOutreachColumns.outreach.map(card => (
                         <SortableLinkedinOutreachCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -1913,11 +2037,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Request Accepted ({linkedinOutreachColumns.accepted.length})
+                    Request Accepted ({filteredLinkedinOutreachColumns.accepted.length})
                   </h5>
-                  <SortableContext items={linkedinOutreachColumns.accepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredLinkedinOutreachColumns.accepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="accepted">
-                      {linkedinOutreachColumns.accepted.map(card => (
+                      {filteredLinkedinOutreachColumns.accepted.map(card => (
                         <SortableLinkedinOutreachCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -1927,11 +2051,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Followed Up ({linkedinOutreachColumns.followedUpLinkedin.length})
+                    Followed Up ({filteredLinkedinOutreachColumns.followedUpLinkedin.length})
                   </h5>
-                  <SortableContext items={linkedinOutreachColumns.followedUpLinkedin.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredLinkedinOutreachColumns.followedUpLinkedin.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="followedUpLinkedin">
-                      {linkedinOutreachColumns.followedUpLinkedin.map(card => (
+                      {filteredLinkedinOutreachColumns.followedUpLinkedin.map(card => (
                         <SortableLinkedinOutreachCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -1941,11 +2065,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Coffee Chat ({linkedinOutreachColumns.linkedinOutreach.length})
+                    Coffee Chat ({filteredLinkedinOutreachColumns.linkedinOutreach.length})
                   </h5>
-                  <SortableContext items={linkedinOutreachColumns.linkedinOutreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredLinkedinOutreachColumns.linkedinOutreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="linkedinOutreach">
-                      {linkedinOutreachColumns.linkedinOutreach.map(card => (
+                      {filteredLinkedinOutreachColumns.linkedinOutreach.map(card => (
                         <SortableLinkedinOutreachCard key={card.id} card={card} />
                       ))}
                     </DroppableColumn>
@@ -2034,8 +2158,31 @@ const hasSeededMockDataRef = useRef(false);
         {/* Events Content */}
         {activeTab === 'events' && (
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <h4 className="text-xl font-bold text-white">In-Person Events</h4>
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span>Show:</span>
+                <button
+                  onClick={() => setEventsFilter('currentMonth')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    eventsFilter === 'currentMonth'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  Current Month
+                </button>
+                <button
+                  onClick={() => setEventsFilter('allTime')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    eventsFilter === 'allTime'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  All Time
+                </button>
+              </div>
               <button
                 onClick={() => {
                   setEditingEvent(null);
@@ -2054,11 +2201,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Scheduled ({eventColumns.upcoming.length})
+                    Scheduled ({filteredEventColumns.upcoming.length})
                   </h5>
-                  <SortableContext items={eventColumns.upcoming.map(event => String(event.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredEventColumns.upcoming.map(event => String(event.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="upcoming">
-                      {eventColumns.upcoming.map(event => (
+                      {filteredEventColumns.upcoming.map(event => (
                         <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
@@ -2068,11 +2215,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Attending ({eventColumns.attending.length})
+                    Attending ({filteredEventColumns.attending.length})
                   </h5>
-                  <SortableContext items={eventColumns.attending.map(event => String(event.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredEventColumns.attending.map(event => String(event.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="attending">
-                      {eventColumns.attending.map(event => (
+                      {filteredEventColumns.attending.map(event => (
                         <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
@@ -2082,11 +2229,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Attended ({eventColumns.attended.length})
+                    Attended ({filteredEventColumns.attended.length})
                   </h5>
-                  <SortableContext items={eventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredEventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="attended">
-                      {eventColumns.attended.map(event => (
+                      {filteredEventColumns.attended.map(event => (
                         <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
@@ -2096,11 +2243,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Followed Up ({eventColumns.followups.length})
+                    Followed Up ({filteredEventColumns.followups.length})
                   </h5>
-                  <SortableContext items={eventColumns.followups.map(event => String(event.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredEventColumns.followups.map(event => String(event.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="followups">
-                      {eventColumns.followups.map(event => (
+                      {filteredEventColumns.followups.map(event => (
                         <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
@@ -2201,8 +2348,31 @@ const hasSeededMockDataRef = useRef(false);
         {/* LeetCode Content */}
         {activeTab === 'leetcode' && (
           <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <h4 className="text-xl font-bold text-white">LeetCode Progress</h4>
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span>Show:</span>
+                <button
+                  onClick={() => setLeetFilter('currentMonth')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    leetFilter === 'currentMonth'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  Current Month
+                </button>
+                <button
+                  onClick={() => setLeetFilter('allTime')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    leetFilter === 'allTime'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  All Time
+                </button>
+              </div>
               <button
                 onClick={() => {
                   setEditingLeet(null);
@@ -2221,11 +2391,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Planned ({leetColumns.planned.length})
+                    Planned ({filteredLeetColumns.planned.length})
                   </h5>
-                  <SortableContext items={leetColumns.planned.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredLeetColumns.planned.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="planned">
-                      {leetColumns.planned.map(entry => (
+                      {filteredLeetColumns.planned.map(entry => (
                         <SortableLeetCard key={entry.id} card={entry} />
                       ))}
                     </DroppableColumn>
@@ -2235,11 +2405,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Solved ({leetColumns.solved.length})
+                    Solved ({filteredLeetColumns.solved.length})
                   </h5>
-                  <SortableContext items={leetColumns.solved.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredLeetColumns.solved.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="solved">
-                      {leetColumns.solved.map(entry => (
+                      {filteredLeetColumns.solved.map(entry => (
                         <SortableLeetCard key={entry.id} card={entry} />
                       ))}
                     </DroppableColumn>
@@ -2249,11 +2419,11 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Reflected ({leetColumns.reflected.length})
+                    Reflected ({filteredLeetColumns.reflected.length})
                   </h5>
-                  <SortableContext items={leetColumns.reflected.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
+                  <SortableContext items={filteredLeetColumns.reflected.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                     <DroppableColumn id="reflected">
-                      {leetColumns.reflected.map(entry => (
+                      {filteredLeetColumns.reflected.map(entry => (
                         <SortableLeetCard key={entry.id} card={entry} />
                       ))}
                     </DroppableColumn>
