@@ -1521,6 +1521,38 @@ const hasSeededMockDataRef = useRef(false);
     };
   }, [leetColumns, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
 
+  // Calculate all-time counts for each metric
+  const applicationsAllTimeCount = useMemo(() => {
+    const qualifyingColumns: ApplicationColumnId[] = ['messagedHiringManager', 'messagedRecruiter', 'followedUp', 'interview'];
+    let count = 0;
+    qualifyingColumns.forEach(col => {
+      count += appColumns[col].length;
+    });
+    return count;
+  }, [appColumns]);
+
+  const linkedinOutreachAllTimeCount = useMemo(() => {
+    const allColumns: LinkedinOutreachColumnId[] = ['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach'];
+    let count = 0;
+    allColumns.forEach(col => {
+      count += linkedinOutreachColumns[col].length;
+    });
+    return count;
+  }, [linkedinOutreachColumns]);
+
+  const eventsAllTimeCount = useMemo(() => {
+    const qualifyingColumns: EventColumnId[] = ['attended', 'followups'];
+    let count = 0;
+    qualifyingColumns.forEach(col => {
+      count += eventColumns[col].length;
+    });
+    return count;
+  }, [eventColumns]);
+
+  const leetAllTimeCount = useMemo(() => {
+    return leetColumns.reflected.length;
+  }, [leetColumns]);
+
   const isWithinCurrentMonth = useCallback(
     (value?: string | null) => {
       if (!value) return false;
@@ -1710,9 +1742,17 @@ const hasSeededMockDataRef = useRef(false);
                     </div>
                     <div className={`w-3 h-3 ${applicationsMetrics.statusDotClass} rounded-full`}></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">{applicationsMetrics.count}</div>
-                  <div className="text-sm text-gray-400 mb-3">This month</div>
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-end justify-between mb-1">
+                    <div>
+                      <div className="text-3xl font-bold text-white">{applicationsMetrics.count}</div>
+                      <div className="text-sm text-gray-400">This month</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-300">{applicationsAllTimeCount}</div>
+                      <div className="text-xs text-gray-500">All Time</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-3">
                     <span className="text-gray-400">Goal: {applicationsMetrics.goal || '—'}</span>
                     {applicationsMetrics.goal > 0 && (
                       <span className={applicationsMetrics.statusTextColor}>{applicationsMetrics.statusText}</span>
@@ -1737,9 +1777,17 @@ const hasSeededMockDataRef = useRef(false);
                     </div>
                     <div className={`w-3 h-3 ${linkedinOutreachMetrics.statusDotClass} rounded-full`}></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">{linkedinOutreachMetrics.count}</div>
-                  <div className="text-sm text-gray-400 mb-3">This month</div>
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-end justify-between mb-1">
+                    <div>
+                      <div className="text-3xl font-bold text-white">{linkedinOutreachMetrics.count}</div>
+                      <div className="text-sm text-gray-400">This month</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-300">{linkedinOutreachAllTimeCount}</div>
+                      <div className="text-xs text-gray-500">All Time</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-3">
                     <span className="text-gray-400">Goal: {linkedinOutreachMetrics.goal || '—'}</span>
                     {linkedinOutreachMetrics.goal > 0 && (
                       <span className={linkedinOutreachMetrics.statusTextColor}>{linkedinOutreachMetrics.statusText}</span>
@@ -1764,9 +1812,17 @@ const hasSeededMockDataRef = useRef(false);
                     </div>
                     <div className={`w-3 h-3 ${eventsMetrics.statusDotClass} rounded-full`}></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">{eventsMetrics.count}</div>
-                  <div className="text-sm text-gray-400 mb-3">This month</div>
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-end justify-between mb-1">
+                    <div>
+                      <div className="text-3xl font-bold text-white">{eventsMetrics.count}</div>
+                      <div className="text-sm text-gray-400">This month</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-300">{eventsAllTimeCount}</div>
+                      <div className="text-xs text-gray-500">All Time</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-3">
                     <span className="text-gray-400">Goal: {eventsMetrics.goal || '—'}</span>
                     {eventsMetrics.goal > 0 && (
                       <span className={eventsMetrics.statusTextColor}>{eventsMetrics.statusText}</span>
@@ -1791,9 +1847,17 @@ const hasSeededMockDataRef = useRef(false);
                     </div>
                     <div className={`w-3 h-3 ${leetMetrics.statusDotClass} rounded-full`}></div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-1">{leetMetrics.count}</div>
-                  <div className="text-sm text-gray-400 mb-3">This month</div>
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-end justify-between mb-1">
+                    <div>
+                      <div className="text-3xl font-bold text-white">{leetMetrics.count}</div>
+                      <div className="text-sm text-gray-400">This month</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-300">{leetAllTimeCount}</div>
+                      <div className="text-xs text-gray-500">All Time</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-3">
                     <span className="text-gray-400">Goal: {leetMetrics.goal}</span>
                     <span className={leetMetrics.statusTextColor}>{leetMetrics.statusText}</span>
                   </div>
