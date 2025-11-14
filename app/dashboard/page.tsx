@@ -10,6 +10,77 @@ import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus, X, Ed
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
+// ===== PROJECTED OFFER DATE FORMULA START =====
+// Copied from onboarding page3-v2 so product engineers can tweak independently.
+function calculateProjectedOfferDate(
+  appsWithOutreachPerWeek: number,
+  linkedinOutreachPerWeek: number,
+  inPersonEventsPerMonth: number,
+  careerFairsPerYear: number,
+  referenceDate?: Date
+) {
+  let offersPerAppWithOutreach = 0.0025;
+  let offersPerLinkedinOutreachAttempt = 0.00075;
+  let offersPerInPersonEvent = 0.0075;
+  let offersPerCareerFair = 0.1;
+
+  let bonusPoints = 0;
+
+  if (linkedinOutreachPerWeek >= 20) {
+    bonusPoints += 20;
+  } else if (linkedinOutreachPerWeek >= 12) {
+    bonusPoints += 11;
+  } else if (linkedinOutreachPerWeek >= 6) {
+    bonusPoints += 6;
+  } else if (linkedinOutreachPerWeek >= 1) {
+    bonusPoints += 1;
+  }
+
+  if (inPersonEventsPerMonth >= 8) {
+    bonusPoints += 80;
+  } else if (inPersonEventsPerMonth >= 4) {
+    bonusPoints += 40;
+  } else if (inPersonEventsPerMonth >= 2) {
+    bonusPoints += 20;
+  } else if (inPersonEventsPerMonth >= 1) {
+    bonusPoints += 10;
+  }
+
+  if (careerFairsPerYear >= 4) {
+    bonusPoints += 80;
+  } else if (careerFairsPerYear >= 3) {
+    bonusPoints += 40;
+  } else if (careerFairsPerYear >= 2) {
+    bonusPoints += 20;
+  } else if (careerFairsPerYear >= 1) {
+    bonusPoints += 10;
+  }
+
+  const a = 2.0;
+  const b = 0.01;
+  const multiplier = 3 - a * Math.exp(-b * bonusPoints);
+
+  offersPerAppWithOutreach *= multiplier;
+  offersPerLinkedinOutreachAttempt *= multiplier;
+  offersPerInPersonEvent *= multiplier;
+  offersPerCareerFair *= multiplier;
+
+  const totalOffersPerWeek =
+    appsWithOutreachPerWeek * offersPerAppWithOutreach +
+    linkedinOutreachPerWeek * offersPerLinkedinOutreachAttempt +
+    inPersonEventsPerMonth * offersPerInPersonEvent +
+    (careerFairsPerYear / 52) * offersPerCareerFair;
+
+  if (!Number.isFinite(totalOffersPerWeek) || totalOffersPerWeek <= 0) {
+    return new Date();
+  }
+
+  const totalWeeks = 3 + 1 / totalOffersPerWeek;
+  const baseDate = referenceDate ?? new Date();
+  return new Date(baseDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
+}
+// ===== PROJECTED OFFER DATE FORMULA END =====
+
 // ===== MOCK DATA FEATURE TOGGLE START =====
 // Toggle this flag or comment out the seeding effect below to disable mock data.
 const ENABLE_DASHBOARD_MOCKS = false;
@@ -19,7 +90,7 @@ const ENABLE_DASHBOARD_MOCKS = false;
 // Toggle this flag to enable editing dateCreated in create/edit modals for testing and debugging.
 // When enabled, a date input field will appear in all modals allowing you to set/change the dateCreated value.
 // The date will be properly saved to the database as a DateTime when creating or updating records.
-const ENABLE_DATE_CREATED_EDITING = false;
+const ENABLE_DATE_CREATED_EDITING = true;
 // ===== DATE CREATED EDITING TOGGLE END =====
 
 type TimeParts = {
@@ -198,6 +269,7 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(true);
   const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('currentMonth');
   const isFetchingRef = useRef(false);
+  const lastProjectedOfferSyncRef = useRef<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
@@ -1066,6 +1138,7 @@ const hasSeededMockDataRef = useRef(false);
     targetOfferDate?: string | null;
     inPersonEventsPerMonth?: number | null;
     resetStartDate?: string | null;
+    careerFairsPerYear?: number | null;
   } | null>(null);
 
   // <<<<< MOCK DATA SEEDING EFFECT START >>>>>
@@ -1471,35 +1544,72 @@ const hasSeededMockDataRef = useRef(false);
     };
   }, [linkedinOutreachColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
 
+  const careerFairsThisYear = useMemo(() => {
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const yearEnd = new Date(now.getFullYear() + 1, 0, 1);
+    const eligibleStatuses: InPersonEventStatus[] = ['attended', 'followUp'];
+    let count = 0;
+    (Object.values(eventColumns) as InPersonEvent[][]).forEach(columnEvents => {
+      columnEvents.forEach(event => {
+        if (!event.careerFair || !event.date) return;
+        if (!eligibleStatuses.includes(event.status)) return;
+        const eventDate = new Date(event.date);
+        if (Number.isNaN(eventDate.getTime())) return;
+        if (eventDate >= yearStart && eventDate < yearEnd) {
+          count += 1;
+        }
+      });
+    });
+    return count;
+  }, [eventColumns]);
+
+  const careerFairPlanGoal = userData?.careerFairsPerYear ?? 0;
+
+  const careerFairProgress = useMemo(() => {
+    if (careerFairPlanGoal <= 0) return 1;
+    if (!careerFairsThisYear || careerFairsThisYear <= 0) return 0;
+    return Math.min(careerFairsThisYear / careerFairPlanGoal, 1);
+  }, [careerFairsThisYear, careerFairPlanGoal]);
+
   const eventsMetrics = useMemo(() => {
     const qualifyingColumns: EventColumnId[] = ['attended', 'followups'];
-    let count = 0;
+    let eventCount = 0;
+    let careerFairCount = 0;
 
     qualifyingColumns.forEach(col => {
       eventColumns[col].forEach(event => {
         const eventDate = new Date(event.date);
         if (!Number.isNaN(eventDate.getTime()) && eventDate >= metricsMonth && eventDate < metricsMonthEnd) {
-          count++;
+          if (event.careerFair) {
+            careerFairCount++;
+          } else {
+            eventCount++;
+          }
         }
       });
     });
 
-    const goal = userData?.inPersonEventsPerMonth ?? 0;
-    const rawPercentage = goal > 0 ? (count / goal) * 100 : 0;
+    const baseGoal = userData?.inPersonEventsPerMonth ?? 0;
+    const fairGoalAnnual = careerFairPlanGoal > 0 ? careerFairPlanGoal : 0;
+    const combinedGoal = baseGoal + fairGoalAnnual;
+    const combinedCount = eventCount + careerFairCount;
+    const rawPercentage = combinedGoal > 0 ? (combinedCount / combinedGoal) * 100 : 0;
     const clampedPercentage = Math.min(Math.max(rawPercentage, 0), 100);
-    const styles = getHabitStatusStyles(count, goal, clampedPercentage);
+    const styles = getHabitStatusStyles(combinedCount, combinedGoal, clampedPercentage);
     const statusText = `${Math.round(clampedPercentage)}%`;
 
     return {
-      count,
-      goal,
+      count: eventCount,
+      totalCount: combinedCount,
+      goal: combinedGoal,
       percentage: clampedPercentage,
       statusText,
       statusTextColor: styles.textClass,
       statusDotClass: styles.dotClass,
       statusBarClass: styles.barClass,
     };
-  }, [eventColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
+  }, [eventColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles, careerFairPlanGoal]);
 
   const leetMetrics = useMemo(() => {
     let count = 0;
@@ -1569,6 +1679,105 @@ const hasSeededMockDataRef = useRef(false);
     },
     [metricsMonth, metricsMonthEnd]
   );
+
+  const PROJECTED_WEEKS_PER_MONTH = 4;
+
+  const derivedPlanStartDate = useMemo(() => {
+    if (!targetOfferDate || !userData) return null;
+
+    const planApps = userData.appsWithOutreachPerWeek ?? 0;
+    const planLinkedin = userData.linkedinOutreachPerWeek ?? 0;
+    const planEvents = userData.inPersonEventsPerMonth ?? 0;
+    const planFairs = userData.careerFairsPerYear ?? 0;
+
+    const epoch = new Date(0);
+    const planDurationDate = calculateProjectedOfferDate(
+      planApps,
+      planLinkedin,
+      planEvents,
+      planFairs,
+      epoch
+    );
+    const planDurationMs = planDurationDate.getTime() - epoch.getTime();
+    if (!Number.isFinite(planDurationMs) || planDurationMs <= 0) return null;
+
+    return new Date(targetOfferDate.getTime() - planDurationMs);
+  }, [
+    targetOfferDate,
+    userData?.appsWithOutreachPerWeek,
+    userData?.linkedinOutreachPerWeek,
+    userData?.inPersonEventsPerMonth,
+    userData?.careerFairsPerYear,
+    userData,
+  ]);
+
+  const projectedOfferDate = useMemo(() => {
+    const appsPerWeekRaw = applicationsMetrics.count / PROJECTED_WEEKS_PER_MONTH;
+    const linkedinPerWeekRaw = linkedinOutreachMetrics.count / PROJECTED_WEEKS_PER_MONTH;
+    const appsPerWeek = Number.isFinite(appsPerWeekRaw) ? appsPerWeekRaw : 0;
+    const linkedinPerWeek = Number.isFinite(linkedinPerWeekRaw) ? linkedinPerWeekRaw : 0;
+    const eventsPerMonth = Number.isFinite(eventsMetrics.count) ? eventsMetrics.count : 0;
+    const careerFairsPerYear = careerFairPlanGoal > 0
+      ? careerFairPlanGoal * careerFairProgress
+      : careerFairsThisYear;
+
+    const referenceDate = userData?.resetStartDate
+      ? new Date(userData.resetStartDate)
+      : derivedPlanStartDate ?? undefined;
+
+    return calculateProjectedOfferDate(
+      appsPerWeek,
+      linkedinPerWeek,
+      eventsPerMonth,
+      careerFairsPerYear,
+      referenceDate
+    );
+  }, [
+    applicationsMetrics.count,
+    linkedinOutreachMetrics.count,
+    eventsMetrics.count,
+    careerFairsThisYear,
+    careerFairPlanGoal,
+    careerFairProgress,
+    derivedPlanStartDate,
+    userData?.careerFairsPerYear,
+    userData?.resetStartDate,
+  ]);
+
+  const projectedOfferDateText = useMemo(() => {
+    try {
+      return projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch {
+      return '—';
+    }
+  }, [projectedOfferDate]);
+
+  useEffect(() => {
+    if (!projectedOfferDate) return;
+    const iso = projectedOfferDate.toISOString();
+    if (lastProjectedOfferSyncRef.current === iso) return;
+
+    const controller = new AbortController();
+
+    fetch('/api/users/projected-offer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectedOfferDate: iso }),
+      signal: controller.signal,
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to update projected offer date');
+        }
+        lastProjectedOfferSyncRef.current = iso;
+      })
+      .catch(error => {
+        if (controller.signal.aborted) return;
+        console.error('Error syncing projected offer date:', error);
+      });
+
+    return () => controller.abort();
+  }, [projectedOfferDate]);
 
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
@@ -1721,11 +1930,18 @@ const hasSeededMockDataRef = useRef(false);
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-white font-bold text-lg flex items-center">
                   <CalendarCheck className="text-electric-blue mr-3" />
-                  Target Offer Date
+                  Offer Date Forecast
                 </h2>
               </div>
-              <div className="flex items-center justify-center">
-                <div className="text-5xl font-bold text-electric-blue text-center">{targetOfferDateText}</div>
+              <div className="flex flex-col gap-4 md:flex-row md:gap-8">
+                <div className="flex-1 rounded-lg bg-gray-800/60 border border-electric-blue/20 p-4 text-center">
+                  <div className="text-sm uppercase tracking-widest text-gray-400 mb-2">Target Offer Date</div>
+                  <div className="text-4xl md:text-5xl font-bold text-electric-blue">{targetOfferDateText}</div>
+                </div>
+                <div className="flex-1 rounded-lg bg-gray-800/60 border border-purple-400/30 p-4 text-center">
+                  <div className="text-sm uppercase tracking-widest text-gray-400 mb-2">Projected Offer Date</div>
+                  <div className="text-4xl md:text-5xl font-bold text-purple-300">{projectedOfferDateText}</div>
+                </div>
               </div>
               <div className="mt-2 text-left">
                 <Link href="/onboarding/page3-v2" className="text-sm text-gray-300 hover:text-white underline underline-offset-2">
@@ -1821,7 +2037,7 @@ const hasSeededMockDataRef = useRef(false);
                   </div>
                   <div className="flex items-end justify-between mb-1">
                     <div>
-                      <div className="text-3xl font-bold text-white">{eventsMetrics.count}</div>
+                      <div className="text-3xl font-bold text-white">{eventsMetrics.totalCount ?? eventsMetrics.count}</div>
                       <div className="text-sm text-gray-400">This month</div>
                     </div>
                     <div className="text-right">
