@@ -65,6 +65,9 @@ export function AuthenticatedUserButton() {
           {showSettingsDropdown && (
             <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-light-steel-blue rounded-lg shadow-lg z-50">
               <div className="py-2">
+                {/* ===== PROFILE & PREFERENCES: Commented out until features are implemented ===== */}
+                {/* Uncomment the buttons below when Profile and Preferences features are ready */}
+                {/* 
                 <button 
                   onClick={() => setShowSettingsDropdown(false)}
                   className="w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center"
@@ -78,6 +81,7 @@ export function AuthenticatedUserButton() {
                   <Cog className="mr-2" />Preferences
                 </button>
                 <hr className="border-light-steel-blue my-1" />
+                */}
                 <div className="px-4 py-2">
                   <SignOut />
                 </div>
