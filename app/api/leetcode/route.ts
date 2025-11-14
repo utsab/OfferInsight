@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { problem, problemType, difficulty, url, reflection, status } = await request.json();
+    const { problem, problemType, difficulty, url, reflection, status, dateCreated } = await request.json(); // ===== DATE CREATED EDITING =====
 
     if (!problem?.trim()) {
       return NextResponse.json({ error: "Problem title is required" }, { status: 400 });
@@ -53,6 +53,8 @@ export async function POST(request: Request) {
         reflection: reflection?.trim() || null,
         status: status || "planned",
         userId: session.user.id,
+        // ===== DATE CREATED EDITING: Allow setting dateCreated if provided =====
+        dateCreated: dateCreated ? new Date(dateCreated) : undefined,
       },
     });
 
@@ -117,7 +119,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id, problem, problemType, difficulty, url, reflection, status } = await request.json();
+    const { id, problem, problemType, difficulty, url, reflection, status, dateCreated } = await request.json(); // ===== DATE CREATED EDITING =====
 
     if (!id) {
       return NextResponse.json({ error: "Problem ID is required" }, { status: 400 });
@@ -143,6 +145,8 @@ export async function PUT(request: Request) {
         ...(url !== undefined ? { url: url?.trim() || null } : {}),
         ...(reflection !== undefined ? { reflection: reflection?.trim() || null } : {}),
         ...(status !== undefined ? { status } : {}),
+        // ===== DATE CREATED EDITING: Allow updating dateCreated if provided =====
+        ...(dateCreated !== undefined ? { dateCreated: new Date(dateCreated) } : {}),
       },
     });
 

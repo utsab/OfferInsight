@@ -50,6 +50,7 @@ export async function POST(request: Request) {
       msgToRecruiter,
       notes,
       status,
+      dateCreated, // ===== DATE CREATED EDITING =====
     } = body;
 
     if (!company) {
@@ -69,6 +70,8 @@ export async function POST(request: Request) {
         notes: notes || null,
         status: status || "applied",
         userId: session.user.id,
+        // ===== DATE CREATED EDITING: Allow setting dateCreated if provided =====
+        dateCreated: dateCreated ? new Date(dateCreated) : undefined,
       },
     });
 
@@ -164,6 +167,7 @@ export async function PUT(request: Request) {
       msgToRecruiter,
       notes,
       status,
+      dateCreated, // ===== DATE CREATED EDITING =====
     } = body;
 
     if (!id) {
@@ -200,6 +204,8 @@ export async function PUT(request: Request) {
       updateData.msgToRecruiter = msgToRecruiter;
     if (notes !== undefined) updateData.notes = notes;
     if (status !== undefined) updateData.status = status;
+    // ===== DATE CREATED EDITING: Allow updating dateCreated if provided =====
+    if (dateCreated !== undefined) updateData.dateCreated = new Date(dateCreated);
 
     const updatedApplication = await prisma.applications_With_Outreach.update({
       where: { id },

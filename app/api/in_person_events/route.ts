@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { event, date, location, url, notes, status, careerFair, numPeopleSpokenTo, numLinkedInRequests, numOfInterviews } = body;
+    const { event, date, location, url, notes, status, careerFair, numPeopleSpokenTo, numLinkedInRequests, numOfInterviews, dateCreated } = body; // ===== DATE CREATED EDITING =====
 
     if (!event || !date) {
       return NextResponse.json(
@@ -62,6 +62,8 @@ export async function POST(request: Request) {
         numPeopleSpokenTo: numPeopleSpokenTo ?? null,
         numLinkedInRequests: numLinkedInRequests ?? null,
         numOfInterviews: numOfInterviews ?? null,
+        // ===== DATE CREATED EDITING: Allow setting dateCreated if provided =====
+        dateCreated: dateCreated ? new Date(dateCreated) : undefined,
       },
     });
 
@@ -154,6 +156,7 @@ export async function PUT(request: Request) {
       numLinkedInRequests,
       numOfInterviews,
       careerFair,
+      dateCreated, // ===== DATE CREATED EDITING =====
     } = body;
 
     if (!id) {
@@ -192,6 +195,8 @@ export async function PUT(request: Request) {
       updateData.numOfInterviews = numOfInterviews;
     if (careerFair !== undefined)
       updateData.careerFair = careerFair;
+    // ===== DATE CREATED EDITING: Allow updating dateCreated if provided =====
+    if (dateCreated !== undefined) updateData.dateCreated = new Date(dateCreated);
 
     const updatedEvent = await prisma.in_Person_Events.update({
       where: { id },

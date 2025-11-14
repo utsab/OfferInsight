@@ -12,8 +12,15 @@ const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2,
 
 // ===== MOCK DATA FEATURE TOGGLE START =====
 // Toggle this flag or comment out the seeding effect below to disable mock data.
-const ENABLE_DASHBOARD_MOCKS = true;
+const ENABLE_DASHBOARD_MOCKS = false;
 // ===== MOCK DATA FEATURE TOGGLE END =====
+
+// ===== DATE CREATED EDITING TOGGLE START =====
+// Toggle this flag to enable editing dateCreated in create/edit modals for testing and debugging.
+// When enabled, a date input field will appear in all modals allowing you to set/change the dateCreated value.
+// The date will be properly saved to the database as a DateTime when creating or updating records.
+const ENABLE_DATE_CREATED_EDITING = false;
+// ===== DATE CREATED EDITING TOGGLE END =====
 
 type TimeParts = {
   hour: string;
@@ -2614,6 +2621,19 @@ function ApplicationModal({
   onClose: () => void; 
   onSave: (data: Partial<Application>) => void;
 }) {
+  // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
+  const toLocalDate = (value: string) => {
+    try {
+      const date = new Date(value);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
   type ApplicationFormData = {
     company: string;
     hiringManager: string;
@@ -2622,6 +2642,7 @@ function ApplicationModal({
     msgToRecruiter: string;
     notes: string;
     status: ApplicationStatus;
+    dateCreated: string; // ===== DATE CREATED EDITING: Added for testing/debugging =====
   };
 
   const [formData, setFormData] = useState<ApplicationFormData>({
@@ -2632,6 +2653,7 @@ function ApplicationModal({
     msgToRecruiter: application?.msgToRecruiter || '',
     notes: application?.notes || '',
     status: application?.status || 'applied',
+    dateCreated: application?.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE CREATED EDITING =====
   });
 
   // Update form data when application changes
@@ -2645,6 +2667,7 @@ function ApplicationModal({
         msgToRecruiter: application.msgToRecruiter || '',
         notes: application.notes || '',
         status: application.status ?? 'applied',
+        dateCreated: application.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE CREATED EDITING =====
       });
     } else {
       setFormData({
@@ -2655,6 +2678,7 @@ function ApplicationModal({
         msgToRecruiter: '',
         notes: '',
         status: 'applied',
+        dateCreated: '', // ===== DATE CREATED EDITING =====
       });
     }
   }, [application]);
@@ -2665,7 +2689,20 @@ function ApplicationModal({
       alert('Company name is required');
       return;
     }
-    onSave(formData);
+    // ===== DATE CREATED EDITING: Convert date string to ISO DateTime if provided =====
+    const submitData: Partial<Application> = { ...formData };
+    if (ENABLE_DATE_CREATED_EDITING && formData.dateCreated) {
+      try {
+        // Convert local date to ISO string (midnight UTC of that date)
+        const date = new Date(formData.dateCreated);
+        if (!isNaN(date.getTime())) {
+          submitData.dateCreated = date.toISOString();
+        }
+      } catch (error) {
+        console.error('Error parsing dateCreated:', error);
+      }
+    }
+    onSave(submitData);
   };
 
   return (
@@ -2765,6 +2802,19 @@ function ApplicationModal({
             />
           </div>
 
+          {/* ===== DATE CREATED EDITING: Show dateCreated field when toggle is enabled ===== */}
+          {ENABLE_DATE_CREATED_EDITING && (
+            <div>
+              <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+              <input
+                type="date"
+                value={formData.dateCreated}
+                onChange={(e) => setFormData({ ...formData, dateCreated: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+              />
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -2796,6 +2846,19 @@ function LinkedinOutreachModal({
   onClose: () => void; 
   onSave: (data: Partial<LinkedinOutreach>) => void;
 }) {
+  // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
+  const toLocalDate = (value: string) => {
+    try {
+      const date = new Date(value);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
   type LinkedinOutreachFormData = {
     name: string;
     company: string;
@@ -2804,6 +2867,7 @@ function LinkedinOutreachModal({
     notes: string;
     status: LinkedinOutreachStatus;
     recievedReferral: boolean;
+    dateCreated: string; // ===== DATE CREATED EDITING: Added for testing/debugging =====
   };
 
   const [formData, setFormData] = useState<LinkedinOutreachFormData>({
@@ -2814,6 +2878,7 @@ function LinkedinOutreachModal({
     notes: linkedinOutreach?.notes || '',
     status: linkedinOutreach ? linkedinOutreach.status : 'outreachRequestSent',
     recievedReferral: linkedinOutreach?.recievedReferral || false,
+    dateCreated: linkedinOutreach?.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE CREATED EDITING =====
   });
 
   // Update form data when linkedin outreach changes
@@ -2827,6 +2892,7 @@ function LinkedinOutreachModal({
         notes: linkedinOutreach.notes || '',
         status: linkedinOutreach.status,
         recievedReferral: linkedinOutreach.recievedReferral || false,
+        dateCreated: linkedinOutreach.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE CREATED EDITING =====
       });
     } else {
       setFormData({
@@ -2837,6 +2903,7 @@ function LinkedinOutreachModal({
         notes: '',
         status: 'outreachRequestSent',
         recievedReferral: false,
+        dateCreated: '', // ===== DATE CREATED EDITING =====
       });
     }
   }, [linkedinOutreach]);
@@ -2847,7 +2914,20 @@ function LinkedinOutreachModal({
       alert('Name and company are required');
       return;
     }
-    onSave(formData);
+    // ===== DATE CREATED EDITING: Convert date string to ISO DateTime if provided =====
+    const submitData: Partial<LinkedinOutreach> = { ...formData };
+    if (ENABLE_DATE_CREATED_EDITING && formData.dateCreated) {
+      try {
+        // Convert local date to ISO string (midnight UTC of that date)
+        const date = new Date(formData.dateCreated);
+        if (!isNaN(date.getTime())) {
+          submitData.dateCreated = date.toISOString();
+        }
+      } catch (error) {
+        console.error('Error parsing dateCreated:', error);
+      }
+    }
+    onSave(submitData);
   };
 
   return (
@@ -2950,6 +3030,19 @@ function LinkedinOutreachModal({
             </label>
           </div>
 
+          {/* ===== DATE CREATED EDITING: Show dateCreated field when toggle is enabled ===== */}
+          {ENABLE_DATE_CREATED_EDITING && (
+            <div>
+              <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+              <input
+                type="date"
+                value={formData.dateCreated}
+                onChange={(e) => setFormData({ ...formData, dateCreated: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+              />
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -3050,6 +3143,7 @@ function InPersonEventModal({
     numLinkedInRequests: string;
     numOfInterviews: string;
     careerFair: boolean;
+    dateCreated: string; // ===== DATE CREATED EDITING: Added for testing/debugging =====
   };
 
   const [formData, setFormData] = useState<EventFormData>({
@@ -3066,6 +3160,7 @@ function InPersonEventModal({
     numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
     numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
     careerFair: eventItem?.careerFair ?? false,
+    dateCreated: eventItem?.dateCreated ? toLocalDate(eventItem.dateCreated) : '', // ===== DATE CREATED EDITING =====
   });
 
   useEffect(() => {
@@ -3084,6 +3179,7 @@ function InPersonEventModal({
       numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
       numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
       careerFair: eventItem?.careerFair ?? false,
+      dateCreated: eventItem?.dateCreated ? toLocalDate(eventItem.dateCreated) : '', // ===== DATE CREATED EDITING =====
     });
   }, [eventItem]);
 
@@ -3137,7 +3233,8 @@ function InPersonEventModal({
       return;
     }
 
-    onSave({
+    // ===== DATE CREATED EDITING: Convert date string to ISO DateTime if provided =====
+    const saveData: Partial<InPersonEvent> & { date?: string } = {
       event: formData.event.trim(),
       date: combinedDate,
       location: formData.location ? formData.location.trim() : null,
@@ -3148,7 +3245,19 @@ function InPersonEventModal({
       numLinkedInRequests: formData.numLinkedInRequests !== '' ? Number(formData.numLinkedInRequests) : null,
       numOfInterviews: formData.numOfInterviews !== '' ? Number(formData.numOfInterviews) : null,
       careerFair: formData.careerFair,
-    });
+    };
+    if (ENABLE_DATE_CREATED_EDITING && formData.dateCreated) {
+      try {
+        // Convert local date to ISO string (midnight UTC of that date)
+        const date = new Date(formData.dateCreated);
+        if (!isNaN(date.getTime())) {
+          saveData.dateCreated = date.toISOString();
+        }
+      } catch (error) {
+        console.error('Error parsing dateCreated:', error);
+      }
+    }
+    onSave(saveData);
   };
 
   return (
@@ -3316,6 +3425,19 @@ function InPersonEventModal({
             </label>
           </div>
 
+          {/* ===== DATE CREATED EDITING: Show dateCreated field when toggle is enabled ===== */}
+          {ENABLE_DATE_CREATED_EDITING && (
+            <div>
+              <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+              <input
+                type="date"
+                value={formData.dateCreated}
+                onChange={(e) => setFormData(prev => ({ ...prev, dateCreated: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+              />
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -3346,6 +3468,19 @@ function LeetModal({
   onClose: () => void;
   onSave: (data: Partial<LeetEntry>) => void;
 }) {
+  // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
+  const toLocalDate = (value: string) => {
+    try {
+      const date = new Date(value);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
   type LeetFormData = {
     problem: string;
     problemType: string;
@@ -3353,6 +3488,7 @@ function LeetModal({
     url: string;
     reflection: string;
     status: LeetStatus;
+    dateCreated: string; // ===== DATE CREATED EDITING: Added for testing/debugging =====
   };
 
   const [formData, setFormData] = useState<LeetFormData>({
@@ -3362,6 +3498,7 @@ function LeetModal({
     url: entry?.url ?? '',
     reflection: entry?.reflection ?? '',
     status: entry?.status ?? 'planned',
+    dateCreated: entry?.dateCreated ? toLocalDate(entry.dateCreated) : '', // ===== DATE CREATED EDITING =====
   });
   const [isLeetHelpOpen, setIsLeetHelpOpen] = useState(false);
   const tooltipRef = useRef<HTMLSpanElement | null>(null);
@@ -3381,6 +3518,31 @@ function LeetModal({
     };
   }, [isLeetHelpOpen]);
 
+  // ===== DATE CREATED EDITING: Update form data when entry changes =====
+  useEffect(() => {
+    if (entry) {
+      setFormData({
+        problem: entry.problem ?? '',
+        problemType: entry.problemType ?? '',
+        difficulty: entry.difficulty ?? '',
+        url: entry.url ?? '',
+        reflection: entry.reflection ?? '',
+        status: entry.status ?? 'planned',
+        dateCreated: entry.dateCreated ? toLocalDate(entry.dateCreated) : '',
+      });
+    } else {
+      setFormData({
+        problem: '',
+        problemType: '',
+        difficulty: '',
+        url: '',
+        reflection: '',
+        status: 'planned',
+        dateCreated: '',
+      });
+    }
+  }, [entry]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.problem.trim()) {
@@ -3388,14 +3550,27 @@ function LeetModal({
       return;
     }
 
-    onSave({
+    // ===== DATE CREATED EDITING: Convert date string to ISO DateTime if provided =====
+    const submitData: Partial<LeetEntry> = {
       problem: formData.problem.trim(),
       problemType: formData.problemType ? formData.problemType.trim() : null,
       difficulty: formData.difficulty ? formData.difficulty.trim() : null,
       url: formData.url ? formData.url.trim() : null,
       reflection: formData.reflection ? formData.reflection.trim() : null,
       status: formData.status,
-    });
+    };
+    if (ENABLE_DATE_CREATED_EDITING && formData.dateCreated) {
+      try {
+        // Convert local date to ISO string (midnight UTC of that date)
+        const date = new Date(formData.dateCreated);
+        if (!isNaN(date.getTime())) {
+          submitData.dateCreated = date.toISOString();
+        }
+      } catch (error) {
+        console.error('Error parsing dateCreated:', error);
+      }
+    }
+    onSave(submitData);
   };
 
   return (
@@ -3502,6 +3677,19 @@ function LeetModal({
               <option value="reflected">Reflected</option>
             </select>
           </div>
+
+          {/* ===== DATE CREATED EDITING: Show dateCreated field when toggle is enabled ===== */}
+          {ENABLE_DATE_CREATED_EDITING && (
+            <div>
+              <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+              <input
+                type="date"
+                value={formData.dateCreated}
+                onChange={(e) => setFormData(prev => ({ ...prev, dateCreated: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <button
