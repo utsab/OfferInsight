@@ -169,6 +169,21 @@ type LeetColumnId = 'planned' | 'solved' | 'reflected';
 
 type BoardTimeFilter = 'currentMonth' | 'allTime';
 
+const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
+  'messagedHiringManager',
+  'messagedRecruiter',
+  'followedUp',
+  'interview',
+];
+const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
+  'outreach',
+  'accepted',
+  'followedUpLinkedin',
+  'linkedinOutreach',
+];
+const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'followups'];
+const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflected'];
+
 // Application type definition
 type Application = {
   id: number;
@@ -397,16 +412,24 @@ export default function Page() {
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
-      const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
+      const newStatus = applicationColumnToStatus[toCol];
+      const newDateCompleted = APPLICATION_COMPLETION_COLUMNS.includes(toCol)
+        ? new Date().toISOString()
+        : null;
+      const updatedItem: Application = {
+        ...movingItem,
+        status: newStatus,
+        dateCompleted: newDateCompleted,
+      };
+      const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setAppColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
       
       // Update status in database
       try {
-        const newStatus = applicationColumnToStatus[toCol];
         const response = await fetch(`/api/applications_with_outreach?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ status: newStatus, dateCompleted: newDateCompleted }),
         });
         if (!response.ok) throw new Error('Failed to update status');
         
@@ -604,7 +627,15 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const movingItem = fromItems[movingIndex];
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
-      const updatedItem: LinkedinOutreach = { ...movingItem, status: linkedinOutreachColumnToStatus[toCol] };
+      const newStatus = linkedinOutreachColumnToStatus[toCol];
+      const newDateCompleted = LINKEDIN_COMPLETION_COLUMNS.includes(toCol)
+        ? new Date().toISOString()
+        : null;
+      const updatedItem: LinkedinOutreach = {
+        ...movingItem,
+        status: newStatus,
+        dateCompleted: newDateCompleted,
+      };
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setLinkedinOutreachColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
@@ -613,7 +644,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
         const response = await fetch(`/api/linkedin_outreach?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: linkedinOutreachColumnToStatus[toCol] }),
+          body: JSON.stringify({ status: newStatus, dateCompleted: newDateCompleted }),
         });
         if (!response.ok) throw new Error('Failed to update LinkedIn outreach status');
 
@@ -727,15 +758,23 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
-      const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
+      const newStatus = eventColumnToStatus[toCol] ?? 'scheduled';
+      const newDateCompleted = EVENT_COMPLETION_COLUMNS.includes(toCol)
+        ? new Date().toISOString()
+        : null;
+      const updatedItem: InPersonEvent = {
+        ...movingItem,
+        status: newStatus,
+        dateCompleted: newDateCompleted,
+      };
+      const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setEventColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
 
       try {
-        const newStatus = eventColumnToStatus[toCol] ?? 'scheduled';
         const response = await fetch(`/api/in_person_events?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ status: newStatus, dateCompleted: newDateCompleted }),
         });
         if (!response.ok) throw new Error('Failed to update event status');
 
@@ -850,15 +889,23 @@ const hasSeededMockDataRef = useRef(false);
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
-      const newTo = [...toItems.slice(0, insertIndex), movingItem, ...toItems.slice(insertIndex)];
+      const newStatus = leetColumnToStatus[toCol];
+      const newDateCompleted = LEET_COMPLETION_COLUMNS.includes(toCol)
+        ? new Date().toISOString()
+        : null;
+      const updatedItem: LeetEntry = {
+        ...movingItem,
+        status: newStatus,
+        dateCompleted: newDateCompleted,
+      };
+      const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setLeetColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
 
       try {
-        const newStatus = leetColumnToStatus[toCol];
         const response = await fetch(`/api/leetcode?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ status: newStatus, dateCompleted: newDateCompleted }),
         });
         if (!response.ok) throw new Error('Failed to update LeetCode status');
 
@@ -1481,10 +1528,9 @@ const hasSeededMockDataRef = useRef(false);
     
     // Count applications in columns: messagedHiringManager, messagedRecruiter, followedUp, interview
     // (any column to the right of "applied")
-    const qualifyingColumns: ApplicationColumnId[] = ['messagedHiringManager', 'messagedRecruiter', 'followedUp', 'interview'];
     let count = 0;
     
-    qualifyingColumns.forEach(col => {
+    APPLICATION_COMPLETION_COLUMNS.forEach(col => {
       appColumns[col].forEach(app => {
         const appDate = new Date(app.dateCreated);
         if (!Number.isNaN(appDate.getTime()) && appDate >= metricsMonth && appDate < metricsMonthEnd) {
@@ -1514,10 +1560,9 @@ const hasSeededMockDataRef = useRef(false);
   // Calculate linkedin outreach metrics for this month
   const linkedinOutreachMetrics = useMemo(() => {
     // Count all linkedin outreach entries from all 4 columns (outreach, accepted, followedUpLinkedin, linkedinOutreach)
-    const allColumns: LinkedinOutreachColumnId[] = ['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach'];
     let count = 0;
     
-    allColumns.forEach(col => {
+    LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
       linkedinOutreachColumns[col].forEach(chat => {
         const chatDate = new Date(chat.dateCreated);
         if (!Number.isNaN(chatDate.getTime()) && chatDate >= metricsMonth && chatDate < metricsMonthEnd) {
@@ -1573,11 +1618,10 @@ const hasSeededMockDataRef = useRef(false);
   }, [careerFairsThisYear, careerFairPlanGoal]);
 
   const eventsMetrics = useMemo(() => {
-    const qualifyingColumns: EventColumnId[] = ['attended', 'followups'];
     let eventCount = 0;
     let careerFairCount = 0;
 
-    qualifyingColumns.forEach(col => {
+    EVENT_COMPLETION_COLUMNS.forEach(col => {
       eventColumns[col].forEach(event => {
         const eventDate = new Date(event.date);
         if (!Number.isNaN(eventDate.getTime()) && eventDate >= metricsMonth && eventDate < metricsMonthEnd) {
@@ -1640,34 +1684,31 @@ const hasSeededMockDataRef = useRef(false);
 
   // Calculate all-time counts for each metric
   const applicationsAllTimeCount = useMemo(() => {
-    const qualifyingColumns: ApplicationColumnId[] = ['messagedHiringManager', 'messagedRecruiter', 'followedUp', 'interview'];
     let count = 0;
-    qualifyingColumns.forEach(col => {
+    APPLICATION_COMPLETION_COLUMNS.forEach(col => {
       count += appColumns[col].length;
     });
     return count;
   }, [appColumns]);
 
   const linkedinOutreachAllTimeCount = useMemo(() => {
-    const allColumns: LinkedinOutreachColumnId[] = ['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach'];
     let count = 0;
-    allColumns.forEach(col => {
+    LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
       count += linkedinOutreachColumns[col].length;
     });
     return count;
   }, [linkedinOutreachColumns]);
 
   const eventsAllTimeCount = useMemo(() => {
-    const qualifyingColumns: EventColumnId[] = ['attended', 'followups'];
     let count = 0;
-    qualifyingColumns.forEach(col => {
+    EVENT_COMPLETION_COLUMNS.forEach(col => {
       count += eventColumns[col].length;
     });
     return count;
   }, [eventColumns]);
 
   const leetAllTimeCount = useMemo(() => {
-    return leetColumns.reflected.length;
+    return LEET_COMPLETION_COLUMNS.reduce((acc, col) => acc + leetColumns[col].length, 0);
   }, [leetColumns]);
 
   const isWithinCurrentMonth = useCallback(
