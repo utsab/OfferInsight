@@ -25,6 +25,7 @@ model Applications_With_Outreach {
   notes                 String?
   status                String    @default("applied")
   dateCreated           DateTime  @default(now())
+  dateCompleted         DateTime?
   userId                String
   user                  User      @relation(fields: [userId], references: [id])
 }
@@ -39,6 +40,7 @@ model Linkedin_Outreach {
   recievedReferral    Boolean   @default(false)
   status              String    @default("outreachRequestSent")
   dateCreated         DateTime  @default(now())
+  dateCompleted       DateTime?
   userId              String
   user                User      @relation(fields: [userId], references: [id])
 }
@@ -56,6 +58,7 @@ model In_Person_Events {
   numOfInterviews     Int?
   status              String    @default("scheduled")
   dateCreated         DateTime  @default(now())
+  dateCompleted       DateTime?
   userId              String
   user                User      @relation(fields: [userId], references: [id])
 }
@@ -67,8 +70,9 @@ model Leetcode_Practice {
   difficulty  String?
   url         String?
   reflection  String?
-  status      String   @default("planned")
+  status      String  @default("planned")
   dateCreated         DateTime  @default(now())
+  dateCompleted       DateTime?
   userId      String
   user        User     @relation(fields: [userId], references: [id])
 }

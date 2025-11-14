@@ -121,6 +121,40 @@ const toLocalTimeParts = (value: string): TimeParts => {
   }
 };
 
+const formatCardDate = (value?: string | null) => {
+  if (!value) return '-';
+  try {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return '-';
+  }
+};
+
+function CardDateMeta({
+  created,
+  completed,
+  className,
+}: {
+  created?: string | null;
+  completed?: string | null;
+  className?: string;
+}) {
+  return (
+    <div className={className ? className : 'mt-3'}>
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-gray-400 mb-1">
+        <span>Created:</span>
+        <span>Completed:</span>
+      </div>
+      <div className="flex items-center justify-between text-xs text-yellow-400">
+        <span>{formatCardDate(created)}</span>
+        <span>{formatCardDate(completed)}</span>
+      </div>
+    </div>
+  );
+}
+
 type ApplicationStatus = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
 type ApplicationColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
 
@@ -146,6 +180,7 @@ type Application = {
   notes?: string | null;
   status: ApplicationStatus;
   dateCreated: string;
+  dateCompleted?: string | null;
   userId: string;
 };
 
@@ -159,6 +194,7 @@ type LinkedinOutreach = {
   notes?: string | null;
   status: LinkedinOutreachStatus;
   dateCreated: string;
+  dateCompleted?: string | null;
   recievedReferral: boolean;
   userId: string;
 };
@@ -177,6 +213,7 @@ type InPersonEvent = {
   numOfInterviews?: number | null;
   userId: string;
   dateCreated?: string;
+  dateCompleted?: string | null;
 };
 
 type LeetEntry = {
@@ -189,6 +226,7 @@ type LeetEntry = {
   status: LeetStatus;
   userId: string;
   dateCreated?: string;
+  dateCompleted?: string | null;
 };
 
 // Map status values to column IDs (moved outside component to prevent re-renders)
@@ -400,15 +438,6 @@ export default function Page() {
       opacity: isDragging ? 0 : undefined,
     } as React.CSSProperties;
 
-    const formatDate = (dateString: string) => {
-      try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      } catch {
-        return '';
-      }
-    };
-
     const handleEdit = (e: React.MouseEvent) => {
       e.stopPropagation();
       setEditingApp(props.card);
@@ -465,7 +494,7 @@ export default function Page() {
         {props.card.notes && (
           <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
         )}
-        <div className="text-xs text-yellow-400">{formatDate(props.card.dateCreated)}</div>
+        <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} />
       </div>
     );
   }
@@ -857,15 +886,6 @@ const hasSeededMockDataRef = useRef(false);
       opacity: isDragging ? 0 : undefined,
     } as React.CSSProperties;
 
-    const formatDate = (dateString: string) => {
-      try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      } catch {
-        return '';
-      }
-    };
-
     const handleEdit = (e: React.MouseEvent) => {
       e.stopPropagation();
       setEditingLinkedinOutreach(props.card);
@@ -929,7 +949,7 @@ const hasSeededMockDataRef = useRef(false);
         {props.card.recievedReferral && (
           <div className="text-green-400 text-xs mb-2">✓ Referral Received</div>
         )}
-        <div className="text-xs text-yellow-400">{formatDate(props.card.dateCreated)}</div>
+        <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} />
       </div>
     );
   }
@@ -1030,17 +1050,7 @@ const hasSeededMockDataRef = useRef(false);
             <span className="px-2 py-0.5 rounded-full bg-gray-700">Interviews {props.card.numOfInterviews}</span>
           )}
         </div>
-        {props.card.dateCreated && (
-          <div className="text-xs text-yellow-400 mt-2">
-            {(() => {
-              try {
-                return new Date(props.card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              } catch {
-                return '';
-              }
-            })()}
-          </div>
-        )}
+        <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} className="mt-3" />
       </div>
     );
   }
@@ -1117,17 +1127,7 @@ const hasSeededMockDataRef = useRef(false);
         {props.card.reflection && (
           <div className="text-gray-400 text-xs mb-2 line-clamp-3">{props.card.reflection}</div>
         )}
-        {props.card.dateCreated && (
-          <div className="text-xs text-yellow-400">
-            {(() => {
-              try {
-                return new Date(props.card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              } catch {
-                return '';
-              }
-            })()}
-          </div>
-        )}
+        <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} className="mt-3" />
       </div>
     );
   }
