@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Info, Coffee, Users, Building2, ArrowLeft, Rocket, Target, CalendarCheck, Loader2 } from 'lucide-react';
+import { FileText, Coffee, Users, Building2, ArrowLeft, Rocket, Target, CalendarCheck, Loader2 } from 'lucide-react';
 
 const MONTH_OPTIONS = [
   { label: 'January', value: 0 },
@@ -252,14 +252,6 @@ export default function Page3V2() {
         {/* Header (condensed) */}
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-white">Fine-tune Your Action Plan</h2>
-          <div className="flex items-center justify-center mt-3">
-            <div className="flex space-x-2">
-              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
-              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
-              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
-            </div>
-            <span className="text-gray-400 ml-3 text-sm">Step 3 of 3</span>
-          </div>
         </div>
 
         {/* Form */}
@@ -270,6 +262,26 @@ export default function Page3V2() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
+          {/* Target Outcome */}
+          <div className="bg-gray-700/30 border border-light-steel-blue rounded-lg p-6 mb-8">
+            <h3 className="text-white font-bold text-lg mb-6 flex items-center justify-center">
+              <Target className="text-electric-blue mr-3" />
+              Target Outcome with Your Custom Plan
+            </h3>
+            <div className="flex flex-col items-center justify-center gap-6 md:flex-row md:gap-12">
+              <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
+                <div className="text-3xl font-bold text-electric-blue mb-2">
+                  {targetOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+                <div className="text-gray-300 text-sm font-medium">Target Offer Date</div>
+              </div>
+              <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
+                <div className="text-3xl font-bold text-electric-blue mb-2">{calculateWeeklyHours(appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear)}</div>
+                <div className="text-gray-300 text-sm font-medium">Hours per Week</div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-6 mb-8">
             {/* Applications */}
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
@@ -297,10 +309,6 @@ export default function Page3V2() {
                   <span>1</span>
                   <span>15</span>
                 </div>
-              </div>
-              <div className="text-gray-400 text-sm flex items-center">
-                <Info className="mr-1" />
-                Focus on quality over quantity for better results
               </div>
             </div>
 
@@ -331,10 +339,6 @@ export default function Page3V2() {
                   <span>8</span>
                 </div>
               </div>
-              <div className="text-gray-400 text-sm flex items-center">
-                <Info className="mr-1" />
-                Build meaningful connections in your industry
-              </div>
             </div>
 
             {/* Events */}
@@ -364,10 +368,6 @@ export default function Page3V2() {
                   <span>10</span>
                 </div>
               </div>
-              <div className="text-gray-400 text-sm flex items-center">
-                <Info className="mr-1" />
-                Career fairs, meetups, and networking events
-              </div>
             </div>
 
             {/* Career Fairs (replaces LeetCode) */}
@@ -396,10 +396,6 @@ export default function Page3V2() {
                   <span>0</span>
                   <span>8</span>
                 </div>
-              </div>
-              <div className="text-gray-400 text-sm flex items-center">
-                <Info className="mr-1" />
-                Large events to meet many employers in one place
               </div>
             </div>
           </div>
@@ -459,26 +455,6 @@ export default function Page3V2() {
           </div>
         </div>
 
-          {/* Target Outcome */}
-          <div className="bg-gray-700/30 border border-light-steel-blue rounded-lg p-6 mb-8">
-            <h3 className="text-white font-bold text-lg mb-6 flex items-center justify-center">
-              <Target className="text-electric-blue mr-3" />
-              Target Outcome with Your Custom Plan
-            </h3>
-            <div className="flex flex-col items-center justify-center gap-6 md:flex-row md:gap-12">
-              <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
-                <div className="text-3xl font-bold text-electric-blue mb-2">
-                  {targetOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-                </div>
-                <div className="text-gray-300 text-sm font-medium">Target Offer Date</div>
-              </div>
-              <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
-                <div className="text-3xl font-bold text-electric-blue mb-2">{calculateWeeklyHours(appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear)}</div>
-                <div className="text-gray-300 text-sm font-medium">Hours per Week</div>
-              </div>
-            </div>
-          </div>
-
           {/* Buttons */}
           <div className="flex space-x-4">
             <button type="button" onClick={handleBack} className="flex-1 bg-gray-700 hover:bg-gray-600 border border-light-steel-blue text-white py-4 rounded-lg font-semibold transition-colors flex items-center justify-center">
@@ -489,6 +465,16 @@ export default function Page3V2() {
               <Rocket className="mr-2" />
               Start Tracking My Progress
             </button>
+          </div>
+          
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center mt-6">
+            <div className="flex space-x-2">
+              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+            </div>
+            <span className="text-gray-400 ml-3 text-sm">Step 3 of 3</span>
           </div>
           </form>
         )}
