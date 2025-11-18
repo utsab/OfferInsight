@@ -161,8 +161,8 @@ type ApplicationColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringMana
 type LinkedinOutreachStatus = 'outreachRequestSent' | 'accepted' | 'followedUp' | 'linkedinOutreach';
 type LinkedinOutreachColumnId = 'outreach' | 'accepted' | 'followedUpLinkedin' | 'linkedinOutreach';
 
-type InPersonEventStatus = 'scheduled' | 'attending' | 'attended' | 'followUp';
-type EventColumnId = 'upcoming' | 'attending' | 'attended' | 'followups';
+type InPersonEventStatus = 'scheduled' | 'attended' | 'linkedinRequestsSent' | 'followUp';
+type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | 'followups';
 
 type LeetStatus = 'planned' | 'solved' | 'reflected';
 type LeetColumnId = 'planned' | 'solved' | 'reflected';
@@ -181,7 +181,7 @@ const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
   'followedUpLinkedin',
   'linkedinOutreach',
 ];
-const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'followups'];
+const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'linkedinRequestsSent', 'followups'];
 const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflected'];
 
 // Application type definition
@@ -278,15 +278,15 @@ const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinO
 
 const eventStatusToColumn: Record<InPersonEventStatus, EventColumnId> = {
   scheduled: 'upcoming',
-  attending: 'attending',
   attended: 'attended',
+  linkedinRequestsSent: 'linkedinRequestsSent',
   followUp: 'followups',
 };
 
 const eventColumnToStatus: Record<EventColumnId, InPersonEventStatus> = {
   upcoming: 'scheduled',
-  attending: 'attending',
   attended: 'attended',
+  linkedinRequestsSent: 'linkedinRequestsSent',
   followups: 'followUp',
 };
 
@@ -667,8 +667,8 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   // dnd-kit: Events board (In-Person Events)
   const [eventColumns, setEventColumns] = useState<Record<EventColumnId, InPersonEvent[]>>({
     upcoming: [],
-    attending: [],
     attended: [],
+    linkedinRequestsSent: [],
     followups: [],
   });
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
@@ -694,8 +694,8 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
 
       const grouped: Record<EventColumnId, InPersonEvent[]> = {
         upcoming: [],
-        attending: [],
         attended: [],
+        linkedinRequestsSent: [],
         followups: [],
       };
 
@@ -737,7 +737,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     const overId = String(over.id);
 
     const fromCol = getEventColumnOfItem(activeId);
-    const toCol = (['upcoming', 'attending', 'attended', 'followups'] as EventColumnId[]).includes(overId as EventColumnId)
+    const toCol = (['upcoming', 'attended', 'linkedinRequestsSent', 'followups'] as EventColumnId[]).includes(overId as EventColumnId)
       ? (overId as EventColumnId)
       : getEventColumnOfItem(overId);
     if (!fromCol || !toCol) return;
@@ -1339,17 +1339,6 @@ const hasSeededMockDataRef = useRef(false);
           userId: 'mock-user',
         },
       ],
-      attending: [
-        {
-          id: 3002,
-          event: 'Tech Mixer',
-          date: isoWithDelta({ months: -2, days: -2, hour: 18 }),
-          location: 'Seattle',
-          status: 'attending',
-          careerFair: false,
-          userId: 'mock-user',
-        },
-      ],
       attended: [
         {
           id: 3003,
@@ -1360,6 +1349,18 @@ const hasSeededMockDataRef = useRef(false);
           numPeopleSpokenTo: 6,
           numLinkedInRequests: 4,
           careerFair: true,
+          userId: 'mock-user',
+        },
+      ],
+      linkedinRequestsSent: [
+        {
+          id: 3002,
+          event: 'Tech Mixer',
+          date: isoWithDelta({ months: -2, days: -2, hour: 18 }),
+          location: 'Seattle',
+          status: 'linkedinRequestsSent',
+          numLinkedInRequests: 5,
+          careerFair: false,
           userId: 'mock-user',
         },
       ],
@@ -1593,7 +1594,7 @@ const hasSeededMockDataRef = useRef(false);
     const now = new Date();
     const yearStart = new Date(now.getFullYear(), 0, 1);
     const yearEnd = new Date(now.getFullYear() + 1, 0, 1);
-    const eligibleStatuses: InPersonEventStatus[] = ['attended', 'followUp'];
+    const eligibleStatuses: InPersonEventStatus[] = ['attended', 'linkedinRequestsSent', 'followUp'];
     let count = 0;
     (Object.values(eventColumns) as InPersonEvent[][]).forEach(columnEvents => {
       columnEvents.forEach(event => {
@@ -1855,8 +1856,8 @@ const hasSeededMockDataRef = useRef(false);
     if (eventsFilter === 'allTime') return eventColumns;
     const filtered: Record<EventColumnId, InPersonEvent[]> = {
       upcoming: [],
-      attending: [],
       attended: [],
+      linkedinRequestsSent: [],
       followups: [],
     };
     (Object.keys(eventColumns) as EventColumnId[]).forEach(columnId => {
@@ -2571,12 +2572,12 @@ const hasSeededMockDataRef = useRef(false);
 
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Attending ({filteredEventColumns.attending.length})
+                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                    Attended ({filteredEventColumns.attended.length})
                   </h5>
-                  <SortableContext items={filteredEventColumns.attending.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="attending">
-                      {filteredEventColumns.attending.map(event => (
+                  <SortableContext items={filteredEventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="attended">
+                      {filteredEventColumns.attended.map(event => (
                         <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
@@ -2585,12 +2586,12 @@ const hasSeededMockDataRef = useRef(false);
 
                 <div className="bg-gray-700 rounded-lg p-4">
                   <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Attended ({filteredEventColumns.attended.length})
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    LinkedIn Requests Sent ({filteredEventColumns.linkedinRequestsSent.length})
                   </h5>
-                  <SortableContext items={filteredEventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="attended">
-                      {filteredEventColumns.attended.map(event => (
+                  <SortableContext items={filteredEventColumns.linkedinRequestsSent.map(event => String(event.id))} strategy={rectSortingStrategy}>
+                    <DroppableColumn id="linkedinRequestsSent">
+                      {filteredEventColumns.linkedinRequestsSent.map(event => (
                         <SortableEventCard key={event.id} card={event} />
                       ))}
                     </DroppableColumn>
@@ -3620,8 +3621,8 @@ function InPersonEventModal({
               className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
             >
               <option value="scheduled">Scheduled</option>
-              <option value="attending">Attending</option>
               <option value="attended">Attended</option>
+              <option value="linkedinRequestsSent">LinkedIn Requests Sent</option>
               <option value="followUp">Followed Up</option>
             </select>
           </div>
