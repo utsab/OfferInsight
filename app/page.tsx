@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FileText, MessageCircle, Users, Code } from 'lucide-react';
+import { handleSignIn } from '@/components/auth-actions';
 
 export default function Page() {
   const [currentStep, setCurrentStep] = useState<'homepage' | 'onboarding-step1' | 'onboarding-step2' | 'onboarding-step3' | 'dashboard'>('homepage');
   const [selectedTimeline, setSelectedTimeline] = useState<string>('');
   const [onboardingProgress, setOnboardingProgress] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const showStep = (stepId: 'homepage' | 'onboarding-step1' | 'onboarding-step2' | 'onboarding-step3' | 'dashboard') => {
     setCurrentStep(stepId as any);
@@ -26,9 +28,13 @@ export default function Page() {
         if (response.ok) {
           const user = await response.json();
           setOnboardingProgress(user.onboardingProgress);
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Failed to fetch onboarding progress:', error);
+        setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
@@ -37,8 +43,14 @@ export default function Page() {
     fetchOnboardingProgress();
   }, []);
 
-  const handleGetStarted = () => {
+  const handleGetStarted = async () => {
     if (loading) return;
+    
+    // If user is not authenticated, trigger sign-in flow
+    if (!isAuthenticated) {
+      await handleSignIn();
+      return;
+    }
     
     // Redirect based on onboarding progress
     switch (onboardingProgress) {
