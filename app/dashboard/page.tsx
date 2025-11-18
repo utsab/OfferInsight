@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus, X, Edit2, Trash2 } from 'lucide-react';
+import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus, X, Trash2 } from 'lucide-react';
 
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
@@ -323,6 +323,7 @@ export default function Page() {
   const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('currentMonth');
   const isFetchingRef = useRef(false);
   const lastProjectedOfferSyncRef = useRef<string | null>(null);
+  const isDraggingAppRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
@@ -384,7 +385,10 @@ export default function Page() {
 
   const handleApplicationsDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) {
+      isDraggingAppRef.current = false;
+      return;
+    }
 
     const activeId = String(active.id);
     const overId = String(over.id);
@@ -393,21 +397,33 @@ export default function Page() {
     const toCol = (['applied','messagedRecruiter','messagedHiringManager','followedUp','interview'] as ApplicationColumnId[]).includes(overId as ApplicationColumnId)
       ? (overId as ApplicationColumnId)
       : getApplicationColumnOfItem(overId);
-    if (!fromCol || !toCol) return;
+    if (!fromCol || !toCol) {
+      setActiveAppId(null);
+      isDraggingAppRef.current = false;
+      return;
+    }
 
     // Update UI optimistically
     if (fromCol === toCol) {
       const items = appColumns[fromCol];
       const oldIndex = items.findIndex(i => String(i.id) === activeId);
       const newIndex = items.findIndex(i => String(i.id) === overId);
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        setActiveAppId(null);
+        isDraggingAppRef.current = false;
+        return;
+      }
       const newItems = arrayMove(items, oldIndex, newIndex);
       setAppColumns(prev => ({ ...prev, [fromCol]: newItems }));
     } else {
       const fromItems = appColumns[fromCol];
       const toItems = appColumns[toCol];
       const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
-      if (movingIndex === -1) return;
+      if (movingIndex === -1) {
+        setActiveAppId(null);
+        isDraggingAppRef.current = false;
+        return;
+      }
       const movingItem = fromItems[movingIndex];
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
@@ -441,10 +457,12 @@ export default function Page() {
       }
     }
     setActiveAppId(null);
+    isDraggingAppRef.current = false;
   };
 
   const handleApplicationsDragStart = (event: DragStartEvent) => {
     setActiveAppId(String(event.active.id));
+    isDraggingAppRef.current = true;
   };
 
   const handleApplicationsDragOver = (event: DragOverEvent) => {
@@ -455,16 +473,25 @@ export default function Page() {
 
   function SortableAppCard(props: { card: Application }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
+    
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
       opacity: isDragging ? 0 : undefined,
     } as React.CSSProperties;
 
-    const handleEdit = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setEditingApp(props.card);
-      setIsModalOpen(true);
+    const handleClick = (e: React.MouseEvent) => {
+      // Prevent opening modal if this card was just dragged
+      if (activeAppId === String(props.card.id)) {
+        return;
+      }
+      // Small delay to check if drag started
+      setTimeout(() => {
+        if (!isDraggingAppRef.current && !isDragging && activeAppId !== String(props.card.id)) {
+          setEditingApp(props.card);
+          setIsModalOpen(true);
+        }
+      }, 50);
     };
 
     const handleDelete = (e: React.MouseEvent) => {
@@ -477,8 +504,9 @@ export default function Page() {
         ref={setNodeRef} 
         style={style} 
         {...attributes} 
-        {...listeners} 
-        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors group relative"
+        {...listeners}
+        onClick={handleClick}
+        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
       >
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
@@ -491,13 +519,6 @@ export default function Page() {
             )}
           </div>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleEdit}
-              className="p-1 hover:bg-gray-500 rounded text-gray-300 hover:text-white"
-              title="Edit"
-            >
-              <Edit2 size={14} />
-            </button>
             <button
               onClick={handleDelete}
               className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
@@ -548,6 +569,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [isLoadingLinkedinOutreach, setIsLoadingLinkedinOutreach] = useState(true);
   const [linkedinOutreachFilter, setLinkedinOutreachFilter] = useState<BoardTimeFilter>('currentMonth');
   const isFetchingLinkedinOutreachRef = useRef(false);
+  const isDraggingLinkedinOutreachRef = useRef(false);
 
   const fetchLinkedinOutreach = useCallback(async () => {
     // --- MOCK DATA BYPASS FOR OUTREACH FETCH START ---
@@ -601,7 +623,10 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
 
   const handleLinkedinOutreachDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) {
+      isDraggingLinkedinOutreachRef.current = false;
+      return;
+    }
 
     const activeId = String(active.id);
     const overId = String(over.id);
@@ -610,20 +635,32 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     const toCol = (['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach'] as LinkedinOutreachColumnId[]).includes(overId as LinkedinOutreachColumnId)
       ? (overId as LinkedinOutreachColumnId)
       : getLinkedinOutreachColumnOfItem(overId);
-    if (!fromCol || !toCol) return;
+    if (!fromCol || !toCol) {
+      setActiveLinkedinOutreachId(null);
+      isDraggingLinkedinOutreachRef.current = false;
+      return;
+    }
 
     if (fromCol === toCol) {
       const items = linkedinOutreachColumns[fromCol];
       const oldIndex = items.findIndex(i => String(i.id) === activeId);
       const newIndex = items.findIndex(i => String(i.id) === overId);
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        setActiveLinkedinOutreachId(null);
+        isDraggingLinkedinOutreachRef.current = false;
+        return;
+      }
       const newItems = arrayMove(items, oldIndex, newIndex);
       setLinkedinOutreachColumns(prev => ({ ...prev, [fromCol]: newItems }));
     } else {
       const fromItems = linkedinOutreachColumns[fromCol];
       const toItems = linkedinOutreachColumns[toCol];
       const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
-      if (movingIndex === -1) return;
+      if (movingIndex === -1) {
+        setActiveLinkedinOutreachId(null);
+        isDraggingLinkedinOutreachRef.current = false;
+        return;
+      }
       const movingItem = fromItems[movingIndex];
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
@@ -654,10 +691,12 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       }
     }
     setActiveLinkedinOutreachId(null);
+    isDraggingLinkedinOutreachRef.current = false;
   };
 
   const handleLinkedinOutreachDragStart = (event: DragStartEvent) => {
     setActiveLinkedinOutreachId(String(event.active.id));
+    isDraggingLinkedinOutreachRef.current = true;
   };
 
   const handleLinkedinOutreachDragOver = (event: DragOverEvent) => {
@@ -678,6 +717,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [eventsFilter, setEventsFilter] = useState<BoardTimeFilter>('currentMonth');
   const isFetchingEventsRef = useRef(false);
+  const isDraggingEventRef = useRef(false);
 
   const fetchEvents = useCallback(async () => {
     // --- MOCK DATA BYPASS FOR EVENTS FETCH START ---
@@ -731,7 +771,10 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
 
   const handleEventsDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) {
+      isDraggingEventRef.current = false;
+      return;
+    }
 
     const activeId = String(active.id);
     const overId = String(over.id);
@@ -740,20 +783,32 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     const toCol = (['upcoming', 'attended', 'linkedinRequestsSent', 'followups'] as EventColumnId[]).includes(overId as EventColumnId)
       ? (overId as EventColumnId)
       : getEventColumnOfItem(overId);
-    if (!fromCol || !toCol) return;
+    if (!fromCol || !toCol) {
+      setActiveEventId(null);
+      isDraggingEventRef.current = false;
+      return;
+    }
 
     if (fromCol === toCol) {
       const items = eventColumns[fromCol];
       const oldIndex = items.findIndex(i => String(i.id) === activeId);
       const newIndex = items.findIndex(i => String(i.id) === overId);
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        setActiveEventId(null);
+        isDraggingEventRef.current = false;
+        return;
+      }
       const newItems = arrayMove(items, oldIndex, newIndex);
       setEventColumns(prev => ({ ...prev, [fromCol]: newItems }));
     } else {
       const fromItems = eventColumns[fromCol];
       const toItems = eventColumns[toCol];
       const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
-      if (movingIndex === -1) return;
+      if (movingIndex === -1) {
+        setActiveEventId(null);
+        isDraggingEventRef.current = false;
+        return;
+      }
       const movingItem = fromItems[movingIndex];
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
@@ -784,10 +839,12 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       }
     }
     setActiveEventId(null);
+    isDraggingEventRef.current = false;
   };
 
   const handleEventsDragStart = (event: DragStartEvent) => {
     setActiveEventId(String(event.active.id));
+    isDraggingEventRef.current = true;
   };
 
   const handleEventsDragOver = (event: DragOverEvent) => {
@@ -807,6 +864,7 @@ const [isDeletingLeet, setIsDeletingLeet] = useState<number | null>(null);
 const [isLoadingLeet, setIsLoadingLeet] = useState(true);
   const [leetFilter, setLeetFilter] = useState<BoardTimeFilter>('currentMonth');
 const isFetchingLeetRef = useRef(false);
+  const isDraggingLeetRef = useRef(false);
 // ----- MOCK DATA SEED TRACKER START -----
 const hasSeededMockDataRef = useRef(false);
 // ----- MOCK DATA SEED TRACKER END -----
@@ -862,7 +920,10 @@ const hasSeededMockDataRef = useRef(false);
 
   const handleLeetDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) {
+      isDraggingLeetRef.current = false;
+      return;
+    }
 
     const activeId = String(active.id);
     const overId = String(over.id);
@@ -871,20 +932,32 @@ const hasSeededMockDataRef = useRef(false);
     const toCol = (['planned', 'solved', 'reflected'] as LeetColumnId[]).includes(overId as LeetColumnId)
       ? (overId as LeetColumnId)
       : getLeetColumnOfItem(overId);
-    if (!fromCol || !toCol) return;
+    if (!fromCol || !toCol) {
+      setActiveLeetId(null);
+      isDraggingLeetRef.current = false;
+      return;
+    }
 
     if (fromCol === toCol) {
       const items = leetColumns[fromCol];
       const oldIndex = items.findIndex(i => String(i.id) === activeId);
       const newIndex = items.findIndex(i => String(i.id) === overId);
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        setActiveLeetId(null);
+        isDraggingLeetRef.current = false;
+        return;
+      }
       const newItems = arrayMove(items, oldIndex, newIndex);
       setLeetColumns(prev => ({ ...prev, [fromCol]: newItems }));
     } else {
       const fromItems = leetColumns[fromCol];
       const toItems = leetColumns[toCol];
       const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
-      if (movingIndex === -1) return;
+      if (movingIndex === -1) {
+        setActiveLeetId(null);
+        isDraggingLeetRef.current = false;
+        return;
+      }
       const movingItem = fromItems[movingIndex];
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
@@ -915,10 +988,12 @@ const hasSeededMockDataRef = useRef(false);
       }
     }
     setActiveLeetId(null);
+    isDraggingLeetRef.current = false;
   };
 
   const handleLeetDragStart = (event: DragStartEvent) => {
     setActiveLeetId(String(event.active.id));
+    isDraggingLeetRef.current = true;
   };
 
   const handleLeetDragOver = (event: DragOverEvent) => {
@@ -927,16 +1002,25 @@ const hasSeededMockDataRef = useRef(false);
 
   function SortableLinkedinOutreachCard(props: { card: LinkedinOutreach }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
+    
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
       opacity: isDragging ? 0 : undefined,
     } as React.CSSProperties;
 
-    const handleEdit = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setEditingLinkedinOutreach(props.card);
-      setIsLinkedinOutreachModalOpen(true);
+    const handleClick = (e: React.MouseEvent) => {
+      // Prevent opening modal if this card was just dragged
+      if (activeLinkedinOutreachId === String(props.card.id)) {
+        return;
+      }
+      // Small delay to check if drag started
+      setTimeout(() => {
+        if (!isDraggingLinkedinOutreachRef.current && !isDragging && activeLinkedinOutreachId !== String(props.card.id)) {
+          setEditingLinkedinOutreach(props.card);
+          setIsLinkedinOutreachModalOpen(true);
+        }
+      }, 50);
     };
 
     const handleDelete = (e: React.MouseEvent) => {
@@ -949,8 +1033,9 @@ const hasSeededMockDataRef = useRef(false);
         ref={setNodeRef} 
         style={style} 
         {...attributes} 
-        {...listeners} 
-        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors group relative"
+        {...listeners}
+        onClick={handleClick}
+        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
       >
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
@@ -971,13 +1056,6 @@ const hasSeededMockDataRef = useRef(false);
             )}
           </div>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleEdit}
-              className="p-1 hover:bg-gray-500 rounded text-gray-300 hover:text-white"
-              title="Edit"
-            >
-              <Edit2 size={14} />
-            </button>
             <button
               onClick={handleDelete}
               className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
@@ -1003,6 +1081,7 @@ const hasSeededMockDataRef = useRef(false);
 
   function SortableEventCard(props: { card: InPersonEvent }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
+    
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
@@ -1023,10 +1102,18 @@ const hasSeededMockDataRef = useRef(false);
       }
     };
 
-    const handleEdit = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setEditingEvent(props.card);
-      setIsEventModalOpen(true);
+    const handleClick = (e: React.MouseEvent) => {
+      // Prevent opening modal if this card was just dragged
+      if (activeEventId === String(props.card.id)) {
+        return;
+      }
+      // Small delay to check if drag started
+      setTimeout(() => {
+        if (!isDraggingEventRef.current && !isDragging && activeEventId !== String(props.card.id)) {
+          setEditingEvent(props.card);
+          setIsEventModalOpen(true);
+        }
+      }, 50);
     };
 
     const handleDelete = (e: React.MouseEvent) => {
@@ -1040,7 +1127,8 @@ const hasSeededMockDataRef = useRef(false);
         style={style}
         {...attributes}
         {...listeners}
-        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors group relative"
+        onClick={handleClick}
+        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
       >
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
@@ -1064,13 +1152,6 @@ const hasSeededMockDataRef = useRef(false);
             )}
           </div>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleEdit}
-              className="p-1 hover:bg-gray-500 rounded text-gray-300 hover:text-white"
-              title="Edit"
-            >
-              <Edit2 size={14} />
-            </button>
             <button
               onClick={handleDelete}
               className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
@@ -1104,16 +1185,25 @@ const hasSeededMockDataRef = useRef(false);
 
   function SortableLeetCard(props: { card: LeetEntry }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
+    
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
       opacity: isDragging ? 0 : undefined,
     } as React.CSSProperties;
 
-    const handleEdit = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setEditingLeet(props.card);
-      setIsLeetModalOpen(true);
+    const handleClick = (e: React.MouseEvent) => {
+      // Prevent opening modal if this card was just dragged
+      if (activeLeetId === String(props.card.id)) {
+        return;
+      }
+      // Small delay to check if drag started
+      setTimeout(() => {
+        if (!isDraggingLeetRef.current && !isDragging && activeLeetId !== String(props.card.id)) {
+          setEditingLeet(props.card);
+          setIsLeetModalOpen(true);
+        }
+      }, 50);
     };
 
     const handleDelete = (e: React.MouseEvent) => {
@@ -1127,7 +1217,8 @@ const hasSeededMockDataRef = useRef(false);
         style={style}
         {...attributes}
         {...listeners}
-        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-move hover:border-electric-blue transition-colors group relative"
+        onClick={handleClick}
+        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
       >
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
@@ -1142,13 +1233,6 @@ const hasSeededMockDataRef = useRef(false);
             )}
           </div>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleEdit}
-              className="p-1 hover:bg-gray-500 rounded text-gray-300 hover:text-white"
-              title="Edit"
-            >
-              <Edit2 size={14} />
-            </button>
             <button
               onClick={handleDelete}
               className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
