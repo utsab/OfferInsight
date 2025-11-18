@@ -3636,50 +3636,59 @@ function InPersonEventModal({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-white font-semibold mb-2">People Spoken To</label>
-              <input
-                type="number"
-                min={0}
-                value={formData.numPeopleSpokenTo}
-                onChange={(e) => setFormData(prev => ({ ...prev, numPeopleSpokenTo: e.target.value }))}
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white font-semibold mb-2">LinkedIn Requests</label>
-              <input
-                type="number"
-                min={0}
-                value={formData.numLinkedInRequests}
-                onChange={(e) => setFormData(prev => ({ ...prev, numLinkedInRequests: e.target.value }))}
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white font-semibold mb-2">Interviews from Event</label>
-              <input
-                type="number"
-                min={0}
-                value={formData.numOfInterviews}
-                onChange={(e) => setFormData(prev => ({ ...prev, numOfInterviews: e.target.value }))}
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center">
+          <div className="flex items-center mb-4">
             <input
               type="checkbox"
               id="careerFair"
               checked={formData.careerFair}
-              onChange={(e) => setFormData(prev => ({ ...prev, careerFair: e.target.checked }))}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                careerFair: e.target.checked,
+                numOfInterviews: e.target.checked ? prev.numOfInterviews : ''
+              }))}
               className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
             />
             <label htmlFor="careerFair" className="ml-2 text-white font-semibold">
               This is a career fair
             </label>
+          </div>
+
+          <div className={`grid gap-4 ${formData.careerFair ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            <div>
+              <label className="block text-white font-semibold mb-2">No. of People Spoken To</label>
+              <input
+                type="number"
+                min={0}
+                value={formData.numPeopleSpokenTo}
+                onChange={(e) => setFormData(prev => ({ ...prev, numPeopleSpokenTo: e.target.value }))}
+                placeholder="#"
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              />
+            </div>
+            <div>
+              <label className="block text-white font-semibold mb-2">No. of LinkedIn Requests</label>
+              <input
+                type="number"
+                min={0}
+                value={formData.numLinkedInRequests}
+                onChange={(e) => setFormData(prev => ({ ...prev, numLinkedInRequests: e.target.value }))}
+                placeholder="#"
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              />
+            </div>
+            {formData.careerFair && (
+              <div>
+                <label className="block text-white font-semibold mb-2">No. of Interviews</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={formData.numOfInterviews}
+                  onChange={(e) => setFormData(prev => ({ ...prev, numOfInterviews: e.target.value }))}
+                  placeholder="#"
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                />
+              </div>
+            )}
           </div>
 
           {/* ===== DATE CREATED EDITING: Show dateCreated field when toggle is enabled ===== */}
