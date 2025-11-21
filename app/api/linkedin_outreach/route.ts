@@ -66,8 +66,9 @@ export async function POST(request: NextRequest) {
         status: data.status || "outreachRequestSent", // TODO: This is apart of default status. eliminate redundancy (1/3)
         recievedReferral: data.recievedReferral || false,
         userId: user.id,
-        // ===== DATE CREATED EDITING: Allow setting dateCreated if provided =====
+        // ===== DATE FIELD EDITING: Allow setting dateCreated and dateCompleted if provided =====
         dateCreated: data.dateCreated ? new Date(data.dateCreated) : undefined,
+        dateCompleted: data.dateCompleted ? new Date(data.dateCompleted) : null,
       },
     });
 
@@ -206,11 +207,15 @@ export async function PUT(request: NextRequest) {
           data.recievedReferral !== undefined
             ? data.recievedReferral
             : outreach.recievedReferral,
-        // ===== DATE CREATED EDITING: Allow updating dateCreated if provided =====
+        // ===== DATE FIELD EDITING: Allow updating dateCreated and dateCompleted if provided =====
         dateCreated:
           data.dateCreated !== undefined
             ? new Date(data.dateCreated)
             : outreach.dateCreated,
+        dateCompleted:
+          data.dateCompleted !== undefined
+            ? (data.dateCompleted ? new Date(data.dateCompleted) : null)
+            : outreach.dateCompleted,
       },
     });
 
