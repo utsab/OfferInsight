@@ -2126,6 +2126,7 @@ const hasSeededMockDataRef = useRef(false);
                 <div className="flex-1 rounded-lg bg-gray-800/60 border border-purple-400/30 p-4 text-center">
                   <div className="text-sm uppercase tracking-widest text-gray-400 mb-2">Projected Offer Date</div>
                   <div className="text-4xl md:text-5xl font-bold text-purple-300">{projectedOfferDateText}</div>
+                  <div className="text-xs text-gray-400 mt-2">Based on previous month's habits</div>
                 </div>
               </div>
               <div className="mt-2 text-left">
