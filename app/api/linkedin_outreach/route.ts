@@ -98,7 +98,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { status } = body;
+    const { status, dateCompleted } = body;
 
     if (status === undefined) {
       return NextResponse.json(
@@ -130,10 +130,15 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Update only the status
+    // Update status and dateCompleted
+    const updateData: any = { status };
+    if (dateCompleted !== undefined) {
+      updateData.dateCompleted = dateCompleted ? new Date(dateCompleted) : null;
+    }
+
     const updatedOutreach = await prisma.linkedin_Outreach.update({
       where: { id: parseInt(id) },
-      data: { status },
+      data: updateData,
     });
 
     return NextResponse.json(updatedOutreach);

@@ -87,7 +87,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { status } = body;
+    const { status, dateCompleted } = body;
 
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
@@ -118,10 +118,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Update just the status
+    // Update status and dateCompleted
+    const updateData: any = { status };
+    if (dateCompleted !== undefined) {
+      updateData.dateCompleted = dateCompleted ? new Date(dateCompleted) : null;
+    }
+
     const updatedEvent = await prisma.in_Person_Events.update({
       where: { id: parseInt(id) },
-      data: { status },
+      data: updateData,
     });
 
     return NextResponse.json(updatedEvent);

@@ -74,7 +74,8 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { status } = await request.json();
+    const body = await request.json();
+    const { status, dateCompleted } = body;
 
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
@@ -98,9 +99,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
+    // Update status and dateCompleted
+    const updateData: any = { status };
+    if (dateCompleted !== undefined) {
+      updateData.dateCompleted = dateCompleted ? new Date(dateCompleted) : null;
+    }
+
     const updated = await prisma.leetcode_Practice.update({
       where: { id: parseInt(id, 10) },
-      data: { status },
+      data: updateData,
     });
 
     return NextResponse.json(updated);
