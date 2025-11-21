@@ -1572,6 +1572,19 @@ const hasSeededMockDataRef = useRef(false);
     return end;
   }, [metricsMonth]);
 
+  // Calculate last month's date range for projected offer date
+  const lastMonthStart = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return start;
+  }, []);
+
+  const lastMonthEnd = useMemo(() => {
+    const end = new Date(lastMonthStart);
+    end.setMonth(end.getMonth() + 1);
+    return end;
+  }, [lastMonthStart]);
+
   const getHabitStatusStyles = useCallback((
     count: number,
     goal: number,
@@ -1808,6 +1821,49 @@ const hasSeededMockDataRef = useRef(false);
 
   const PROJECTED_WEEKS_PER_MONTH = 4;
 
+  // Calculate last month's metrics for projected offer date (using dateCompleted)
+  const lastMonthApplicationsMetrics = useMemo(() => {
+    let count = 0;
+    APPLICATION_COMPLETION_COLUMNS.forEach(col => {
+      appColumns[col].forEach(app => {
+        if (!app.dateCompleted) return;
+        const completedDate = new Date(app.dateCompleted);
+        if (!Number.isNaN(completedDate.getTime()) && completedDate >= lastMonthStart && completedDate < lastMonthEnd) {
+          count++;
+        }
+      });
+    });
+    return count;
+  }, [appColumns, lastMonthStart, lastMonthEnd]);
+
+  const lastMonthLinkedinOutreachMetrics = useMemo(() => {
+    let count = 0;
+    LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
+      linkedinOutreachColumns[col].forEach(chat => {
+        if (!chat.dateCompleted) return;
+        const completedDate = new Date(chat.dateCompleted);
+        if (!Number.isNaN(completedDate.getTime()) && completedDate >= lastMonthStart && completedDate < lastMonthEnd) {
+          count++;
+        }
+      });
+    });
+    return count;
+  }, [linkedinOutreachColumns, lastMonthStart, lastMonthEnd]);
+
+  const lastMonthEventsMetrics = useMemo(() => {
+    let count = 0;
+    EVENT_COMPLETION_COLUMNS.forEach(col => {
+      eventColumns[col].forEach(event => {
+        if (!event.dateCompleted) return;
+        const completedDate = new Date(event.dateCompleted);
+        if (!Number.isNaN(completedDate.getTime()) && completedDate >= lastMonthStart && completedDate < lastMonthEnd) {
+          count++;
+        }
+      });
+    });
+    return count;
+  }, [eventColumns, lastMonthStart, lastMonthEnd]);
+
   const derivedPlanStartDate = useMemo(() => {
     if (!targetOfferDate || !userData) return null;
 
@@ -1839,11 +1895,12 @@ const hasSeededMockDataRef = useRef(false);
   ]);
 
   const projectedOfferDate = useMemo(() => {
-    const appsPerWeekRaw = applicationsMetrics.count / PROJECTED_WEEKS_PER_MONTH;
-    const linkedinPerWeekRaw = linkedinOutreachMetrics.count / PROJECTED_WEEKS_PER_MONTH;
+    // Use last month's metrics instead of current month's
+    const appsPerWeekRaw = lastMonthApplicationsMetrics / PROJECTED_WEEKS_PER_MONTH;
+    const linkedinPerWeekRaw = lastMonthLinkedinOutreachMetrics / PROJECTED_WEEKS_PER_MONTH;
     const appsPerWeek = Number.isFinite(appsPerWeekRaw) ? appsPerWeekRaw : 0;
     const linkedinPerWeek = Number.isFinite(linkedinPerWeekRaw) ? linkedinPerWeekRaw : 0;
-    const eventsPerMonth = Number.isFinite(eventsMetrics.count) ? eventsMetrics.count : 0;
+    const eventsPerMonth = Number.isFinite(lastMonthEventsMetrics) ? lastMonthEventsMetrics : 0;
     const careerFairsPerYear = careerFairPlanGoal > 0
       ? careerFairPlanGoal * careerFairProgress
       : careerFairsThisYear;
@@ -1860,9 +1917,9 @@ const hasSeededMockDataRef = useRef(false);
       referenceDate
     );
   }, [
-    applicationsMetrics.count,
-    linkedinOutreachMetrics.count,
-    eventsMetrics.count,
+    lastMonthApplicationsMetrics,
+    lastMonthLinkedinOutreachMetrics,
+    lastMonthEventsMetrics,
     careerFairsThisYear,
     careerFairPlanGoal,
     careerFairProgress,
