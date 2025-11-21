@@ -167,7 +167,7 @@ type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | 'followu
 type LeetStatus = 'planned' | 'solved' | 'reflected';
 type LeetColumnId = 'planned' | 'solved' | 'reflected';
 
-type BoardTimeFilter = 'currentMonth' | 'allTime';
+type BoardTimeFilter = 'createdThisMonth' | 'completedThisMonth' | 'allTime';
 
 const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
   'messagedHiringManager',
@@ -320,7 +320,7 @@ export default function Page() {
   const [editingApp, setEditingApp] = useState<Application | null>(null);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('currentMonth');
+  const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('createdThisMonth');
   const isFetchingRef = useRef(false);
   const lastProjectedOfferSyncRef = useRef<string | null>(null);
   const isDraggingAppRef = useRef(false);
@@ -567,7 +567,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [editingLinkedinOutreach, setEditingLinkedinOutreach] = useState<LinkedinOutreach | null>(null);
   const [isDeletingLinkedinOutreach, setIsDeletingLinkedinOutreach] = useState<number | null>(null);
   const [isLoadingLinkedinOutreach, setIsLoadingLinkedinOutreach] = useState(true);
-  const [linkedinOutreachFilter, setLinkedinOutreachFilter] = useState<BoardTimeFilter>('currentMonth');
+  const [linkedinOutreachFilter, setLinkedinOutreachFilter] = useState<BoardTimeFilter>('createdThisMonth');
   const isFetchingLinkedinOutreachRef = useRef(false);
   const isDraggingLinkedinOutreachRef = useRef(false);
 
@@ -715,7 +715,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [editingEvent, setEditingEvent] = useState<InPersonEvent | null>(null);
   const [isDeletingEvent, setIsDeletingEvent] = useState<number | null>(null);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
-  const [eventsFilter, setEventsFilter] = useState<BoardTimeFilter>('currentMonth');
+  const [eventsFilter, setEventsFilter] = useState<BoardTimeFilter>('createdThisMonth');
   const isFetchingEventsRef = useRef(false);
   const isDraggingEventRef = useRef(false);
 
@@ -862,7 +862,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [editingLeet, setEditingLeet] = useState<LeetEntry | null>(null);
 const [isDeletingLeet, setIsDeletingLeet] = useState<number | null>(null);
 const [isLoadingLeet, setIsLoadingLeet] = useState(true);
-  const [leetFilter, setLeetFilter] = useState<BoardTimeFilter>('currentMonth');
+  const [leetFilter, setLeetFilter] = useState<BoardTimeFilter>('createdThisMonth');
 const isFetchingLeetRef = useRef(false);
   const isDraggingLeetRef = useRef(false);
 // ----- MOCK DATA SEED TRACKER START -----
@@ -1974,7 +1974,11 @@ const hasSeededMockDataRef = useRef(false);
       interview: [],
     };
     (Object.keys(appColumns) as ApplicationColumnId[]).forEach(columnId => {
-      filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateCreated));
+      if (applicationsFilter === 'createdThisMonth') {
+        filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateCreated));
+      } else if (applicationsFilter === 'completedThisMonth') {
+        filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateCompleted));
+      }
     });
     return filtered;
   }, [appColumns, applicationsFilter, isWithinCurrentMonth]);
@@ -1988,9 +1992,15 @@ const hasSeededMockDataRef = useRef(false);
       linkedinOutreach: [],
     };
     (Object.keys(linkedinOutreachColumns) as LinkedinOutreachColumnId[]).forEach(columnId => {
-      filtered[columnId] = linkedinOutreachColumns[columnId].filter(entry =>
-        isWithinCurrentMonth(entry.dateCreated)
-      );
+      if (linkedinOutreachFilter === 'createdThisMonth') {
+        filtered[columnId] = linkedinOutreachColumns[columnId].filter(entry =>
+          isWithinCurrentMonth(entry.dateCreated)
+        );
+      } else if (linkedinOutreachFilter === 'completedThisMonth') {
+        filtered[columnId] = linkedinOutreachColumns[columnId].filter(entry =>
+          isWithinCurrentMonth(entry.dateCompleted)
+        );
+      }
     });
     return filtered;
   }, [linkedinOutreachColumns, linkedinOutreachFilter, isWithinCurrentMonth]);
@@ -2004,9 +2014,15 @@ const hasSeededMockDataRef = useRef(false);
       followups: [],
     };
     (Object.keys(eventColumns) as EventColumnId[]).forEach(columnId => {
-      filtered[columnId] = eventColumns[columnId].filter(event =>
-        isWithinCurrentMonth(event.date)
-      );
+      if (eventsFilter === 'createdThisMonth') {
+        filtered[columnId] = eventColumns[columnId].filter(event =>
+          isWithinCurrentMonth(event.dateCreated || event.date)
+        );
+      } else if (eventsFilter === 'completedThisMonth') {
+        filtered[columnId] = eventColumns[columnId].filter(event =>
+          isWithinCurrentMonth(event.dateCompleted)
+        );
+      }
     });
     return filtered;
   }, [eventColumns, eventsFilter, isWithinCurrentMonth]);
@@ -2019,9 +2035,15 @@ const hasSeededMockDataRef = useRef(false);
       reflected: [],
     };
     (Object.keys(leetColumns) as LeetColumnId[]).forEach(columnId => {
-      filtered[columnId] = leetColumns[columnId].filter(entry =>
-        isWithinCurrentMonth(entry.dateCreated)
-      );
+      if (leetFilter === 'createdThisMonth') {
+        filtered[columnId] = leetColumns[columnId].filter(entry =>
+          isWithinCurrentMonth(entry.dateCreated)
+        );
+      } else if (leetFilter === 'completedThisMonth') {
+        filtered[columnId] = leetColumns[columnId].filter(entry =>
+          isWithinCurrentMonth(entry.dateCompleted)
+        );
+      }
     });
     return filtered;
   }, [leetColumns, leetFilter, isWithinCurrentMonth]);
@@ -2290,14 +2312,24 @@ const hasSeededMockDataRef = useRef(false);
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <span>Show:</span>
                 <button
-                  onClick={() => setApplicationsFilter('currentMonth')}
+                  onClick={() => setApplicationsFilter('createdThisMonth')}
                   className={`px-3 py-1 rounded-md border transition-colors ${
-                    applicationsFilter === 'currentMonth'
+                    applicationsFilter === 'createdThisMonth'
                       ? 'bg-electric-blue text-white border-electric-blue'
                       : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
                   }`}
                 >
-                  Current Month
+                  Created This Month
+                </button>
+                <button
+                  onClick={() => setApplicationsFilter('completedThisMonth')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    applicationsFilter === 'completedThisMonth'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  Completed This Month
                 </button>
                 <button
                   onClick={() => setApplicationsFilter('allTime')}
@@ -2487,14 +2519,24 @@ const hasSeededMockDataRef = useRef(false);
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <span>Show:</span>
                 <button
-                  onClick={() => setLinkedinOutreachFilter('currentMonth')}
+                  onClick={() => setLinkedinOutreachFilter('createdThisMonth')}
                   className={`px-3 py-1 rounded-md border transition-colors ${
-                    linkedinOutreachFilter === 'currentMonth'
+                    linkedinOutreachFilter === 'createdThisMonth'
                       ? 'bg-electric-blue text-white border-electric-blue'
                       : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
                   }`}
                 >
-                  Current Month
+                  Created This Month
+                </button>
+                <button
+                  onClick={() => setLinkedinOutreachFilter('completedThisMonth')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    linkedinOutreachFilter === 'completedThisMonth'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  Completed This Month
                 </button>
                 <button
                   onClick={() => setLinkedinOutreachFilter('allTime')}
@@ -2665,14 +2707,24 @@ const hasSeededMockDataRef = useRef(false);
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <span>Show:</span>
                 <button
-                  onClick={() => setEventsFilter('currentMonth')}
+                  onClick={() => setEventsFilter('createdThisMonth')}
                   className={`px-3 py-1 rounded-md border transition-colors ${
-                    eventsFilter === 'currentMonth'
+                    eventsFilter === 'createdThisMonth'
                       ? 'bg-electric-blue text-white border-electric-blue'
                       : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
                   }`}
                 >
-                  Current Month
+                  Created This Month
+                </button>
+                <button
+                  onClick={() => setEventsFilter('completedThisMonth')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    eventsFilter === 'completedThisMonth'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  Completed This Month
                 </button>
                 <button
                   onClick={() => setEventsFilter('allTime')}
@@ -2855,14 +2907,24 @@ const hasSeededMockDataRef = useRef(false);
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <span>Show:</span>
                 <button
-                  onClick={() => setLeetFilter('currentMonth')}
+                  onClick={() => setLeetFilter('createdThisMonth')}
                   className={`px-3 py-1 rounded-md border transition-colors ${
-                    leetFilter === 'currentMonth'
+                    leetFilter === 'createdThisMonth'
                       ? 'bg-electric-blue text-white border-electric-blue'
                       : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
                   }`}
                 >
-                  Current Month
+                  Created This Month
+                </button>
+                <button
+                  onClick={() => setLeetFilter('completedThisMonth')}
+                  className={`px-3 py-1 rounded-md border transition-colors ${
+                    leetFilter === 'completedThisMonth'
+                      ? 'bg-electric-blue text-white border-electric-blue'
+                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+                  }`}
+                >
+                  Completed This Month
                 </button>
                 <button
                   onClick={() => setLeetFilter('allTime')}
