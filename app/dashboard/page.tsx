@@ -18,7 +18,7 @@ function calculateProjectedOfferDate(
   inPersonEventsPerMonth: number,
   careerFairsPerYear: number,
   referenceDate?: Date
-) {
+): Date | null {
   let offersPerAppWithOutreach = 0.0025;
   let offersPerLinkedinOutreachAttempt = 0.00075;
   let offersPerInPersonEvent = 0.0075;
@@ -72,7 +72,7 @@ function calculateProjectedOfferDate(
     (careerFairsPerYear / 52) * offersPerCareerFair;
 
   if (!Number.isFinite(totalOffersPerWeek) || totalOffersPerWeek <= 0) {
-    return new Date();
+    return null;
   }
 
   const totalWeeks = 3 + 1 / totalOffersPerWeek;
@@ -1824,6 +1824,7 @@ const hasSeededMockDataRef = useRef(false);
       planFairs,
       epoch
     );
+    if (!planDurationDate) return null;
     const planDurationMs = planDurationDate.getTime() - epoch.getTime();
     if (!Number.isFinite(planDurationMs) || planDurationMs <= 0) return null;
 
@@ -1871,6 +1872,7 @@ const hasSeededMockDataRef = useRef(false);
   ]);
 
   const projectedOfferDateText = useMemo(() => {
+    if (!projectedOfferDate) return '—';
     try {
       return projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
     } catch {
