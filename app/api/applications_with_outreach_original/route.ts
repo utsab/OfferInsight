@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     const applicationsWithOutreach =
-      await prisma.applications_with_Outreach.findMany({
+      await prisma.applications_With_Outreach.findMany({
         where: {
           user: {
             email: session.user.email,
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       offer,
     } = await request.json();
     const newApplicationWithOutreach =
-      await prisma.applications_with_Outreach.create({
+      await prisma.applications_With_Outreach.create({
         data: {
           company,
           hiringManager,
@@ -85,7 +85,7 @@ export async function PUT(request: Request) {
     const { id, ...data } = await request.json();
 
     const existingApplication_with_Outreach =
-      await prisma.applications_with_Outreach.findFirst({
+      await prisma.applications_With_Outreach.findFirst({
         where: {
           id,
           user: {
@@ -102,7 +102,7 @@ export async function PUT(request: Request) {
     }
 
     const updatedApplicationWithOutreach =
-      await prisma.applications_with_Outreach.update({
+      await prisma.applications_With_Outreach.update({
         where: { id },
         data,
       });
@@ -126,7 +126,7 @@ export async function DELETE(request: Request) {
     const { id } = await request.json();
 
     const existingApplication_with_Outreach =
-      await prisma.applications_with_Outreach.findFirst({
+      await prisma.applications_With_Outreach.findFirst({
         where: {
           id,
           user: {
@@ -142,7 +142,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.applications_with_Outreach.delete({
+    await prisma.applications_With_Outreach.delete({
       where: { id },
     });
     return NextResponse.json({

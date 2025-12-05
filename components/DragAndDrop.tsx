@@ -59,9 +59,22 @@ export const DraggableCard = <T extends DraggableItem>({
       };
 
   const handleClick = (e: React.MouseEvent) => {
+<<<<<<< HEAD
+<<<<<<< HEAD
     e.preventDefault();
     e.stopPropagation();
     onEdit(item);
+=======
+    // Only handle click if not dragging
+    if (!isDragging) {
+      onEdit(item);
+    }
+>>>>>>> b2b8387 (Tried to improve the feeling of moving the cards.)
+=======
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit(item);
+>>>>>>> 45dc61b (Tried to fix a bug with the editing modal.)
   };
 
   return (
@@ -223,7 +236,7 @@ export const DragAndDropBoard = <T extends DraggableItem>({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex flex-col md:flex-row gap-4 overflow-x-auto pb-4 max-w-full">
+      <div className="flex flex-row flex-nowrap gap-4 pb-4 min-w-max">
         {columns.map((column) => {
           // Use the local items state instead of props
           const columnItems = localItems.filter(

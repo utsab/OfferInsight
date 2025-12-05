@@ -1,57 +1,314 @@
-import AcmeLogo from '@/app/ui/acme-logo';
-import { ArrowRightIcon } from '@heroicons/react/24/outline';
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import styles from '@/app/ui/home.module.css';
-import { lusitana } from '@/app/ui/fonts';
-import Image from 'next/image';
+import { FileText, MessageCircle, Users, Code } from 'lucide-react';
+import { handleSignIn } from '@/components/auth-actions';
 
 export default function Page() {
+  const [currentStep, setCurrentStep] = useState<'homepage' | 'onboarding-step1' | 'onboarding-step2' | 'onboarding-step3' | 'dashboard'>('homepage');
+  const [selectedTimeline, setSelectedTimeline] = useState<string>('');
+  const [onboardingProgress, setOnboardingProgress] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  const showStep = (stepId: 'homepage' | 'onboarding-step1' | 'onboarding-step2' | 'onboarding-step3' | 'dashboard') => {
+    setCurrentStep(stepId as any);
+  };
+
+  const handleTimelineSelect = (months: string) => {
+    setSelectedTimeline(months);
+  };
+
+  // Fetch user's onboarding progress on component mount
+  useEffect(() => {
+    const fetchOnboardingProgress = async () => {
+      try {
+        const response = await fetch('/api/users/onboarding2');
+        if (response.ok) {
+          const user = await response.json();
+          setOnboardingProgress(user.onboardingProgress);
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch onboarding progress:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOnboardingProgress();
+  }, []);
+
+  const handleGetStarted = async () => {
+    if (loading) return;
+    
+    // If user is not authenticated, trigger sign-in flow
+    if (!isAuthenticated) {
+      await handleSignIn();
+      return;
+    }
+    
+    // Redirect based on onboarding progress
+    switch (onboardingProgress) {
+      case 0:
+        window.location.href = '/onboarding/page1-v2';
+        break;
+      case 1:
+        window.location.href = '/onboarding/page2-v2';
+        break;
+      case 2:
+        window.location.href = '/onboarding/page3-v2';
+        break;
+      case 3:
+        window.location.href = '/dashboard';
+        break;
+      default:
+        // If no progress or error, start from the beginning
+        window.location.href = '/onboarding/page1-v2';
+    }
+  };
+
+
+  const handleOnboarding1Submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Redirect to the actual page1-v2
+    window.location.href = '/onboarding/page1-v2';
+  };
+
+  const handleOnboarding2Submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedTimeline !== '') {
+      showStep('onboarding-step3');
+    }
+  };
+
+  const handleOnboarding3Submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Redirect to the actual dashboard page
+    window.location.href = '/dashboard';
+  };
+
   return (
-    <main className="flex min-h-screen flex-col p-6">
-      <div className="flex h-20 shrink-0 items-end rounded-lg bg-blue-500 p-4 md:h-52">
-        <AcmeLogo />
-        <div className={styles.shape} />
+    <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900">
+      {/* Homepage */}
+      {currentStep === 'homepage' && (
+        <>
+          <section className="h-[600px] flex items-center justify-center">
+            <div className="max-w-4xl mx-auto text-center px-8">
+              <h2 className="text-5xl font-bold mb-6 text-white leading-tight">
+                Track Your Job Search.<br />
+                <span className="text-electric-blue">Predict Your Success.</span>
+              </h2>
+              <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+                OfferInsight tracks your job-seeking habits and provides data-driven insights to project when you'll receive your first job offer. Master the four key habits that lead to success.
+              </p>
+              <button 
+                onClick={handleGetStarted}
+                disabled={loading}
+                className="bg-electric-blue hover:bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Loading...' : 'Get Started'}
+              </button>
+            </div>
+          </section>
+
+          <section className="py-20 px-8">
+            <div className="max-w-6xl mx-auto">
+              <h3 className="text-3xl font-bold text-center mb-16 text-white">Four Habits to Success</h3>
+              <div className="grid grid-cols-4 gap-8">
+                <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-8 text-center">
+                  <FileText className="text-white text-4xl mb-4 mx-auto" />
+                  <h4 className="text-lg font-bold mb-3 text-white">High Quality Applications</h4>
+                  <p className="text-gray-300 text-sm">Track and optimize your job application process for maximum impact.</p>
+                </div>
+                <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-8 text-center">
+                  <MessageCircle className="text-white text-4xl mb-4 mx-auto" />
+                  <h4 className="text-lg font-bold mb-3 text-white">Informational Interviews</h4>
+                  <p className="text-gray-300 text-sm">Build meaningful connections through strategic networking conversations.</p>
+                </div>
+                <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-8 text-center">
+                  <Users className="text-white text-4xl mb-4 mx-auto" />
+                  <h4 className="text-lg font-bold mb-3 text-white">In-Person Events</h4>
+                  <p className="text-gray-300 text-sm">Attend career fairs, meetups, and networking events to expand your reach.</p>
+                </div>
+                <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-8 text-center">
+                  <Code className="text-white text-4xl mb-4 mx-auto" />
+                  <h4 className="text-lg font-bold mb-3 text-white">LeetCode Practice</h4>
+                  <p className="text-gray-300 text-sm">Sharpen your technical skills with consistent coding practice.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
+
+      {/* Onboarding Step 1 */}
+      {currentStep === 'onboarding-step1' && (
+        <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+          <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[500px]">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">Welcome to OfferInsight</h2>
+              <p className="text-gray-300">Let's get to know you better</p>
+            </div>
+            <form onSubmit={handleOnboarding1Submit}>
+              <div className="mb-6">
+                <label className="block text-white font-semibold mb-2">Full Name</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white placeholder-gray-400" 
+                  placeholder="Enter your full name"
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-white font-semibold mb-2">School</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white placeholder-gray-400" 
+                  placeholder="Enter your school name"
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-white font-semibold mb-2">Major</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white placeholder-gray-400" 
+                  placeholder="Enter your major"
+                />
+              </div>
+              <div className="mb-8">
+                <label className="block text-white font-semibold mb-2">Year of Graduation</label>
+                <select className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white">
+                  <option>2024</option>
+                  <option>2025</option>
+                  <option>2026</option>
+                  <option>2027</option>
+                </select>
       </div>
-      <div className="mt-4 flex grow flex-col gap-4 md:flex-row">
-        <div className="flex flex-col justify-center gap-6 rounded-lg bg-gray-50 px-6 py-10 md:w-2/5 md:px-20">
-          <div className="relative w-0 h-0 border-l-[15px] border-r-[15px] border-b-[26px] border-l-transparent border-r-transparent border-b-black" />
-          <Link
-            href="/dashboard"
-            className="self-start text-blue-500 underline"
-          >
-            Go to Dashboard
-          </Link>
-          <Link
-            href="/onboarding"
-            className="self-start text-blue-500 underline"
-          >
-            Onboarding
-          </Link>
-          <p className={`${lusitana.className} text-xl text-gray-800 md:text-3xl md:leading-normal`}>
-            <strong>Welcome to Acme.</strong> This is the example for the{' '}
-            <a href="https://nextjs.org/learn/" className="text-blue-500">
-              Next.js Learn Course
-            </a>
-            , brought to you by Vercel.
-          </p>
-          <Link
-            href="/login"
-            className="flex items-center gap-5 self-start rounded-lg bg-blue-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400 md:text-base"
-          >
-            <Image
-              src="/hero-desktop.png"
-              width={1000}
-              height={760}
-              className="hidden md:block"
-              alt="Screenshots of the dashboard project showing desktop version"
-            />
-            <span>Log in</span> <ArrowRightIcon className="w-5 md:w-6" />
-          </Link>
+              <button 
+                type="submit" 
+                className="w-full bg-electric-blue hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors"
+              >
+                Continue
+              </button>
+            </form>
+          </div>
         </div>
-        <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
-          {/* Add Hero Images Here */}
+      )}
+
+      {/* Onboarding Step 2 */}
+      {currentStep === 'onboarding-step2' && (
+        <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+          <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[500px]">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">Timeline Planning</h2>
+              <p className="text-gray-300">This helps us create your personalized roadmap</p>
+            </div>
+            <form onSubmit={handleOnboarding2Submit}>
+              <div className="mb-8">
+                <label className="block text-white font-semibold mb-4">How many months do you have to secure an internship or job?</label>
+                <div className="grid grid-cols-3 gap-4">
+                  {['3', '6', '9', '12', '18', '0'].map((months) => (
+                    <button 
+                      key={months}
+                      type="button" 
+                      onClick={() => handleTimelineSelect(months)}
+                      className={`timeline-btn border border-light-steel-blue rounded-lg py-4 text-white font-semibold transition-colors ${
+                        selectedTimeline === months 
+                          ? 'bg-electric-blue' 
+                          : 'bg-gray-700 hover:bg-electric-blue'
+                      }`}
+                    >
+                      {months === '0' ? 'Not Sure' : `${months} Months`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button 
+                type="submit" 
+                className="w-full bg-electric-blue hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors"
+              >
+                Continue
+              </button>
+            </form>
+          </div>
         </div>
+      )}
+
+      {/* Onboarding Step 3 */}
+      {currentStep === 'onboarding-step3' && (
+        <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+          <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[600px]">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">Fine-tune Your Plan</h2>
+              <p className="text-gray-300">Customize your weekly goals for each habit</p>
+            </div>
+            <form onSubmit={handleOnboarding3Submit}>
+              <div className="grid grid-cols-2 gap-6 mb-8">
+                <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
+                  <h4 className="text-white font-semibold mb-3 flex items-center">
+                    <FileText className="text-electric-blue mr-2" />
+                    Applications per Week
+                  </h4>
+                  <input 
+                    type="number" 
+                    className="w-full bg-gray-600 border border-light-steel-blue rounded px-3 py-2 text-white" 
+                    defaultValue="5" 
+                    min="1"
+                  />
+                </div>
+                <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
+                  <h4 className="text-white font-semibold mb-3 flex items-center">
+                    <MessageCircle className="text-electric-blue mr-2" />
+                    Interviews per Week
+                  </h4>
+                  <input 
+                    type="number" 
+                    className="w-full bg-gray-600 border border-light-steel-blue rounded px-3 py-2 text-white" 
+                    defaultValue="2" 
+                    min="0"
+                  />
+                </div>
+                <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
+                  <h4 className="text-white font-semibold mb-3 flex items-center">
+                    <Users className="text-electric-blue mr-2" />
+                    Events per Month
+                  </h4>
+                  <input 
+                    type="number" 
+                    className="w-full bg-gray-600 border border-light-steel-blue rounded px-3 py-2 text-white" 
+                    defaultValue="3" 
+                    min="0"
+                  />
+                </div>
+                <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
+                  <h4 className="text-white font-semibold mb-3 flex items-center">
+                    <Code className="text-electric-blue mr-2" />
+                    LeetCode per Week
+                  </h4>
+                  <input 
+                    type="number" 
+                    className="w-full bg-gray-600 border border-light-steel-blue rounded px-3 py-2 text-white" 
+                    defaultValue="10" 
+                    min="0"
+                  />
+                </div>
+              </div>
+              <button 
+                type="submit" 
+                className="w-full bg-electric-blue hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors"
+              >
+                Start Tracking
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       </div>
-    </main>
   );
 }

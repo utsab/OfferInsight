@@ -13,46 +13,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Applications {
-  id          Int     @id @default(autoincrement())
-  company     String
-  firstRound  Boolean
-  finalRound  Boolean
-  offer       Boolean
-  userId      String
-  user        User    @relation(fields: [userId], references: [id])
-}
+// model Applications removed – consolidated into Applications_with_Outreach
 
-model Applications_with_Outreach {
-  id                    Int     @id @default(autoincrement())
+model Applications_With_Outreach {
+  id                    Int       @id @default(autoincrement())
   company               String
   hiringManager         String?
   msgToManager          String?
   recruiter             String?
   msgToRecruiter        String?
   notes                 String?
-  status                String  @default("applied")
-  dateCreated           DateTime @default(now())
+  status                String    @default("applied")
+  dateCreated           DateTime  @default(now())
+  dateCompleted         DateTime?
   userId                String
-  user                  User    @relation(fields: [userId], references: [id])
+  user                  User      @relation(fields: [userId], references: [id])
 }
 
 model Linkedin_Outreach {
-  id                  Int     @id @default(autoincrement())
+  id                  Int       @id @default(autoincrement())
   name                String
   company             String
   message             String?
   linkedInUrl         String?
   notes               String?
-  status              String  @default("linkedInRequestSent")
-  dateCreated         DateTime @default(now())
-  recievedReferral    Boolean @default(false)
+  recievedReferral    Boolean   @default(false)
+  status              String    @default("outreachRequestSent")
+  dateCreated         DateTime  @default(now())
+  dateCompleted       DateTime?
   userId              String
-  user                User    @relation(fields: [userId], references: [id])
+  user                User      @relation(fields: [userId], references: [id])
 }
 
 model In_Person_Events {
-  id                  Int      @id @default(autoincrement())
+  id                  Int       @id @default(autoincrement())
   event               String
   date                DateTime
   location            String?
@@ -60,48 +54,57 @@ model In_Person_Events {
   notes               String?
   numPeopleSpokenTo   Int?
   numLinkedInRequests Int?
+  careerFair          Boolean   @default(false)
+  numOfInterviews     Int?
+  status              String    @default("scheduled")
+  dateCreated         DateTime  @default(now())
+  dateCompleted       DateTime?
   userId              String
-  user                User     @relation(fields: [userId], references: [id])
-  status              String   @default("scheduled")
+  user                User      @relation(fields: [userId], references: [id])
 }
 
-model Career_Fairs {
-  id                  Int     @id @default(autoincrement())
-  event               String
-  date                DateTime
-  location            String?
-  url                 String?
-  notes               String?
-  numOfInterviews     Int?
-  userId              String
-  user                User    @relation(fields: [userId], references: [id])
-  status              String  @default("scheduled")
+model Leetcode_Practice {
+  id          Int      @id @default(autoincrement())
+  problem     String?
+  problemType String?
+  difficulty  String?
+  url         String?
+  reflection  String?
+  status      String  @default("planned")
+  dateCreated         DateTime  @default(now())
+  dateCompleted       DateTime?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
 }
+
+// model Career_Fairs removed – merged into In_Person_Events
 
 model User {
-  id                                  String                        @id @default(cuid())
-  name                                String?
-  email                               String?                       @unique
-  image                               String?
-  createdAt                           DateTime                      @default(now())
-  applications                        Applications[]
-  applicationsWithOutreach            Applications_with_Outreach[]
-  linkedinOutreach                    Linkedin_Outreach[]
-  inPersonEvents                      In_Person_Events[]
-  careerFairs                         Career_Fairs[]
-  emailVerified                       DateTime?
-  accounts                            Account[]
-  onboarding_progress                 Int                          @default(0)
-  school                              String?
-  major                               String?
-  expectedGraduationDate              DateTime?
-  monthsToSecureInternship            Int?
-  commitment                          Int?
-  applications_per_week               Int?
-  apps_with_outreach_per_week         Int?
-  info_interview_outreach_per_week    Int?
-  in_person_events_per_month          Int?
-  career_fairs_quota                  Int?                         @default(1)                        
+  id                     String                @id @default(cuid())
+  name                   String?
+  email                  String?               @unique
+  image                  String?
+  createdAt              DateTime              @default(now())
+  resetStartDate         DateTime              @default(now())
+  // applications removed – use applicationsWithOutreach instead
+  applicationsWithOutreach Applications_With_Outreach[]
+  linkedinOutreach       Linkedin_Outreach[]
+  inPersonEvents         In_Person_Events[]
+  leetCode               Leetcode_Practice[]
+  emailVerified          DateTime?
+  accounts               Account[]
+  onboardingProgress     Int                   @default(0)
+  school                 String?
+  major                  String?
+  expectedGraduationDate DateTime?
+  targetOfferDate         DateTime?
+  projectedOfferDate     DateTime?
+  monthsToSecureInternship Int?
+  commitment             Int?
+  appsWithOutreachPerWeek Int?
+  linkedinOutreachPerWeek Int?
+  inPersonEventsPerMonth Int?
+  careerFairsPerYear     Int?
 }
 
 model VerificationToken {

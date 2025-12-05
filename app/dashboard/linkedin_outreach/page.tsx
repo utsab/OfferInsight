@@ -11,6 +11,8 @@ import CardEditModal from "@/components/CardEditModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { useDashboardMetrics } from "@/app/contexts/DashboardMetricsContext";
 
+type OutreachStatus = 'outreachRequestSent' | 'accepted' | 'followedUp' | 'linkedinOutreach';
+
 type Outreach = {
   id: number;
   name: string;
@@ -18,7 +20,7 @@ type Outreach = {
   message: string | null;
   linkedInUrl: string | null;
   notes: string | null;
-  status: string;
+  status: OutreachStatus;
   recievedReferral: boolean;
 };
 
@@ -37,7 +39,7 @@ export default function LinkedInOutreachPage() {
     message: "",
     linkedInUrl: "",
     notes: "",
-    status: "linkedInRequestSent", // TODO: This is apart of default status. eliminate redundancy (2/3)
+    status: "outreachRequestSent",
     recievedReferral: false,
   });
   const [editOutreach, setEditOutreach] = useState<Outreach | null>(null);
@@ -122,7 +124,7 @@ export default function LinkedInOutreachPage() {
         message: "",
         linkedInUrl: "",
         notes: "",
-        status: "linkedInRequestSent", // TODO: This is apart of default status. eliminate redundancy (3/3)
+        status: "outreachRequestSent",
         recievedReferral: false,
       });
       await fetchOutreaches();
@@ -163,16 +165,17 @@ export default function LinkedInOutreachPage() {
     }
   };
 
-  const handleUpdateStatus = async (id: number, newStatus: string) => {
+const handleUpdateStatus = async (id: number, newStatus: string) => {
     if (!id) return;
 
     try {
+    const status = newStatus as OutreachStatus;
       const response = await fetch(`/api/linkedin_outreach?id=${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: newStatus }),
+      body: JSON.stringify({ status }),
       });
 
       if (!response.ok) {

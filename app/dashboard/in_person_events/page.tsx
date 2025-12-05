@@ -10,6 +10,7 @@ import CardContent from "@/components/CardContent";
 import CardEditModal from "@/components/CardEditModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { useDashboardMetrics } from "@/app/contexts/DashboardMetricsContext";
+import { formatDateForDisplay } from "@/app/lib/date-utils";
 
 type Event = {
   id: number;
@@ -77,23 +78,7 @@ export default function InPersonEventsPage() {
       key: "date",
       label: "Date",
       type: "text" as const,
-      formatter: (date: Date | string) => {
-        let dateObj: Date;
-
-        if (date instanceof Date) {
-          dateObj = date;
-        } else {
-          dateObj = new Date(date);
-        }
-
-        // Fix date display by using UTC methods
-        const year = dateObj.getUTCFullYear();
-        const month = dateObj.getUTCMonth() + 1; // getUTCMonth() returns 0-11
-        const day = dateObj.getUTCDate();
-
-        // Format as MM/DD/YYYY
-        return `${month}/${day}/${year}`;
-      },
+      formatter: (date: Date | string) => formatDateForDisplay(date),
     },
     { key: "location", label: "Location", type: "text" as const },
     {

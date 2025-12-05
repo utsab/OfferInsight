@@ -63,9 +63,12 @@ export async function POST(request: NextRequest) {
         message: data.message || null,
         linkedInUrl: data.linkedInUrl || null,
         notes: data.notes || null,
-        status: data.status || "linkedInRequestSent", // TODO: This is apart of default status. eliminate redundancy (1/3)
+        status: data.status || "outreachRequestSent", // TODO: This is apart of default status. eliminate redundancy (1/3)
         recievedReferral: data.recievedReferral || false,
         userId: user.id,
+        // ===== DATE FIELD EDITING: Allow setting dateCreated and dateCompleted if provided =====
+        dateCreated: data.dateCreated ? new Date(data.dateCreated) : undefined,
+        dateCompleted: data.dateCompleted ? new Date(data.dateCompleted) : null,
       },
     });
 
@@ -96,7 +99,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { status } = body;
+    const { status, dateCompleted } = body;
 
     if (status === undefined) {
       return NextResponse.json(
@@ -128,10 +131,15 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Update only the status
+    // Update status and dateCompleted
+    const updateData: any = { status };
+    if (dateCompleted !== undefined) {
+      updateData.dateCompleted = dateCompleted ? new Date(dateCompleted) : null;
+    }
+
     const updatedOutreach = await prisma.linkedin_Outreach.update({
       where: { id: parseInt(id) },
-      data: { status },
+      data: updateData,
     });
 
     return NextResponse.json(updatedOutreach);
@@ -199,6 +207,15 @@ export async function PUT(request: NextRequest) {
           data.recievedReferral !== undefined
             ? data.recievedReferral
             : outreach.recievedReferral,
+        // ===== DATE FIELD EDITING: Allow updating dateCreated and dateCompleted if provided =====
+        dateCreated:
+          data.dateCreated !== undefined
+            ? new Date(data.dateCreated)
+            : outreach.dateCreated,
+        dateCompleted:
+          data.dateCompleted !== undefined
+            ? (data.dateCompleted ? new Date(data.dateCompleted) : null)
+            : outreach.dateCompleted,
       },
     });
 

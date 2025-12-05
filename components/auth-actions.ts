@@ -7,5 +7,5 @@ export async function handleSignIn(provider?: string) {
 }
 
 export async function handleSignOut() {
-  await signOut()
+  await signOut({ redirect: false })
 }
