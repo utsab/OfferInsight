@@ -21,7 +21,7 @@ const CALCULATOR_DATA: Record<TimelineKey, {
   '12': { range: '10-12 Months', commitment: '5 Hours', apps: '1 Weekly', interviewsOutreach: '5 Monthly', events: '1 Monthly', fairs: '1 Yearly', interviews: 25, offers: 1 },
 };
 
-export default function Page2V2() {
+export default function Page2() {
   const router = useRouter();
   const [selectedTimeline, setSelectedTimeline] = useState<TimelineKey | null>(null);
 
@@ -58,7 +58,7 @@ export default function Page2V2() {
 
     if (response.ok) {
       console.log('User information updated successfully');
-      router.push('/onboarding/page3-v2');
+      router.push('/onboarding/page3');
     } else {
       console.error('Failed to update user information');
     }

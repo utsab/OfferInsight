@@ -17,8 +17,8 @@ Hydration mismatch occurs when the HTML rendered on the server doesn't match wha
 **Problem**: Using `new Date()` directly in client components causes different values on server vs client due to timing differences.
 
 **Files Fixed**:
-- `app/onboarding/page1-v2/page.tsx` - Year calculation for graduation year dropdown
-- `app/onboarding/page3-v2/page.tsx` - Estimated offer date calculation
+- `app/onboarding/page1/page.tsx` - Year calculation for graduation year dropdown
+- `app/onboarding/page3/page.tsx` - Estimated offer date calculation
 
 **Solution**: Move date calculations to `useEffect` to ensure they only run on the client side.
 
@@ -149,8 +149,8 @@ To prevent future hydration mismatches:
 
 ## Files Modified
 
-- `app/onboarding/page1-v2/page.tsx`
-- `app/onboarding/page3-v2/page.tsx`
+- `app/onboarding/page1/page.tsx`
+- `app/onboarding/page3/page.tsx`
 - `app/dashboard/page.tsx`
 - `app/contexts/DashboardMetricsContext.tsx`
 - `app/ui/dashboard/total-progress-wrapper.tsx`

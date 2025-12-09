@@ -96,7 +96,7 @@ function calculateWeeklyHours(appsPerWeek: number, interviewsPerWeek: number, ev
   return Math.round(appsPerWeek * hoursPerAppWithOutreach + interviewsPerWeek * hoursPerLinkedinOutreachAttempt + eventsPerMonth * hoursPerInPersonEvent + fairsPerYear * hoursPerCareerFair);
 }
 
-export default function Page3V2() {
+export default function Page3() {
   const router = useRouter();
   const today = useMemo(() => new Date(), []);
 
@@ -112,7 +112,7 @@ export default function Page3V2() {
   const [selectedDay, setSelectedDay] = useState<number>(today.getDate());
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Initialize values from server (based on selections saved in page2-v2)
+  // Initialize values from server (based on selections saved in page2)
   useEffect(() => {
     const fetchInitial = async () => {
       try {

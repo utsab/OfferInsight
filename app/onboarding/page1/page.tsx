@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { checkAuth } from '../../server';
 import './page.css';
 
-export default function Page1V2() {
+export default function Page1() {
   const [name, setName] = useState('');
   const [school, setSchool] = useState('');
   const [major, setMajor] = useState('');
@@ -42,7 +42,7 @@ export default function Page1V2() {
 
     if (response.ok) {
       console.log('User information updated successfully');
-      router.push('/onboarding/page2-v2');
+      router.push('/onboarding/page2');
     } else {
       console.error('Failed to update user information');
       setIsSubmitting(false);
@@ -51,7 +51,7 @@ export default function Page1V2() {
 
   const handleSkip = () => {
     if (confirm('Are you sure you want to skip? This information helps us personalize your experience.')) {
-      router.push('/onboarding/page2-v2');
+      router.push('/onboarding/page2');
     }
   };
 

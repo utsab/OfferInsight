@@ -11,7 +11,7 @@ const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
 // ===== PROJECTED OFFER DATE FORMULA START =====
-// Copied from onboarding page3-v2 so product engineers can tweak independently.
+// Copied from onboarding page3 so product engineers can tweak independently.
 function calculateProjectedOfferDate(
   appsWithOutreachPerWeek: number,
   linkedinOutreachPerWeek: number,
@@ -2152,7 +2152,7 @@ const hasSeededMockDataRef = useRef(false);
                 </div>
               </div>
               <div className="mt-2 text-left">
-                <Link href="/onboarding/page3-v2" className="text-sm text-gray-300 hover:text-white underline underline-offset-2">
+                <Link href="/onboarding/page3" className="text-sm text-gray-300 hover:text-white underline underline-offset-2">
                   Fine-tune your plan
                 </Link>
               </div>
