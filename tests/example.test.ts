@@ -5,27 +5,21 @@
 import request from 'supertest';
 import { createServer } from 'http';
 import { auth } from '@/auth';
-import { GET } from '@/app/api/applications/route';
+import { GET } from '@/app/api/applications_with_outreach/route';
 
 
 jest.mock('@/auth', () => ({
   auth: jest.fn(),
 }));
 
-describe('GET /api/applications', () => {
+describe('GET /api/applications_with_outreach', () => {
   it('should return only applications belonging to the logged-in user', async () => {
     (auth as jest.Mock).mockResolvedValue({
       user: {
-        email: 'utsab.k.saha@gmail.com',
+        id: 'test-user-id',
+        email: 'test@example.com',
       },
     });
-
-    // const requestObj = {
-    //   nextUrl: {
-    //     searchParams: new URLSearchParams({ Id: '1' }),
-    //   },
-    // } as any;
-
 
     const response = await GET();
     const body = await response.json();
