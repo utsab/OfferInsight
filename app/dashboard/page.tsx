@@ -1,17 +1,20 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import Link from 'next/link';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent, DragOverlay, useDroppable } from '@dnd-kit/core';
-import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck, Plus, X, Trash2 } from 'lucide-react';
+import { PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent } from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
+import { Gauge, FileText, MessageCircle, Users, Code, X } from 'lucide-react';
+import OverviewTab from './components/OverviewTab';
+import ApplicationsTab from './components/ApplicationsTab';
+import CoffeeChatsTab from './components/CoffeeChatsTab';
+import EventsTab from './components/EventsTab';
+import LeetCodeTab from './components/LeetCodeTab';
 
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
 // ===== PROJECTED OFFER DATE FORMULA START =====
-// Copied from onboarding page3-v2 so product engineers can tweak independently.
+// Copied from onboarding page3 so product engineers can tweak independently.
 function calculateProjectedOfferDate(
   appsWithOutreachPerWeek: number,
   linkedinOutreachPerWeek: number,
@@ -120,40 +123,6 @@ const toLocalTimeParts = (value: string): TimeParts => {
     };
   }
 };
-
-const formatCardDate = (value?: string | null) => {
-  if (!value) return '-';
-  try {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '-';
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  } catch {
-    return '-';
-  }
-};
-
-function CardDateMeta({
-  created,
-  completed,
-  className,
-}: {
-  created?: string | null;
-  completed?: string | null;
-  className?: string;
-}) {
-  return (
-    <div className={className ? className : 'mt-3'}>
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-gray-400 mb-1">
-        <span>Created:</span>
-        <span>Completed:</span>
-      </div>
-      <div className="flex items-center justify-between text-xs text-yellow-400">
-        <span>{formatCardDate(created)}</span>
-        <span>{formatCardDate(completed)}</span>
-      </div>
-    </div>
-  );
-}
 
 type ApplicationStatus = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
 type ApplicationColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
@@ -470,89 +439,6 @@ export default function Page() {
     // State updates should only happen in onDragEnd to prevent infinite loops
     // No state updates here - just let the DroppableColumn handle visual feedback
   };
-
-  function SortableAppCard(props: { card: Application }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
-    
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0 : undefined,
-    } as React.CSSProperties;
-
-    const handleClick = (e: React.MouseEvent) => {
-      // Prevent opening modal if this card was just dragged
-      if (activeAppId === String(props.card.id)) {
-        return;
-      }
-      // Small delay to check if drag started
-      setTimeout(() => {
-        if (!isDraggingAppRef.current && !isDragging && activeAppId !== String(props.card.id)) {
-          setEditingApp(props.card);
-          setIsModalOpen(true);
-        }
-      }, 50);
-    };
-
-    const handleDelete = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsDeleting(props.card.id);
-    };
-
-    return (
-      <div 
-        ref={setNodeRef} 
-        style={style} 
-        {...attributes} 
-        {...listeners}
-        onClick={handleClick}
-        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
-      >
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <div className="text-white font-medium mb-1">{props.card.company}</div>
-            {props.card.hiringManager && (
-              <div className="text-gray-400 text-xs mb-1">HM: {props.card.hiringManager}</div>
-            )}
-            {props.card.recruiter && (
-              <div className="text-gray-400 text-xs mb-1">Recruiter: {props.card.recruiter}</div>
-            )}
-          </div>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleDelete}
-              className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </div>
-        {(props.card.msgToManager || props.card.msgToRecruiter) && (
-          <div className="text-green-400 text-xs mb-2">
-            {props.card.msgToManager && '✓ Messaged HM'}
-            {props.card.msgToManager && props.card.msgToRecruiter && ' • '}
-            {props.card.msgToRecruiter && '✓ Messaged Recruiter'}
-          </div>
-        )}
-        {props.card.notes && (
-          <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
-        )}
-        <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} />
-      </div>
-    );
-  }
-
-  function DroppableColumn(props: { id: string; children: React.ReactNode }) {
-    const { setNodeRef, isOver } = useDroppable({ id: props.id });
-    return (
-      <div ref={setNodeRef} className={`space-y-3 min-h-32 ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-650/40' : ''}`}>
-        {props.children}
-        {/* When empty, provide space to drop */}
-        <div className="h-2"></div>
-      </div>
-    );
-  }
 
   // dnd-kit: Linkedin outreach board (Linkedin_Outreach)
 
@@ -999,269 +885,6 @@ const hasSeededMockDataRef = useRef(false);
   const handleLeetDragOver = (event: DragOverEvent) => {
     // onDragOver is only for visual feedback via DroppableColumn
   };
-
-  function SortableLinkedinOutreachCard(props: { card: LinkedinOutreach }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
-    
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0 : undefined,
-    } as React.CSSProperties;
-
-    const handleClick = (e: React.MouseEvent) => {
-      // Prevent opening modal if this card was just dragged
-      if (activeLinkedinOutreachId === String(props.card.id)) {
-        return;
-      }
-      // Small delay to check if drag started
-      setTimeout(() => {
-        if (!isDraggingLinkedinOutreachRef.current && !isDragging && activeLinkedinOutreachId !== String(props.card.id)) {
-          setEditingLinkedinOutreach(props.card);
-          setIsLinkedinOutreachModalOpen(true);
-        }
-      }, 50);
-    };
-
-    const handleDelete = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsDeletingLinkedinOutreach(props.card.id);
-    };
-
-    return (
-      <div 
-        ref={setNodeRef} 
-        style={style} 
-        {...attributes} 
-        {...listeners}
-        onClick={handleClick}
-        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
-      >
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <div className="text-white font-medium mb-1">{props.card.name}</div>
-            <div className="text-gray-400 text-xs mb-1">{props.card.company}</div>
-            {props.card.linkedInUrl && (
-              <div className="text-xs mb-1">
-                <a
-                  href={props.card.linkedInUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-electric-blue hover:text-sky-300 underline"
-                >
-                  LinkedIn Profile
-                </a>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleDelete}
-              className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </div>
-        {props.card.message && (
-          <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.message}</div>
-        )}
-        {props.card.notes && (
-          <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
-        )}
-        {props.card.recievedReferral && (
-          <div className="text-green-400 text-xs mb-2">✓ Referral Received</div>
-        )}
-        <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} />
-      </div>
-    );
-  }
-
-  function SortableEventCard(props: { card: InPersonEvent }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
-    
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0 : undefined,
-    } as React.CSSProperties;
-
-    const formatDateTime = (dateString: string) => {
-      try {
-        const date = new Date(dateString);
-        return date.toLocaleString(undefined, {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-        });
-      } catch {
-        return '';
-      }
-    };
-
-    const handleClick = (e: React.MouseEvent) => {
-      // Prevent opening modal if this card was just dragged
-      if (activeEventId === String(props.card.id)) {
-        return;
-      }
-      // Small delay to check if drag started
-      setTimeout(() => {
-        if (!isDraggingEventRef.current && !isDragging && activeEventId !== String(props.card.id)) {
-          setEditingEvent(props.card);
-          setIsEventModalOpen(true);
-        }
-      }, 50);
-    };
-
-    const handleDelete = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsDeletingEvent(props.card.id);
-    };
-
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
-        onClick={handleClick}
-        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
-      >
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <div className="text-white font-medium mb-1">{props.card.event}</div>
-            <div className="text-gray-400 text-xs mb-1">{formatDateTime(props.card.date)}</div>
-            {props.card.location && (
-              <div className="text-gray-400 text-xs mb-1">{props.card.location}</div>
-            )}
-            {props.card.url && (
-              <div className="text-gray-500 text-xs mb-1">
-                <a
-                  href={props.card.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="hover:text-electric-blue underline"
-                >
-                  Event Link
-                </a>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleDelete}
-              className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </div>
-        {props.card.notes && (
-          <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
-        )}
-        <div className="flex flex-wrap gap-2 text-[10px] text-gray-300">
-          {props.card.careerFair && (
-            <span className="text-green-400 text-xs">✓ Career Fair</span>
-          )}
-          {typeof props.card.numPeopleSpokenTo === 'number' && (
-            <span className="px-2 py-0.5 rounded-full bg-gray-700">Spoke to {props.card.numPeopleSpokenTo}</span>
-          )}
-          {typeof props.card.numLinkedInRequests === 'number' && (
-            <span className="px-2 py-0.5 rounded-full bg-gray-700">LinkedIn {props.card.numLinkedInRequests}</span>
-          )}
-          {typeof props.card.numOfInterviews === 'number' && (
-            <span className="px-2 py-0.5 rounded-full bg-gray-700">Interviews {props.card.numOfInterviews}</span>
-          )}
-        </div>
-        <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} className="mt-3" />
-      </div>
-    );
-  }
-
-  function SortableLeetCard(props: { card: LeetEntry }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
-    
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0 : undefined,
-    } as React.CSSProperties;
-
-    const handleClick = (e: React.MouseEvent) => {
-      // Prevent opening modal if this card was just dragged
-      if (activeLeetId === String(props.card.id)) {
-        return;
-      }
-      // Small delay to check if drag started
-      setTimeout(() => {
-        if (!isDraggingLeetRef.current && !isDragging && activeLeetId !== String(props.card.id)) {
-          setEditingLeet(props.card);
-          setIsLeetModalOpen(true);
-        }
-      }, 50);
-    };
-
-    const handleDelete = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsDeletingLeet(props.card.id);
-    };
-
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
-        onClick={handleClick}
-        className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
-      >
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <div className="text-white font-medium mb-1">{props.card.problem?.trim() || 'Untitled Problem'}</div>
-            <div className="text-gray-400 text-xs mb-1">
-              {props.card.problemType ? props.card.problemType : '—'}
-            </div>
-            {props.card.difficulty && (
-              <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-electric-blue/20 text-electric-blue uppercase tracking-wide">
-                {props.card.difficulty}
-              </span>
-            )}
-          </div>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleDelete}
-              className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </div>
-        {props.card.url && (
-          <div className="text-gray-500 text-xs mb-2">
-            <a
-              href={props.card.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="hover:text-electric-blue underline"
-            >
-              Problem Link
-            </a>
-          </div>
-        )}
-        {props.card.reflection && (
-          <div className="text-gray-400 text-xs mb-2 line-clamp-3">{props.card.reflection}</div>
-        )}
-        <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} className="mt-3" />
-      </div>
-    );
-  }
 
   const [userData, setUserData] = useState<{
     appsWithOutreachPerWeek?: number | null;
@@ -2130,945 +1753,127 @@ const hasSeededMockDataRef = useRef(false);
 
         {/* Overview Content */}
         {activeTab === 'overview' && (
-          <div>
-            {/* Target Offer Date (question-box styling) */
-            }
-            <section className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 mb-8">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-white font-bold text-lg flex items-center">
-                  <CalendarCheck className="text-electric-blue mr-3" />
-                  Offer Date Forecast
-                </h2>
-              </div>
-              <div className="flex flex-col gap-4 md:flex-row md:gap-8">
-                <div className="flex-1 rounded-lg bg-gray-800/60 border border-electric-blue/20 p-4 text-center">
-                  <div className="text-sm uppercase tracking-widest text-gray-400 mb-2">Target Offer Date</div>
-                  <div className="text-4xl md:text-5xl font-bold text-electric-blue">{targetOfferDateText}</div>
-                </div>
-                <div className="flex-1 rounded-lg bg-gray-800/60 border border-purple-400/30 p-4 text-center">
-                  <div className="text-sm uppercase tracking-widest text-gray-400 mb-2">Projected Offer Date</div>
-                  <div className="text-4xl md:text-5xl font-bold text-purple-300">{projectedOfferDateText}</div>
-                  <div className="text-xs text-gray-400 mt-2">Based on previous month's habits</div>
-                </div>
-              </div>
-              <div className="mt-2 text-left">
-                <Link href="/onboarding/page3-v2" className="text-sm text-gray-300 hover:text-white underline underline-offset-2">
-                  Fine-tune your plan
-                </Link>
-              </div>
-            </section>
-
-            {/* Habit Overview Section */}
-            <section>
-              <h3 className="text-2xl font-bold text-white mb-6">Habit Overview</h3>
-              <div className="grid grid-cols-4 gap-6">
-                <div 
-                  onClick={() => handleHabitCardClick('applications')}
-                  className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <FileText className="text-electric-blue text-xl" />
-                      <h4 className="text-white font-semibold">Applications</h4>
-                    </div>
-                    <div className={`w-3 h-3 ${applicationsMetrics.statusDotClass} rounded-full`}></div>
-                  </div>
-                  <div className="flex items-end justify-between mb-1">
-                    <div>
-                      <div className="text-3xl font-bold text-white">{applicationsMetrics.count}</div>
-                      <div className="text-sm text-gray-400">This month</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-300">{applicationsAllTimeCount}</div>
-                      <div className="text-xs text-gray-500">All Time</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-3">
-                    <span className="text-gray-400">Goal: {applicationsMetrics.goal || '—'}</span>
-                    {applicationsMetrics.goal > 0 && (
-                      <span className={applicationsMetrics.statusTextColor}>{applicationsMetrics.statusText}</span>
-                    )}
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-                    <div 
-                      className={`${applicationsMetrics.statusBarClass} h-2 rounded-full`} 
-                      style={{width: `${applicationsMetrics.percentage}%`}}
-                    ></div>
-                  </div>
-                </div>
-
-                <div 
-                  onClick={() => handleHabitCardClick('interviews')}
-                  className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <MessageCircle className="text-electric-blue text-xl" />
-                      <h4 className="text-white font-semibold">Coffee Chats</h4>
-                    </div>
-                    <div className={`w-3 h-3 ${linkedinOutreachMetrics.statusDotClass} rounded-full`}></div>
-                  </div>
-                  <div className="flex items-end justify-between mb-1">
-                    <div>
-                      <div className="text-3xl font-bold text-white">{linkedinOutreachMetrics.count}</div>
-                      <div className="text-sm text-gray-400">This month</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-300">{linkedinOutreachAllTimeCount}</div>
-                      <div className="text-xs text-gray-500">All Time</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-3">
-                    <span className="text-gray-400">Goal: {linkedinOutreachMetrics.goal || '—'}</span>
-                    {linkedinOutreachMetrics.goal > 0 && (
-                      <span className={linkedinOutreachMetrics.statusTextColor}>{linkedinOutreachMetrics.statusText}</span>
-                    )}
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-                    <div 
-                      className={`${linkedinOutreachMetrics.statusBarClass} h-2 rounded-full`} 
-                      style={{width: `${linkedinOutreachMetrics.percentage}%`}}
-                    ></div>
-                  </div>
-                </div>
-
-                <div 
-                  onClick={() => handleHabitCardClick('events')}
-                  className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <Users className="text-electric-blue text-xl" />
-                      <h4 className="text-white font-semibold">Events</h4>
-                    </div>
-                    <div className={`w-3 h-3 ${eventsMetrics.statusDotClass} rounded-full`}></div>
-                  </div>
-                  <div className="flex items-end justify-between mb-1">
-                    <div>
-                      <div className="text-3xl font-bold text-white">{eventsMetrics.totalCount ?? eventsMetrics.count}</div>
-                      <div className="text-sm text-gray-400">This month</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-300">{eventsAllTimeCount}</div>
-                      <div className="text-xs text-gray-500">All Time</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-3">
-                    <span className="text-gray-400">Goal: {eventsMetrics.goal || '—'}</span>
-                    {eventsMetrics.goal > 0 && (
-                      <span className={eventsMetrics.statusTextColor}>{eventsMetrics.statusText}</span>
-                    )}
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-                    <div 
-                      className={`${eventsMetrics.statusBarClass} h-2 rounded-full`} 
-                      style={{width: `${eventsMetrics.percentage}%`}}
-                    ></div>
-                  </div>
-                </div>
-
-                <div 
-                  onClick={() => handleHabitCardClick('leetcode')}
-                  className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <Code className="text-electric-blue text-xl" />
-                      <h4 className="text-white font-semibold">LeetCode</h4>
-                    </div>
-                    <div className={`w-3 h-3 ${leetMetrics.statusDotClass} rounded-full`}></div>
-                  </div>
-                  <div className="flex items-end justify-between mb-1">
-                    <div>
-                      <div className="text-3xl font-bold text-white">{leetMetrics.count}</div>
-                      <div className="text-sm text-gray-400">This month</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-300">{leetAllTimeCount}</div>
-                      <div className="text-xs text-gray-500">All Time</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-3">
-                    <span className="text-gray-400">Goal: {leetMetrics.goal}</span>
-                    <span className={leetMetrics.statusTextColor}>{leetMetrics.statusText}</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-                    <div 
-                      className={`${leetMetrics.statusBarClass} h-2 rounded-full`} 
-                      style={{width: `${leetMetrics.percentage}%`}}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
+          <OverviewTab
+            targetOfferDateText={targetOfferDateText}
+            projectedOfferDateText={projectedOfferDateText}
+            applicationsMetrics={applicationsMetrics}
+            applicationsAllTimeCount={applicationsAllTimeCount}
+            linkedinOutreachMetrics={linkedinOutreachMetrics}
+            linkedinOutreachAllTimeCount={linkedinOutreachAllTimeCount}
+            eventsMetrics={eventsMetrics}
+            eventsAllTimeCount={eventsAllTimeCount}
+            leetMetrics={leetMetrics}
+            leetAllTimeCount={leetAllTimeCount}
+            handleHabitCardClick={handleHabitCardClick}
+          />
         )}
 
         {/* Applications Content */}
         {activeTab === 'applications' && (
-          <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <h4 className="text-xl font-bold text-white">High Quality Applications</h4>
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span>Show:</span>
-                <button
-                  onClick={() => setApplicationsFilter('createdThisMonth')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    applicationsFilter === 'createdThisMonth'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  Created This Month
-                </button>
-                <button
-                  onClick={() => setApplicationsFilter('completedThisMonth')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    applicationsFilter === 'completedThisMonth'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  Completed This Month
-                </button>
-                <button
-                  onClick={() => setApplicationsFilter('allTime')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    applicationsFilter === 'allTime'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  All Time
-                </button>
-              </div>
-              <button 
-                onClick={() => {
-                  setEditingApp(null);
-                  setIsModalOpen(true);
-                }}
-                className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
-              >
-                <Plus className="mr-2" />Add Application
-              </button>
-            </div>
-            {isLoading ? (
-              <div className="text-center py-8 text-gray-400">Loading applications...</div>
-            ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleApplicationsDragStart} onDragOver={handleApplicationsDragOver} onDragEnd={handleApplicationsDragEnd}>
-              <div className="grid grid-cols-5 gap-6">
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Applied ({filteredAppColumns.applied.length})
-                  </h5>
-                  <SortableContext items={filteredAppColumns.applied.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="applied">
-                      {filteredAppColumns.applied.map(card => (
-                        <SortableAppCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Messaged Hiring Manager ({filteredAppColumns.messagedHiringManager.length})
-                  </h5>
-                  <SortableContext items={filteredAppColumns.messagedHiringManager.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="messagedHiringManager">
-                      {filteredAppColumns.messagedHiringManager.map(card => (
-                        <SortableAppCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Messaged Recruiter ({filteredAppColumns.messagedRecruiter.length})
-                  </h5>
-                  <SortableContext items={filteredAppColumns.messagedRecruiter.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="messagedRecruiter">
-                      {filteredAppColumns.messagedRecruiter.map(card => (
-                        <SortableAppCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Followed Up ({filteredAppColumns.followedUp.length})
-                  </h5>
-                  <SortableContext items={filteredAppColumns.followedUp.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="followedUp">
-                      {filteredAppColumns.followedUp.map(card => (
-                        <SortableAppCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-pink-500 rounded-full mr-2"></div>
-                    Interview ({filteredAppColumns.interview.length})
-                  </h5>
-                  <SortableContext items={filteredAppColumns.interview.map(c => c.id)} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="interview">
-                      {filteredAppColumns.interview.map(card => (
-                        <SortableAppCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-              </div>
-              <DragOverlay>
-                {activeAppId ? (() => {
-                  const col = getApplicationColumnOfItem(activeAppId);
-                  if (!col) return null;
-                  const card = appColumns[col].find(c => String(c.id) === activeAppId);
-                  if (!card) return null;
-                  return (
-                    <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
-                      <div className="text-white font-medium mb-1">{card.company}</div>
-                      {card.hiringManager && (
-                        <div className="text-gray-400 text-xs mb-1">HM: {card.hiringManager}</div>
-                      )}
-                      {card.recruiter && (
-                        <div className="text-gray-400 text-xs mb-1">Recruiter: {card.recruiter}</div>
-                      )}
-                      <div className="text-xs text-yellow-400">{new Date(card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                    </div>
-                  );
-                })() : null}
-              </DragOverlay>
-            </DndContext>
-            )}
-            
-            {/* Create/Edit Modal */}
-            {isModalOpen && (
-              <ApplicationModal
-                application={editingApp}
-                onClose={() => {
-                  setIsModalOpen(false);
-                  setEditingApp(null);
-                }}
-                onSave={async (data) => {
-                  try {
-                    if (editingApp) {
-                      // Update existing
-                      const response = await fetch('/api/applications_with_outreach', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...data, id: editingApp.id }),
-                      });
-                      if (!response.ok) throw new Error('Failed to update application');
-                    } else {
-                      // Create new
-                      const response = await fetch('/api/applications_with_outreach', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data),
-                      });
-                      if (!response.ok) throw new Error('Failed to create application');
-                    }
-                    await fetchApplications();
-                    setIsModalOpen(false);
-                    setEditingApp(null);
-                  } catch (error) {
-                    console.error('Error saving application:', error);
-                    alert('Failed to save application. Please try again.');
-                  }
-                }}
-              />
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {isDeleting !== null && (
-              <DeleteModal
-                onConfirm={async () => {
-                  try {
-                    const response = await fetch(`/api/applications_with_outreach?id=${isDeleting}`, {
-                      method: 'DELETE',
-                    });
-                    if (!response.ok) throw new Error('Failed to delete application');
-                    await fetchApplications();
-                    setIsDeleting(null);
-                  } catch (error) {
-                    console.error('Error deleting application:', error);
-                    alert('Failed to delete application. Please try again.');
-                    setIsDeleting(null);
-                  }
-                }}
-                onCancel={() => setIsDeleting(null)}
-              />
-            )}
-          </section>
+          <ApplicationsTab
+            filteredAppColumns={filteredAppColumns}
+            appColumns={appColumns}
+            isLoading={isLoading}
+            applicationsFilter={applicationsFilter}
+            setApplicationsFilter={setApplicationsFilter}
+            setIsModalOpen={setIsModalOpen}
+            setEditingApp={setEditingApp}
+            sensors={sensors}
+            handleApplicationsDragStart={handleApplicationsDragStart}
+            handleApplicationsDragOver={handleApplicationsDragOver}
+            handleApplicationsDragEnd={handleApplicationsDragEnd}
+            activeAppId={activeAppId}
+            getApplicationColumnOfItem={getApplicationColumnOfItem}
+            ApplicationModal={ApplicationModal}
+            DeleteModal={DeleteModal}
+            isModalOpen={isModalOpen}
+            editingApp={editingApp}
+            setIsDeleting={setIsDeleting}
+            isDeleting={isDeleting}
+            fetchApplications={fetchApplications}
+            isDraggingAppRef={isDraggingAppRef}
+          />
         )}
 
         {/* Coffee Chats Content */}
         {activeTab === 'interviews' && (
-          <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <h4 className="text-xl font-bold text-white">Coffee Chats</h4>
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span>Show:</span>
-                <button
-                  onClick={() => setLinkedinOutreachFilter('createdThisMonth')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    linkedinOutreachFilter === 'createdThisMonth'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  Created This Month
-                </button>
-                <button
-                  onClick={() => setLinkedinOutreachFilter('completedThisMonth')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    linkedinOutreachFilter === 'completedThisMonth'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  Completed This Month
-                </button>
-                <button
-                  onClick={() => setLinkedinOutreachFilter('allTime')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    linkedinOutreachFilter === 'allTime'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  All Time
-                </button>
-              </div>
-              <button 
-                onClick={() => {
-                  setEditingLinkedinOutreach(null);
-                  setIsLinkedinOutreachModalOpen(true);
-                }}
-                className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
-              >
-                <Plus className="mr-2" />New Outreach
-              </button>
-            </div>
-            {isLoadingLinkedinOutreach ? (
-              <div className="text-center py-8 text-gray-400">Loading coffee chats...</div>
-            ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLinkedinOutreachDragStart} onDragOver={handleLinkedinOutreachDragOver} onDragEnd={handleLinkedinOutreachDragEnd}>
-              <div className="grid grid-cols-4 gap-6">
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Outreach Request Sent ({filteredLinkedinOutreachColumns.outreach.length})
-                  </h5>
-                  <SortableContext items={filteredLinkedinOutreachColumns.outreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="outreach">
-                      {filteredLinkedinOutreachColumns.outreach.map(card => (
-                        <SortableLinkedinOutreachCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Request Accepted ({filteredLinkedinOutreachColumns.accepted.length})
-                  </h5>
-                  <SortableContext items={filteredLinkedinOutreachColumns.accepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="accepted">
-                      {filteredLinkedinOutreachColumns.accepted.map(card => (
-                        <SortableLinkedinOutreachCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Followed Up ({filteredLinkedinOutreachColumns.followedUpLinkedin.length})
-                  </h5>
-                  <SortableContext items={filteredLinkedinOutreachColumns.followedUpLinkedin.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="followedUpLinkedin">
-                      {filteredLinkedinOutreachColumns.followedUpLinkedin.map(card => (
-                        <SortableLinkedinOutreachCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Coffee Chat ({filteredLinkedinOutreachColumns.linkedinOutreach.length})
-                  </h5>
-                  <SortableContext items={filteredLinkedinOutreachColumns.linkedinOutreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="linkedinOutreach">
-                      {filteredLinkedinOutreachColumns.linkedinOutreach.map(card => (
-                        <SortableLinkedinOutreachCard key={card.id} card={card} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-              </div>
-              <DragOverlay>
-                {activeLinkedinOutreachId ? (() => {
-                  const col = getLinkedinOutreachColumnOfItem(activeLinkedinOutreachId);
-                  if (!col) return null;
-                  const card = linkedinOutreachColumns[col].find(c => String(c.id) === activeLinkedinOutreachId);
-                  if (!card) return null;
-                  return (
-                    <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
-                      <div className="text-white font-medium mb-1">{card.name}</div>
-                      <div className="text-gray-400 text-xs mb-1">{card.company}</div>
-                      <div className="text-xs text-yellow-400">{new Date(card.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                    </div>
-                  );
-                })() : null}
-              </DragOverlay>
-            </DndContext>
-            )}
-
-            {/* Create/Edit Modal */}
-            {isLinkedinOutreachModalOpen && (
-              <LinkedinOutreachModal
-                linkedinOutreach={editingLinkedinOutreach}
-                onClose={() => {
-                  setIsLinkedinOutreachModalOpen(false);
-                  setEditingLinkedinOutreach(null);
-                }}
-                onSave={async (data) => {
-                  try {
-                    if (editingLinkedinOutreach) {
-                      // Update existing
-                      const response = await fetch('/api/linkedin_outreach', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...data, id: editingLinkedinOutreach.id }),
-                      });
-                      if (!response.ok) throw new Error('Failed to update LinkedIn outreach entry');
-                    } else {
-                      // Create new
-                      const response = await fetch('/api/linkedin_outreach', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data),
-                      });
-                      if (!response.ok) throw new Error('Failed to create LinkedIn outreach entry');
-                    }
-                    await fetchLinkedinOutreach();
-                    setIsLinkedinOutreachModalOpen(false);
-                    setEditingLinkedinOutreach(null);
-                  } catch (error) {
-                    console.error('Error saving LinkedIn outreach entry:', error);
-                    alert('Failed to save coffee chat. Please try again.');
-                  }
-                }}
-              />
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {isDeletingLinkedinOutreach !== null && (
-              <DeleteModal
-                onConfirm={async () => {
-                  try {
-                    const response = await fetch(`/api/linkedin_outreach?id=${isDeletingLinkedinOutreach}`, {
-                      method: 'DELETE',
-                    });
-                    if (!response.ok) throw new Error('Failed to delete LinkedIn outreach entry');
-                    await fetchLinkedinOutreach();
-                    setIsDeletingLinkedinOutreach(null);
-                  } catch (error) {
-                    console.error('Error deleting LinkedIn outreach entry:', error);
-                    alert('Failed to delete coffee chat. Please try again.');
-                    setIsDeletingLinkedinOutreach(null);
-                  }
-                }}
-                onCancel={() => setIsDeletingLinkedinOutreach(null)}
-              />
-            )}
-          </section>
+          <CoffeeChatsTab
+            filteredLinkedinOutreachColumns={filteredLinkedinOutreachColumns}
+            linkedinOutreachColumns={linkedinOutreachColumns}
+            isLoadingLinkedinOutreach={isLoadingLinkedinOutreach}
+            linkedinOutreachFilter={linkedinOutreachFilter}
+            setLinkedinOutreachFilter={setLinkedinOutreachFilter}
+            setIsLinkedinOutreachModalOpen={setIsLinkedinOutreachModalOpen}
+            setEditingLinkedinOutreach={setEditingLinkedinOutreach}
+            sensors={sensors}
+            handleLinkedinOutreachDragStart={handleLinkedinOutreachDragStart}
+            handleLinkedinOutreachDragOver={handleLinkedinOutreachDragOver}
+            handleLinkedinOutreachDragEnd={handleLinkedinOutreachDragEnd}
+            activeLinkedinOutreachId={activeLinkedinOutreachId}
+            getLinkedinOutreachColumnOfItem={getLinkedinOutreachColumnOfItem}
+            LinkedinOutreachModal={LinkedinOutreachModal}
+            DeleteModal={DeleteModal}
+            isLinkedinOutreachModalOpen={isLinkedinOutreachModalOpen}
+            editingLinkedinOutreach={editingLinkedinOutreach}
+            setIsDeletingLinkedinOutreach={setIsDeletingLinkedinOutreach}
+            isDeletingLinkedinOutreach={isDeletingLinkedinOutreach}
+            fetchLinkedinOutreach={fetchLinkedinOutreach}
+            isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+          />
         )}
 
         {/* Events Content */}
         {activeTab === 'events' && (
-          <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <h4 className="text-xl font-bold text-white">In-Person Events</h4>
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span>Show:</span>
-                <button
-                  onClick={() => setEventsFilter('createdThisMonth')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    eventsFilter === 'createdThisMonth'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  Created This Month
-                </button>
-                <button
-                  onClick={() => setEventsFilter('completedThisMonth')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    eventsFilter === 'completedThisMonth'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  Completed This Month
-                </button>
-                <button
-                  onClick={() => setEventsFilter('allTime')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    eventsFilter === 'allTime'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  All Time
-                </button>
-              </div>
-              <button
-                onClick={() => {
-                  setEditingEvent(null);
-                  setIsEventModalOpen(true);
-                }}
-                className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
-              >
-                <Plus className="mr-2" />Add Event
-              </button>
-            </div>
-            {isLoadingEvents ? (
-              <div className="text-center py-8 text-gray-400">Loading events...</div>
-            ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleEventsDragStart} onDragOver={handleEventsDragOver} onDragEnd={handleEventsDragEnd}>
-              <div className="grid grid-cols-4 gap-6">
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Scheduled ({filteredEventColumns.upcoming.length})
-                  </h5>
-                  <SortableContext items={filteredEventColumns.upcoming.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="upcoming">
-                      {filteredEventColumns.upcoming.map(event => (
-                        <SortableEventCard key={event.id} card={event} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Attended ({filteredEventColumns.attended.length})
-                  </h5>
-                  <SortableContext items={filteredEventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="attended">
-                      {filteredEventColumns.attended.map(event => (
-                        <SortableEventCard key={event.id} card={event} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    LinkedIn Requests Sent ({filteredEventColumns.linkedinRequestsSent.length})
-                  </h5>
-                  <SortableContext items={filteredEventColumns.linkedinRequestsSent.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="linkedinRequestsSent">
-                      {filteredEventColumns.linkedinRequestsSent.map(event => (
-                        <SortableEventCard key={event.id} card={event} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Followed Up ({filteredEventColumns.followups.length})
-                  </h5>
-                  <SortableContext items={filteredEventColumns.followups.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="followups">
-                      {filteredEventColumns.followups.map(event => (
-                        <SortableEventCard key={event.id} card={event} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-              </div>
-              <DragOverlay>
-                {activeEventId ? (() => {
-                  const col = getEventColumnOfItem(activeEventId);
-                  if (!col) return null;
-                  const card = eventColumns[col].find(event => String(event.id) === activeEventId);
-                  if (!card) return null;
-                  const formattedDate = (() => {
-                    try {
-                      return new Date(card.date).toLocaleString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      });
-                    } catch {
-                      return '';
-                    }
-                  })();
-                  return (
-                    <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
-                      <div className="text-white font-medium mb-1">{card.event}</div>
-                      <div className="text-gray-400 text-xs mb-1">{formattedDate}</div>
-                      {card.location && (
-                        <div className="text-gray-400 text-xs mb-1">{card.location}</div>
-                      )}
-                    </div>
-                  );
-                })() : null}
-              </DragOverlay>
-            </DndContext>
-            )}
-
-            {/* Create/Edit Modal */}
-            {isEventModalOpen && (
-              <InPersonEventModal
-                eventItem={editingEvent}
-                onClose={() => {
-                  setIsEventModalOpen(false);
-                  setEditingEvent(null);
-                }}
-                onSave={async (data) => {
-                  try {
-                    if (editingEvent) {
-                      const response = await fetch('/api/in_person_events', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...data, id: editingEvent.id }),
-                      });
-                      if (!response.ok) throw new Error('Failed to update event');
-                    } else {
-                      const response = await fetch('/api/in_person_events', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data),
-                      });
-                      if (!response.ok) throw new Error('Failed to create event');
-                    }
-                    await fetchEvents();
-                    setIsEventModalOpen(false);
-                    setEditingEvent(null);
-                  } catch (error) {
-                    console.error('Error saving event:', error);
-                    alert('Failed to save event. Please try again.');
-                  }
-                }}
-              />
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {isDeletingEvent !== null && (
-              <DeleteModal
-                onConfirm={async () => {
-                  try {
-                    const response = await fetch(`/api/in_person_events?id=${isDeletingEvent}`, {
-                      method: 'DELETE',
-                    });
-                    if (!response.ok) throw new Error('Failed to delete event');
-                    await fetchEvents();
-                    setIsDeletingEvent(null);
-                  } catch (error) {
-                    console.error('Error deleting event:', error);
-                    alert('Failed to delete event. Please try again.');
-                    setIsDeletingEvent(null);
-                  }
-                }}
-                onCancel={() => setIsDeletingEvent(null)}
-              />
-            )}
-          </section>
+          <EventsTab
+            filteredEventColumns={filteredEventColumns}
+            eventColumns={eventColumns}
+            isLoadingEvents={isLoadingEvents}
+            eventsFilter={eventsFilter}
+            setEventsFilter={setEventsFilter}
+            setIsEventModalOpen={setIsEventModalOpen}
+            setEditingEvent={setEditingEvent}
+            sensors={sensors}
+            handleEventsDragStart={handleEventsDragStart}
+            handleEventsDragOver={handleEventsDragOver}
+            handleEventsDragEnd={handleEventsDragEnd}
+            activeEventId={activeEventId}
+            getEventColumnOfItem={getEventColumnOfItem}
+            InPersonEventModal={InPersonEventModal}
+            DeleteModal={DeleteModal}
+            isEventModalOpen={isEventModalOpen}
+            editingEvent={editingEvent}
+            setIsDeletingEvent={setIsDeletingEvent}
+            isDeletingEvent={isDeletingEvent}
+            fetchEvents={fetchEvents}
+            isDraggingEventRef={isDraggingEventRef}
+          />
         )}
 
         {/* LeetCode Content */}
         {activeTab === 'leetcode' && (
-          <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <h4 className="text-xl font-bold text-white">LeetCode Progress</h4>
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span>Show:</span>
-                <button
-                  onClick={() => setLeetFilter('createdThisMonth')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    leetFilter === 'createdThisMonth'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  Created This Month
-                </button>
-                <button
-                  onClick={() => setLeetFilter('completedThisMonth')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    leetFilter === 'completedThisMonth'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  Completed This Month
-                </button>
-                <button
-                  onClick={() => setLeetFilter('allTime')}
-                  className={`px-3 py-1 rounded-md border transition-colors ${
-                    leetFilter === 'allTime'
-                      ? 'bg-electric-blue text-white border-electric-blue'
-                      : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-                  }`}
-                >
-                  All Time
-                </button>
-              </div>
-              <button
-                onClick={() => {
-                  setEditingLeet(null);
-                  setIsLeetModalOpen(true);
-                }}
-                className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
-              >
-                <Plus className="mr-2" />Log Practice
-              </button>
-            </div>
-            {isLoadingLeet ? (
-              <div className="text-center py-8 text-gray-400">Loading problems...</div>
-            ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLeetDragStart} onDragOver={handleLeetDragOver} onDragEnd={handleLeetDragEnd}>
-              <div className="grid grid-cols-3 gap-6">
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                    Planned ({filteredLeetColumns.planned.length})
-                  </h5>
-                  <SortableContext items={filteredLeetColumns.planned.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="planned">
-                      {filteredLeetColumns.planned.map(entry => (
-                        <SortableLeetCard key={entry.id} card={entry} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    Solved ({filteredLeetColumns.solved.length})
-                  </h5>
-                  <SortableContext items={filteredLeetColumns.solved.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="solved">
-                      {filteredLeetColumns.solved.map(entry => (
-                        <SortableLeetCard key={entry.id} card={entry} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h5 className="text-white font-semibold mb-4 flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    Reflected ({filteredLeetColumns.reflected.length})
-                  </h5>
-                  <SortableContext items={filteredLeetColumns.reflected.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
-                    <DroppableColumn id="reflected">
-                      {filteredLeetColumns.reflected.map(entry => (
-                        <SortableLeetCard key={entry.id} card={entry} />
-                      ))}
-                    </DroppableColumn>
-                  </SortableContext>
-                </div>
-              </div>
-              <DragOverlay>
-                {activeLeetId ? (() => {
-                  const col = getLeetColumnOfItem(activeLeetId);
-                  if (!col) return null;
-                  const card = leetColumns[col].find(entry => String(entry.id) === activeLeetId);
-                  if (!card) return null;
-                  return (
-                    <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
-                      <div className="text-white font-medium mb-1">{card.problem?.trim() || 'Untitled Problem'}</div>
-                      <div className="text-gray-400 text-xs mb-1">{card.problemType || '—'}</div>
-                      {card.difficulty && (
-                        <div className="text-[10px] text-electric-blue uppercase">{card.difficulty}</div>
-                      )}
-                    </div>
-                  );
-                })() : null}
-              </DragOverlay>
-            </DndContext>
-            )}
-
-            {isLeetModalOpen && (
-              <LeetModal
-                entry={editingLeet}
-                onClose={() => {
-                  setIsLeetModalOpen(false);
-                  setEditingLeet(null);
-                }}
-                onSave={async (data) => {
-                  try {
-                    if (editingLeet) {
-                      const response = await fetch('/api/leetcode', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...data, id: editingLeet.id }),
-                      });
-                      if (!response.ok) throw new Error('Failed to update problem');
-                    } else {
-                      const response = await fetch('/api/leetcode', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data),
-                      });
-                      if (!response.ok) throw new Error('Failed to create problem');
-                    }
-                    await fetchLeetEntries();
-                    setIsLeetModalOpen(false);
-                    setEditingLeet(null);
-                  } catch (error) {
-                    console.error('Error saving LeetCode problem:', error);
-                    alert('Failed to save problem. Please try again.');
-                  }
-                }}
-              />
-            )}
-
-            {isDeletingLeet !== null && (
-              <DeleteModal
-                onConfirm={async () => {
-                  try {
-                    const response = await fetch(`/api/leetcode?id=${isDeletingLeet}`, {
-                      method: 'DELETE',
-                    });
-                    if (!response.ok) throw new Error('Failed to delete problem');
-                    await fetchLeetEntries();
-                    setIsDeletingLeet(null);
-                  } catch (error) {
-                    console.error('Error deleting LeetCode problem:', error);
-                    alert('Failed to delete problem. Please try again.');
-                    setIsDeletingLeet(null);
-                  }
-                }}
-                onCancel={() => setIsDeletingLeet(null)}
-              />
-            )}
-          </section>
+          <LeetCodeTab
+            filteredLeetColumns={filteredLeetColumns}
+            leetColumns={leetColumns}
+            isLoadingLeet={isLoadingLeet}
+            leetFilter={leetFilter}
+            setLeetFilter={setLeetFilter}
+            setIsLeetModalOpen={setIsLeetModalOpen}
+            setEditingLeet={setEditingLeet}
+            sensors={sensors}
+            handleLeetDragStart={handleLeetDragStart}
+            handleLeetDragOver={handleLeetDragOver}
+            handleLeetDragEnd={handleLeetDragEnd}
+            activeLeetId={activeLeetId}
+            getLeetColumnOfItem={getLeetColumnOfItem}
+            LeetModal={LeetModal}
+            DeleteModal={DeleteModal}
+            isLeetModalOpen={isLeetModalOpen}
+            editingLeet={editingLeet}
+            setIsDeletingLeet={setIsDeletingLeet}
+            isDeletingLeet={isDeletingLeet}
+            fetchLeetEntries={fetchLeetEntries}
+            isDraggingLeetRef={isDraggingLeetRef}
+          />
         )}
     </main>
     </div>

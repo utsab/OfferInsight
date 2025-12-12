@@ -1,134 +1,226 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { checkAuth } from '../../server';
-import '../shared-onboarding.css';
-import './page.css';
+import { FileText, Coffee, Users, Building2, ArrowLeft, Rocket, Target, CalendarCheck, Loader2 } from 'lucide-react';
 
-// Helper functions for data conversion
-function parseCommitmentToInt(commitment: string): number {
-  switch (commitment) {
-    case '6 - 8': return 7;
-    case '9 - 11': return 10;
-    case '12 - 19': return 15;
-    case '20 - 25': return 22;
-    default: return 0;
+const MONTH_OPTIONS = [
+  { label: 'January', value: 0 },
+  { label: 'February', value: 1 },
+  { label: 'March', value: 2 },
+  { label: 'April', value: 3 },
+  { label: 'May', value: 4 },
+  { label: 'June', value: 5 },
+  { label: 'July', value: 6 },
+  { label: 'August', value: 7 },
+  { label: 'September', value: 8 },
+  { label: 'October', value: 9 },
+  { label: 'November', value: 10 },
+  { label: 'December', value: 11 },
+];
+
+function calculateEstimatedOfferDate(
+  appsWithOutreachPerWeek: number,
+  linkedinOutreachPerWeek: number,
+  inPersonEventsPerMonth: number,
+  careerFairsPerYear: number,
+  referenceDate?: Date
+) {
+  let offersPerAppWithOutreach = 0.0025;
+  let offersPerLinkedinOutreachAttempt = 0.00075;
+  let offersPerInPersonEvent = 0.0075;
+  let offersPerCareerFair = 0.1;
+
+  let bonusPoints = 0;
+
+  if (linkedinOutreachPerWeek >= 20) {
+    bonusPoints += 20;
+  } else if (linkedinOutreachPerWeek >= 12) {
+    bonusPoints += 11;
+  } else if (linkedinOutreachPerWeek >= 6) {
+    bonusPoints += 6;
+  } else if (linkedinOutreachPerWeek >= 1) {
+    bonusPoints += 1;
   }
-}
 
-function parseRangeToInt(range: string): number {
-  const parts = range.split(' - ');
-  if (parts.length === 2) {
-    const min = parseInt(parts[0], 10);
-    const max = parseInt(parts[1], 10);
-    return Math.round((min + max) / 2);
+  if (inPersonEventsPerMonth >= 8) {
+    bonusPoints += 80;
+  } else if (inPersonEventsPerMonth >= 4) {
+    bonusPoints += 40;
+  } else if (inPersonEventsPerMonth >= 2) {
+    bonusPoints += 20;
+  } else if (inPersonEventsPerMonth >= 1) {
+    bonusPoints += 10;
   }
-  return 0;
-}
 
-function parseEventsToInt(events: string): number {
-  switch (events) {
-    case '0': return 0;
-    case '1': return 1;
-    case '2': return 2;
-    case '4': return 4;
-    case '8': return 8;
-    default: return 0;
+  if (careerFairsPerYear >= 4) {
+    bonusPoints += 80;
+  } else if (careerFairsPerYear >= 3) {
+    bonusPoints += 40;
+  } else if (careerFairsPerYear >= 2) {
+    bonusPoints += 20;
+  } else if (careerFairsPerYear >= 1) {
+    bonusPoints += 10;
   }
-}
 
-function parseCareerFairsToInt(careerFairs: string): number {
-  switch (careerFairs) {
-    case '0': return 0;
-    case '1': return 1;
-    case '2': return 2;
-    case '3': return 3;
-    case '4': return 4;
-    default: return 0;
+  const a = 2.0;
+  const b = 0.01;
+  const multiplier = 3 - a * Math.exp(-b * bonusPoints);
+
+  offersPerAppWithOutreach *= multiplier;
+  offersPerLinkedinOutreachAttempt *= multiplier;
+  offersPerInPersonEvent *= multiplier;
+  offersPerCareerFair *= multiplier;
+
+  const totalOffersPerWeek =
+    appsWithOutreachPerWeek * offersPerAppWithOutreach +
+    linkedinOutreachPerWeek * offersPerLinkedinOutreachAttempt +
+    inPersonEventsPerMonth * offersPerInPersonEvent +
+    (careerFairsPerYear / 52) * offersPerCareerFair;
+
+  if (!Number.isFinite(totalOffersPerWeek) || totalOffersPerWeek <= 0) {
+    return new Date(); //to do: handle error case more gracefully
   }
+
+  const totalWeeks = 3 + 1 / totalOffersPerWeek;
+  const baseDate = referenceDate ?? new Date(); //to do: handle case where user comes back to this page at a later date to edit their plan, we may want to use a earlier reference date
+  return new Date(baseDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
 }
 
-function intToCommitmentString(value: number): string {
-  if (value <= 8) return '6 - 8';
-  if (value <= 11) return '9 - 11';
-  if (value <= 19) return '12 - 19';
-  return '20 - 25';
+function calculateWeeklyHours(appsPerWeek: number, interviewsPerWeek: number, eventsPerMonth: number, fairsPerYear: number) {
+  let hoursPerAppWithOutreach = 1;
+  let hoursPerLinkedinOutreachAttempt = 0.5;
+  let hoursPerInPersonEvent = 4/4.33;
+  let hoursPerCareerFair = 10/26; //We are assuming that the average target offer date is 6 months into the future, so they only have 26 weeks to attends the target number of career fairs
+
+  return Math.round(appsPerWeek * hoursPerAppWithOutreach + interviewsPerWeek * hoursPerLinkedinOutreachAttempt + eventsPerMonth * hoursPerInPersonEvent + fairsPerYear * hoursPerCareerFair);
 }
 
-function intToRangeString(value: number, type: string): string {
-  if (type === 'applications' || type === 'outreach') {
-    if (value <= 2) return '1 - 2';
-    if (value <= 5) return '3 - 5';
-    if (value <= 10) return '6 - 10';
-    return '11 - 20';
-  } else if (type === 'info') {
-    if (value <= 5) return '1 - 5';
-    if (value <= 10) return '6 - 10';
-    if (value <= 20) return '11 - 20';
-    return '20 - 30';
-  }
-  return '';
-}
-
-function intToEventsString(value: number): string {
-  return value.toString();
-}
-
-function intToCareerFairsString(value: number): string {
-  return value.toString();
-}
-
-// Data layer hook
-function usePage3Data() {
-  const [commitment, setCommitment] = useState('');
-  const [appsWithOutreachPerWeek, setAppsWithOutreachPerWeek] = useState('');
-  const [linkedinOutreachPerWeek, setLinkedinOutreachPerWeek] = useState('');
-  const [inPersonEventsPerMonth, setInPersonEventsPerMonth] = useState('');
-  const [careerFairsPerYear, setCareerFairsPerYear] = useState('');
-  const [loading, setLoading] = useState(true);
+export default function Page3() {
   const router = useRouter();
+  const today = useMemo(() => new Date(), []);
+
+  // Goals (sliders)
+  const [appsPerWeek, setAppsPerWeek] = useState<number>(5);
+  const [interviewsPerWeek, setInterviewsPerWeek] = useState<number>(2);
+  const [eventsPerMonth, setEventsPerMonth] = useState<number>(3);
+  const [fairsPerYear, setFairsPerYear] = useState<number>(1);
+  const [hoursPerWeek, setHoursPerWeek] = useState<number>(12);
+  const [planStartDate, setPlanStartDate] = useState<Date | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth());
+  const [selectedDay, setSelectedDay] = useState<number>(today.getDate());
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Initialize values from server (based on selections saved in page2)
+  useEffect(() => {
+    const fetchInitial = async () => {
+      try {
+        const res = await fetch('/api/users/onboarding2');
+        if (!res.ok) return;
+        const user = await res.json();
+        if (typeof user.appsWithOutreachPerWeek === 'number') {
+          setAppsPerWeek(user.appsWithOutreachPerWeek);
+        }
+        if (typeof user.linkedinOutreachPerWeek === 'number') {
+          setInterviewsPerWeek(user.linkedinOutreachPerWeek);
+        }
+        if (typeof user.inPersonEventsPerMonth === 'number') {
+          setEventsPerMonth(user.inPersonEventsPerMonth);
+        }
+        if (typeof user.careerFairsPerYear === 'number') {
+          setFairsPerYear(user.careerFairsPerYear);
+        }
+        if (typeof user.commitment === 'number') {
+          setHoursPerWeek(user.commitment);
+        }
+        if (user.resetStartDate) {
+          const parsed = new Date(user.resetStartDate);
+          if (!Number.isNaN(parsed.getTime())) {
+            setPlanStartDate(parsed);
+            setSelectedYear(parsed.getFullYear());
+            setSelectedMonth(parsed.getMonth());
+            setSelectedDay(parsed.getDate());
+          }
+        } else {
+          const fallback = new Date();
+          setPlanStartDate(fallback);
+          setSelectedYear(fallback.getFullYear());
+          setSelectedMonth(fallback.getMonth());
+          setSelectedDay(fallback.getDate());
+        }
+      } catch (e) {
+        console.error('Failed to load initial onboarding values:', e);
+        const fallback = new Date();
+        setPlanStartDate(fallback);
+        setSelectedYear(fallback.getFullYear());
+        setSelectedMonth(fallback.getMonth());
+        setSelectedDay(fallback.getDate());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchInitial();
+  }, []);
+
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, idx) => currentYear - 2 + idx);
+  }, []);
+
+  const daysInSelectedMonth = useMemo(() => new Date(selectedYear, selectedMonth + 1, 0).getDate(), [selectedYear, selectedMonth]);
 
   useEffect(() => {
-    async function authenticate() {
-      const session = await checkAuth();
-      if (session?.user?.email) {
-        // Fetch user data from the database
-        const response = await fetch('/api/users/onboarding2');
-        if (response.ok) {
-          const userData = await response.json();
-          // Convert integer values from DB to string representations for UI
-          if (userData.commitment !== null && userData.commitment !== undefined) {
-            setCommitment(intToCommitmentString(userData.commitment));
-          }
-          if (userData.appsWithOutreachPerWeek !== null && userData.appsWithOutreachPerWeek !== undefined) {
-            setAppsWithOutreachPerWeek(intToRangeString(userData.appsWithOutreachPerWeek, 'outreach'));
-          }
-          if (userData.linkedinOutreachPerWeek !== null && userData.linkedinOutreachPerWeek !== undefined) {
-            setLinkedinOutreachPerWeek(intToRangeString(userData.linkedinOutreachPerWeek, 'info'));
-          }
-          if (userData.inPersonEventsPerMonth !== null && userData.inPersonEventsPerMonth !== undefined) {
-            setInPersonEventsPerMonth(intToEventsString(userData.inPersonEventsPerMonth));
-          }
-          if (userData.careerFairsPerYear !== null && userData.careerFairsPerYear !== undefined) {
-            setCareerFairsPerYear(intToCareerFairsString(userData.careerFairsPerYear));
-          }
-        }
-      }
-      setLoading(false);
+    if (selectedDay > daysInSelectedMonth) {
+      const clampedDay = daysInSelectedMonth;
+      setSelectedDay(clampedDay);
+      setPlanStartDate(new Date(selectedYear, selectedMonth, clampedDay));
     }
-    authenticate();
-  }, []);
+  }, [daysInSelectedMonth, selectedDay, selectedYear, selectedMonth]);
+
+  const handleYearChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const year = Number(event.target.value);
+    const maxDay = new Date(year, selectedMonth + 1, 0).getDate();
+    const day = Math.min(selectedDay, maxDay);
+    setSelectedYear(year);
+    setSelectedDay(day);
+    setPlanStartDate(new Date(year, selectedMonth, day));
+  };
+
+  const handleMonthChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const month = Number(event.target.value);
+    const maxDay = new Date(selectedYear, month + 1, 0).getDate();
+    const day = Math.min(selectedDay, maxDay);
+    setSelectedMonth(month);
+    setSelectedDay(day);
+    setPlanStartDate(new Date(selectedYear, month, day));
+  };
+
+  const handleDayChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const day = Number(event.target.value);
+    setSelectedDay(day);
+    setPlanStartDate(new Date(selectedYear, selectedMonth, day));
+  };
+
+  // Target Offer Date calculations (adapted from original page3, with fairs instead of LeetCode)
+  const targetOfferDate = useMemo(
+    () =>
+      calculateEstimatedOfferDate(
+        appsPerWeek,
+        interviewsPerWeek,
+        eventsPerMonth,
+        fairsPerYear,
+        planStartDate ?? undefined
+      ),
+    [appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear, planStartDate]
+  );
+
+  const weeklyHours = Math.round(hoursPerWeek);
+
+  const handleBack = () => router.back();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Convert string values to integers for the API call
-    const commitmentValue = parseCommitmentToInt(commitment);
-    const outreachValue = parseRangeToInt(appsWithOutreachPerWeek);
-    const linkedinOutreachValue = parseRangeToInt(linkedinOutreachPerWeek);
-    const inPersonValue = parseEventsToInt(inPersonEventsPerMonth);
-    const careerFairsValue = parseCareerFairsToInt(careerFairsPerYear);
     
     const response = await fetch('/api/users/onboarding3', {
       method: 'POST',
@@ -136,263 +228,259 @@ function usePage3Data() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        commitment: commitmentValue,
-        appsWithOutreachPerWeek: outreachValue,
-        linkedinOutreachPerWeek: linkedinOutreachValue,
-        inPersonEventsPerMonth: inPersonValue,
-        careerFairsPerYear: careerFairsValue
+        commitment: weeklyHours,
+        appsWithOutreachPerWeek: appsPerWeek,
+        linkedinOutreachPerWeek: interviewsPerWeek,
+        inPersonEventsPerMonth: eventsPerMonth,
+        careerFairsPerYear: fairsPerYear,
+        targetOfferDate: targetOfferDate.toISOString(),
+        resetStartDate: planStartDate ? planStartDate.toISOString().split('T')[0] : undefined,
       }),
     });
 
     if (response.ok) {
-      // Handle successful submission
       console.log('User plan updated successfully');
-      router.push('/dashboard'); // Redirect to Dashboard
+      router.push('/dashboard');
     } else {
-      // Handle error
       console.error('Failed to update user plan');
     }
   };
 
-  return {
-    commitment,
-    setCommitment,
-    appsWithOutreachPerWeek,
-    setAppsWithOutreachPerWeek,
-    linkedinOutreachPerWeek,
-    setLinkedinOutreachPerWeek,
-    inPersonEventsPerMonth,
-    setInPersonEventsPerMonth,
-    careerFairsPerYear,
-    setCareerFairsPerYear,
-    loading,
-    handleSubmit
-  };
-}
-
-
-function calculateEstimatedOfferDate(appsWithOutreachPerWeek: number, linkedinOutreachPerWeek: number, inPersonEventsPerMonth: number, careerFairsPerYear: number) {
-  
-  
-  console.log("appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "linkedinOutreachPerWeek: ", linkedinOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth, "careerFairsPerYear: ", careerFairsPerYear)
-  
-  // Hardcode the ROI percentages for each habit 
-
-  let offersPerAppWithOutreach = 0.0025;
-  let offersPerLinkedinOutreachAttempt = 0.00075;
-  let offersPerInPersonEvent = 0.0075;
-  let offersPerCareerFair = 0.1;
-
-  // Bonus points captures the 'luck' factor. The more habits they do, the luckier they get, 
-  // in a way that goes beyond the base percentages listed above
-  let bonusPoints = 0;
-
-  if (linkedinOutreachPerWeek === 1) {
-    bonusPoints += 1;
-  } else if (linkedinOutreachPerWeek === 6) {
-    bonusPoints += 6;
-  } else if (linkedinOutreachPerWeek === 11) {
-    bonusPoints += 11;
-  } else if (linkedinOutreachPerWeek === 20) {
-    bonusPoints += 20;
-  }
-  
-
-  if (inPersonEventsPerMonth === 1) {
-    bonusPoints += 10; 
-  } else if (inPersonEventsPerMonth === 2) {
-    bonusPoints += 20; 
-  } else if (inPersonEventsPerMonth === 4) {
-    bonusPoints += 40; 
-  } else if (inPersonEventsPerMonth === 8) {
-    bonusPoints += 80; 
-  }
-
-  if (careerFairsPerYear === 1) {
-    bonusPoints += 10; 
-  } else if (careerFairsPerYear === 2) {
-    bonusPoints += 20; 
-  } else if (careerFairsPerYear === 3) {
-    bonusPoints += 40; 
-  } else if (careerFairsPerYear === 4) {
-    bonusPoints += 80; 
-  }
-
-  const a = 2.0;
-  const b = 0.01;
-  const x = bonusPoints; // Using bonusPoints as the x value
-  let multiplier = 3 - a * Math.exp(-b * x);
-
-  console.log("************************************************")
-  console.log("bonusPoints: ", bonusPoints, "multiplier: ", multiplier)
-  console.log("************************************************")
-
-  offersPerAppWithOutreach *= multiplier;
-  offersPerLinkedinOutreachAttempt *= multiplier;
-  offersPerInPersonEvent *= multiplier;
-  offersPerCareerFair *= multiplier;
-
-
-  // Calculate the total number of job offers per week 
-
-  const totalOffersPerWeek = (appsWithOutreachPerWeek * offersPerAppWithOutreach) + (linkedinOutreachPerWeek * offersPerLinkedinOutreachAttempt) + (inPersonEventsPerMonth * offersPerInPersonEvent) + (careerFairsPerYear * offersPerCareerFair);
-
-  // Calculate the total number of weeks
-
-  const totalWeeks = 3 + (1 / totalOffersPerWeek);
-
-
-  // Calculate the estimated offer date 
-  // Use a fixed reference date to avoid hydration mismatches
-  const referenceDate = new Date();
-  const estimatedOfferDate = new Date(referenceDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
-
-  // Return the estimated offer date 
-
-  return estimatedOfferDate;
-
-}
-
-
-// Main component
-export default function Page3() {
-  const {
-    commitment,
-    setCommitment,
-    appsWithOutreachPerWeek,
-    setAppsWithOutreachPerWeek,
-    linkedinOutreachPerWeek,
-    setLinkedinOutreachPerWeek,
-    inPersonEventsPerMonth,
-    setInPersonEventsPerMonth,
-    careerFairsPerYear,
-    setCareerFairsPerYear,
-    loading,
-    handleSubmit
-  } = usePage3Data();
-
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-
-  //console.log("Recalculating estimated date...: ", "applicationsPerWeek: ", applicationsPerWeek, "appsWithOutreachPerWeek: ", appsWithOutreachPerWeek, "linkedinOutreachPerWeek: ", linkedinOutreachPerWeek, "inPersonEventsPerMonth: ", inPersonEventsPerMonth)
-
-  const estimatedOfferDate = calculateEstimatedOfferDate(
-    parseInt(appsWithOutreachPerWeek), 
-    parseInt(linkedinOutreachPerWeek), 
-    parseInt(inPersonEventsPerMonth),
-    parseInt(careerFairsPerYear)
-  );
-  
-  
-  // Presentation layer
   return (
-    <div className="onboarding-page3">
-      <div className="onboarding-container">
-        <div className="onboarding-content-wrapper">
-          <div className="onboarding-main-content">
-            <div className="onboarding-header">
-              <h1 className="welcome-text">Let's fine-tune your plan!</h1>
-            </div>
-            
-            <form className="onboarding-form" onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">How many hours are you willing to commit per week?</label>
-                <div className="options-container">
-                  {['6 - 8', '9 - 11', '12 - 19', '20 - 25'].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setCommitment(option)}
-                      className={`btn-option ${commitment === option ? 'btn-option-selected' : ''}`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">How many applications you'll submit per week? <br /><i>Each application should include outreach to <u>one</u> recruiter and <u>one</u> hiring manager</i></label>
-                <div className="options-container">
-                  {['1 - 2', '3 - 5', '6 - 10', '11 - 20'].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setAppsWithOutreachPerWeek(option)}
-                      className={`btn-option ${appsWithOutreachPerWeek === option ? 'btn-option-selected' : ''}`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">How many people will you reach out to for <br/> Informational Interviews per week?</label>
-                <div className="options-container">
-                  {['1 - 5', '6 - 10', '11 - 20', '20 - 30'].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setLinkedinOutreachPerWeek(option)}
-                      className={`btn-option ${linkedinOutreachPerWeek === option ? 'btn-option-selected' : ''}`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">How many networking events you'll attend <b>per month</b>? <br/><i>This includes meetups, company events, workshops, etc.</i></label>
-                <div className="options-container">
-                  {['0', '1', '2', '4', '8'].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setInPersonEventsPerMonth(option)}
-                      className={`btn-option ${inPersonEventsPerMonth === option ? 'btn-option-selected' : ''}`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">How many career fairs you'll attend <b>per year</b>?</label>
-                <div className="options-container">
-                  {['0', '1', '2', '3', '4'].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setCareerFairsPerYear(option)}
-                      className={`btn-option ${careerFairsPerYear === option ? 'btn-option-selected' : ''}`}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="estimated-date-container">
-                  <h4 className="estimated-date-label">Estimated Internship Offer Date:</h4>
-                  <p className="estimated-date-value">{estimatedOfferDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-              </div>
-            
+    <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
+        {/* Header (condensed) */}
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-bold text-white">Fine-tune Your Action Plan</h2>
+        </div>
 
-              <button type="submit" className="btn-primary">Finalize Goals</button>
-            </form>
+        {/* Form */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-32 text-gray-300">
+            <Loader2 className="h-12 w-12 animate-spin text-electric-blue" />
+            <p className="mt-4 text-sm">Loading your action plan...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+          {/* Target Outcome */}
+          <div className="bg-gray-700/30 border border-light-steel-blue rounded-lg p-6 mb-8">
+            <h3 className="text-white font-bold text-lg mb-6 flex items-center justify-center">
+              <Target className="text-electric-blue mr-3" />
+              Target Outcome with Your Custom Plan
+            </h3>
+            <div className="flex flex-col items-center justify-center gap-6 md:flex-row md:gap-12">
+              <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
+                <div className="text-3xl font-bold text-electric-blue mb-2">
+                  {targetOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+                <div className="text-gray-300 text-sm font-medium">Target Offer Date</div>
+              </div>
+              <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
+                <div className="text-3xl font-bold text-electric-blue mb-2">{calculateWeeklyHours(appsPerWeek, interviewsPerWeek, eventsPerMonth, fairsPerYear)}</div>
+                <div className="text-gray-300 text-sm font-medium">Hours per Week</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            {/* Applications */}
+            <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-white font-bold text-lg flex items-center">
+                  <FileText className="text-electric-blue mr-3" />
+                  High Quality Applications
+                </h4>
+                <div className="text-electric-blue text-sm font-semibold">WEEKLY</div>
+              </div>
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-300">Target per week:</span>
+                  <span className="text-white font-bold text-xl">{appsPerWeek}</span>
+                </div>
+                <input
+                  type="range"
+                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  min={1}
+                  max={15}
+                  value={appsPerWeek}
+                  onChange={(e) => setAppsPerWeek(Number(e.target.value))}
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>1</span>
+                  <span>15</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Linkedin Outreach */}
+            <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-white font-bold text-lg flex items-center">
+                  <Coffee className="text-electric-blue mr-3" />
+                  LinkedIn Outreach
+                </h4>
+                <div className="text-electric-blue text-sm font-semibold">WEEKLY</div>
+              </div>
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-300">Target per week:</span>
+                  <span className="text-white font-bold text-xl">{interviewsPerWeek}</span>
+                </div>
+                <input
+                  type="range"
+                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  min={0}
+                  max={8}
+                  value={interviewsPerWeek}
+                  onChange={(e) => setInterviewsPerWeek(Number(e.target.value))}
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>0</span>
+                  <span>8</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Events */}
+            <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-white font-bold text-lg flex items-center">
+                  <Users className="text-electric-blue mr-3" />
+                  In-Person Events
+                </h4>
+                <div className="text-electric-blue text-sm font-semibold">MONTHLY</div>
+              </div>
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-300">Target per month:</span>
+                  <span className="text-white font-bold text-xl">{eventsPerMonth}</span>
+                </div>
+                <input
+                  type="range"
+                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  min={0}
+                  max={10}
+                  value={eventsPerMonth}
+                  onChange={(e) => setEventsPerMonth(Number(e.target.value))}
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>0</span>
+                  <span>10</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Career Fairs (replaces LeetCode) */}
+            <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-white font-bold text-lg flex items-center">
+                  <Building2 className="text-electric-blue mr-3" />
+                  Career Fairs
+                </h4>
+                <div className="text-electric-blue text-sm font-semibold">YEARLY</div>
+              </div>
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-300">Total per year:</span>
+                  <span className="text-white font-bold text-xl">{fairsPerYear}</span>
+                </div>
+                <input
+                  type="range"
+                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  min={0}
+                  max={8}
+                  value={fairsPerYear}
+                  onChange={(e) => setFairsPerYear(Number(e.target.value))}
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>0</span>
+                  <span>8</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        {/* Plan Start Date */}
+        <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-white font-bold text-lg flex items-center">
+              <CalendarCheck className="text-electric-blue mr-3" />
+              Plan Start Date
+            </h4>
+            <span className="text-gray-400 text-sm">Adjust your baseline</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm text-gray-300 mb-2">Month</label>
+              <select
+                className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                value={selectedMonth}
+                onChange={handleMonthChange}
+              >
+                {MONTH_OPTIONS.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-300 mb-2">Day</label>
+              <select
+                className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                value={selectedDay}
+                onChange={handleDayChange}
+              >
+                {Array.from({ length: daysInSelectedMonth }, (_, idx) => idx + 1).map((day) => (
+                  <option key={day} value={day}>
+                    {day}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-300 mb-2">Year</label>
+              <select
+                className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                value={selectedYear}
+                onChange={handleYearChange}
+              >
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
-        <div className="progress-dots">
-          <div className="dot completed"></div>
-          <div className="dot completed"></div>
-          <div className="dot active"></div>
-        </div>
+          {/* Buttons */}
+          <div className="flex space-x-4">
+            <button type="button" onClick={handleBack} className="flex-1 bg-gray-700 hover:bg-gray-600 border border-light-steel-blue text-white py-4 rounded-lg font-semibold transition-colors flex items-center justify-center">
+              <ArrowLeft className="mr-2" />
+              Back
+            </button>
+            <button type="submit" className="flex-2 bg-electric-blue hover:bg-blue-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors flex items-center justify-center">
+              <Rocket className="mr-2" />
+              Start Tracking My Progress
+            </button>
+          </div>
+          
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center mt-6">
+            <div className="flex space-x-2">
+              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+            </div>
+            <span className="text-gray-400 ml-3 text-sm">Step 3 of 3</span>
+          </div>
+          </form>
+        )}
       </div>
     </div>
   );
 }
+
+

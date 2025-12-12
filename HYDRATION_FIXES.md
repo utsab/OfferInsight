@@ -156,7 +156,7 @@ To prevent future hydration mismatches:
 - `app/ui/dashboard/total-progress-wrapper.tsx`
 - `app/api/dashboard-metrics/route.ts`
 - `app/actions/dashboard-metrics.ts`
-- `app/dashboard/in_person_events/page.tsx`
+- `app/dashboard/page.tsx` (contains all dashboard functionality)
 - `app/lib/date-utils.ts` (new file)
 
 All changes maintain the same functionality while ensuring consistent rendering between server and client.

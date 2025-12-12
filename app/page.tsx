@@ -55,28 +55,28 @@ export default function Page() {
     // Redirect based on onboarding progress
     switch (onboardingProgress) {
       case 0:
-        window.location.href = '/onboarding/page1-v2';
+        window.location.href = '/onboarding/page1';
         break;
       case 1:
-        window.location.href = '/onboarding/page2-v2';
+        window.location.href = '/onboarding/page2';
         break;
       case 2:
-        window.location.href = '/onboarding/page3-v2';
+        window.location.href = '/onboarding/page3';
         break;
       case 3:
         window.location.href = '/dashboard';
         break;
       default:
         // If no progress or error, start from the beginning
-        window.location.href = '/onboarding/page1-v2';
+        window.location.href = '/onboarding/page1';
     }
   };
 
 
   const handleOnboarding1Submit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Redirect to the actual page1-v2
-    window.location.href = '/onboarding/page1-v2';
+    // Redirect to the actual page1
+    window.location.href = '/onboarding/page1';
   };
 
   const handleOnboarding2Submit = (e: React.FormEvent) => {

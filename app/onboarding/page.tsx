@@ -14,17 +14,17 @@ export default async function Onboarding() {
       <p>Select a page to start the onboarding process:</p>
       <ul>
         <li>
-          <Link href="/onboarding/page1-v2">
+          <Link href="/onboarding/page1">
             Go to Page 1
           </Link>
         </li>
         <li>
-          <Link href="/onboarding/page2-v2">
+          <Link href="/onboarding/page2">
             Go to Page 2
           </Link>
         </li>
         <li>
-          <Link href="/onboarding/page3-v2">
+          <Link href="/onboarding/page3">
             Go to Page 3
           </Link>
         </li>

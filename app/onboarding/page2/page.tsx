@@ -1,60 +1,45 @@
-"use client"
+'use client';
 
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { checkAuth } from '../../server';
-import '../shared-onboarding.css';
-import './page.css';
-import { auth } from 'auth';
-import { redirect } from 'next/navigation';
+
+type TimelineKey = '3' | '6' | '9' | '12';
+
+const CALCULATOR_DATA: Record<TimelineKey, {
+  range: string;
+  commitment: string;
+  apps: string;
+  interviewsOutreach: string;
+  events: string;
+  fairs: string;
+  interviews: number;
+  offers: number;
+}> = {
+  '3': { range: '1-3 Months', commitment: '15 Hours', apps: '5 Weekly', interviewsOutreach: '15 Monthly', events: '4 Monthly', fairs: '1 Yearly', interviews: 10, offers: 1 },
+  '6': { range: '4-6 Months', commitment: '10 Hours', apps: '3 Weekly', interviewsOutreach: '10 Monthly', events: '3 Monthly', fairs: '1 Yearly', interviews: 15, offers: 1 },
+  '9': { range: '7-9 Months', commitment: '8 Hours', apps: '1 Weekly', interviewsOutreach: '7 Monthly', events: '2 Monthly', fairs: '1 Yearly', interviews: 20, offers: 1 },
+  '12': { range: '10-12 Months', commitment: '5 Hours', apps: '1 Weekly', interviewsOutreach: '5 Monthly', events: '1 Monthly', fairs: '1 Yearly', interviews: 25, offers: 1 },
+};
 
 export default function Page2() {
-  const [monthsToSecureInternship, setMonthsToSecureInternship] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter(); 
+  const router = useRouter();
+  const [selectedTimeline, setSelectedTimeline] = useState<TimelineKey | null>(null);
 
+  const calculator = useMemo(() => {
+    if (!selectedTimeline) return null;
+    return CALCULATOR_DATA[selectedTimeline];
+  }, [selectedTimeline]);
 
-
-  useEffect(() => {
-    async function authenticate() {
-      const session = await checkAuth();
-      if (session?.user?.email) {
-        // Fetch user data from the database
-        const response = await fetch('/api/users/onboarding2');
-        if (response.ok) {
-          const userData = await response.json();
-          if (userData.monthsToSecureInternship) {
-            setMonthsToSecureInternship(userData.monthsToSecureInternship);
-          }
-        }
-      }
-      setLoading(false);
-    }
-    authenticate();
-  }, []);
-
-
-
-  // Function to handle option selection
-  const handleOptionSelect = (option: string) => {
-    // Convert display value to numeric data value
-    let numericMonths: number;
-    switch (option) {
-      case '1-3': numericMonths = 3; break;
-      case '4-6': numericMonths = 6; break;
-      case '7-9': numericMonths = 9; break;
-      case '10-12': numericMonths = 12; break;
-      default: numericMonths = 0;
-    }
-    setMonthsToSecureInternship(numericMonths);
+  const handleOptionClick = (value: TimelineKey) => {
+    setSelectedTimeline(value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedTimeline) return;
     
-    // Generate the plan based on the selected months
-    const plan = generatePlan();
+    // Generate the plan based on the selected timeline
+    const plan = calculator!;
     
     const response = await fetch('/api/users/onboarding2', {
       method: 'POST',
@@ -62,213 +47,175 @@ export default function Page2() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        monthsToSecureInternship,
-        commitment: plan.commitment,
-        appsWithOutreachPerWeek: plan.appsWithOutreachPerWeek,
-        linkedinOutreachPerWeek: plan.linkedinOutreachPerWeek,
-        inPersonEventsPerMonth: plan.inPersonEventsPerMonth,
-        careerFairsPerYear: plan.careerFairsPerYear
+        monthsToSecureInternship: parseInt(selectedTimeline),
+        commitment: parseInt(plan.commitment),
+        appsWithOutreachPerWeek: parseInt(plan.apps.split(' ')[0]),
+        linkedinOutreachPerWeek: parseInt(plan.interviewsOutreach.split(' ')[0]),
+        inPersonEventsPerMonth: parseInt(plan.events.split(' ')[0]),
+        careerFairsPerYear: parseInt(plan.fairs.split(' ')[0])
       }),
     });
 
     if (response.ok) {
-      // Handle successful submission
       console.log('User information updated successfully');
-      router.push('/onboarding/page3'); // Redirect to Page 3
+      router.push('/onboarding/page3');
     } else {
-      // Handle error
       console.error('Failed to update user information');
     }
   };
 
-
-  /* 
-  * This plan was based on the calculations in this spreadsheet: https://docs.google.com/spreadsheets/d/1ti_ZVpi6VEqdAKkfRyWQNerpxSswTjvQF53w4JUahws/edit?gid=1637986855#gid=1637986855
-  */
-  const generatePlan = () => {
-    const plan = {
-      timeline: monthsToSecureInternship,
-      timeline_display: getTimelineDisplay(monthsToSecureInternship),
-      commitment: 0,
-      commitment_display: '?',
-      appsWithOutreachPerWeek: 0,
-      appsWithOutreachPerWeekDisplay: '?',
-      linkedinOutreachPerWeek: 0,
-      linkedinOutreachPerWeekDisplay: '?',
-      inPersonEventsPerMonth: 0,
-      inPersonEventsPerMonthDisplay: '?',
-      careerFairsPerYear: 0,
-      careerFairsPerYearDisplay: '?',
-    };
-
-    if (monthsToSecureInternship === 3) {
-      plan.commitment = 23;
-      plan.commitment_display = '23 Hours';
-      plan.appsWithOutreachPerWeek = 3;
-      plan.appsWithOutreachPerWeekDisplay = '3 Weekly';
-      plan.linkedinOutreachPerWeek = 21;
-      plan.linkedinOutreachPerWeekDisplay = '21 Monthly';
-      plan.inPersonEventsPerMonth = 8;
-      plan.inPersonEventsPerMonthDisplay = '8 Monthly';
-      plan.careerFairsPerYear = 3;
-      plan.careerFairsPerYearDisplay = '3 Yearly';
-    } else if (monthsToSecureInternship === 6) {
-      plan.commitment = 11;
-      plan.commitment_display = '11 Hours';
-      plan.appsWithOutreachPerWeek = 2;
-      plan.appsWithOutreachPerWeekDisplay = '2 Weekly';
-      plan.linkedinOutreachPerWeek = 10;
-      plan.linkedinOutreachPerWeekDisplay = '10 Monthly';
-      plan.inPersonEventsPerMonth = 4;
-      plan.inPersonEventsPerMonthDisplay = '4 Monthly';
-      plan.careerFairsPerYear = 2;
-      plan.careerFairsPerYearDisplay = '2 Yearly';
-    } else if (monthsToSecureInternship === 9) {
-      plan.commitment = 8;
-      plan.commitment_display = '8 Hours';
-      plan.appsWithOutreachPerWeek = 1;
-      plan.appsWithOutreachPerWeekDisplay = '1 Weekly';
-      plan.linkedinOutreachPerWeek = 7;
-      plan.linkedinOutreachPerWeekDisplay = '7 Monthly';
-      plan.inPersonEventsPerMonth = 2;
-      plan.inPersonEventsPerMonthDisplay = '2 Monthly';
-      plan.careerFairsPerYear = 1;
-      plan.careerFairsPerYearDisplay = '1 Yearly';
-    } else if (monthsToSecureInternship === 12) {
-      plan.commitment = 6;
-      plan.commitment_display = '6 Hours';
-      plan.appsWithOutreachPerWeek = 1;
-      plan.appsWithOutreachPerWeekDisplay = '1 Weekly';
-      plan.linkedinOutreachPerWeek = 5;
-      plan.linkedinOutreachPerWeekDisplay = '5 Monthly';
-      plan.inPersonEventsPerMonth = 2;
-      plan.inPersonEventsPerMonthDisplay = '2 Monthly';
-      plan.careerFairsPerYear = 1;
-      plan.careerFairsPerYearDisplay = '1 Yearly';
-    } 
-
-    return plan;
-  }
-
-  // Helper function to convert numeric value to display string
-  const getTimelineDisplay = (months: number | null): string => {
-    switch (months) {
-      case 3: return '1-3';
-      case 6: return '4-6';
-      case 9: return '7-9';
-      case 12: return '10-12';
-      default: return '?';
-    }
-  }
-
-
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-
-
-  const plan = generatePlan();
-
-
-
   return (
-    <div className="onboarding-page2">
-    <div className="onboarding-container">
-      <div className="onboarding-content-wrapper">
-        <div className="onboarding-main-content">
-          <div className="onboarding-header">
-            <h1 className="welcome-text">Cool, now let's set goals</h1>
-          </div>
-          <form className="onboarding-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">How many months do you have to secure an internship?</label>
-              <div className="options-container">
-                {['1-3', '4-6', '7-9', '10-12'].map((option, index) => (
+    <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center p-8">
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg w-auto flex overflow-visible h-[720px]">
+        {/* Main content */}
+        <div className="flex-grow p-12 flex flex-col justify-between items-center">
+          <div>
+            <div className="mb-12 text-center">
+              <h2 className="text-4xl font-bold text-white mb-8">Cool, now let's set goals</h2>
+              <p className="text-gray-300 text-lg">How many months do you have to secure an internship?</p>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="mb-10">
+                <div className="flex justify-center space-x-4 mb-10">
                   <button
-                    key={option}
                     type="button"
-                    onClick={() => handleOptionSelect(option)}
-                    className={`btn-option ${getTimelineDisplay(monthsToSecureInternship) === option ? 'btn-option-selected' : ''}`}
+                    onClick={() => handleOptionClick('3')}
+                    className={`timeline-option border-2 rounded-lg py-3 px-6 text-white font-semibold transition-all duration-200 ${
+                      selectedTimeline === '3'
+                        ? 'bg-electric-blue border-electric-blue'
+                        : 'border-light-steel-blue hover:border-electric-blue'
+                    }`}
+                    data-months="3"
+                    data-range="1-3 Months"
                   >
-                    {option}
+                    1-3
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => handleOptionClick('6')}
+                    className={`timeline-option border-2 rounded-lg py-3 px-6 text-white font-semibold transition-all duration-200 ${
+                      selectedTimeline === '6'
+                        ? 'bg-electric-blue border-electric-blue'
+                        : 'border-light-steel-blue hover:border-electric-blue'
+                    }`}
+                    data-months="6"
+                    data-range="4-6 Months"
+                  >
+                    4-6
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOptionClick('9')}
+                    className={`timeline-option border-2 rounded-lg py-3 px-6 text-white font-semibold transition-all duration-200 ${
+                      selectedTimeline === '9'
+                        ? 'bg-electric-blue border-electric-blue'
+                        : 'border-light-steel-blue hover:border-electric-blue'
+                    }`}
+                    data-months="9"
+                    data-range="7-9 Months"
+                  >
+                    7-9
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOptionClick('12')}
+                    className={`timeline-option border-2 rounded-lg py-3 px-6 text-white font-semibold transition-all duration-200 ${
+                      selectedTimeline === '12'
+                        ? 'bg-electric-blue border-electric-blue'
+                        : 'border-light-steel-blue hover:border-electric-blue'
+                    }`}
+                    data-months="12"
+                    data-range="10-12 Months"
+                  >
+                    10-12
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  className="bg-electric-blue hover:bg-blue-600 text-white px-12 py-3 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full max-w-xs text-lg mx-auto block"
+                  disabled={!selectedTimeline}
+                >
+                  Continue
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="flex items-center space-x-2 mt-12">
+            <div className="h-1.5 w-16 bg-gray-600 rounded-full"></div>
+            <div className="h-1.5 w-16 bg-electric-blue rounded-full"></div>
+            <div className="h-1.5 w-16 bg-gray-600 rounded-full"></div>
+          </div>
+        </div>
+
+        {/* Success Calculator */}
+        <div className="w-max flex-shrink-0 bg-electric-blue p-10 text-white flex flex-col">
+          <h3 className="text-2xl font-bold mb-10">Success Calculator</h3>
+
+          <div className="space-y-8 flex-grow">
+            <div>
+              <p className="text-sm font-semibold text-blue-200 mb-2">TIMELINE</p>
+              <div className="flex justify-start items-center whitespace-nowrap gap-6">
+                <p className="text-lg">Secure internship within</p>
+                <span className="ml-auto text-right bg-blue-800 text-white text-sm font-semibold px-4 py-1.5 rounded-full">
+                  {calculator ? calculator.range : '-'}
+                </span>
               </div>
             </div>
-           
-            <button type="submit" className="btn-primary">Continue</button>
-          </form>
 
-          <div className="progress-dots">
-            <div className="dot completed"></div>
-            <div className="dot active"></div>
-            <div className="dot"></div>
-          </div>
-        </div>
-        
-        <div className={`action-plan-sidebar ${monthsToSecureInternship ? 'sidebar-active' : 'sidebar-inactive'}`}>
-          <div className="sidebar-logo">
-            <img src="/images/logo-only.png" alt="OpenResumeBook" />
-            <span>OpenResumeBook</span>
-          </div>
-          
-          <h2 className="calculator-heading">Success Calculator</h2>
-          
-          <div className="sidebar-section">
-            <h3>Timeline</h3>
-            <div className="sidebar-item">
-              <span>Secure internship within</span>
-              <span className="value-pill">
-                {(plan.timeline_display || '?') + ' Months'}
-              </span>
+            <div className="border-t border-blue-500 opacity-50"></div>
+
+            <div>
+              <p className="text-sm font-semibold text-blue-200 mb-2">COMMITMENT</p>
+              <div className="flex justify-start items-center whitespace-nowrap gap-6">
+                <p className="text-lg">Weekly Commitment</p>
+                <span className="ml-auto text-right text-lg font-bold">{calculator ? calculator.commitment : '-'}</span>
+              </div>
+            </div>
+
+            <div className="border-t border-blue-500 opacity-50"></div>
+
+            <div>
+              <p className="text-sm font-semibold text-blue-200 mb-4">ACTIONS</p>
+              <div className="space-y-3">
+                <div className="flex justify-start items-center text-lg whitespace-nowrap gap-6">
+                  <p>Applications with Outreach</p>
+                  <span className="ml-auto text-right font-bold">{calculator ? calculator.apps : '-'}</span>
+                </div>
+                <div className="flex justify-start items-center text-lg whitespace-nowrap gap-6">
+                  <p>Coffee Chat Outreach</p>
+                  <span className="ml-auto text-right font-bold">{calculator ? calculator.interviewsOutreach : '-'}</span>
+                </div>
+                <div className="flex justify-start items-center text-lg whitespace-nowrap gap-6">
+                  <p>In-person Events</p>
+                  <span className="ml-auto text-right font-bold">{calculator ? calculator.events : '-'}</span>
+                </div>
+                <div className="flex justify-start items-center text-lg whitespace-nowrap gap-6">
+                  <p>Career Fairs</p>
+                  <span className="ml-auto text-right font-bold">{calculator ? calculator.fairs : '-'}</span>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div className="sidebar-section">
-            <h3>Commitment</h3>
-            <div className="sidebar-item">
-              <span>Weekly Commitment</span>
-              <span className="value"> {plan.commitment_display} </span>
+
+          <div className="grid grid-cols-2 gap-4 mt-8">
+            <div className="bg-blue-800/50 border border-blue-500 rounded-lg p-4 text-center">
+              <p className="text-sm text-blue-200">Interviews</p>
+              <p className="text-4xl font-bold">{calculator ? calculator.interviews : '-'}</p>
             </div>
-          </div> 
-          
-          <div className="sidebar-section">
-            <h3>Actions</h3>
-            <div className="sidebar-item">
-              <span>Applications with Outreach</span>
-              <span className="value"> {plan.appsWithOutreachPerWeekDisplay} </span>
-            </div>
-            <div className="sidebar-item">
-              <span>Informational Interview Outreach</span>
-              <span className="value"> {plan.linkedinOutreachPerWeekDisplay} </span>
-            </div>
-            <div className="sidebar-item">
-              <span>In-person Events</span>
-              <span className="value"> {plan.inPersonEventsPerMonthDisplay} </span>
-            </div>
-            <div className="sidebar-item">
-              <span>Career Fairs</span>
-              <span className="value"> {plan.careerFairsPerYearDisplay} </span>
+            <div className="bg-blue-800/50 border border-blue-500 rounded-lg p-4 text-center">
+              <p className="text-sm text-blue-200">Job Offers</p>
+              <p className="text-4xl font-bold">{calculator ? calculator.offers : '-'}</p>
             </div>
           </div>
-          
-          <div className="metrics-container">
-            <div className="metric-box">
-              <h4>Interviews</h4>
-              <div className="metric-value">{monthsToSecureInternship ? 15 : '?'}</div>
-            </div>
-            <div className="metric-box">
-              <h4>Job Offers</h4>
-              <div className="metric-value">{monthsToSecureInternship ? 1 : '?'}</div>
-            </div>
-          </div>
-          
-          
         </div>
       </div>
-
-     
-    </div>
     </div>
   );
 }
+
+
