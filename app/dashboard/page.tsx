@@ -93,7 +93,7 @@ const ENABLE_DASHBOARD_MOCKS = false;
 // Toggle this flag to enable editing dateCreated and dateCompleted in create/edit modals for testing and debugging.
 // When enabled, date input fields will appear in all modals allowing you to set/change the dateCreated and dateCompleted values.
 // The dates will be properly saved to the database as DateTime when creating or updating records.
-const ENABLE_DATE_FIELD_EDITING = true;
+const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
 
 type TimeParts = {

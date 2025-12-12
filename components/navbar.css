@@ -1,5 +1,0 @@
-/* Navbar styles are now handled by Tailwind classes */
-.user-button-container {
-  display: flex;
-  align-items: center;
-}

@@ -99,7 +99,7 @@ pnpm prisma migrate dev
 pnpm prisma generate
 
 If you want GUI for databasae ala Prisma:
-pnpm prisma studio (optional if I want GUI)
+pnpm prisma studio (optional if you want GUI)
 
 Starts the website:
 pnpm dev
