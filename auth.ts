@@ -39,7 +39,8 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
         session.user = {
           id: dbUser.id,
           name: dbUser.name,
-          email: dbUser.email,
+          email: dbUser.email ?? undefined,
+          emailVerified: dbUser.emailVerified ?? null,
           image: dbUser.image,
           onboardingProgress: dbUser.onboardingProgress,
           targetOfferDate: dbUser.targetOfferDate,
@@ -48,7 +49,7 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
           inPersonEventsPerMonth: dbUser.inPersonEventsPerMonth,
           careerFairsPerYear: dbUser.careerFairsPerYear,
           resetStartDate: dbUser.resetStartDate,
-        }
+        } as typeof session.user
       }
 
       return session
