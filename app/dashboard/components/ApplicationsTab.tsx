@@ -110,7 +110,7 @@ function SortableAppCard(props: {
 function DroppableColumn(props: { id: string; children: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: props.id });
   return (
-    <div ref={setNodeRef} className={`space-y-3 min-h-32 ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-650/40' : ''}`}>
+    <div ref={setNodeRef} className={`space-y-3 min-h-32 ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-600/40' : ''}`}>
       {props.children}
       <div className="h-2"></div>
     </div>

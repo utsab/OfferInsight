@@ -23,7 +23,7 @@ export default function RootLayout({
           `
         }} />
       </head>
-      <body className={`${inter.className} antialiased`} suppressHydrationWarning={true}>
+      <body className={`${inter.className} antialiased bg-gray-900`} suppressHydrationWarning={true}>
         <Navbar />
         <main>{children}</main>
       </body>

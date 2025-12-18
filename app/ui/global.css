@@ -1,6 +1,58 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@plugin "@tailwindcss/forms";
+
+@theme {
+  /* Custom brand colors */
+  --color-blue-400: #2589FE;
+  --color-blue-500: #0070F3;
+  --color-blue-600: #2F6FEB;
+  --color-midnight-blue: #003366;
+  --color-electric-blue: #007ACC;
+  --color-light-steel-blue: #b0c4de;
+  
+  /* Gray scale - Tailwind 4 defaults, but defining explicitly for consistency */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  /* Basic colors */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  
+  /* Red colors */
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  
+  /* Yellow colors */
+  --color-yellow-500: #eab308;
+  
+  /* Purple colors */
+  --color-purple-500: #a855f7;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-gray-900);
+  }
+  body {
+    background-color: var(--color-gray-900);
+    color: var(--color-white);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
 
 input[type='number'] {
   -moz-appearance: textfield;
