@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import { PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { Gauge, FileText, MessageCircle, Users, Code, X } from 'lucide-react';
@@ -1560,18 +1561,15 @@ const hasSeededMockDataRef = useRef(false);
     }
   }, [projectedOfferDate]);
 
-  useEffect(() => {
-    if (!projectedOfferDate) return;
-    const iso = projectedOfferDate.toISOString();
+  // Debounced function to sync projected offer date (prevents rapid-fire requests)
+  const syncProjectedOfferDate = useDebouncedCallback((date: Date) => {
+    const iso = date.toISOString();
     if (lastProjectedOfferSyncRef.current === iso) return;
-
-    const controller = new AbortController();
 
     fetch('/api/users/projected-offer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectedOfferDate: iso }),
-      signal: controller.signal,
     })
       .then(response => {
         if (!response.ok) {
@@ -1580,12 +1578,14 @@ const hasSeededMockDataRef = useRef(false);
         lastProjectedOfferSyncRef.current = iso;
       })
       .catch(error => {
-        if (controller.signal.aborted) return;
         console.error('Error syncing projected offer date:', error);
       });
+  }, 500); // Wait 500ms after last change before sending request
 
-    return () => controller.abort();
-  }, [projectedOfferDate]);
+  useEffect(() => {
+    if (!projectedOfferDate) return;
+    syncProjectedOfferDate(projectedOfferDate);
+  }, [projectedOfferDate, syncProjectedOfferDate]);
 
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
