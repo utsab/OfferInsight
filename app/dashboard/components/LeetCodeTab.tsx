@@ -1,10 +1,9 @@
 'use client';
 
-import { Plus } from 'lucide-react';
-import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
+import { Plus, Trash2 } from 'lucide-react';
+import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Trash2 } from 'lucide-react';
 import type { LeetEntry, LeetColumnId, BoardTimeFilter } from './types';
 import { CardDateMeta, DroppableColumn } from './shared';
 

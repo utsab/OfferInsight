@@ -4,7 +4,6 @@ import { prisma } from "@/db"
 import NextAuth from "next-auth"
 import authConfig from "./auth.config"
  
-import { PrismaClient } from "@prisma/client"
 import { PrismaAdapter } from "@auth/prisma-adapter"
  
  

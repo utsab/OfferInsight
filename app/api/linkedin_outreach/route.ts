@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/db";
 import { auth } from "@/auth";
-
-// Create a new Prisma client instance
-const prisma = new PrismaClient();
 
 // GET: Fetch all LinkedIn outreach for the current user
 export async function GET(request: NextRequest) {

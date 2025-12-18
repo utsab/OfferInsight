@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { SignOut } from "./auth-components"
-import { Settings, ChevronDown, User, Cog } from "lucide-react";
+import { Settings, ChevronDown } from "lucide-react";
 
 interface UserData {
   name: string | null;
