@@ -43,16 +43,11 @@ export default function TabNav() {
       href: "/dashboard/linkedin_outreach",
       icon: BriefcaseIcon,
     },
-    {
-      name: "Career Fairs",
-      href: "/dashboard/career_fairs",
-      icon: BriefcaseIcon,
-    },
   ]);
 
   return (
     <div className="w-full bg-white border-b border-gray-200">
-      <div className="grid grid-cols-5 w-full">
+      <div className="grid grid-cols-4 w-full">
         {tabData.map((tab) => {
           const LinkIcon = tab.icon;
           const isActive = pathname === tab.href;

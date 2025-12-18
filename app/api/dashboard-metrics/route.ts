@@ -79,14 +79,15 @@ export async function GET() {
       },
     });
 
-    // Count career fairs this month
-    const careerFairsCount = await prisma.career_Fairs.count({
+    // Count career fairs this month (career fairs are now part of In_Person_Events with careerFair flag)
+    const careerFairsCount = await prisma.in_Person_Events.count({
       where: {
         userId: user.id,
         date: {
           gte: firstDayOfMonth,
           lte: lastDayOfMonth,
         },
+        careerFair: true,
         status: {
           in: ["attended", "followUp"],
         },
