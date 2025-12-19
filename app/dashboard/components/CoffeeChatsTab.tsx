@@ -155,9 +155,9 @@ export default function CoffeeChatsTab({
             Created This Month
           </button>
           <button
-            onClick={() => setLinkedinOutreachFilter('completedThisMonth')}
+            onClick={() => setLinkedinOutreachFilter('modifiedThisMonth')}
             className={`px-3 py-1 rounded-md border transition-colors ${
-              linkedinOutreachFilter === 'completedThisMonth'
+              linkedinOutreachFilter === 'modifiedThisMonth'
                 ? 'bg-electric-blue text-white border-electric-blue'
                 : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
             }`}

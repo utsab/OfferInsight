@@ -180,9 +180,9 @@ export default function EventsTab({
             Created This Month
           </button>
           <button
-            onClick={() => setEventsFilter('completedThisMonth')}
+            onClick={() => setEventsFilter('modifiedThisMonth')}
             className={`px-3 py-1 rounded-md border transition-colors ${
-              eventsFilter === 'completedThisMonth'
+              eventsFilter === 'modifiedThisMonth'
                 ? 'bg-electric-blue text-white border-electric-blue'
                 : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
             }`}

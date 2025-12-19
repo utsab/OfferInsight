@@ -12,7 +12,7 @@ export type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | '
 export type LeetStatus = 'planned' | 'solved' | 'reflected';
 export type LeetColumnId = 'planned' | 'solved' | 'reflected';
 
-export type BoardTimeFilter = 'createdThisMonth' | 'completedThisMonth' | 'allTime';
+export type BoardTimeFilter = 'createdThisMonth' | 'modifiedThisMonth' | 'allTime';
 
 export type Application = {
   id: number;

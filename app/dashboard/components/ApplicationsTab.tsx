@@ -157,9 +157,9 @@ export default function ApplicationsTab({
             Created This Month
           </button>
           <button
-            onClick={() => setApplicationsFilter('completedThisMonth')}
+            onClick={() => setApplicationsFilter('modifiedThisMonth')}
             className={`px-3 py-1 rounded-md border transition-colors ${
-              applicationsFilter === 'completedThisMonth'
+              applicationsFilter === 'modifiedThisMonth'
                 ? 'bg-electric-blue text-white border-electric-blue'
                 : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
             }`}

@@ -137,7 +137,7 @@ type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | 'followu
 type LeetStatus = 'planned' | 'solved' | 'reflected';
 type LeetColumnId = 'planned' | 'solved' | 'reflected';
 
-type BoardTimeFilter = 'createdThisMonth' | 'completedThisMonth' | 'allTime';
+type BoardTimeFilter = 'createdThisMonth' | 'modifiedThisMonth' | 'allTime';
 
 const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
   'messagedHiringManager',
@@ -1486,8 +1486,8 @@ const hasSeededMockDataRef = useRef(false);
     APPLICATION_COMPLETION_COLUMNS.forEach(col => {
       appColumns[col].forEach(app => {
         if (!app.dateModified) return;
-        const completedDate = new Date(app.dateModified);
-        if (!Number.isNaN(completedDate.getTime()) && completedDate >= lastMonthStart && completedDate < lastMonthEnd) {
+        const modifiedDate = new Date(app.dateModified);
+        if (!Number.isNaN(modifiedDate.getTime()) && modifiedDate >= lastMonthStart && modifiedDate < lastMonthEnd) {
           count++;
         }
       });
@@ -1500,8 +1500,8 @@ const hasSeededMockDataRef = useRef(false);
     LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
       linkedinOutreachColumns[col].forEach(chat => {
         if (!chat.dateModified) return;
-        const completedDate = new Date(chat.dateModified);
-        if (!Number.isNaN(completedDate.getTime()) && completedDate >= lastMonthStart && completedDate < lastMonthEnd) {
+        const modifiedDate = new Date(chat.dateModified);
+        if (!Number.isNaN(modifiedDate.getTime()) && modifiedDate >= lastMonthStart && modifiedDate < lastMonthEnd) {
           count++;
         }
       });
@@ -1514,8 +1514,8 @@ const hasSeededMockDataRef = useRef(false);
     EVENT_COMPLETION_COLUMNS.forEach(col => {
       eventColumns[col].forEach(event => {
         if (!event.dateModified) return;
-        const completedDate = new Date(event.dateModified);
-        if (!Number.isNaN(completedDate.getTime()) && completedDate >= lastMonthStart && completedDate < lastMonthEnd) {
+        const modifiedDate = new Date(event.dateModified);
+        if (!Number.isNaN(modifiedDate.getTime()) && modifiedDate >= lastMonthStart && modifiedDate < lastMonthEnd) {
           count++;
         }
       });
@@ -1634,7 +1634,7 @@ const hasSeededMockDataRef = useRef(false);
     (Object.keys(appColumns) as ApplicationColumnId[]).forEach(columnId => {
       if (applicationsFilter === 'createdThisMonth') {
         filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateCreated));
-      } else if (applicationsFilter === 'completedThisMonth') {
+      } else if (applicationsFilter === 'modifiedThisMonth') {
         filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateModified));
       }
     });
@@ -1654,7 +1654,7 @@ const hasSeededMockDataRef = useRef(false);
         filtered[columnId] = linkedinOutreachColumns[columnId].filter(entry =>
           isWithinCurrentMonth(entry.dateCreated)
         );
-      } else if (linkedinOutreachFilter === 'completedThisMonth') {
+      } else if (linkedinOutreachFilter === 'modifiedThisMonth') {
         filtered[columnId] = linkedinOutreachColumns[columnId].filter(entry =>
           isWithinCurrentMonth(entry.dateModified)
         );
@@ -1676,7 +1676,7 @@ const hasSeededMockDataRef = useRef(false);
         filtered[columnId] = eventColumns[columnId].filter(event =>
           isWithinCurrentMonth(event.dateCreated || event.date)
         );
-      } else if (eventsFilter === 'completedThisMonth') {
+      } else if (eventsFilter === 'modifiedThisMonth') {
         filtered[columnId] = eventColumns[columnId].filter(event =>
           isWithinCurrentMonth(event.dateModified)
         );
@@ -1697,7 +1697,7 @@ const hasSeededMockDataRef = useRef(false);
         filtered[columnId] = leetColumns[columnId].filter(entry =>
           isWithinCurrentMonth(entry.dateCreated)
         );
-      } else if (leetFilter === 'completedThisMonth') {
+      } else if (leetFilter === 'modifiedThisMonth') {
         filtered[columnId] = leetColumns[columnId].filter(entry =>
           isWithinCurrentMonth(entry.dateModified)
         );
@@ -2138,7 +2138,7 @@ function ApplicationModal({
                 />
               </div>
               <div>
-                <label className="block text-white font-semibold mb-2">Date Completed (Testing/Debug)</label>
+                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
                 <input
                   type="date"
                   value={formData.dateModified}
@@ -2396,7 +2396,7 @@ function LinkedinOutreachModal({
                 />
               </div>
               <div>
-                <label className="block text-white font-semibold mb-2">Date Completed (Testing/Debug)</label>
+                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
                 <input
                   type="date"
                   value={formData.dateModified}
@@ -2829,7 +2829,7 @@ function InPersonEventModal({
                 />
               </div>
               <div>
-                <label className="block text-white font-semibold mb-2">Date Completed (Testing/Debug)</label>
+                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
                 <input
                   type="date"
                   value={formData.dateModified}
@@ -3112,7 +3112,7 @@ function LeetModal({
                 />
               </div>
               <div>
-                <label className="block text-white font-semibold mb-2">Date Completed (Testing/Debug)</label>
+                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
                 <input
                   type="date"
                   value={formData.dateModified}
