@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkAuth } from '../../server';
+import { User, GraduationCap, Calendar, Loader2, ArrowRight } from 'lucide-react';
 import './page.css';
 
 export default function Page1() {
@@ -77,34 +78,29 @@ export default function Page1() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
+          <div className="flex flex-col items-center justify-center py-32 text-gray-300">
+            <Loader2 className="h-12 w-12 animate-spin text-electric-blue" />
+            <p className="mt-4 text-sm">Loading...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
-      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-12 w-[600px] shadow-2xl">
-        <div className="text-center mb-10">
-          {/* <div className="flex items-center justify-center space-x-3 mb-4">
-            <i className="fas fa-chart-line text-electric-blue text-3xl"></i>
-            <h1 className="text-2xl font-bold text-white">OpenSourceResumeBook</h1>
-          </div> */}
-          <h2 className="text-4xl font-bold text-white mb-3">Welcome Aboard!</h2>
-          <p className="text-gray-300 text-lg">Let's set up your profile</p>
-          <div className="flex justify-center mt-6">
-            <div className="flex space-x-2">
-              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
-              <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
-              <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
-            </div>
-          </div>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-bold text-white">Welcome Aboard!</h2>
+          <p className="text-gray-300 mt-2">Let's set up your profile</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="form-group">
-            <label className="block text-white font-semibold mb-3 text-lg">
-              <i className="fas fa-user text-electric-blue mr-2"></i>
+            <label className="block text-white font-semibold mb-3 text-lg flex items-center">
+              <User className="text-electric-blue mr-3" />
               Full Name
             </label>
             <input 
@@ -119,8 +115,8 @@ export default function Page1() {
           </div>
 
           <div className="form-group">
-            <label className="block text-white font-semibold mb-3 text-lg">
-              <i className="fas fa-university text-electric-blue mr-2"></i>
+            <label className="block text-white font-semibold mb-3 text-lg flex items-center">
+              <GraduationCap className="text-electric-blue mr-3" />
               School / University
             </label>
             <input 
@@ -135,8 +131,8 @@ export default function Page1() {
           </div>
 
           <div className="form-group">
-            <label className="block text-white font-semibold mb-3 text-lg">
-              <i className="fas fa-graduation-cap text-electric-blue mr-2"></i>
+            <label className="block text-white font-semibold mb-3 text-lg flex items-center">
+              <GraduationCap className="text-electric-blue mr-3" />
               Major / Field of Study
             </label>
             <input 
@@ -151,8 +147,8 @@ export default function Page1() {
           </div>
 
           <div className="form-group">
-            <label className="block text-white font-semibold mb-3 text-lg">
-              <i className="fas fa-calendar-alt text-electric-blue mr-2"></i>
+            <label className="block text-white font-semibold mb-3 text-lg flex items-center">
+              <Calendar className="text-electric-blue mr-3" />
               Expected Graduation Date
             </label>
             <div className="grid grid-cols-2 gap-4">
@@ -162,7 +158,7 @@ export default function Page1() {
                   name="graduationMonth"
                   value={graduationMonth}
                   onChange={(e) => setGraduationMonth(e.target.value)}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue focus:ring-opacity-50 transition-all"
+                  className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
                   required
                 >
                   <option value="">Select month</option>
@@ -179,7 +175,7 @@ export default function Page1() {
                   name="graduationYear"
                   value={graduationYear}
                   onChange={(e) => setGraduationYear(e.target.value)}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue focus:ring-opacity-50 transition-all"
+                  className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
                   required
                 >
                   <option value="">Select year</option>
@@ -193,46 +189,37 @@ export default function Page1() {
             </div>
           </div>
 
-          <div className="pt-6">
+          {/* Buttons */}
+          <div className="flex space-x-4 pt-6">
             <button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-full bg-electric-blue hover:bg-blue-600 text-white py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-electric-blue focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="flex-1 bg-electric-blue hover:bg-blue-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Processing...
                 </>
               ) : (
                 <>
                   Continue to Timeline Setup
-                  <i className="fas fa-arrow-right ml-2"></i>
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </>
               )}
             </button>
-            
-            {/* <div className="text-center mt-4">
-              <button 
-                type="button" 
-                onClick={handleSkip}
-                className="text-gray-400 hover:text-white text-sm underline transition-colors"
-              >
-                Skip for now
-              </button>
-            </div> */}
+          </div>
+          
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center mt-6">
+            <div className="flex space-x-2">
+              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+              <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
+              <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
+            </div>
+            <span className="text-gray-400 ml-3 text-sm">Step 1 of 3</span>
           </div>
         </form>
-
-        <div className="mt-8 pt-6 border-t border-light-steel-blue">
-          <div className="flex items-center justify-between text-sm text-gray-400">
-            <span>Step 1 of 3</span>
-            {/* <span className="flex items-center">
-              <i className="fas fa-shield-alt text-electric-blue mr-1"></i>
-              Your data is secure
-            </span> */}
-          </div>
-        </div>
       </div>
     </div>
   );
