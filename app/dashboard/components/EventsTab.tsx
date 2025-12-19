@@ -170,16 +170,6 @@ export default function EventsTab({
         <div className="flex items-center gap-2 text-sm text-gray-300">
           <span>Show:</span>
           <button
-            onClick={() => setEventsFilter('createdThisMonth')}
-            className={`px-3 py-1 rounded-md border transition-colors ${
-              eventsFilter === 'createdThisMonth'
-                ? 'bg-electric-blue text-white border-electric-blue'
-                : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-            }`}
-          >
-            Created This Month
-          </button>
-          <button
             onClick={() => setEventsFilter('modifiedThisMonth')}
             className={`px-3 py-1 rounded-md border transition-colors ${
               eventsFilter === 'modifiedThisMonth'

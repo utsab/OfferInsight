@@ -147,16 +147,6 @@ export default function ApplicationsTab({
         <div className="flex items-center gap-2 text-sm text-gray-300">
           <span>Show:</span>
           <button
-            onClick={() => setApplicationsFilter('createdThisMonth')}
-            className={`px-3 py-1 rounded-md border transition-colors ${
-              applicationsFilter === 'createdThisMonth'
-                ? 'bg-electric-blue text-white border-electric-blue'
-                : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-            }`}
-          >
-            Created This Month
-          </button>
-          <button
             onClick={() => setApplicationsFilter('modifiedThisMonth')}
             className={`px-3 py-1 rounded-md border transition-colors ${
               applicationsFilter === 'modifiedThisMonth'

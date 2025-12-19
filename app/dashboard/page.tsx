@@ -137,7 +137,7 @@ type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | 'followu
 type LeetStatus = 'planned' | 'solved' | 'reflected';
 type LeetColumnId = 'planned' | 'solved' | 'reflected';
 
-type BoardTimeFilter = 'createdThisMonth' | 'modifiedThisMonth' | 'allTime';
+type BoardTimeFilter = 'modifiedThisMonth' | 'allTime';
 
 const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
   'messagedHiringManager',
@@ -290,7 +290,7 @@ export default function Page() {
   const [editingApp, setEditingApp] = useState<Application | null>(null);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('createdThisMonth');
+  const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('allTime');
   const isFetchingRef = useRef(false);
   const lastProjectedOfferSyncRef = useRef<string | null>(null);
   const isDraggingAppRef = useRef(false);
@@ -468,7 +468,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [editingLinkedinOutreach, setEditingLinkedinOutreach] = useState<LinkedinOutreach | null>(null);
   const [isDeletingLinkedinOutreach, setIsDeletingLinkedinOutreach] = useState<number | null>(null);
   const [isLoadingLinkedinOutreach, setIsLoadingLinkedinOutreach] = useState(true);
-  const [linkedinOutreachFilter, setLinkedinOutreachFilter] = useState<BoardTimeFilter>('createdThisMonth');
+  const [linkedinOutreachFilter, setLinkedinOutreachFilter] = useState<BoardTimeFilter>('allTime');
   const isFetchingLinkedinOutreachRef = useRef(false);
   const isDraggingLinkedinOutreachRef = useRef(false);
 
@@ -623,7 +623,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [editingEvent, setEditingEvent] = useState<InPersonEvent | null>(null);
   const [isDeletingEvent, setIsDeletingEvent] = useState<number | null>(null);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
-  const [eventsFilter, setEventsFilter] = useState<BoardTimeFilter>('createdThisMonth');
+  const [eventsFilter, setEventsFilter] = useState<BoardTimeFilter>('allTime');
   const isFetchingEventsRef = useRef(false);
   const isDraggingEventRef = useRef(false);
 
@@ -777,7 +777,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const [editingLeet, setEditingLeet] = useState<LeetEntry | null>(null);
 const [isDeletingLeet, setIsDeletingLeet] = useState<number | null>(null);
 const [isLoadingLeet, setIsLoadingLeet] = useState(true);
-  const [leetFilter, setLeetFilter] = useState<BoardTimeFilter>('createdThisMonth');
+  const [leetFilter, setLeetFilter] = useState<BoardTimeFilter>('allTime');
 const isFetchingLeetRef = useRef(false);
   const isDraggingLeetRef = useRef(false);
 // ----- MOCK DATA SEED TRACKER START -----
@@ -1632,9 +1632,7 @@ const hasSeededMockDataRef = useRef(false);
       interview: [],
     };
     (Object.keys(appColumns) as ApplicationColumnId[]).forEach(columnId => {
-      if (applicationsFilter === 'createdThisMonth') {
-        filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateCreated));
-      } else if (applicationsFilter === 'modifiedThisMonth') {
+      if (applicationsFilter === 'modifiedThisMonth') {
         filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateModified));
       }
     });
@@ -1650,11 +1648,7 @@ const hasSeededMockDataRef = useRef(false);
       linkedinOutreach: [],
     };
     (Object.keys(linkedinOutreachColumns) as LinkedinOutreachColumnId[]).forEach(columnId => {
-      if (linkedinOutreachFilter === 'createdThisMonth') {
-        filtered[columnId] = linkedinOutreachColumns[columnId].filter(entry =>
-          isWithinCurrentMonth(entry.dateCreated)
-        );
-      } else if (linkedinOutreachFilter === 'modifiedThisMonth') {
+      if (linkedinOutreachFilter === 'modifiedThisMonth') {
         filtered[columnId] = linkedinOutreachColumns[columnId].filter(entry =>
           isWithinCurrentMonth(entry.dateModified)
         );
@@ -1672,11 +1666,7 @@ const hasSeededMockDataRef = useRef(false);
       followups: [],
     };
     (Object.keys(eventColumns) as EventColumnId[]).forEach(columnId => {
-      if (eventsFilter === 'createdThisMonth') {
-        filtered[columnId] = eventColumns[columnId].filter(event =>
-          isWithinCurrentMonth(event.dateCreated || event.date)
-        );
-      } else if (eventsFilter === 'modifiedThisMonth') {
+      if (eventsFilter === 'modifiedThisMonth') {
         filtered[columnId] = eventColumns[columnId].filter(event =>
           isWithinCurrentMonth(event.dateModified)
         );
@@ -1693,11 +1683,7 @@ const hasSeededMockDataRef = useRef(false);
       reflected: [],
     };
     (Object.keys(leetColumns) as LeetColumnId[]).forEach(columnId => {
-      if (leetFilter === 'createdThisMonth') {
-        filtered[columnId] = leetColumns[columnId].filter(entry =>
-          isWithinCurrentMonth(entry.dateCreated)
-        );
-      } else if (leetFilter === 'modifiedThisMonth') {
+      if (leetFilter === 'modifiedThisMonth') {
         filtered[columnId] = leetColumns[columnId].filter(entry =>
           isWithinCurrentMonth(entry.dateModified)
         );

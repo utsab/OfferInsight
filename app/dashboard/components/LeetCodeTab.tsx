@@ -146,16 +146,6 @@ export default function LeetCodeTab({
         <div className="flex items-center gap-2 text-sm text-gray-300">
           <span>Show:</span>
           <button
-            onClick={() => setLeetFilter('createdThisMonth')}
-            className={`px-3 py-1 rounded-md border transition-colors ${
-              leetFilter === 'createdThisMonth'
-                ? 'bg-electric-blue text-white border-electric-blue'
-                : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-            }`}
-          >
-            Created This Month
-          </button>
-          <button
             onClick={() => setLeetFilter('modifiedThisMonth')}
             className={`px-3 py-1 rounded-md border transition-colors ${
               leetFilter === 'modifiedThisMonth'
