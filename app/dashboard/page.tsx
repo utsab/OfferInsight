@@ -366,11 +366,11 @@ export default function Page() {
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
           console.error('Failed to update status:', {
-            status: response.status,
+            httpStatus: response.status,
             statusText: response.statusText,
             errorData,
             id,
-            status: status
+            cardStatus: status
           });
           throw new Error(`Failed to update status: ${response.status} - ${errorData.error || errorData.details || 'Unknown error'}`);
         }
