@@ -15,5 +15,11 @@ export default {
       server: process.env.EMAIL_SERVER,
       from: process.env.EMAIL_FROM
     })
-  ]
+  ],
+  theme: {
+    colorScheme: "dark",
+    brandColor: "#007ACC", // electric-blue
+    buttonText: "#ffffff", // white text on buttons
+    // logo: "/logo.png", // Optional: add your logo URL here if you have one
+  }
 } satisfies NextAuthConfig
