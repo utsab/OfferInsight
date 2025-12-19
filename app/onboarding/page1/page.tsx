@@ -88,7 +88,7 @@ export default function Page1() {
         <div className="text-center mb-10">
           {/* <div className="flex items-center justify-center space-x-3 mb-4">
             <i className="fas fa-chart-line text-electric-blue text-3xl"></i>
-            <h1 className="text-2xl font-bold text-white">OfferInsight</h1>
+            <h1 className="text-2xl font-bold text-white">OpenSourceResumeBook</h1>
           </div> */}
           <h2 className="text-4xl font-bold text-white mb-3">Welcome Aboard!</h2>
           <p className="text-gray-300 text-lg">Let's set up your profile</p>

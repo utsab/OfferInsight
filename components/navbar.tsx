@@ -8,7 +8,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-8 py-6 flex justify-between items-center">
         <Link href="/" className="flex items-center space-x-3">
           <LineChart className="text-electric-blue text-2xl" />
-          <h1 className="text-2xl font-bold text-white">OfferInsight</h1>
+          <h1 className="text-2xl font-bold text-white">OpenSourceResumeBook</h1>
         </Link>
         <div className="user-button-container">
           <UserButton />

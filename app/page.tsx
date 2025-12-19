@@ -104,7 +104,7 @@ export default function Page() {
                 <span className="text-electric-blue">Predict Your Success.</span>
               </h2>
               <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-                OfferInsight tracks your job-seeking habits and provides data-driven insights to project when you'll receive your first job offer. Master the four key habits that lead to success.
+                OSRB helps you track your job search journey and build a comprehensive resume based on your applications, networking, and skill development. Master the four key habits that lead to success.
               </p>
               <button 
                 onClick={handleGetStarted}
@@ -152,7 +152,7 @@ export default function Page() {
         <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
           <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[500px]">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-white mb-2">Welcome to OfferInsight</h2>
+              <h2 className="text-3xl font-bold text-white mb-2">Welcome to OpenSourceResumeBook</h2>
               <p className="text-gray-300">Let's get to know you better</p>
             </div>
             <form onSubmit={handleOnboarding1Submit}>
