@@ -135,7 +135,7 @@ function SortableEventCard(props: {
           <span className="px-2 py-0.5 rounded-full bg-gray-700">Interviews {props.card.numOfInterviews}</span>
         )}
       </div>
-      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateModified} className="mt-3" />
+      <CardDateMeta created={props.card.dateCreated} modified={props.card.dateModified} className="mt-3" />
     </div>
   );
 }
@@ -187,7 +187,7 @@ export default function EventsTab({
                 : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
             }`}
           >
-            Completed This Month
+            This Month
           </button>
           <button
             onClick={() => setEventsFilter('allTime')}

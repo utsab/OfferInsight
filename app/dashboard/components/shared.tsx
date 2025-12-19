@@ -6,11 +6,11 @@ import { useDroppable } from '@dnd-kit/core';
 
 export function CardDateMeta({
   created,
-  completed,
+  modified,
   className,
 }: {
   created?: string | null;
-  completed?: string | null;
+  modified?: string | null;
   className?: string;
 }) {
   const formatCardDate = (value?: string | null) => {
@@ -26,13 +26,13 @@ export function CardDateMeta({
 
   return (
     <div className={className ? className : 'mt-3'}>
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-gray-400 mb-1">
-        <span>Created:</span>
-        <span>Completed:</span>
+      <div className="flex items-center justify-between text-[10px] tracking-wider text-gray-400 mb-1">
+        <span>CREATED:</span>
+        <span>MODIFIED:</span>
       </div>
       <div className="flex items-center justify-between text-xs text-yellow-400">
         <span>{formatCardDate(created)}</span>
-        <span>{formatCardDate(completed)}</span>
+        <span>{formatCardDate(modified)}</span>
       </div>
     </div>
   );

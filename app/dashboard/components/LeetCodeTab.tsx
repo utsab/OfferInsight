@@ -111,7 +111,7 @@ function SortableLeetCard(props: {
       {props.card.reflection && (
         <div className="text-gray-400 text-xs mb-2 line-clamp-3">{props.card.reflection}</div>
       )}
-      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateModified} className="mt-3" />
+      <CardDateMeta created={props.card.dateCreated} modified={props.card.dateModified} className="mt-3" />
     </div>
   );
 }
@@ -163,7 +163,7 @@ export default function LeetCodeTab({
                 : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
             }`}
           >
-            Completed This Month
+            This Month
           </button>
           <button
             onClick={() => setLeetFilter('allTime')}

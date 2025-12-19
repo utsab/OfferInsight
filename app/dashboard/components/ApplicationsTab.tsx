@@ -102,7 +102,7 @@ function SortableAppCard(props: {
       {props.card.notes && (
         <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
       )}
-      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateModified} />
+      <CardDateMeta created={props.card.dateCreated} modified={props.card.dateModified} />
     </div>
   );
 }
@@ -164,7 +164,7 @@ export default function ApplicationsTab({
                 : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
             }`}
           >
-            Completed This Month
+            This Month
           </button>
           <button
             onClick={() => setApplicationsFilter('allTime')}

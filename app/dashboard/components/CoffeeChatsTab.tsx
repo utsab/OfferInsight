@@ -110,7 +110,7 @@ function SortableLinkedinOutreachCard(props: {
       {props.card.recievedReferral && (
         <div className="text-green-400 text-xs mb-2">✓ Referral Received</div>
       )}
-      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateModified} />
+      <CardDateMeta created={props.card.dateCreated} modified={props.card.dateModified} />
     </div>
   );
 }
@@ -162,7 +162,7 @@ export default function CoffeeChatsTab({
                 : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
             }`}
           >
-            Completed This Month
+            This Month
           </button>
           <button
             onClick={() => setLinkedinOutreachFilter('allTime')}
