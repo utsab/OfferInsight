@@ -22,17 +22,9 @@ export function SignIn({
 }
 
 export function SignOut(props: React.ComponentPropsWithRef<typeof Button>) {
-  const onSignOut = async () => {
-    await handleSignOut();
-    window.location.href = "/";
-  };
-
   return (
     <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        await onSignOut();
-      }}
+      action={handleSignOut}
     >
       <Button 
         variant="ghost" 

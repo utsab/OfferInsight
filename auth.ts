@@ -13,33 +13,24 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   callbacks: { 
     async redirect({ url, baseUrl }) {
+      // Handle relative paths - allow them to pass through
       if (url.startsWith("/")) {
         return `${baseUrl}${url}`
       }
+      // Handle full URLs within baseUrl
       if (url.startsWith(baseUrl)) {
         return url
       }
-      // After sign-in, default to dashboard instead of homepage
-      // If URL is just the baseUrl (homepage), redirect to dashboard after sign-in
-      if (url === baseUrl || url === `${baseUrl}/`) {
-        return `${baseUrl}/dashboard`
-      }
-      // Default fallback: redirect to dashboard
-      return `${baseUrl}/dashboard`
+      
+      // Default fallback to homepage
+      return baseUrl
     },
    
     async session({ session, user }) {
-      // Check if the user is new based on onboardingProgress
-
-      console.log("In session.....user:  ", user)
-      console.log("In session.....session:  ", session)
-
-      // // Fetch the user from the database to include all fields
+      // Fetch the user from the database to include all fields
       const dbUser = await prisma.user.findUnique({
         where: { email: session.user.email },
       })
-
-      console.log("In session.....dbUser:  ", dbUser)
 
       if (dbUser) {
         session.user = {
@@ -62,7 +53,6 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
     },
   }
 })
-
 
 
 // export const { handlers, auth, signIn, signOut } = NextAuth({
