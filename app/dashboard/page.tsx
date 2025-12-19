@@ -353,6 +353,25 @@ export default function Page() {
     return entry ?? null;
   };
 
+  // Debounced function to update application status (prevents rapid-fire requests when dragging)
+  // Server will automatically set dateModified to current date on PATCH
+  const debouncedUpdateApplicationStatus = useDebouncedCallback(
+    async (id: number, status: ApplicationStatus) => {
+      try {
+        const response = await fetch(`/api/applications_with_outreach?id=${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (!response.ok) throw new Error('Failed to update status');
+      } catch (error) {
+        console.error('Error updating status:', error);
+        fetchApplications();
+      }
+    },
+    300 // Wait 300ms after last change before sending request
+  );
+
   const handleApplicationsDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) {
@@ -399,32 +418,17 @@ export default function Page() {
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newStatus = applicationColumnToStatus[toCol];
-      const newDateCompleted = APPLICATION_COMPLETION_COLUMNS.includes(toCol)
-        ? new Date().toISOString()
-        : null;
       const updatedItem: Application = {
         ...movingItem,
         status: newStatus,
-        dateModified: newDateCompleted,
+        // dateModified will be set automatically by the server on PATCH
       };
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setAppColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
       
-      // Update status in database
-      try {
-        const response = await fetch(`/api/applications_with_outreach?id=${movingItem.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus, dateModified: newDateCompleted }),
-        });
-        if (!response.ok) throw new Error('Failed to update status');
-        
-        // Update the application in the main list
-      } catch (error) {
-        console.error('Error updating status:', error);
-        // Revert on error
-        fetchApplications();
-      }
+      // Update status in database (debounced to prevent rapid-fire requests)
+      // Server will automatically set dateModified to current date on PATCH
+      debouncedUpdateApplicationStatus(movingItem.id, newStatus);
     }
     setActiveAppId(null);
     isDraggingAppRef.current = false;
@@ -508,6 +512,25 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     return entry ?? null;
   };
 
+  // Debounced function to update LinkedIn outreach status (prevents rapid-fire requests when dragging)
+  // Server will automatically set dateModified to current date on PATCH
+  const debouncedUpdateLinkedinOutreachStatus = useDebouncedCallback(
+    async (id: number, status: LinkedinOutreachStatus) => {
+      try {
+        const response = await fetch(`/api/linkedin_outreach?id=${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (!response.ok) throw new Error('Failed to update LinkedIn outreach status');
+      } catch (error) {
+        console.error('Error updating LinkedIn outreach status:', error);
+        fetchLinkedinOutreach();
+      }
+    },
+    300 // Wait 300ms after last change before sending request
+  );
+
   const handleLinkedinOutreachDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) {
@@ -552,30 +575,18 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newStatus = linkedinOutreachColumnToStatus[toCol];
-      const newDateCompleted = LINKEDIN_COMPLETION_COLUMNS.includes(toCol)
-        ? new Date().toISOString()
-        : null;
       const updatedItem: LinkedinOutreach = {
         ...movingItem,
         status: newStatus,
-        dateModified: newDateCompleted,
+        // dateModified will be set automatically by the server on PATCH
       };
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setLinkedinOutreachColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
 
-      try {
-        const response = await fetch(`/api/linkedin_outreach?id=${movingItem.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus, dateModified: newDateCompleted }),
-        });
-        if (!response.ok) throw new Error('Failed to update LinkedIn outreach status');
-
-      } catch (error) {
-        console.error('Error updating LinkedIn outreach status:', error);
-        fetchLinkedinOutreach();
-      }
+      // Update status in database (debounced to prevent rapid-fire requests)
+      // Server will automatically set dateModified to current date on PATCH
+      debouncedUpdateLinkedinOutreachStatus(movingItem.id, newStatus);
     }
     setActiveLinkedinOutreachId(null);
     isDraggingLinkedinOutreachRef.current = false;
@@ -656,6 +667,25 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     return entry ?? null;
   };
 
+  // Debounced function to update event status (prevents rapid-fire requests when dragging)
+  // Server will automatically set dateModified to current date on PATCH
+  const debouncedUpdateEventStatus = useDebouncedCallback(
+    async (id: number, status: InPersonEventStatus) => {
+      try {
+        const response = await fetch(`/api/in_person_events?id=${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (!response.ok) throw new Error('Failed to update event status');
+      } catch (error) {
+        console.error('Error updating event status:', error);
+        fetchEvents();
+      }
+    },
+    300 // Wait 300ms after last change before sending request
+  );
+
   const handleEventsDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) {
@@ -701,29 +731,17 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newStatus = eventColumnToStatus[toCol] ?? 'scheduled';
-      const newDateCompleted = EVENT_COMPLETION_COLUMNS.includes(toCol)
-        ? new Date().toISOString()
-        : null;
       const updatedItem: InPersonEvent = {
         ...movingItem,
         status: newStatus,
-        dateModified: newDateCompleted,
+        // dateModified will be set automatically by the server on PATCH
       };
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setEventColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
 
-      try {
-        const response = await fetch(`/api/in_person_events?id=${movingItem.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus, dateModified: newDateCompleted }),
-        });
-        if (!response.ok) throw new Error('Failed to update event status');
-
-      } catch (error) {
-        console.error('Error updating event status:', error);
-        fetchEvents();
-      }
+      // Update status in database (debounced to prevent rapid-fire requests)
+      // Server will automatically set dateModified to current date on PATCH
+      debouncedUpdateEventStatus(movingItem.id, newStatus);
     }
     setActiveEventId(null);
     isDraggingEventRef.current = false;
@@ -805,6 +823,25 @@ const hasSeededMockDataRef = useRef(false);
     return entry ?? null;
   };
 
+  // Debounced function to update LeetCode status (prevents rapid-fire requests when dragging)
+  // Server will automatically set dateModified to current date on PATCH
+  const debouncedUpdateLeetCodeStatus = useDebouncedCallback(
+    async (id: number, status: LeetStatus) => {
+      try {
+        const response = await fetch(`/api/leetcode?id=${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (!response.ok) throw new Error('Failed to update LeetCode status');
+      } catch (error) {
+        console.error('Error updating LeetCode status:', error);
+        fetchLeetEntries();
+      }
+    },
+    300 // Wait 300ms after last change before sending request
+  );
+
   const handleLeetDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) {
@@ -850,29 +887,17 @@ const hasSeededMockDataRef = useRef(false);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newStatus = leetColumnToStatus[toCol];
-      const newDateCompleted = LEET_COMPLETION_COLUMNS.includes(toCol)
-        ? new Date().toISOString()
-        : null;
       const updatedItem: LeetEntry = {
         ...movingItem,
         status: newStatus,
-        dateModified: newDateCompleted,
+        // dateModified will be set automatically by the server on PATCH
       };
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setLeetColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
 
-      try {
-        const response = await fetch(`/api/leetcode?id=${movingItem.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus, dateModified: newDateCompleted }),
-        });
-        if (!response.ok) throw new Error('Failed to update LeetCode status');
-
-      } catch (error) {
-        console.error('Error updating LeetCode status:', error);
-        fetchLeetEntries();
-      }
+      // Update status in database (debounced to prevent rapid-fire requests)
+      // Server will automatically set dateModified to current date on PATCH
+      debouncedUpdateLeetCodeStatus(movingItem.id, newStatus);
     }
     setActiveLeetId(null);
     isDraggingLeetRef.current = false;

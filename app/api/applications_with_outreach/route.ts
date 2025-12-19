@@ -73,7 +73,8 @@ export async function POST(request: Request) {
         userId: session.user.id,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
-        dateModified: dateModified ? new Date(dateModified) : null,
+        // dateModified: Set to current date on create, unless ENABLE_DATE_FIELD_EDITING provides a value
+        dateModified: dateModified ? new Date(dateModified) : new Date(),
       },
     });
 
@@ -135,10 +136,11 @@ export async function PATCH(request: Request) {
     }
 
     // Update status and dateModified
-    const updateData: any = { status };
-    if (dateModified !== undefined) {
-      updateData.dateModified = dateModified ? new Date(dateModified) : null;
-    }
+    // dateModified: Always set to current date on status change, unless ENABLE_DATE_FIELD_EDITING provides a value
+    const updateData: any = { 
+      status,
+      dateModified: dateModified ? new Date(dateModified) : new Date(),
+    };
 
     const updatedApplication = await prisma.applications_With_Outreach.update({
       where: { id: parseInt(id) },
@@ -214,7 +216,8 @@ export async function PUT(request: Request) {
     if (status !== undefined) updateData.status = status;
     // ===== DATE FIELD EDITING: Allow updating dateCreated and dateModified if provided =====
     if (dateCreated !== undefined) updateData.dateCreated = new Date(dateCreated);
-    if (dateModified !== undefined) updateData.dateModified = dateModified ? new Date(dateModified) : null;
+    // dateModified: Always set to current date on any field update, unless ENABLE_DATE_FIELD_EDITING provides a value
+    updateData.dateModified = dateModified ? new Date(dateModified) : new Date();
 
     const updatedApplication = await prisma.applications_With_Outreach.update({
       where: { id },

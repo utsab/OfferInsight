@@ -55,7 +55,8 @@ export async function POST(request: Request) {
         userId: session.user.id,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
-        dateModified: dateModified ? new Date(dateModified) : null,
+        // dateModified: Set to current date on create, unless ENABLE_DATE_FIELD_EDITING provides a value
+        dateModified: dateModified ? new Date(dateModified) : new Date(),
       },
     });
 
@@ -101,10 +102,11 @@ export async function PATCH(request: Request) {
     }
 
     // Update status and dateModified
-    const updateData: any = { status };
-    if (dateModified !== undefined) {
-      updateData.dateModified = dateModified ? new Date(dateModified) : null;
-    }
+    // dateModified: Always set to current date on status change, unless ENABLE_DATE_FIELD_EDITING provides a value
+    const updateData: any = { 
+      status,
+      dateModified: dateModified ? new Date(dateModified) : new Date(),
+    };
 
     const updated = await prisma.leetcode_Practice.update({
       where: { id: parseInt(id, 10) },
@@ -155,7 +157,8 @@ export async function PUT(request: Request) {
         ...(status !== undefined ? { status } : {}),
         // ===== DATE FIELD EDITING: Allow updating dateCreated and dateModified if provided =====
         ...(dateCreated !== undefined ? { dateCreated: new Date(dateCreated) } : {}),
-        ...(dateModified !== undefined ? { dateModified: dateModified ? new Date(dateModified) : null } : {}),
+        // dateModified: Always set to current date on any field update, unless ENABLE_DATE_FIELD_EDITING provides a value
+        dateModified: dateModified ? new Date(dateModified) : new Date(),
       },
     });
 

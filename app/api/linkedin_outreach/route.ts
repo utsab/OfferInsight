@@ -65,7 +65,8 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: data.dateCreated ? new Date(data.dateCreated) : undefined,
-        dateModified: data.dateModified ? new Date(data.dateModified) : null,
+        // dateModified: Set to current date on create, unless ENABLE_DATE_FIELD_EDITING provides a value
+        dateModified: data.dateModified ? new Date(data.dateModified) : new Date(),
       },
     });
 
@@ -129,10 +130,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update status and dateModified
-    const updateData: any = { status };
-    if (dateModified !== undefined) {
-      updateData.dateModified = dateModified ? new Date(dateModified) : null;
-    }
+    // dateModified: Always set to current date on status change, unless ENABLE_DATE_FIELD_EDITING provides a value
+    const updateData: any = { 
+      status,
+      dateModified: dateModified ? new Date(dateModified) : new Date(),
+    };
 
     const updatedOutreach = await prisma.linkedin_Outreach.update({
       where: { id: parseInt(id) },
@@ -209,10 +211,11 @@ export async function PUT(request: NextRequest) {
           data.dateCreated !== undefined
             ? new Date(data.dateCreated)
             : outreach.dateCreated,
+        // dateModified: Always set to current date on any field update, unless ENABLE_DATE_FIELD_EDITING provides a value
         dateModified:
           data.dateModified !== undefined
-            ? (data.dateModified ? new Date(data.dateModified) : null)
-            : outreach.dateModified,
+            ? (data.dateModified ? new Date(data.dateModified) : new Date())
+            : new Date(),
       },
     });
 
