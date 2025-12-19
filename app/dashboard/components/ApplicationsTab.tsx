@@ -102,7 +102,7 @@ function SortableAppCard(props: {
       {props.card.notes && (
         <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
       )}
-      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} />
+      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateModified} />
     </div>
   );
 }

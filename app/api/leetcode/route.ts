@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { problem, problemType, difficulty, url, reflection, status, dateCreated, dateCompleted } = await request.json(); // ===== DATE FIELD EDITING =====
+    const { problem, problemType, difficulty, url, reflection, status, dateCreated, dateModified } = await request.json(); // ===== DATE FIELD EDITING =====
 
     if (!problem?.trim()) {
       return NextResponse.json({ error: "Problem title is required" }, { status: 400 });
@@ -53,9 +53,9 @@ export async function POST(request: Request) {
         reflection: reflection?.trim() || null,
         status: status || "planned",
         userId: session.user.id,
-        // ===== DATE FIELD EDITING: Allow setting dateCreated and dateCompleted if provided =====
+        // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
-        dateCompleted: dateCompleted ? new Date(dateCompleted) : null,
+        dateModified: dateModified ? new Date(dateModified) : null,
       },
     });
 
@@ -76,7 +76,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { status, dateCompleted } = body;
+    const { status, dateModified } = body;
 
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
@@ -100,10 +100,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
-    // Update status and dateCompleted
+    // Update status and dateModified
     const updateData: any = { status };
-    if (dateCompleted !== undefined) {
-      updateData.dateCompleted = dateCompleted ? new Date(dateCompleted) : null;
+    if (dateModified !== undefined) {
+      updateData.dateModified = dateModified ? new Date(dateModified) : null;
     }
 
     const updated = await prisma.leetcode_Practice.update({
@@ -127,7 +127,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id, problem, problemType, difficulty, url, reflection, status, dateCreated, dateCompleted } = await request.json(); // ===== DATE FIELD EDITING =====
+    const { id, problem, problemType, difficulty, url, reflection, status, dateCreated, dateModified } = await request.json(); // ===== DATE FIELD EDITING =====
 
     if (!id) {
       return NextResponse.json({ error: "Problem ID is required" }, { status: 400 });
@@ -153,9 +153,9 @@ export async function PUT(request: Request) {
         ...(url !== undefined ? { url: url?.trim() || null } : {}),
         ...(reflection !== undefined ? { reflection: reflection?.trim() || null } : {}),
         ...(status !== undefined ? { status } : {}),
-        // ===== DATE FIELD EDITING: Allow updating dateCreated and dateCompleted if provided =====
+        // ===== DATE FIELD EDITING: Allow updating dateCreated and dateModified if provided =====
         ...(dateCreated !== undefined ? { dateCreated: new Date(dateCreated) } : {}),
-        ...(dateCompleted !== undefined ? { dateCompleted: dateCompleted ? new Date(dateCompleted) : null } : {}),
+        ...(dateModified !== undefined ? { dateModified: dateModified ? new Date(dateModified) : null } : {}),
       },
     });
 

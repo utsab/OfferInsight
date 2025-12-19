@@ -135,7 +135,7 @@ function SortableEventCard(props: {
           <span className="px-2 py-0.5 rounded-full bg-gray-700">Interviews {props.card.numOfInterviews}</span>
         )}
       </div>
-      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} className="mt-3" />
+      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateModified} className="mt-3" />
     </div>
   );
 }

@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       notes,
       status,
       dateCreated, // ===== DATE FIELD EDITING =====
-      dateCompleted, // ===== DATE FIELD EDITING =====
+      dateModified, // ===== DATE FIELD EDITING =====
     } = body;
 
     if (!company) {
@@ -71,9 +71,9 @@ export async function POST(request: Request) {
         notes: notes || null,
         status: status || "applied",
         userId: session.user.id,
-        // ===== DATE FIELD EDITING: Allow setting dateCreated and dateCompleted if provided =====
+        // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
-        dateCompleted: dateCompleted ? new Date(dateCompleted) : null,
+        dateModified: dateModified ? new Date(dateModified) : null,
       },
     });
 
@@ -99,7 +99,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { status, dateCompleted } = body;
+    const { status, dateModified } = body;
 
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
@@ -134,10 +134,10 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // Update status and dateCompleted
+    // Update status and dateModified
     const updateData: any = { status };
-    if (dateCompleted !== undefined) {
-      updateData.dateCompleted = dateCompleted ? new Date(dateCompleted) : null;
+    if (dateModified !== undefined) {
+      updateData.dateModified = dateModified ? new Date(dateModified) : null;
     }
 
     const updatedApplication = await prisma.applications_With_Outreach.update({
@@ -175,7 +175,7 @@ export async function PUT(request: Request) {
       notes,
       status,
       dateCreated, // ===== DATE FIELD EDITING =====
-      dateCompleted, // ===== DATE FIELD EDITING =====
+      dateModified, // ===== DATE FIELD EDITING =====
     } = body;
 
     if (!id) {
@@ -212,9 +212,9 @@ export async function PUT(request: Request) {
       updateData.msgToRecruiter = msgToRecruiter;
     if (notes !== undefined) updateData.notes = notes;
     if (status !== undefined) updateData.status = status;
-    // ===== DATE FIELD EDITING: Allow updating dateCreated and dateCompleted if provided =====
+    // ===== DATE FIELD EDITING: Allow updating dateCreated and dateModified if provided =====
     if (dateCreated !== undefined) updateData.dateCreated = new Date(dateCreated);
-    if (dateCompleted !== undefined) updateData.dateCompleted = dateCompleted ? new Date(dateCompleted) : null;
+    if (dateModified !== undefined) updateData.dateModified = dateModified ? new Date(dateModified) : null;
 
     const updatedApplication = await prisma.applications_With_Outreach.update({
       where: { id },

@@ -24,7 +24,7 @@ export type Application = {
   notes?: string | null;
   status: ApplicationStatus;
   dateCreated: string;
-  dateCompleted?: string | null;
+  dateModified?: string | null;
   userId: string;
 };
 
@@ -37,7 +37,7 @@ export type LinkedinOutreach = {
   notes?: string | null;
   status: LinkedinOutreachStatus;
   dateCreated: string;
-  dateCompleted?: string | null;
+  dateModified?: string | null;
   recievedReferral: boolean;
   userId: string;
 };
@@ -56,7 +56,7 @@ export type InPersonEvent = {
   numOfInterviews?: number | null;
   userId: string;
   dateCreated?: string;
-  dateCompleted?: string | null;
+  dateModified?: string | null;
 };
 
 export type LeetEntry = {
@@ -69,7 +69,7 @@ export type LeetEntry = {
   status: LeetStatus;
   userId: string;
   dateCreated?: string;
-  dateCompleted?: string | null;
+  dateModified?: string | null;
 };
 
 export const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [

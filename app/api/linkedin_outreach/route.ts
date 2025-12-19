@@ -63,9 +63,9 @@ export async function POST(request: NextRequest) {
         status: data.status || "outreachRequestSent", // TODO: This is apart of default status. eliminate redundancy (1/3)
         recievedReferral: data.recievedReferral || false,
         userId: user.id,
-        // ===== DATE FIELD EDITING: Allow setting dateCreated and dateCompleted if provided =====
+        // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: data.dateCreated ? new Date(data.dateCreated) : undefined,
-        dateCompleted: data.dateCompleted ? new Date(data.dateCompleted) : null,
+        dateModified: data.dateModified ? new Date(data.dateModified) : null,
       },
     });
 
@@ -96,7 +96,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { status, dateCompleted } = body;
+    const { status, dateModified } = body;
 
     if (status === undefined) {
       return NextResponse.json(
@@ -128,10 +128,10 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Update status and dateCompleted
+    // Update status and dateModified
     const updateData: any = { status };
-    if (dateCompleted !== undefined) {
-      updateData.dateCompleted = dateCompleted ? new Date(dateCompleted) : null;
+    if (dateModified !== undefined) {
+      updateData.dateModified = dateModified ? new Date(dateModified) : null;
     }
 
     const updatedOutreach = await prisma.linkedin_Outreach.update({
@@ -204,15 +204,15 @@ export async function PUT(request: NextRequest) {
           data.recievedReferral !== undefined
             ? data.recievedReferral
             : outreach.recievedReferral,
-        // ===== DATE FIELD EDITING: Allow updating dateCreated and dateCompleted if provided =====
+        // ===== DATE FIELD EDITING: Allow updating dateCreated and dateModified if provided =====
         dateCreated:
           data.dateCreated !== undefined
             ? new Date(data.dateCreated)
             : outreach.dateCreated,
-        dateCompleted:
-          data.dateCompleted !== undefined
-            ? (data.dateCompleted ? new Date(data.dateCompleted) : null)
-            : outreach.dateCompleted,
+        dateModified:
+          data.dateModified !== undefined
+            ? (data.dateModified ? new Date(data.dateModified) : null)
+            : outreach.dateModified,
       },
     });
 

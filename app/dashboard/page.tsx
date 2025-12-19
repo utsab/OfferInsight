@@ -91,8 +91,8 @@ const ENABLE_DASHBOARD_MOCKS = false;
 // ===== MOCK DATA FEATURE TOGGLE END =====
 
 // ===== DATE FIELD EDITING TOGGLE START =====
-// Toggle this flag to enable editing dateCreated and dateCompleted in create/edit modals for testing and debugging.
-// When enabled, date input fields will appear in all modals allowing you to set/change the dateCreated and dateCompleted values.
+// Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
+// When enabled, date input fields will appear in all modals allowing you to set/change the dateCreated and dateModified values.
 // The dates will be properly saved to the database as DateTime when creating or updating records.
 const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
@@ -165,7 +165,7 @@ type Application = {
   notes?: string | null;
   status: ApplicationStatus;
   dateCreated: string;
-  dateCompleted?: string | null;
+  dateModified?: string | null;
   userId: string;
 };
 
@@ -179,7 +179,7 @@ type LinkedinOutreach = {
   notes?: string | null;
   status: LinkedinOutreachStatus;
   dateCreated: string;
-  dateCompleted?: string | null;
+  dateModified?: string | null;
   recievedReferral: boolean;
   userId: string;
 };
@@ -198,7 +198,7 @@ type InPersonEvent = {
   numOfInterviews?: number | null;
   userId: string;
   dateCreated?: string;
-  dateCompleted?: string | null;
+  dateModified?: string | null;
 };
 
 type LeetEntry = {
@@ -211,7 +211,7 @@ type LeetEntry = {
   status: LeetStatus;
   userId: string;
   dateCreated?: string;
-  dateCompleted?: string | null;
+  dateModified?: string | null;
 };
 
 // Map status values to column IDs (moved outside component to prevent re-renders)
@@ -405,7 +405,7 @@ export default function Page() {
       const updatedItem: Application = {
         ...movingItem,
         status: newStatus,
-        dateCompleted: newDateCompleted,
+        dateModified: newDateCompleted,
       };
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setAppColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
@@ -415,7 +415,7 @@ export default function Page() {
         const response = await fetch(`/api/applications_with_outreach?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus, dateCompleted: newDateCompleted }),
+          body: JSON.stringify({ status: newStatus, dateModified: newDateCompleted }),
         });
         if (!response.ok) throw new Error('Failed to update status');
         
@@ -558,7 +558,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const updatedItem: LinkedinOutreach = {
         ...movingItem,
         status: newStatus,
-        dateCompleted: newDateCompleted,
+        dateModified: newDateCompleted,
       };
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
@@ -568,7 +568,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
         const response = await fetch(`/api/linkedin_outreach?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus, dateCompleted: newDateCompleted }),
+          body: JSON.stringify({ status: newStatus, dateModified: newDateCompleted }),
         });
         if (!response.ok) throw new Error('Failed to update LinkedIn outreach status');
 
@@ -707,7 +707,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const updatedItem: InPersonEvent = {
         ...movingItem,
         status: newStatus,
-        dateCompleted: newDateCompleted,
+        dateModified: newDateCompleted,
       };
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setEventColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
@@ -716,7 +716,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
         const response = await fetch(`/api/in_person_events?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus, dateCompleted: newDateCompleted }),
+          body: JSON.stringify({ status: newStatus, dateModified: newDateCompleted }),
         });
         if (!response.ok) throw new Error('Failed to update event status');
 
@@ -856,7 +856,7 @@ const hasSeededMockDataRef = useRef(false);
       const updatedItem: LeetEntry = {
         ...movingItem,
         status: newStatus,
-        dateCompleted: newDateCompleted,
+        dateModified: newDateCompleted,
       };
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       setLeetColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
@@ -865,7 +865,7 @@ const hasSeededMockDataRef = useRef(false);
         const response = await fetch(`/api/leetcode?id=${movingItem.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus, dateCompleted: newDateCompleted }),
+          body: JSON.stringify({ status: newStatus, dateModified: newDateCompleted }),
         });
         if (!response.ok) throw new Error('Failed to update LeetCode status');
 
@@ -1445,13 +1445,13 @@ const hasSeededMockDataRef = useRef(false);
 
   const PROJECTED_WEEKS_PER_MONTH = 4;
 
-  // Calculate last month's metrics for projected offer date (using dateCompleted)
+  // Calculate last month's metrics for projected offer date (using dateModified)
   const lastMonthApplicationsMetrics = useMemo(() => {
     let count = 0;
     APPLICATION_COMPLETION_COLUMNS.forEach(col => {
       appColumns[col].forEach(app => {
-        if (!app.dateCompleted) return;
-        const completedDate = new Date(app.dateCompleted);
+        if (!app.dateModified) return;
+        const completedDate = new Date(app.dateModified);
         if (!Number.isNaN(completedDate.getTime()) && completedDate >= lastMonthStart && completedDate < lastMonthEnd) {
           count++;
         }
@@ -1464,8 +1464,8 @@ const hasSeededMockDataRef = useRef(false);
     let count = 0;
     LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
       linkedinOutreachColumns[col].forEach(chat => {
-        if (!chat.dateCompleted) return;
-        const completedDate = new Date(chat.dateCompleted);
+        if (!chat.dateModified) return;
+        const completedDate = new Date(chat.dateModified);
         if (!Number.isNaN(completedDate.getTime()) && completedDate >= lastMonthStart && completedDate < lastMonthEnd) {
           count++;
         }
@@ -1478,8 +1478,8 @@ const hasSeededMockDataRef = useRef(false);
     let count = 0;
     EVENT_COMPLETION_COLUMNS.forEach(col => {
       eventColumns[col].forEach(event => {
-        if (!event.dateCompleted) return;
-        const completedDate = new Date(event.dateCompleted);
+        if (!event.dateModified) return;
+        const completedDate = new Date(event.dateModified);
         if (!Number.isNaN(completedDate.getTime()) && completedDate >= lastMonthStart && completedDate < lastMonthEnd) {
           count++;
         }
@@ -1600,7 +1600,7 @@ const hasSeededMockDataRef = useRef(false);
       if (applicationsFilter === 'createdThisMonth') {
         filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateCreated));
       } else if (applicationsFilter === 'completedThisMonth') {
-        filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateCompleted));
+        filtered[columnId] = appColumns[columnId].filter(app => isWithinCurrentMonth(app.dateModified));
       }
     });
     return filtered;
@@ -1621,7 +1621,7 @@ const hasSeededMockDataRef = useRef(false);
         );
       } else if (linkedinOutreachFilter === 'completedThisMonth') {
         filtered[columnId] = linkedinOutreachColumns[columnId].filter(entry =>
-          isWithinCurrentMonth(entry.dateCompleted)
+          isWithinCurrentMonth(entry.dateModified)
         );
       }
     });
@@ -1643,7 +1643,7 @@ const hasSeededMockDataRef = useRef(false);
         );
       } else if (eventsFilter === 'completedThisMonth') {
         filtered[columnId] = eventColumns[columnId].filter(event =>
-          isWithinCurrentMonth(event.dateCompleted)
+          isWithinCurrentMonth(event.dateModified)
         );
       }
     });
@@ -1664,7 +1664,7 @@ const hasSeededMockDataRef = useRef(false);
         );
       } else if (leetFilter === 'completedThisMonth') {
         filtered[columnId] = leetColumns[columnId].filter(entry =>
-          isWithinCurrentMonth(entry.dateCompleted)
+          isWithinCurrentMonth(entry.dateModified)
         );
       }
     });
@@ -1912,7 +1912,7 @@ function ApplicationModal({
     notes: string;
     status: ApplicationStatus;
     dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
-    dateCompleted: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+    dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
   };
 
   const [formData, setFormData] = useState<ApplicationFormData>({
@@ -1924,7 +1924,7 @@ function ApplicationModal({
     notes: application?.notes || '',
     status: application?.status || 'applied',
     dateCreated: application?.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
-    dateCompleted: application?.dateCompleted ? toLocalDate(application.dateCompleted) : '', // ===== DATE FIELD EDITING =====
+    dateModified: application?.dateModified ? toLocalDate(application.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
 
   // Update form data when application changes
@@ -1939,7 +1939,7 @@ function ApplicationModal({
         notes: application.notes || '',
         status: application.status ?? 'applied',
         dateCreated: application.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
-        dateCompleted: application.dateCompleted ? toLocalDate(application.dateCompleted) : '', // ===== DATE FIELD EDITING =====
+        dateModified: application.dateModified ? toLocalDate(application.dateModified) : '', // ===== DATE FIELD EDITING =====
       });
     } else {
       setFormData({
@@ -1951,7 +1951,7 @@ function ApplicationModal({
         notes: '',
         status: 'applied',
         dateCreated: '', // ===== DATE FIELD EDITING =====
-        dateCompleted: '', // ===== DATE FIELD EDITING =====
+        dateModified: '', // ===== DATE FIELD EDITING =====
       });
     }
   }, [application]);
@@ -1975,18 +1975,18 @@ function ApplicationModal({
           console.error('Error parsing dateCreated:', error);
         }
       }
-      if (formData.dateCompleted !== undefined) {
+      if (formData.dateModified !== undefined) {
         try {
-          if (formData.dateCompleted) {
-            const date = new Date(formData.dateCompleted);
+          if (formData.dateModified) {
+            const date = new Date(formData.dateModified);
             if (!isNaN(date.getTime())) {
-              submitData.dateCompleted = date.toISOString();
+              submitData.dateModified = date.toISOString();
             }
           } else {
-            submitData.dateCompleted = null;
+            submitData.dateModified = null;
           }
         } catch (error) {
-          console.error('Error parsing dateCompleted:', error);
+          console.error('Error parsing dateModified:', error);
         }
       }
     }
@@ -2090,7 +2090,7 @@ function ApplicationModal({
             />
           </div>
 
-          {/* ===== DATE FIELD EDITING: Show dateCreated and dateCompleted fields when toggle is enabled ===== */}
+          {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -2106,8 +2106,8 @@ function ApplicationModal({
                 <label className="block text-white font-semibold mb-2">Date Completed (Testing/Debug)</label>
                 <input
                   type="date"
-                  value={formData.dateCompleted}
-                  onChange={(e) => setFormData({ ...formData, dateCompleted: e.target.value })}
+                  value={formData.dateModified}
+                  onChange={(e) => setFormData({ ...formData, dateModified: e.target.value })}
                   className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                 />
               </div>
@@ -2167,7 +2167,7 @@ function LinkedinOutreachModal({
     status: LinkedinOutreachStatus;
     recievedReferral: boolean;
     dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
-    dateCompleted: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+    dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
   };
 
   const [formData, setFormData] = useState<LinkedinOutreachFormData>({
@@ -2179,7 +2179,7 @@ function LinkedinOutreachModal({
     status: linkedinOutreach ? linkedinOutreach.status : 'outreachRequestSent',
     recievedReferral: linkedinOutreach?.recievedReferral || false,
     dateCreated: linkedinOutreach?.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
-    dateCompleted: linkedinOutreach?.dateCompleted ? toLocalDate(linkedinOutreach.dateCompleted) : '', // ===== DATE FIELD EDITING =====
+    dateModified: linkedinOutreach?.dateModified ? toLocalDate(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
 
   // Update form data when linkedin outreach changes
@@ -2194,7 +2194,7 @@ function LinkedinOutreachModal({
         status: linkedinOutreach.status,
         recievedReferral: linkedinOutreach.recievedReferral || false,
         dateCreated: linkedinOutreach.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
-        dateCompleted: linkedinOutreach.dateCompleted ? toLocalDate(linkedinOutreach.dateCompleted) : '', // ===== DATE FIELD EDITING =====
+        dateModified: linkedinOutreach.dateModified ? toLocalDate(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
       });
     } else {
       setFormData({
@@ -2206,7 +2206,7 @@ function LinkedinOutreachModal({
         status: 'outreachRequestSent',
         recievedReferral: false,
         dateCreated: '', // ===== DATE FIELD EDITING =====
-        dateCompleted: '', // ===== DATE FIELD EDITING =====
+        dateModified: '', // ===== DATE FIELD EDITING =====
       });
     }
   }, [linkedinOutreach]);
@@ -2230,18 +2230,18 @@ function LinkedinOutreachModal({
           console.error('Error parsing dateCreated:', error);
         }
       }
-      if (formData.dateCompleted !== undefined) {
+      if (formData.dateModified !== undefined) {
         try {
-          if (formData.dateCompleted) {
-            const date = new Date(formData.dateCompleted);
+          if (formData.dateModified) {
+            const date = new Date(formData.dateModified);
             if (!isNaN(date.getTime())) {
-              submitData.dateCompleted = date.toISOString();
+              submitData.dateModified = date.toISOString();
             }
           } else {
-            submitData.dateCompleted = null;
+            submitData.dateModified = null;
           }
         } catch (error) {
-          console.error('Error parsing dateCompleted:', error);
+          console.error('Error parsing dateModified:', error);
         }
       }
     }
@@ -2348,7 +2348,7 @@ function LinkedinOutreachModal({
             </label>
           </div>
 
-          {/* ===== DATE FIELD EDITING: Show dateCreated and dateCompleted fields when toggle is enabled ===== */}
+          {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -2364,8 +2364,8 @@ function LinkedinOutreachModal({
                 <label className="block text-white font-semibold mb-2">Date Completed (Testing/Debug)</label>
                 <input
                   type="date"
-                  value={formData.dateCompleted}
-                  onChange={(e) => setFormData({ ...formData, dateCompleted: e.target.value })}
+                  value={formData.dateModified}
+                  onChange={(e) => setFormData({ ...formData, dateModified: e.target.value })}
                   className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                 />
               </div>
@@ -2473,7 +2473,7 @@ function InPersonEventModal({
     numOfInterviews: string;
     careerFair: boolean;
     dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
-    dateCompleted: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+    dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
   };
 
   const [formData, setFormData] = useState<EventFormData>({
@@ -2491,7 +2491,7 @@ function InPersonEventModal({
     numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
     careerFair: eventItem?.careerFair ?? false,
     dateCreated: eventItem?.dateCreated ? toLocalDate(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
-    dateCompleted: eventItem?.dateCompleted ? toLocalDate(eventItem.dateCompleted) : '', // ===== DATE FIELD EDITING =====
+    dateModified: eventItem?.dateModified ? toLocalDate(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
 
   useEffect(() => {
@@ -2511,7 +2511,7 @@ function InPersonEventModal({
       numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
       careerFair: eventItem?.careerFair ?? false,
       dateCreated: eventItem?.dateCreated ? toLocalDate(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
-      dateCompleted: eventItem?.dateCompleted ? toLocalDate(eventItem.dateCompleted) : '', // ===== DATE FIELD EDITING =====
+      dateModified: eventItem?.dateModified ? toLocalDate(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
     });
   }, [eventItem]);
 
@@ -2589,18 +2589,18 @@ function InPersonEventModal({
           console.error('Error parsing dateCreated:', error);
         }
       }
-      if (formData.dateCompleted !== undefined) {
+      if (formData.dateModified !== undefined) {
         try {
-          if (formData.dateCompleted) {
-            const date = new Date(formData.dateCompleted);
+          if (formData.dateModified) {
+            const date = new Date(formData.dateModified);
             if (!isNaN(date.getTime())) {
-              saveData.dateCompleted = date.toISOString();
+              saveData.dateModified = date.toISOString();
             }
           } else {
-            saveData.dateCompleted = null;
+            saveData.dateModified = null;
           }
         } catch (error) {
-          console.error('Error parsing dateCompleted:', error);
+          console.error('Error parsing dateModified:', error);
         }
       }
     }
@@ -2781,7 +2781,7 @@ function InPersonEventModal({
             )}
           </div>
 
-          {/* ===== DATE FIELD EDITING: Show dateCreated and dateCompleted fields when toggle is enabled ===== */}
+          {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -2797,8 +2797,8 @@ function InPersonEventModal({
                 <label className="block text-white font-semibold mb-2">Date Completed (Testing/Debug)</label>
                 <input
                   type="date"
-                  value={formData.dateCompleted}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dateCompleted: e.target.value }))}
+                  value={formData.dateModified}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dateModified: e.target.value }))}
                   className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                 />
               </div>
@@ -2856,7 +2856,7 @@ function LeetModal({
     reflection: string;
     status: LeetStatus;
     dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
-    dateCompleted: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+    dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
   };
 
   const [formData, setFormData] = useState<LeetFormData>({
@@ -2867,7 +2867,7 @@ function LeetModal({
     reflection: entry?.reflection ?? '',
     status: entry?.status ?? 'planned',
     dateCreated: entry?.dateCreated ? toLocalDate(entry.dateCreated) : '', // ===== DATE FIELD EDITING =====
-    dateCompleted: entry?.dateCompleted ? toLocalDate(entry.dateCompleted) : '', // ===== DATE FIELD EDITING =====
+    dateModified: entry?.dateModified ? toLocalDate(entry.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
   const [isLeetHelpOpen, setIsLeetHelpOpen] = useState(false);
   const tooltipRef = useRef<HTMLSpanElement | null>(null);
@@ -2898,7 +2898,7 @@ function LeetModal({
         reflection: entry.reflection ?? '',
         status: entry.status ?? 'planned',
         dateCreated: entry.dateCreated ? toLocalDate(entry.dateCreated) : '',
-        dateCompleted: entry.dateCompleted ? toLocalDate(entry.dateCompleted) : '',
+        dateModified: entry.dateModified ? toLocalDate(entry.dateModified) : '',
       });
     } else {
       setFormData({
@@ -2909,7 +2909,7 @@ function LeetModal({
         reflection: '',
         status: 'planned',
         dateCreated: '',
-        dateCompleted: '',
+        dateModified: '',
       });
     }
   }, [entry]);
@@ -2941,18 +2941,18 @@ function LeetModal({
           console.error('Error parsing dateCreated:', error);
         }
       }
-      if (formData.dateCompleted !== undefined) {
+      if (formData.dateModified !== undefined) {
         try {
-          if (formData.dateCompleted) {
-            const date = new Date(formData.dateCompleted);
+          if (formData.dateModified) {
+            const date = new Date(formData.dateModified);
             if (!isNaN(date.getTime())) {
-              submitData.dateCompleted = date.toISOString();
+              submitData.dateModified = date.toISOString();
             }
           } else {
-            submitData.dateCompleted = null;
+            submitData.dateModified = null;
           }
         } catch (error) {
-          console.error('Error parsing dateCompleted:', error);
+          console.error('Error parsing dateModified:', error);
         }
       }
     }
@@ -3064,7 +3064,7 @@ function LeetModal({
             </select>
           </div>
 
-          {/* ===== DATE FIELD EDITING: Show dateCreated and dateCompleted fields when toggle is enabled ===== */}
+          {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -3080,8 +3080,8 @@ function LeetModal({
                 <label className="block text-white font-semibold mb-2">Date Completed (Testing/Debug)</label>
                 <input
                   type="date"
-                  value={formData.dateCompleted}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dateCompleted: e.target.value }))}
+                  value={formData.dateModified}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dateModified: e.target.value }))}
                   className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                 />
               </div>

@@ -110,7 +110,7 @@ function SortableLinkedinOutreachCard(props: {
       {props.card.recievedReferral && (
         <div className="text-green-400 text-xs mb-2">✓ Referral Received</div>
       )}
-      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateCompleted} />
+      <CardDateMeta created={props.card.dateCreated} completed={props.card.dateModified} />
     </div>
   );
 }
