@@ -3,7 +3,7 @@
 import { signIn, signOut } from "auth"
 
 export async function handleSignIn(provider?: string) {
-  await signIn(provider, { callbackUrl: '/dashboard' })
+  await signIn(provider, { redirectTo: '/dashboard' })
 }
 
 export async function handleSignOut() {

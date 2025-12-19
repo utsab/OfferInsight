@@ -19,7 +19,13 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
       if (url.startsWith(baseUrl)) {
         return url
       }
-      return baseUrl
+      // After sign-in, default to dashboard instead of homepage
+      // If URL is just the baseUrl (homepage), redirect to dashboard after sign-in
+      if (url === baseUrl || url === `${baseUrl}/`) {
+        return `${baseUrl}/dashboard`
+      }
+      // Default fallback: redirect to dashboard
+      return `${baseUrl}/dashboard`
     },
    
     async session({ session, user }) {
