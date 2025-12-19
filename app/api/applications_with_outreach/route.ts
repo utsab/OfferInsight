@@ -25,8 +25,9 @@ export async function GET() {
     return NextResponse.json(applications);
   } catch (error) {
     console.error("Error fetching applications:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch applications" },
+      { error: "Failed to fetch applications", details: errorMessage },
       { status: 500 }
     );
   }
@@ -99,9 +100,6 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { status, dateModified } = body;
-
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
 
@@ -111,6 +109,9 @@ export async function PATCH(request: Request) {
         { status: 400 }
       );
     }
+
+    const body = await request.json();
+    const { status, dateModified } = body;
 
     if (status === undefined) {
       return NextResponse.json(
@@ -150,8 +151,9 @@ export async function PATCH(request: Request) {
     return NextResponse.json(updatedApplication);
   } catch (error) {
     console.error("Error updating application status:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to update application status" },
+      { error: "Failed to update application status", details: errorMessage },
       { status: 500 }
     );
   }

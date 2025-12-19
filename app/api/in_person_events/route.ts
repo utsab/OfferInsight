@@ -23,8 +23,9 @@ export async function GET() {
     return NextResponse.json(events);
   } catch (error) {
     console.error("Error fetching events:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch events" },
+      { error: "Failed to fetch events", details: errorMessage },
       { status: 500 }
     );
   }

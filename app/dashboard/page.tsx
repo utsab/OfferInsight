@@ -363,7 +363,17 @@ export default function Page() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status }),
         });
-        if (!response.ok) throw new Error('Failed to update status');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('Failed to update status:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorData,
+            id,
+            status: status
+          });
+          throw new Error(`Failed to update status: ${response.status} - ${errorData.error || errorData.details || 'Unknown error'}`);
+        }
       } catch (error) {
         console.error('Error updating status:', error);
         fetchApplications();

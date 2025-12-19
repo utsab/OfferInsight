@@ -25,7 +25,13 @@ export async function GET() {
     return NextResponse.json(problems);
   } catch (error) {
     console.error("Error fetching LeetCode problems:", error);
-    return NextResponse.json({ error: "Failed to fetch problems" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Error details:", { errorMessage, errorStack });
+    return NextResponse.json(
+      { error: "Failed to fetch problems", details: errorMessage },
+      { status: 500 }
+    );
   }
 }
 

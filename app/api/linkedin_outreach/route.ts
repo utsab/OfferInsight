@@ -27,8 +27,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(outreaches);
   } catch (error) {
     console.error("Error fetching LinkedIn outreach:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch LinkedIn outreach" },
+      { error: "Failed to fetch LinkedIn outreach", details: errorMessage },
       { status: 500 }
     );
   }
