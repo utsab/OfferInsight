@@ -11,7 +11,7 @@ export function InstructorSignInButton() {
   return (
     <Link href="/instructor/signin">
       <Button 
-        className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+        className="bg-electric-blue hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
       >
         Instructor Sign In
       </Button>
