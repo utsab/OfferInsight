@@ -135,3 +135,11 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
+model Instructor {
+  id                String   @id @default(cuid())
+  username          String   @unique
+  password          String   // In production, this should be hashed
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
