@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 interface UserData {
   id: string;
@@ -31,7 +32,7 @@ interface UserData {
 // Set to true to show 20 dummy user cards for testing the UI layout
 // Set to false to fetch real user data from the API
 // ============================================================================
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 // ============================================================================
 // DEBUG: Generate dummy user data for testing
@@ -259,6 +260,16 @@ export default function InstructorDashboard() {
                     <span>All Time: <span className="text-white">{user.leetCode.allTime}</span></span>
                   </div>
                 </div>
+              </div>
+
+              {/* View Dashboard Button */}
+              <div className="mt-4 pt-4 border-t border-gray-500">
+                <Link
+                  href={`/dashboard?userId=${user.id}`}
+                  className="block w-full text-center px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+                >
+                  View Dashboard
+                </Link>
               </div>
             </div>
           ))}

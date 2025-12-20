@@ -1,21 +1,21 @@
 "use server";
 
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/db";
-import { auth } from "@/auth";
+import { getUserIdForRequest } from "@/app/lib/api-user-helper";
 
-// GET all LeetCode records for the logged-in user
-export async function GET() {
+// GET all LeetCode records for the logged-in user (or specified user if instructor)
+export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const problems = await prisma.leetcode_Practice.findMany({
       where: {
-        userId: session.user.id,
+        userId: userId,
       },
       orderBy: {
         id: "desc",

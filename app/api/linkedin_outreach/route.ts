@@ -1,26 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db";
-import { auth } from "@/auth";
+import { getUserIdForRequest } from "@/app/lib/api-user-helper";
 
-// GET: Fetch all LinkedIn outreach for the current user
+// GET: Fetch all LinkedIn outreach for the current user (or specified user if instructor)
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const outreaches = await prisma.linkedin_Outreach.findMany({
-      where: { userId: user.id },
+      where: { userId: userId },
       orderBy: { id: "desc" },
     });
 

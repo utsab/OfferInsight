@@ -8,6 +8,7 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
+import { useSearchParams } from "next/navigation";
 
 // Define the metrics data structure
 export interface MetricsData {
@@ -39,6 +40,8 @@ export function DashboardMetricsProvider({
 }: {
   children: ReactNode;
 }) {
+  const searchParams = useSearchParams();
+  const userIdParam = searchParams.get("userId");
   const [metricsData, setMetricsData] = useState<MetricsData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
@@ -47,7 +50,8 @@ export function DashboardMetricsProvider({
   const refreshMetrics = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/dashboard-metrics");
+      const url = userIdParam ? `/api/dashboard-metrics?userId=${userIdParam}` : "/api/dashboard-metrics";
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Failed to fetch metrics");
       }
@@ -83,7 +87,7 @@ export function DashboardMetricsProvider({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userIdParam]);
 
   // Handle client-side mounting to prevent hydration mismatches
   useEffect(() => {

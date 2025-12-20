@@ -1,20 +1,19 @@
-import { NextResponse } from "next/server";
-import { auth } from "auth";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/db";
 import { getCurrentMonthDateRange } from "@/app/lib/date-utils";
+import { getUserIdForRequest } from "@/app/lib/api-user-helper";
 
-export async function GET() {
-  // Get the user's session
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function GET(request: NextRequest) {
   try {
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
+    }
+
     // Get the user data
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email || "" },
+      where: { id: userId },
       select: {
         id: true,
         appsWithOutreachPerWeek: true,

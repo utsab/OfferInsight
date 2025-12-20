@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Gauge, FileText, MessageCircle, Users, Code, X } from 'lucide-react';
+import { Gauge, FileText, MessageCircle, Users, Code, X, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import OverviewTab from './components/OverviewTab';
 import ApplicationsTab from './components/ApplicationsTab';
 import CoffeeChatsTab from './components/CoffeeChatsTab';
@@ -273,6 +275,10 @@ const leetColumnToStatus: Record<LeetColumnId, LeetStatus> = {
 };
 
 export default function Page() {
+  const searchParams = useSearchParams();
+  const userIdParam = searchParams.get('userId');
+  const [viewedUserName, setViewedUserName] = useState<string | null>(null);
+  const [isInstructor, setIsInstructor] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [targetOfferDate, setTargetOfferDate] = useState<Date | null>(null);
 
@@ -309,7 +315,8 @@ export default function Page() {
     try {
       isFetchingRef.current = true;
       setIsLoading(true);
-      const response = await fetch('/api/applications_with_outreach');
+      const url = userIdParam ? `/api/applications_with_outreach?userId=${userIdParam}` : '/api/applications_with_outreach';
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch applications');
       const data = await response.json() as Application[];
       
@@ -481,7 +488,8 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     try {
       isFetchingLinkedinOutreachRef.current = true;
       setIsLoadingLinkedinOutreach(true);
-      const response = await fetch('/api/linkedin_outreach');
+      const url = userIdParam ? `/api/linkedin_outreach?userId=${userIdParam}` : '/api/linkedin_outreach';
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch LinkedIn outreach entries');
       const data = await response.json() as LinkedinOutreach[];
 
@@ -504,7 +512,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       setIsLoadingLinkedinOutreach(false);
       isFetchingLinkedinOutreachRef.current = false;
     }
-  }, []);
+  }, [userIdParam]);
 
   useEffect(() => {
     // --- MOCK DATA BYPASS FOR OUTREACH EFFECT START ---
@@ -636,7 +644,8 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     try {
       isFetchingEventsRef.current = true;
       setIsLoadingEvents(true);
-      const response = await fetch('/api/in_person_events');
+      const url = userIdParam ? `/api/in_person_events?userId=${userIdParam}` : '/api/in_person_events';
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch in-person events');
       const data = await response.json() as InPersonEvent[];
 
@@ -659,7 +668,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       setIsLoadingEvents(false);
       isFetchingEventsRef.current = false;
     }
-  }, []);
+  }, [userIdParam]);
 
   useEffect(() => {
     // --- MOCK DATA BYPASS FOR EVENTS EFFECT START ---
@@ -793,7 +802,8 @@ const hasSeededMockDataRef = useRef(false);
     try {
       isFetchingLeetRef.current = true;
       setIsLoadingLeet(true);
-      const response = await fetch('/api/leetcode');
+      const url = userIdParam ? `/api/leetcode?userId=${userIdParam}` : '/api/leetcode';
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch LeetCode entries');
       const data = await response.json();
 
@@ -815,7 +825,7 @@ const hasSeededMockDataRef = useRef(false);
       setIsLoadingLeet(false);
       isFetchingLeetRef.current = false;
     }
-  }, []);
+  }, [userIdParam]);
 
   useEffect(() => {
     // --- MOCK DATA BYPASS FOR LEET EFFECT START ---
@@ -1184,12 +1194,51 @@ const hasSeededMockDataRef = useRef(false);
   }, []);
   // <<<<< MOCK DATA SEEDING EFFECT END >>>>>
 
+  // Check if viewing as instructor and fetch user name
+  useEffect(() => {
+    async function checkInstructorAndFetchUserName() {
+      if (!userIdParam) {
+        setIsInstructor(false);
+        setViewedUserName(null);
+        return;
+      }
+
+      try {
+        // Check if current user is an instructor
+        const instructorRes = await fetch('/api/instructor');
+        if (instructorRes.ok) {
+          setIsInstructor(true);
+          
+          // Fetch the user's name
+          const userRes = await fetch(`/api/instructor/students`);
+          if (userRes.ok) {
+            const data = await userRes.json();
+            const user = data.students?.find((u: { id: string }) => u.id === userIdParam);
+            if (user) {
+              setViewedUserName(user.name);
+            }
+          }
+        } else {
+          setIsInstructor(false);
+          setViewedUserName(null);
+        }
+      } catch (error) {
+        console.error('Error checking instructor status or fetching user name:', error);
+        setIsInstructor(false);
+        setViewedUserName(null);
+      }
+    }
+
+    checkInstructorAndFetchUserName();
+  }, [userIdParam]);
+
   useEffect(() => {
     if (ENABLE_DASHBOARD_MOCKS) return;
     let isMounted = true;
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/users/onboarding2');
+        const url = userIdParam ? `/api/users/onboarding2?userId=${userIdParam}` : '/api/users/onboarding2';
+        const res = await fetch(url);
         if (!res.ok) return;
         const user = await res.json();
         if (isMounted) {
@@ -1205,7 +1254,7 @@ const hasSeededMockDataRef = useRef(false);
     };
     fetchUser();
     return () => { isMounted = false; };
-  }, []);
+  }, [userIdParam]);
 
   const targetOfferDateText = useMemo(() => {
     if (!targetOfferDate) return '—';
@@ -1598,6 +1647,9 @@ const hasSeededMockDataRef = useRef(false);
 
   // Debounced function to sync projected offer date (prevents rapid-fire requests)
   const syncProjectedOfferDate = useDebouncedCallback((date: Date) => {
+    // Skip sync if viewing as instructor (instructors are view-only)
+    if (isInstructor && userIdParam) return;
+    
     const iso = date.toISOString();
     if (lastProjectedOfferSyncRef.current === iso) return;
 
@@ -1619,8 +1671,10 @@ const hasSeededMockDataRef = useRef(false);
 
   useEffect(() => {
     if (!projectedOfferDate) return;
+    // Skip sync if viewing as instructor (instructors are view-only)
+    if (isInstructor && userIdParam) return;
     syncProjectedOfferDate(projectedOfferDate);
-  }, [projectedOfferDate, syncProjectedOfferDate]);
+  }, [projectedOfferDate, syncProjectedOfferDate, isInstructor, userIdParam]);
 
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
@@ -1714,6 +1768,31 @@ const hasSeededMockDataRef = useRef(false);
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
+      {/* Instructor View Banner */}
+      {isInstructor && userIdParam && viewedUserName && (
+        <div className="bg-electric-blue/20 border-b border-electric-blue/50">
+          <div className="max-w-7xl mx-auto px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="text-electric-blue font-semibold">
+                  Viewing dashboard as instructor
+                </div>
+                <div className="text-gray-300">
+                  User: <span className="text-white font-medium">{viewedUserName}</span>
+                </div>
+              </div>
+              <Link
+                href="/instructor/dashboard"
+                className="flex items-center gap-2 text-electric-blue hover:text-blue-400 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Instructor Dashboard</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-8 py-8">
         {/* Main Navigation Tabs */}
