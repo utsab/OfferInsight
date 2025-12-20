@@ -28,8 +28,8 @@ export default function InstructorSignIn() {
       const data = await response.json();
 
       if (response.ok) {
-        // Redirect to homepage after successful sign-in
-        router.push('/');
+        // Redirect to instructor dashboard after successful sign-in
+        router.push('/instructor/dashboard');
         router.refresh();
       } else {
         setError(data.error || 'Invalid credentials');
