@@ -29,6 +29,7 @@ type LeetCodeTabProps = {
   isDeletingLeet: number | null;
   fetchLeetEntries: () => Promise<void>;
   isDraggingLeetRef: React.MutableRefObject<boolean>;
+  userIdParam: string | null;
 };
 
 function SortableLeetCard(props: { 
@@ -138,6 +139,7 @@ export default function LeetCodeTab({
   isDeletingLeet,
   fetchLeetEntries,
   isDraggingLeetRef,
+  userIdParam,
 }: LeetCodeTabProps) {
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
@@ -277,15 +279,16 @@ export default function LeetCodeTab({
           }}
           onSave={async (data: Partial<LeetEntry>) => {
             try {
+              const url = userIdParam ? `/api/leetcode?userId=${userIdParam}` : '/api/leetcode';
               if (editingLeet) {
-                const response = await fetch('/api/leetcode', {
+                const response = await fetch(url, {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ ...data, id: editingLeet.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update problem');
               } else {
-                const response = await fetch('/api/leetcode', {
+                const response = await fetch(url, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(data),
@@ -308,7 +311,8 @@ export default function LeetCodeTab({
         <DeleteModal
           onConfirm={async () => {
             try {
-              const response = await fetch(`/api/leetcode?id=${isDeletingLeet}`, {
+              const url = userIdParam ? `/api/leetcode?id=${isDeletingLeet}&userId=${userIdParam}` : `/api/leetcode?id=${isDeletingLeet}`;
+              const response = await fetch(url, {
                 method: 'DELETE',
               });
               if (!response.ok) throw new Error('Failed to delete problem');

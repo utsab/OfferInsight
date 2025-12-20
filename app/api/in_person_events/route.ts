@@ -32,12 +32,12 @@ export async function GET(request: NextRequest) {
 }
 
 // POST a new in-person event
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
         location,
         url,
         notes,
-        userId: session.user.id,
+        userId: userId,
         status: status || "scheduled",
         careerFair: careerFair ?? false,
         numPeopleSpokenTo: numPeopleSpokenTo ?? null,
@@ -81,12 +81,12 @@ export async function POST(request: Request) {
 }
 
 // PATCH to update just the status (more efficient for drag and drop updates)
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -113,7 +113,7 @@ export async function PATCH(request: Request) {
     const existingEvent = await prisma.in_Person_Events.findFirst({
       where: {
         id: parseInt(id),
-        userId: session.user.id,
+        userId: userId,
       },
     });
 
@@ -144,12 +144,12 @@ export async function PATCH(request: Request) {
 }
 
 // PUT to update an event's status
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -180,7 +180,7 @@ export async function PUT(request: Request) {
     const existingEvent = await prisma.in_Person_Events.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: userId,
       },
     });
 
@@ -226,12 +226,12 @@ export async function PUT(request: Request) {
 }
 
 // DELETE an event
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const url = new URL(request.url);
@@ -248,7 +248,7 @@ export async function DELETE(request: Request) {
     const event = await prisma.in_Person_Events.findFirst({
       where: {
         id: parseInt(id),
-        userId: session.user.id,
+        userId: userId,
       },
     });
 

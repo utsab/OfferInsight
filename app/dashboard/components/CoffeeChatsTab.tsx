@@ -29,6 +29,7 @@ type CoffeeChatsTabProps = {
   isDeletingLinkedinOutreach: number | null;
   fetchLinkedinOutreach: () => Promise<void>;
   isDraggingLinkedinOutreachRef: React.MutableRefObject<boolean>;
+  userIdParam: string | null;
 };
 
 function SortableLinkedinOutreachCard(props: { 
@@ -137,6 +138,7 @@ export default function CoffeeChatsTab({
   isDeletingLinkedinOutreach,
   fetchLinkedinOutreach,
   isDraggingLinkedinOutreachRef,
+  userIdParam,
 }: CoffeeChatsTabProps) {
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
@@ -296,15 +298,16 @@ export default function CoffeeChatsTab({
           }}
           onSave={async (data: Partial<LinkedinOutreach>) => {
             try {
+              const url = userIdParam ? `/api/linkedin_outreach?userId=${userIdParam}` : '/api/linkedin_outreach';
               if (editingLinkedinOutreach) {
-                const response = await fetch('/api/linkedin_outreach', {
+                const response = await fetch(url, {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ ...data, id: editingLinkedinOutreach.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update LinkedIn outreach entry');
               } else {
-                const response = await fetch('/api/linkedin_outreach', {
+                const response = await fetch(url, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(data),
@@ -327,7 +330,8 @@ export default function CoffeeChatsTab({
         <DeleteModal
           onConfirm={async () => {
             try {
-              const response = await fetch(`/api/linkedin_outreach?id=${isDeletingLinkedinOutreach}`, {
+              const url = userIdParam ? `/api/linkedin_outreach?id=${isDeletingLinkedinOutreach}&userId=${userIdParam}` : `/api/linkedin_outreach?id=${isDeletingLinkedinOutreach}`;
+              const response = await fetch(url, {
                 method: 'DELETE',
               });
               if (!response.ok) throw new Error('Failed to delete LinkedIn outreach entry');

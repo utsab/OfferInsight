@@ -34,12 +34,12 @@ export async function GET(request: NextRequest) {
 }
 
 // POST a new application with outreach
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
         msgToRecruiter: msgToRecruiter || null,
         notes: notes || null,
         status: status || "applied",
-        userId: session.user.id,
+        userId: userId,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
         // dateModified: Set to current date on create, unless ENABLE_DATE_FIELD_EDITING provides a value
@@ -92,12 +92,12 @@ export async function POST(request: Request) {
 }
 
 // PATCH to update just the status (more efficient for drag and drop updates)
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const url = new URL(request.url);
@@ -125,7 +125,7 @@ export async function PATCH(request: Request) {
       await prisma.applications_With_Outreach.findFirst({
         where: {
           id: parseInt(id),
-          userId: session.user.id,
+          userId: userId,
         },
       });
 
@@ -160,12 +160,12 @@ export async function PATCH(request: Request) {
 }
 
 // PUT to update an application
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -194,7 +194,7 @@ export async function PUT(request: Request) {
       await prisma.applications_With_Outreach.findFirst({
         where: {
           id,
-          userId: session.user.id,
+          userId: userId,
         },
       });
 
@@ -237,12 +237,12 @@ export async function PUT(request: Request) {
 }
 
 // DELETE an application
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const url = new URL(request.url);
@@ -259,7 +259,7 @@ export async function DELETE(request: Request) {
     const application = await prisma.applications_With_Outreach.findFirst({
       where: {
         id: parseInt(id),
-        userId: session.user.id,
+        userId: userId,
       },
     });
 

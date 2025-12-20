@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
         inPersonEventsPerMonth: true,
         careerFairsPerYear: true,
         targetOfferDate: true,
+        projectedOfferDate: true,
         resetStartDate: true,
         onboardingProgress: true,
       },

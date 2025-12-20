@@ -29,6 +29,7 @@ type EventsTabProps = {
   isDeletingEvent: number | null;
   fetchEvents: () => Promise<void>;
   isDraggingEventRef: React.MutableRefObject<boolean>;
+  userIdParam: string | null;
 };
 
 function SortableEventCard(props: { 
@@ -162,6 +163,7 @@ export default function EventsTab({
   isDeletingEvent,
   fetchEvents,
   isDraggingEventRef,
+  userIdParam,
 }: EventsTabProps) {
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
@@ -335,15 +337,16 @@ export default function EventsTab({
           }}
           onSave={async (data: Partial<InPersonEvent> & { date?: string }) => {
             try {
+              const url = userIdParam ? `/api/in_person_events?userId=${userIdParam}` : '/api/in_person_events';
               if (editingEvent) {
-                const response = await fetch('/api/in_person_events', {
+                const response = await fetch(url, {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ ...data, id: editingEvent.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update event');
               } else {
-                const response = await fetch('/api/in_person_events', {
+                const response = await fetch(url, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(data),
@@ -366,7 +369,8 @@ export default function EventsTab({
         <DeleteModal
           onConfirm={async () => {
             try {
-              const response = await fetch(`/api/in_person_events?id=${isDeletingEvent}`, {
+              const url = userIdParam ? `/api/in_person_events?id=${isDeletingEvent}&userId=${userIdParam}` : `/api/in_person_events?id=${isDeletingEvent}`;
+              const response = await fetch(url, {
                 method: 'DELETE',
               });
               if (!response.ok) throw new Error('Failed to delete event');

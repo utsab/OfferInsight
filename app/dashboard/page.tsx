@@ -365,7 +365,8 @@ export default function Page() {
   const debouncedUpdateApplicationStatus = useDebouncedCallback(
     async (id: number, status: ApplicationStatus) => {
       try {
-        const response = await fetch(`/api/applications_with_outreach?id=${id}`, {
+        const url = userIdParam ? `/api/applications_with_outreach?id=${id}&userId=${userIdParam}` : `/api/applications_with_outreach?id=${id}`;
+        const response = await fetch(url, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status }),
@@ -535,7 +536,8 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const debouncedUpdateLinkedinOutreachStatus = useDebouncedCallback(
     async (id: number, status: LinkedinOutreachStatus) => {
       try {
-        const response = await fetch(`/api/linkedin_outreach?id=${id}`, {
+        const url = userIdParam ? `/api/linkedin_outreach?id=${id}&userId=${userIdParam}` : `/api/linkedin_outreach?id=${id}`;
+        const response = await fetch(url, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status }),
@@ -691,7 +693,8 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   const debouncedUpdateEventStatus = useDebouncedCallback(
     async (id: number, status: InPersonEventStatus) => {
       try {
-        const response = await fetch(`/api/in_person_events?id=${id}`, {
+        const url = userIdParam ? `/api/in_person_events?id=${id}&userId=${userIdParam}` : `/api/in_person_events?id=${id}`;
+        const response = await fetch(url, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status }),
@@ -848,7 +851,8 @@ const hasSeededMockDataRef = useRef(false);
   const debouncedUpdateLeetCodeStatus = useDebouncedCallback(
     async (id: number, status: LeetStatus) => {
       try {
-        const response = await fetch(`/api/leetcode?id=${id}`, {
+        const url = userIdParam ? `/api/leetcode?id=${id}&userId=${userIdParam}` : `/api/leetcode?id=${id}`;
+        const response = await fetch(url, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status }),
@@ -936,6 +940,7 @@ const hasSeededMockDataRef = useRef(false);
     appsWithOutreachPerWeek?: number | null;
     linkedinOutreachPerWeek?: number | null;
     targetOfferDate?: string | null;
+    projectedOfferDate?: string | null;
     inPersonEventsPerMonth?: number | null;
     resetStartDate?: string | null;
     careerFairsPerYear?: number | null;
@@ -1246,6 +1251,13 @@ const hasSeededMockDataRef = useRef(false);
           if (user?.targetOfferDate) {
             const d = new Date(user.targetOfferDate);
             if (!isNaN(d.getTime())) setTargetOfferDate(d);
+          }
+          // Initialize the sync ref with the stored projectedOfferDate to prevent unnecessary syncing on initial load
+          if (user?.projectedOfferDate) {
+            const storedDate = new Date(user.projectedOfferDate);
+            if (!isNaN(storedDate.getTime())) {
+              lastProjectedOfferSyncRef.current = storedDate.toISOString();
+            }
           }
         }
       } catch (e) {
@@ -1647,13 +1659,11 @@ const hasSeededMockDataRef = useRef(false);
 
   // Debounced function to sync projected offer date (prevents rapid-fire requests)
   const syncProjectedOfferDate = useDebouncedCallback((date: Date) => {
-    // Skip sync if viewing as instructor (instructors are view-only)
-    if (isInstructor && userIdParam) return;
-    
     const iso = date.toISOString();
     if (lastProjectedOfferSyncRef.current === iso) return;
 
-    fetch('/api/users/projected-offer', {
+    const url = userIdParam ? `/api/users/projected-offer?userId=${userIdParam}` : '/api/users/projected-offer';
+    fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectedOfferDate: iso }),
@@ -1671,10 +1681,8 @@ const hasSeededMockDataRef = useRef(false);
 
   useEffect(() => {
     if (!projectedOfferDate) return;
-    // Skip sync if viewing as instructor (instructors are view-only)
-    if (isInstructor && userIdParam) return;
     syncProjectedOfferDate(projectedOfferDate);
-  }, [projectedOfferDate, syncProjectedOfferDate, isInstructor, userIdParam]);
+  }, [projectedOfferDate, syncProjectedOfferDate]);
 
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
@@ -1892,6 +1900,7 @@ const hasSeededMockDataRef = useRef(false);
             isDeleting={isDeleting}
             fetchApplications={fetchApplications}
             isDraggingAppRef={isDraggingAppRef}
+            userIdParam={userIdParam}
           />
         )}
 
@@ -1919,6 +1928,7 @@ const hasSeededMockDataRef = useRef(false);
             isDeletingLinkedinOutreach={isDeletingLinkedinOutreach}
             fetchLinkedinOutreach={fetchLinkedinOutreach}
             isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+            userIdParam={userIdParam}
           />
         )}
 
@@ -1946,6 +1956,7 @@ const hasSeededMockDataRef = useRef(false);
             isDeletingEvent={isDeletingEvent}
             fetchEvents={fetchEvents}
             isDraggingEventRef={isDraggingEventRef}
+            userIdParam={userIdParam}
           />
         )}
 
@@ -1973,6 +1984,7 @@ const hasSeededMockDataRef = useRef(false);
             isDeletingLeet={isDeletingLeet}
             fetchLeetEntries={fetchLeetEntries}
             isDraggingLeetRef={isDraggingLeetRef}
+            userIdParam={userIdParam}
           />
         )}
     </main>

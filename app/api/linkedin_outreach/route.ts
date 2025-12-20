@@ -30,18 +30,10 @@ export async function GET(request: NextRequest) {
 // POST: Create a new LinkedIn outreach
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const data = await request.json();
@@ -55,7 +47,7 @@ export async function POST(request: NextRequest) {
         notes: data.notes || null,
         status: data.status || "outreachRequestSent", // TODO: This is apart of default status. eliminate redundancy (1/3)
         recievedReferral: data.recievedReferral || false,
-        userId: user.id,
+        userId: userId,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: data.dateCreated ? new Date(data.dateCreated) : undefined,
         // dateModified: Set to current date on create, unless ENABLE_DATE_FIELD_EDITING provides a value
@@ -76,10 +68,10 @@ export async function POST(request: NextRequest) {
 // PATCH: Update just the status of a LinkedIn outreach (more efficient for drag and drop updates)
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -99,19 +91,11 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
     // Check if the outreach belongs to the user
     const outreach = await prisma.linkedin_Outreach.findFirst({
       where: {
         id: parseInt(id),
-        userId: user.id,
+        userId: userId,
       },
     });
 
@@ -147,10 +131,10 @@ export async function PATCH(request: NextRequest) {
 // PUT: Update an existing LinkedIn outreach
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const data = await request.json();
@@ -159,19 +143,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
     // First check if the outreach belongs to the user
     const outreach = await prisma.linkedin_Outreach.findFirst({
       where: {
         id: data.id,
-        userId: user.id,
+        userId: userId,
       },
     });
 
@@ -225,10 +201,10 @@ export async function PUT(request: NextRequest) {
 // DELETE: Remove a LinkedIn outreach
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
+    const { userId, error } = await getUserIdForRequest(request);
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
     const url = new URL(request.url);
@@ -238,19 +214,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
     // Check if the outreach belongs to the user
     const outreach = await prisma.linkedin_Outreach.findFirst({
       where: {
         id: parseInt(id),
-        userId: user.id,
+        userId: userId,
       },
     });
 

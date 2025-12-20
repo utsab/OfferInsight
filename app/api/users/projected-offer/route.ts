@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/db';
-import { auth } from 'auth';
+import { getUserIdForRequest } from '@/app/lib/api-user-helper';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || 'Not authenticated' }, { status: 401 });
     }
 
     const { projectedOfferDate } = await request.json();
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     const updatedUser = await prisma.user.update({
-      where: { email: session.user.email },
+      where: { id: userId },
       data: {
         projectedOfferDate: new Date(projectedOfferDate),
       },

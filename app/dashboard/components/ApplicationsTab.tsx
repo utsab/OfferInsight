@@ -28,6 +28,7 @@ type ApplicationsTabProps = {
   setIsDeleting: (id: number | null) => void;
   isDeleting: number | null;
   fetchApplications: () => Promise<void>;
+  userIdParam: string | null;
 };
 
 function SortableAppCard(props: { 
@@ -139,6 +140,7 @@ export default function ApplicationsTab({
   isDeleting,
   fetchApplications,
   isDraggingAppRef,
+  userIdParam,
 }: ApplicationsTabProps & { isDraggingAppRef: React.MutableRefObject<boolean> }) {
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
@@ -325,15 +327,16 @@ export default function ApplicationsTab({
           }}
           onSave={async (data: Partial<Application>) => {
             try {
+              const url = userIdParam ? `/api/applications_with_outreach?userId=${userIdParam}` : '/api/applications_with_outreach';
               if (editingApp) {
-                const response = await fetch('/api/applications_with_outreach', {
+                const response = await fetch(url, {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ ...data, id: editingApp.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update application');
               } else {
-                const response = await fetch('/api/applications_with_outreach', {
+                const response = await fetch(url, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(data),
@@ -356,7 +359,8 @@ export default function ApplicationsTab({
         <DeleteModal
           onConfirm={async () => {
             try {
-              const response = await fetch(`/api/applications_with_outreach?id=${isDeleting}`, {
+              const url = userIdParam ? `/api/applications_with_outreach?id=${isDeleting}&userId=${userIdParam}` : `/api/applications_with_outreach?id=${isDeleting}`;
+              const response = await fetch(url, {
                 method: 'DELETE',
               });
               if (!response.ok) throw new Error('Failed to delete application');
