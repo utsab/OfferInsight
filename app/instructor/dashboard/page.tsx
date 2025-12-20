@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-interface StudentData {
+interface UserData {
   id: string;
   name: string;
   email: string | null;
@@ -28,17 +28,17 @@ interface StudentData {
 
 // ============================================================================
 // DEBUG MODE - Toggle this boolean to enable/disable dummy debug cards
-// Set to true to show 20 dummy student cards for testing the UI layout
-// Set to false to fetch real student data from the API
+// Set to true to show 20 dummy user cards for testing the UI layout
+// Set to false to fetch real user data from the API
 // ============================================================================
 const DEBUG_MODE = true;
 
 // ============================================================================
-// DEBUG: Generate dummy student data for testing
-// This function creates 20 mock students with varied metrics and statuses
+// DEBUG: Generate dummy user data for testing
+// This function creates 20 mock users with varied metrics and statuses
 // to help visualize different card states in the dashboard
 // ============================================================================
-function generateDebugStudents(): StudentData[] {
+function generateDebugUsers(): UserData[] {
   const names = [
     'Alice Johnson', 'Bob Smith', 'Charlie Brown', 'Diana Prince', 'Ethan Hunt',
     'Fiona Chen', 'George Williams', 'Hannah Kim', 'Isaac Newton', 'Julia Roberts',
@@ -48,10 +48,10 @@ function generateDebugStudents(): StudentData[] {
 
   return names.map((name, index) => {
     // Vary the data to show different status combinations
-    const hasGoodProgress = index % 4 === 0; // Every 4th student has good progress
-    const hasMediumProgress = index % 4 === 1; // Every 4th student has medium progress
-    const isActive = index % 3 === 0; // Every 3rd student is active
-    const isMediumActive = index % 3 === 1; // Every 3rd student is medium active
+    const hasGoodProgress = index % 4 === 0; // Every 4th user has good progress
+    const hasMediumProgress = index % 4 === 1; // Every 4th user has medium progress
+    const isActive = index % 3 === 0; // Every 3rd user is active
+    const isMediumActive = index % 3 === 1; // Every 3rd user is medium active
 
     // Determine statuses
     const activeStatus = isActive ? 2 : (isMediumActive ? 1 : 0); // 2=green, 1=yellow, 0=red
@@ -90,45 +90,57 @@ function generateDebugStudents(): StudentData[] {
 }
 
 export default function InstructorDashboard() {
-  const [students, setStudents] = useState<StudentData[]>([]);
+  const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     // ============================================================================
     // DEBUG: Skip API call and use dummy data if debug mode is enabled
     // ============================================================================
     if (DEBUG_MODE) {
-      setStudents(generateDebugStudents());
+      setUsers(generateDebugUsers());
       setLoading(false);
       return;
     }
 
     // ============================================================================
-    // PRODUCTION: Fetch real student data from the API
+    // PRODUCTION: Fetch real user data from the API
     // ============================================================================
-    async function fetchStudents() {
+    async function fetchUsers() {
       try {
         const response = await fetch('/api/instructor/students');
         if (!response.ok) {
-          throw new Error('Failed to fetch students');
+          throw new Error('Failed to fetch users');
         }
         const data = await response.json();
-        setStudents(data.students || []);
+        setUsers(data.students || []);
       } catch (error) {
-        console.error('Error fetching students:', error);
+        console.error('Error fetching users:', error);
       } finally {
         setLoading(false);
       }
     }
-    fetchStudents();
+    fetchUsers();
   }, []);
+
+  // Filter and sort users
+  const filteredAndSortedUsers = users
+    .filter((user) =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      const comparison = a.name.localeCompare(b.name);
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 text-white">
         <div className="container mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold mb-6">Instructor Dashboard</h1>
-          <div className="text-gray-400">Loading students...</div>
+          <div className="text-gray-400">Loading users...</div>
         </div>
       </div>
     );
@@ -139,19 +151,53 @@ export default function InstructorDashboard() {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Instructor Dashboard</h1>
         
+        {/* Search and Sort Controls */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          {/* Search Input */}
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-electric-blue focus:ring-1 focus:ring-electric-blue"
+            />
+          </div>
+          
+          {/* Sort Dropdown */}
+          <div className="sm:w-48">
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-electric-blue focus:ring-1 focus:ring-electric-blue"
+            >
+              <option value="asc">Sort: A-Z</option>
+              <option value="desc">Sort: Z-A</option>
+            </select>
+          </div>
+        </div>
+        
+        {/* Result Count */}
+        {!loading && users.length > 0 && (
+          <div className="text-gray-400 text-sm mb-4">
+            Showing {filteredAndSortedUsers.length} of {users.length} user{users.length !== 1 ? 's' : ''}
+            {searchQuery && ` matching "${searchQuery}"`}
+          </div>
+        )}
+        
         <div 
           className="grid gap-4"
           style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, auto))' }}
         >
-          {students.map((student) => (
+          {filteredAndSortedUsers.map((user) => (
             <div
-              key={student.id}
+              key={user.id}
               className="bg-gray-600 border border-light-steel-blue rounded-lg px-3 py-3 hover:border-electric-blue transition-colors w-fit"
               style={{ minWidth: '320px' }}
             >
               {/* Name on first line */}
               <div className="mb-2">
-                <h2 className="text-white font-medium text-lg whitespace-nowrap">{student.name}</h2>
+                <h2 className="text-white font-medium text-lg whitespace-nowrap">{user.name}</h2>
               </div>
 
               {/* Active and Progress status indicators on second line */}
@@ -159,8 +205,8 @@ export default function InstructorDashboard() {
                 {/* Active indicator */}
                 <div className="flex items-center gap-1.5">
                   <div className={`w-4 h-4 rounded-full ${
-                    student.activeStatus === 2 ? 'bg-green-500' : 
-                    student.activeStatus === 1 ? 'bg-yellow-500' : 
+                    user.activeStatus === 2 ? 'bg-green-500' : 
+                    user.activeStatus === 1 ? 'bg-yellow-500' : 
                     'bg-red-500'
                   }`}></div>
                   <span className="text-gray-300 text-sm font-medium">Active</span>
@@ -168,8 +214,8 @@ export default function InstructorDashboard() {
                 {/* Progress indicator */}
                 <div className="flex items-center gap-1.5">
                   <div className={`w-4 h-4 rounded-full ${
-                    student.progressStatus === 2 ? 'bg-green-500' : 
-                    student.progressStatus === 1 ? 'bg-yellow-500' : 
+                    user.progressStatus === 2 ? 'bg-green-500' : 
+                    user.progressStatus === 1 ? 'bg-yellow-500' : 
                     'bg-red-500'
                   }`}></div>
                   <span className="text-gray-300 text-sm font-medium">Progress</span>
@@ -182,8 +228,8 @@ export default function InstructorDashboard() {
                 <div>
                   <div className="text-gray-300 text-sm font-medium mb-1"># of Applications</div>
                   <div className="flex justify-between text-gray-400 text-sm">
-                    <span>Last Month: <span className="text-white">{student.applications.lastMonth}</span></span>
-                    <span>All Time: <span className="text-white">{student.applications.allTime}</span></span>
+                    <span>Last Month: <span className="text-white">{user.applications.lastMonth}</span></span>
+                    <span>All Time: <span className="text-white">{user.applications.allTime}</span></span>
                   </div>
                 </div>
 
@@ -191,8 +237,8 @@ export default function InstructorDashboard() {
                 <div>
                   <div className="text-gray-300 text-sm font-medium mb-1"># of In Person Events</div>
                   <div className="flex justify-between text-gray-400 text-sm">
-                    <span>Last Month: <span className="text-white">{student.events.lastMonth}</span></span>
-                    <span>All Time: <span className="text-white">{student.events.allTime}</span></span>
+                    <span>Last Month: <span className="text-white">{user.events.lastMonth}</span></span>
+                    <span>All Time: <span className="text-white">{user.events.allTime}</span></span>
                   </div>
                 </div>
 
@@ -200,8 +246,8 @@ export default function InstructorDashboard() {
                 <div>
                   <div className="text-gray-300 text-sm font-medium mb-1"># of Coffee Chat Attempts</div>
                   <div className="flex justify-between text-gray-400 text-sm">
-                    <span>Last Month: <span className="text-white">{student.coffeeChats.lastMonth}</span></span>
-                    <span>All Time: <span className="text-white">{student.coffeeChats.allTime}</span></span>
+                    <span>Last Month: <span className="text-white">{user.coffeeChats.lastMonth}</span></span>
+                    <span>All Time: <span className="text-white">{user.coffeeChats.allTime}</span></span>
                   </div>
                 </div>
 
@@ -209,8 +255,8 @@ export default function InstructorDashboard() {
                 <div>
                   <div className="text-gray-300 text-sm font-medium mb-1"># of LeetCode Problems</div>
                   <div className="flex justify-between text-gray-400 text-sm">
-                    <span>Last Month: <span className="text-white">{student.leetCode.lastMonth}</span></span>
-                    <span>All Time: <span className="text-white">{student.leetCode.allTime}</span></span>
+                    <span>Last Month: <span className="text-white">{user.leetCode.lastMonth}</span></span>
+                    <span>All Time: <span className="text-white">{user.leetCode.allTime}</span></span>
                   </div>
                 </div>
               </div>
@@ -218,8 +264,10 @@ export default function InstructorDashboard() {
           ))}
         </div>
 
-        {students.length === 0 && !loading && (
-          <div className="text-gray-400 text-center py-8">No students found.</div>
+        {filteredAndSortedUsers.length === 0 && !loading && (
+          <div className="text-gray-400 text-center py-8">
+            {searchQuery ? 'No users found matching your search.' : 'No users found.'}
+          </div>
         )}
       </div>
     </div>
