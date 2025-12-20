@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getInstructorSession } from '@/app/lib/instructor-auth';
 import { prisma } from '@/db';
+import bcrypt from 'bcrypt';
 
 // GET - Get current instructor session
 export async function GET() {
@@ -50,64 +51,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, we'll check against hardcoded credentials first
-    // In production, you should hash passwords and compare properly
-    if (username === 'instructor00' && password === 'opensource00') {
-      // Find or create the instructor with correct credentials
-      let instructor = await prisma.instructor.findUnique({
-        where: { username: 'instructor00' },
-      });
-
-      if (!instructor) {
-        // Create the instructor if it doesn't exist
-        instructor = await prisma.instructor.create({
-          data: {
-            username: 'instructor00',
-            password: 'opensource00', // In production, hash this
-          },
-        });
-      } else if (instructor.password !== 'opensource00') {
-        // Update password if it doesn't match (in case of old data)
-        instructor = await prisma.instructor.update({
-          where: { id: instructor.id },
-          data: { password: 'opensource00' },
-        });
-      }
-
-      // Set session cookie
-      const cookieStore = await cookies();
-      cookieStore.set('instructor_session', instructor.id, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-
-      return NextResponse.json({ success: true });
-    }
-
-    // Check if instructor exists and password matches (for future non-hardcoded instructors)
-    const existingInstructor = await prisma.instructor.findUnique({
+    // Find instructor by username
+    const instructor = await prisma.instructor.findUnique({
       where: { username },
     });
 
-    if (existingInstructor && existingInstructor.password === password) {
-      // Set session cookie
-      const cookieStore = await cookies();
-      cookieStore.set('instructor_session', existingInstructor.id, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-
-      return NextResponse.json({ success: true });
+    if (!instructor) {
+      return NextResponse.json(
+        { error: 'Invalid username or password' },
+        { status: 401 }
+      );
     }
 
-    return NextResponse.json(
-      { error: 'Invalid username or password' },
-      { status: 401 }
-    );
+    // Check if password is hashed (starts with $2a$, $2b$, or $2y$)
+    const isPasswordHashed = instructor.password.startsWith('$2a$') || 
+                            instructor.password.startsWith('$2b$') || 
+                            instructor.password.startsWith('$2y$');
+
+    let passwordMatches = false;
+
+    if (isPasswordHashed) {
+      // Compare with bcrypt
+      passwordMatches = await bcrypt.compare(password, instructor.password);
+    } else {
+      // Legacy plaintext password - compare directly, then hash it
+      passwordMatches = instructor.password === password;
+      
+      // If password matches and it's plaintext, hash it for future use
+      if (passwordMatches) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await prisma.instructor.update({
+          where: { id: instructor.id },
+          data: { password: hashedPassword },
+        });
+      }
+    }
+
+    if (!passwordMatches) {
+      return NextResponse.json(
+        { error: 'Invalid username or password' },
+        { status: 401 }
+      );
+    }
+
+    // Set session cookie
+    const cookieStore = await cookies();
+    cookieStore.set('instructor_session', instructor.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Instructor authentication error:', error);
     return NextResponse.json(
