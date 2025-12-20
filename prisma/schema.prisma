@@ -138,7 +138,7 @@ model Account {
 model Instructor {
   id                String   @id @default(cuid())
   username          String   @unique
-  password          String   // In production, this should be hashed
+  password          String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
