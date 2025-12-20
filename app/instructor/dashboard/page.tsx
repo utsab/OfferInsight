@@ -6,8 +6,8 @@ interface StudentData {
   id: string;
   name: string;
   email: string | null;
-  isActive: boolean;
-  progress: number;
+  activeStatus: number; // 0 = red, 1 = yellow, 2 = green
+  progressStatus: number; // 0 = red, 1 = yellow, 2 = green
   applications: {
     lastMonth: number;
     allTime: number;
@@ -76,12 +76,20 @@ export default function InstructorDashboard() {
                 <div className="flex items-center gap-3">
                   {/* Active indicator */}
                   <div className="flex items-center gap-1.5">
-                    <div className={`w-4 h-4 rounded-full ${student.isActive ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                    <div className={`w-4 h-4 rounded-full ${
+                      student.activeStatus === 2 ? 'bg-green-500' : 
+                      student.activeStatus === 1 ? 'bg-yellow-500' : 
+                      'bg-red-500'
+                    }`}></div>
                     <span className="text-gray-300 text-sm font-medium">Active</span>
                   </div>
                   {/* Progress indicator */}
                   <div className="flex items-center gap-1.5">
-                    <div className={`w-4 h-4 rounded-full ${student.progress >= 3 ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                    <div className={`w-4 h-4 rounded-full ${
+                      student.progressStatus === 2 ? 'bg-green-500' : 
+                      student.progressStatus === 1 ? 'bg-yellow-500' : 
+                      'bg-red-500'
+                    }`}></div>
                     <span className="text-gray-300 text-sm font-medium">Progress</span>
                   </div>
                 </div>

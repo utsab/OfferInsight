@@ -31,8 +31,11 @@ export async function GET() {
 
     // Get current month date range
     const { firstDayOfMonth, lastDayOfMonth } = getCurrentMonthDateRange();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const now = new Date();
+    const oneWeekAgo = new Date(now);
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const twoWeeksAgo = new Date(now);
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
     // Fetch all users
     const users = await prisma.user.findMany({
@@ -40,7 +43,6 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
-        onboardingProgress: true,
         createdAt: true,
       },
       orderBy: {
@@ -51,46 +53,54 @@ export async function GET() {
     // For each user, get their stats
     const studentsData = await Promise.all(
       users.map(async (user) => {
-        // Check if user is active (has any activity in last 30 days)
-        const recentActivity = await prisma.$transaction([
+        // Find the most recent dateModified across all card types for activeStatus
+        const [mostRecentApp, mostRecentLinkedIn, mostRecentEvent, mostRecentLeetCode] = await Promise.all([
           prisma.applications_With_Outreach.findFirst({
-            where: {
-              userId: user.id,
-              OR: [
-                { dateCreated: { gte: thirtyDaysAgo } },
-                { dateModified: { gte: thirtyDaysAgo } },
-              ],
-            },
+            where: { userId: user.id, dateModified: { not: null } },
+            select: { dateModified: true },
+            orderBy: { dateModified: 'desc' },
           }),
           prisma.linkedin_Outreach.findFirst({
-            where: {
-              userId: user.id,
-              OR: [
-                { dateCreated: { gte: thirtyDaysAgo } },
-                { dateModified: { gte: thirtyDaysAgo } },
-              ],
-            },
+            where: { userId: user.id, dateModified: { not: null } },
+            select: { dateModified: true },
+            orderBy: { dateModified: 'desc' },
           }),
           prisma.in_Person_Events.findFirst({
-            where: {
-              userId: user.id,
-              OR: [
-                { dateCreated: { gte: thirtyDaysAgo } },
-                { dateModified: { gte: thirtyDaysAgo } },
-              ],
-            },
+            where: { userId: user.id, dateModified: { not: null } },
+            select: { dateModified: true },
+            orderBy: { dateModified: 'desc' },
           }),
           prisma.leetcode_Practice.findFirst({
-            where: {
-              userId: user.id,
-              OR: [
-                { dateCreated: { gte: thirtyDaysAgo } },
-                { dateModified: { gte: thirtyDaysAgo } },
-              ],
-            },
+            where: { userId: user.id, dateModified: { not: null } },
+            select: { dateModified: true },
+            orderBy: { dateModified: 'desc' },
           }),
         ]);
-        const isActive = recentActivity.some(result => result !== null);
+
+        // Find the most recent dateModified across all card types
+        const allDates = [
+          mostRecentApp?.dateModified,
+          mostRecentLinkedIn?.dateModified,
+          mostRecentEvent?.dateModified,
+          mostRecentLeetCode?.dateModified,
+        ].filter((date): date is Date => date !== null && date !== undefined);
+
+        const mostRecentDate = allDates.length > 0 
+          ? new Date(Math.max(...allDates.map(d => d.getTime())))
+          : null;
+
+        // Calculate activeStatus based on most recent dateModified
+        // Green (2): within 1 week, Yellow (1): within 2 weeks, Red (0): beyond 2 weeks or no activity
+        let activeStatus = 0; // red
+        if (mostRecentDate) {
+          if (mostRecentDate >= oneWeekAgo) {
+            activeStatus = 2; // green - within 1 week
+          } else if (mostRecentDate >= twoWeeksAgo) {
+            activeStatus = 1; // yellow - within 2 weeks but not 1 week
+          } else {
+            activeStatus = 0; // red - beyond 2 weeks
+          }
+        }
 
         // Count completed applications (last month and all time)
         const [applicationsLastMonth, applicationsAllTime] = await Promise.all([
@@ -173,12 +183,27 @@ export async function GET() {
           }),
         ]);
 
+        // Calculate progressStatus based on metrics:
+        // There are 3 categories:
+        // 1. Applications (>= 1)
+        // 2. Events/Coffee Chats (events >= 1 OR coffeeChats >= 4)
+        // 3. LeetCode (>= 4)
+        // Green (2): All 3 categories met
+        // Yellow (1): 2 categories met (missing only 1)
+        // Red (0): 1 or 0 categories met (missing 2 or more)
+        const hasApplications = applicationsLastMonth >= 1;
+        const hasEventsOrCoffeeChats = eventsLastMonth >= 1 || coffeeChatsLastMonth >= 4;
+        const hasLeetCode = leetCodeLastMonth >= 4;
+        
+        const categoriesMet = [hasApplications, hasEventsOrCoffeeChats, hasLeetCode].filter(Boolean).length;
+        const progressStatus = categoriesMet === 3 ? 2 : categoriesMet === 2 ? 1 : 0;
+
         return {
           id: user.id,
           name: user.name || 'Unknown',
           email: user.email,
-          isActive,
-          progress: user.onboardingProgress || 0,
+          activeStatus,
+          progressStatus,
           applications: {
             lastMonth: applicationsLastMonth,
             allTime: applicationsAllTime,
