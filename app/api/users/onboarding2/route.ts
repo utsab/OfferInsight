@@ -44,17 +44,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || 'Not authenticated' }, { status: 401 });
     }
 
     const { monthsToSecureInternship, commitment, appsWithOutreachPerWeek, linkedinOutreachPerWeek, inPersonEventsPerMonth, careerFairsPerYear } = await request.json();
 
     const updatedUser = await prisma.user.update({
-      where: { email: session.user.email },
+      where: { id: userId },
       data: {
         monthsToSecureInternship,
         commitment,
