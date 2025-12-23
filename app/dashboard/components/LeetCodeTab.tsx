@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
 import { Plus, Trash2, X } from 'lucide-react';
-import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
+import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { LeetEntry, LeetColumnId, BoardTimeFilter, LeetStatus } from './types';

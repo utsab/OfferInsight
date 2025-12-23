@@ -14,9 +14,6 @@ import EventsTab from './components/EventsTab';
 import LeetCodeTab from './components/LeetCodeTab';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
-const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
-const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
-
 // ===== PROJECTED OFFER DATE FORMULA START =====
 // Copied from onboarding page3 so product engineers can tweak independently.
 function calculateProjectedOfferDate(
@@ -99,34 +96,6 @@ const ENABLE_DASHBOARD_MOCKS = false;
 // The dates will be properly saved to the database as DateTime when creating or updating records.
 const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
-
-type TimeParts = {
-  hour: string;
-  minute: string;
-  period: 'AM' | 'PM';
-};
-
-const toLocalTimeParts = (value: string): TimeParts => {
-  try {
-    const date = new Date(value);
-    let hours = date.getHours();
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const period = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    if (hours === 0) hours = 12;
-    return {
-      hour: String(hours).padStart(2, '0'),
-      minute: minutes,
-      period,
-    };
-  } catch {
-    return {
-      hour: '',
-      minute: '',
-      period: 'AM',
-    };
-  }
-};
 
 type ApplicationStatus = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
 type ApplicationColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
