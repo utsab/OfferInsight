@@ -379,9 +379,12 @@ export default function ApplicationsTab({
                       ];
                     } else {
                       // Different column: remove from old, add to new
-                      newColumns[oldColumn] = [
-                        ...newColumns[oldColumn].slice(0, oldIndex),
-                        ...newColumns[oldColumn].slice(oldIndex + 1)
+                      // Use type assertion to help TypeScript understand oldColumn is not null here
+                      const sourceColumn = oldColumn as ApplicationColumnId;
+                      const sourceArray = newColumns[sourceColumn];
+                      newColumns[sourceColumn] = [
+                        ...sourceArray.slice(0, oldIndex),
+                        ...sourceArray.slice(oldIndex + 1)
                       ];
                       newColumns[targetColumn] = [...newColumns[targetColumn], updatedCard];
                     }
