@@ -1672,13 +1672,13 @@ const hasSeededMockDataRef = useRef(false);
   ]);
 
   const projectedOfferDateText = useMemo(() => {
-    if (!projectedOfferDate) return '—';
+    if (!projectedOfferDate) return targetOfferDateText;
     try {
       return projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
     } catch {
       return '—';
     }
-  }, [projectedOfferDate]);
+  }, [projectedOfferDate, targetOfferDateText]);
 
   // Debounced function to sync projected offer date (prevents rapid-fire requests)
   const syncProjectedOfferDate = useDebouncedCallback((date: Date) => {
