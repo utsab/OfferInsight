@@ -12,6 +12,7 @@ import ApplicationsTab from './components/ApplicationsTab';
 import CoffeeChatsTab from './components/CoffeeChatsTab';
 import EventsTab from './components/EventsTab';
 import LeetCodeTab from './components/LeetCodeTab';
+import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
@@ -368,7 +369,7 @@ export default function Page() {
         const url = userIdParam ? `/api/applications_with_outreach?id=${id}&userId=${userIdParam}` : `/api/applications_with_outreach?id=${id}`;
         const response = await fetch(url, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getHeadersWithTimezone(),
           body: JSON.stringify({ status }),
         });
         if (!response.ok) {
@@ -539,7 +540,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
         const url = userIdParam ? `/api/linkedin_outreach?id=${id}&userId=${userIdParam}` : `/api/linkedin_outreach?id=${id}`;
         const response = await fetch(url, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getHeadersWithTimezone(),
           body: JSON.stringify({ status }),
         });
         if (!response.ok) throw new Error('Failed to update LinkedIn outreach status');
@@ -696,7 +697,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
         const url = userIdParam ? `/api/in_person_events?id=${id}&userId=${userIdParam}` : `/api/in_person_events?id=${id}`;
         const response = await fetch(url, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getHeadersWithTimezone(),
           body: JSON.stringify({ status }),
         });
         if (!response.ok) throw new Error('Failed to update event status');
@@ -854,7 +855,7 @@ const hasSeededMockDataRef = useRef(false);
         const url = userIdParam ? `/api/leetcode?id=${id}&userId=${userIdParam}` : `/api/leetcode?id=${id}`;
         const response = await fetch(url, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getHeadersWithTimezone(),
           body: JSON.stringify({ status }),
         });
         if (!response.ok) throw new Error('Failed to update LeetCode status');
@@ -1665,7 +1666,7 @@ const hasSeededMockDataRef = useRef(false);
     const url = userIdParam ? `/api/users/projected-offer?userId=${userIdParam}` : '/api/users/projected-offer';
     fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeadersWithTimezone(),
       body: JSON.stringify({ projectedOfferDate: iso }),
     })
       .then(response => {
@@ -2075,11 +2076,12 @@ function ApplicationModal({
       return;
     }
     // ===== DATE FIELD EDITING: Convert date strings to ISO DateTime if provided =====
-    const submitData: Partial<Application> = { ...formData };
+    const { dateCreated, dateModified, ...restFormData } = formData;
+    const submitData: Partial<Application> = { ...restFormData };
     if (ENABLE_DATE_FIELD_EDITING) {
-      if (formData.dateCreated) {
+      if (dateCreated) {
         try {
-          const date = new Date(formData.dateCreated);
+          const date = new Date(dateCreated);
           if (!isNaN(date.getTime())) {
             submitData.dateCreated = date.toISOString();
           }
@@ -2087,10 +2089,10 @@ function ApplicationModal({
           console.error('Error parsing dateCreated:', error);
         }
       }
-      if (formData.dateModified !== undefined) {
+      if (dateModified !== undefined) {
         try {
-          if (formData.dateModified) {
-            const date = new Date(formData.dateModified);
+          if (dateModified) {
+            const date = new Date(dateModified);
             if (!isNaN(date.getTime())) {
               submitData.dateModified = date.toISOString();
             }
@@ -2330,11 +2332,12 @@ function LinkedinOutreachModal({
       return;
     }
     // ===== DATE FIELD EDITING: Convert date strings to ISO DateTime if provided =====
-    const submitData: Partial<LinkedinOutreach> = { ...formData };
+    const { dateCreated, dateModified, ...restFormData } = formData;
+    const submitData: Partial<LinkedinOutreach> = { ...restFormData };
     if (ENABLE_DATE_FIELD_EDITING) {
-      if (formData.dateCreated) {
+      if (dateCreated) {
         try {
-          const date = new Date(formData.dateCreated);
+          const date = new Date(dateCreated);
           if (!isNaN(date.getTime())) {
             submitData.dateCreated = date.toISOString();
           }
@@ -2342,10 +2345,10 @@ function LinkedinOutreachModal({
           console.error('Error parsing dateCreated:', error);
         }
       }
-      if (formData.dateModified !== undefined) {
+      if (dateModified !== undefined) {
         try {
-          if (formData.dateModified) {
-            const date = new Date(formData.dateModified);
+          if (dateModified) {
+            const date = new Date(dateModified);
             if (!isNaN(date.getTime())) {
               submitData.dateModified = date.toISOString();
             }

@@ -1,5 +1,7 @@
 'use client';
 
+import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
+
 import { Plus, Trash2 } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
@@ -331,14 +333,14 @@ export default function ApplicationsTab({
               if (editingApp) {
                 const response = await fetch(url, {
                   method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: getHeadersWithTimezone(),
                   body: JSON.stringify({ ...data, id: editingApp.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update application');
               } else {
                 const response = await fetch(url, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: getHeadersWithTimezone(),
                   body: JSON.stringify(data),
                 });
                 if (!response.ok) throw new Error('Failed to create application');
