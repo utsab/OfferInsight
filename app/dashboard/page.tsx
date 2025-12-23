@@ -2197,74 +2197,78 @@ function ApplicationModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-white font-semibold mb-2">Hiring Manager</label>
-              <input
-                type="text"
-                value={formData.hiringManager}
-                onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                placeholder="Hiring manager name"
-              />
-            </div>
+          {application && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white font-semibold mb-2">Hiring Manager</label>
+                  <input
+                    type="text"
+                    value={formData.hiringManager}
+                    onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                    placeholder="Hiring manager name"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-white font-semibold mb-2">Recruiter</label>
-              <input
-                type="text"
-                value={formData.recruiter}
-                onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                placeholder="Recruiter name"
-              />
-            </div>
-          </div>
+                <div>
+                  <label className="block text-white font-semibold mb-2">Recruiter</label>
+                  <input
+                    type="text"
+                    value={formData.recruiter}
+                    onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                    placeholder="Recruiter name"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Message to Hiring Manager</label>
-            <textarea
-              value={formData.msgToManager}
-              onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
-              placeholder="Enter message sent to hiring manager"
-            />
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Message to Hiring Manager</label>
+                <textarea
+                  value={formData.msgToManager}
+                  onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
+                  placeholder="Enter message sent to hiring manager"
+                />
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Message to Recruiter</label>
-            <textarea
-              value={formData.msgToRecruiter}
-              onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
-              placeholder="Enter message sent to recruiter"
-            />
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Message to Recruiter</label>
+                <textarea
+                  value={formData.msgToRecruiter}
+                  onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
+                  placeholder="Enter message sent to recruiter"
+                />
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as ApplicationStatus })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-            >
-              <option value="applied">Applied</option>
-              <option value="messagedHiringManager">Messaged Hiring Manager</option>
-              <option value="messagedRecruiter">Messaged Recruiter</option>
-              <option value="followedUp">Followed Up</option>
-              <option value="interview">Interview</option>
-            </select>
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as ApplicationStatus })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                >
+                  <option value="applied">Applied</option>
+                  <option value="messagedHiringManager">Messaged Hiring Manager</option>
+                  <option value="messagedRecruiter">Messaged Recruiter</option>
+                  <option value="followedUp">Followed Up</option>
+                  <option value="interview">Interview</option>
+                </select>
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
-              placeholder="Additional notes"
-            />
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                  placeholder="Additional notes"
+                />
+              </div>
+            </>
+          )}
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
@@ -2467,63 +2471,67 @@ function LinkedinOutreachModal({
             </div>
           </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">LinkedIn URL</label>
-            <input
-              type="url"
-              value={formData.linkedInUrl}
-              onChange={(e) => setFormData({ ...formData, linkedInUrl: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-              placeholder="https://linkedin.com/in/..."
-            />
-          </div>
+          {linkedinOutreach && (
+            <>
+              <div>
+                <label className="block text-white font-semibold mb-2">LinkedIn URL</label>
+                <input
+                  type="url"
+                  value={formData.linkedInUrl}
+                  onChange={(e) => setFormData({ ...formData, linkedInUrl: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  placeholder="https://linkedin.com/in/..."
+                />
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Message</label>
-            <textarea
-              value={formData.message}
-              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
-              placeholder="Message sent to the person"
-            />
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Message</label>
+                <textarea
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                  placeholder="Message sent to the person"
+                />
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as LinkedinOutreachStatus })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-            >
-              <option value="outreachRequestSent">Outreach Request Sent</option>
-              <option value="accepted">Request Accepted</option>
-              <option value="followedUp">Followed Up</option>
-              <option value="linkedinOutreach">Coffee Chat</option>
-            </select>
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as LinkedinOutreachStatus })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                >
+                  <option value="outreachRequestSent">Outreach Request Sent</option>
+                  <option value="accepted">Request Accepted</option>
+                  <option value="followedUp">Followed Up</option>
+                  <option value="linkedinOutreach">Coffee Chat</option>
+                </select>
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
-              placeholder="Additional notes"
-            />
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                  placeholder="Additional notes"
+                />
+              </div>
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="recievedReferral"
-              checked={formData.recievedReferral}
-              onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
-              className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
-            />
-            <label htmlFor="recievedReferral" className="ml-2 text-white font-semibold">
-              Received Referral
-            </label>
-          </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="recievedReferral"
+                  checked={formData.recievedReferral}
+                  onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
+                  className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
+                />
+                <label htmlFor="recievedReferral" className="ml-2 text-white font-semibold">
+                  Received Referral
+                </label>
+              </div>
+            </>
+          )}
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
@@ -2824,139 +2832,143 @@ function InPersonEventModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-white font-semibold mb-2">Time</label>
-              <div className="flex gap-2">
-                <select
-                  value={formData.timeHour}
-                  onChange={(e) => setFormData(prev => ({ ...prev, timeHour: e.target.value }))}
-                  className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
-                >
-                  {hourOptions.map(hour => (
-                    <option key={hour} value={hour}>{hour}</option>
-                  ))}
-                </select>
-                <select
-                  value={formData.timeMinute}
-                  onChange={(e) => setFormData(prev => ({ ...prev, timeMinute: e.target.value }))}
-                  className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
-                >
-                  {minuteOptions.map(minute => (
-                    <option key={minute} value={minute}>{minute}</option>
-                  ))}
-                </select>
-                <select
-                  value={formData.timePeriod}
-                  onChange={(e) => setFormData(prev => ({ ...prev, timePeriod: e.target.value as 'AM' | 'PM' }))}
-                  className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
-                >
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
+          {eventItem && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white font-semibold mb-2">Time</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.timeHour}
+                      onChange={(e) => setFormData(prev => ({ ...prev, timeHour: e.target.value }))}
+                      className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                    >
+                      {hourOptions.map(hour => (
+                        <option key={hour} value={hour}>{hour}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={formData.timeMinute}
+                      onChange={(e) => setFormData(prev => ({ ...prev, timeMinute: e.target.value }))}
+                      className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                    >
+                      {minuteOptions.map(minute => (
+                        <option key={minute} value={minute}>{minute}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={formData.timePeriod}
+                      onChange={(e) => setFormData(prev => ({ ...prev, timePeriod: e.target.value as 'AM' | 'PM' }))}
+                      className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-white font-semibold mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                    placeholder="City, Online, etc."
+                  />
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="block text-white font-semibold mb-2">Location</label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                placeholder="City, Online, etc."
-              />
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Event URL</label>
-            <input
-              type="url"
-              value={formData.url}
-              onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-              placeholder="https://example.com/event"
-            />
-          </div>
-
-          <div>
-            <label className="block text-white font-semibold mb-2">Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as InPersonEventStatus }))}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-            >
-              <option value="scheduled">Scheduled</option>
-              <option value="attended">Attended</option>
-              <option value="linkedinRequestsSent">LinkedIn Requests Sent</option>
-              <option value="followUp">Followed Up</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-white font-semibold mb-2">Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
-              placeholder="Additional details or outcomes"
-            />
-          </div>
-
-          <div className="flex items-center mb-4">
-            <input
-              type="checkbox"
-              id="careerFair"
-              checked={formData.careerFair}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                careerFair: e.target.checked,
-                numOfInterviews: e.target.checked ? prev.numOfInterviews : ''
-              }))}
-              className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
-            />
-            <label htmlFor="careerFair" className="ml-2 text-white font-semibold">
-              This is a career fair
-            </label>
-          </div>
-
-          <div className={`grid gap-4 ${formData.careerFair ? 'grid-cols-3' : 'grid-cols-2'}`}>
-            <div>
-              <label className="block text-white font-semibold mb-2">No. of People Spoken To</label>
-              <input
-                type="number"
-                min={0}
-                value={formData.numPeopleSpokenTo}
-                onChange={(e) => setFormData(prev => ({ ...prev, numPeopleSpokenTo: e.target.value }))}
-                placeholder="#"
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-              />
-            </div>
-            <div>
-              <label className="block text-white font-semibold mb-2">No. of LinkedIn Requests</label>
-              <input
-                type="number"
-                min={0}
-                value={formData.numLinkedInRequests}
-                onChange={(e) => setFormData(prev => ({ ...prev, numLinkedInRequests: e.target.value }))}
-                placeholder="#"
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-              />
-            </div>
-            {formData.careerFair && (
               <div>
-                <label className="block text-white font-semibold mb-2">No. of Interviews</label>
+                <label className="block text-white font-semibold mb-2">Event URL</label>
                 <input
-                  type="number"
-                  min={0}
-                  value={formData.numOfInterviews}
-                  onChange={(e) => setFormData(prev => ({ ...prev, numOfInterviews: e.target.value }))}
-                  placeholder="#"
+                  type="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                   className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  placeholder="https://example.com/event"
                 />
               </div>
-            )}
-          </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as InPersonEventStatus }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                >
+                  <option value="scheduled">Scheduled</option>
+                  <option value="attended">Attended</option>
+                  <option value="linkedinRequestsSent">LinkedIn Requests Sent</option>
+                  <option value="followUp">Followed Up</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                  placeholder="Additional details or outcomes"
+                />
+              </div>
+
+              <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  id="careerFair"
+                  checked={formData.careerFair}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    careerFair: e.target.checked,
+                    numOfInterviews: e.target.checked ? prev.numOfInterviews : ''
+                  }))}
+                  className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
+                />
+                <label htmlFor="careerFair" className="ml-2 text-white font-semibold">
+                  This is a career fair
+                </label>
+              </div>
+
+              <div className={`grid gap-4 ${formData.careerFair ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <div>
+                  <label className="block text-white font-semibold mb-2">No. of People Spoken To</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.numPeopleSpokenTo}
+                    onChange={(e) => setFormData(prev => ({ ...prev, numPeopleSpokenTo: e.target.value }))}
+                    placeholder="#"
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white font-semibold mb-2">No. of LinkedIn Requests</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.numLinkedInRequests}
+                    onChange={(e) => setFormData(prev => ({ ...prev, numLinkedInRequests: e.target.value }))}
+                    placeholder="#"
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  />
+                </div>
+                {formData.careerFair && (
+                  <div>
+                    <label className="block text-white font-semibold mb-2">No. of Interviews</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={formData.numOfInterviews}
+                      onChange={(e) => setFormData(prev => ({ ...prev, numOfInterviews: e.target.value }))}
+                      placeholder="#"
+                      className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                    />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
@@ -3159,87 +3171,91 @@ function LeetModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-white font-semibold mb-2">
-                <span className="flex items-center gap-2">
-                  Data Structure / Algorithm
-                  <span ref={tooltipRef} className="relative inline-flex items-center">
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setIsLeetHelpOpen((prev: boolean) => !prev)}
-                      onFocus={() => setIsLeetHelpOpen(true)}
-                      onBlur={() => setIsLeetHelpOpen(false)}
-                      className="w-4 h-4 flex items-center justify-center rounded-full bg-electric-blue text-gray-900 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-electric-blue/60"
-                      aria-label="What data structure or algorithm was used?"
-                    >
-                      ?
-                    </button>
-                    {isLeetHelpOpen && (
-                      <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-72 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs shadow-lg z-10">
-                        What data structure, algorithm, or other problem solving technique was needed to solve this problem?
-                      </div>
-                    )}
-                  </span>
-                </span>
-              </label>
-              <input
-                type="text"
-                value={formData.problemType}
-                onChange={(e) => setFormData(prev => ({ ...prev, problemType: e.target.value }))}
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                placeholder="Arrays, DP, Graphs, ..."
-              />
-            </div>
-            <div>
-              <label className="block text-white font-semibold mb-2">Difficulty</label>
-              <select
-                value={formData.difficulty}
-                onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
-                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-              >
-                <option value="">Select difficulty</option>
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-              </select>
-            </div>
-          </div>
+          {entry && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white font-semibold mb-2">
+                    <span className="flex items-center gap-2">
+                      Data Structure / Algorithm
+                      <span ref={tooltipRef} className="relative inline-flex items-center">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => setIsLeetHelpOpen((prev: boolean) => !prev)}
+                          onFocus={() => setIsLeetHelpOpen(true)}
+                          onBlur={() => setIsLeetHelpOpen(false)}
+                          className="w-4 h-4 flex items-center justify-center rounded-full bg-electric-blue text-gray-900 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-electric-blue/60"
+                          aria-label="What data structure or algorithm was used?"
+                        >
+                          ?
+                        </button>
+                        {isLeetHelpOpen && (
+                          <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-72 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs shadow-lg z-10">
+                            What data structure, algorithm, or other problem solving technique was needed to solve this problem?
+                          </div>
+                        )}
+                      </span>
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.problemType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, problemType: e.target.value }))}
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                    placeholder="Arrays, DP, Graphs, ..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-white font-semibold mb-2">Difficulty</label>
+                  <select
+                    value={formData.difficulty}
+                    onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                  >
+                    <option value="">Select difficulty</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Problem URL</label>
-            <input
-              type="url"
-              value={formData.url}
-              onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-              placeholder="https://leetcode.com/problems/..."
-            />
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Problem URL</label>
+                <input
+                  type="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  placeholder="https://leetcode.com/problems/..."
+                />
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Signal / Cue</label>
-            <textarea
-              value={formData.reflection}
-              onChange={(e) => setFormData(prev => ({ ...prev, reflection: e.target.value }))}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[120px]"
-              placeholder="Was there anything in the original problem description that signaled to you that this problem requires the data structure/algorithm you listed above?"
-            />
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Signal / Cue</label>
+                <textarea
+                  value={formData.reflection}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reflection: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[120px]"
+                  placeholder="Was there anything in the original problem description that signaled to you that this problem requires the data structure/algorithm you listed above?"
+                />
+              </div>
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as LeetStatus }))}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-            >
-              <option value="planned">Planned</option>
-              <option value="solved">Solved</option>
-              <option value="reflected">Reflected</option>
-            </select>
-          </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as LeetStatus }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                >
+                  <option value="planned">Planned</option>
+                  <option value="solved">Solved</option>
+                  <option value="reflected">Reflected</option>
+                </select>
+              </div>
+            </>
+          )}
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
