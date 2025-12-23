@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { SignOut } from "./auth-components"
 import { Settings, ChevronDown } from "lucide-react";
 
@@ -14,6 +15,7 @@ export function AuthenticatedUserButton() {
   const [userData, setUserData] = useState<UserData>({ name: null, image: null });
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     // Fetch user data
@@ -35,7 +37,7 @@ export function AuthenticatedUserButton() {
     };
 
     fetchUserData();
-  }, []);
+  }, [pathname]); // Refetch when route changes (e.g., after onboarding)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
