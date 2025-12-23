@@ -1241,11 +1241,27 @@ const hasSeededMockDataRef = useRef(false);
   useEffect(() => {
     if (ENABLE_DASHBOARD_MOCKS) return;
     let isMounted = true;
-    const fetchUser = async () => {
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 500; // 500ms between retries
+    
+    const fetchUser = async (attempt: number = 0) => {
       try {
         const url = userIdParam ? `/api/users/onboarding2?userId=${userIdParam}` : '/api/users/onboarding2';
         const res = await fetch(url);
-        if (!res.ok) return;
+        if (!res.ok) {
+          // If user not found and we haven't exceeded retries, retry after a delay
+          // This handles race conditions where the user was just created
+          if (res.status === 404 && attempt < maxRetries && isMounted) {
+            setTimeout(() => {
+              if (isMounted) {
+                fetchUser(attempt + 1);
+              }
+            }, retryDelay * (attempt + 1)); // Exponential backoff
+            return;
+          }
+          return;
+        }
         const user = await res.json();
         if (isMounted) {
           setUserData(user);
@@ -1262,7 +1278,14 @@ const hasSeededMockDataRef = useRef(false);
           }
         }
       } catch (e) {
-        // non-fatal: leave as null
+        // If error and we haven't exceeded retries, retry after a delay
+        if (attempt < maxRetries && isMounted) {
+          setTimeout(() => {
+            if (isMounted) {
+              fetchUser(attempt + 1);
+            }
+          }, retryDelay * (attempt + 1));
+        }
       }
     };
     fetchUser();

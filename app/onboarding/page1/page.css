@@ -1,7 +1,7 @@
 /* Custom styles for the new onboarding page1 design */
 
-/* Main container spacing */
-.min-h-screen {
+/* Main container spacing - scoped to onboarding page1 only */
+[data-onboarding-page="page1"].min-h-screen {
   padding-top: 10rem;    /* Space between navbar and component */
   padding-bottom: 10rem; /* Space between component and bottom */
 }
@@ -84,7 +84,7 @@ select::-webkit-scrollbar-thumb:hover {
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  .min-h-screen {
+  [data-onboarding-page="page1"].min-h-screen {
     padding-top: 1rem;    /* Reduced spacing on mobile */
     padding-bottom: 1rem;
   }
