@@ -3,6 +3,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/db";
 import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+import { getDateInUserTimezone } from "@/app/lib/server-date-utils";
 
 // GET all LeetCode records for the logged-in user (or specified user if instructor)
 export async function GET(request: NextRequest) {
@@ -61,8 +62,8 @@ export async function POST(request: NextRequest) {
         userId: userId,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
-        // dateModified: Set to current date on create, unless ENABLE_DATE_FIELD_EDITING provides a value
-        dateModified: dateModified ? new Date(dateModified) : new Date(),
+        // dateModified: Set to current date on create, or use provided value if specified (adjusted for user's timezone)
+        dateModified: dateModified ? new Date(dateModified) : getDateInUserTimezone(),
       },
     });
 
@@ -83,7 +84,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { status, dateModified } = body;
+    const { status } = body;
 
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
@@ -107,11 +108,17 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
+    // Only update if status actually changed
+    if (status === existing.status) {
+      // Status unchanged, return existing problem without updating
+      return NextResponse.json(existing);
+    }
+
     // Update status and dateModified
-    // dateModified: Always set to current date on status change, unless ENABLE_DATE_FIELD_EDITING provides a value
+    // dateModified: Set to current date when status changes (adjusted for user's timezone)
     const updateData: any = { 
       status,
-      dateModified: dateModified ? new Date(dateModified) : new Date(),
+      dateModified: getDateInUserTimezone(),
     };
 
     const updated = await prisma.leetcode_Practice.update({
@@ -135,7 +142,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
-    const { id, problem, problemType, difficulty, url, reflection, status, dateCreated, dateModified } = await request.json(); // ===== DATE FIELD EDITING =====
+    const { id, problem, problemType, difficulty, url, reflection, status, dateCreated } = await request.json(); // ===== DATE FIELD EDITING =====
 
     if (!id) {
       return NextResponse.json({ error: "Problem ID is required" }, { status: 400 });
@@ -152,21 +159,69 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
-    const updatedProblem = await prisma.leetcode_Practice.update({
-      where: { id },
-      data: {
-        ...(problem !== undefined ? { problem: problem?.trim() || existing.problem } : {}),
-        ...(problemType !== undefined ? { problemType: problemType?.trim() || null } : {}),
-        ...(difficulty !== undefined ? { difficulty: difficulty?.trim() || null } : {}),
-        ...(url !== undefined ? { url: url?.trim() || null } : {}),
-        ...(reflection !== undefined ? { reflection: reflection?.trim() || null } : {}),
-        ...(status !== undefined ? { status } : {}),
-        // ===== DATE FIELD EDITING: Allow updating dateCreated and dateModified if provided =====
-        ...(dateCreated !== undefined ? { dateCreated: new Date(dateCreated) } : {}),
-        // dateModified: Always set to current date on any field update, unless ENABLE_DATE_FIELD_EDITING provides a value
-        dateModified: dateModified ? new Date(dateModified) : new Date(),
-      },
-    });
+    // Build update data only for fields that have actually changed
+    const updateData: any = {};
+    let hasChanges = false;
+
+    if (problem !== undefined) {
+      const trimmedProblem = problem?.trim() || existing.problem;
+      if (trimmedProblem !== existing.problem) {
+        updateData.problem = trimmedProblem;
+        hasChanges = true;
+      }
+    }
+    if (problemType !== undefined) {
+      const trimmedProblemType = problemType?.trim() || null;
+      if (trimmedProblemType !== existing.problemType) {
+        updateData.problemType = trimmedProblemType;
+        hasChanges = true;
+      }
+    }
+    if (difficulty !== undefined) {
+      const trimmedDifficulty = difficulty?.trim() || null;
+      if (trimmedDifficulty !== existing.difficulty) {
+        updateData.difficulty = trimmedDifficulty;
+        hasChanges = true;
+      }
+    }
+    if (url !== undefined) {
+      const trimmedUrl = url?.trim() || null;
+      if (trimmedUrl !== existing.url) {
+        updateData.url = trimmedUrl;
+        hasChanges = true;
+      }
+    }
+    if (reflection !== undefined) {
+      const trimmedReflection = reflection?.trim() || null;
+      if (trimmedReflection !== existing.reflection) {
+        updateData.reflection = trimmedReflection;
+        hasChanges = true;
+      }
+    }
+    if (status !== undefined && status !== existing.status) {
+      updateData.status = status;
+      hasChanges = true;
+    }
+    // ===== DATE FIELD EDITING: Allow updating dateCreated if provided =====
+    if (dateCreated !== undefined) {
+      const newDateCreated = new Date(dateCreated);
+      if (newDateCreated.getTime() !== existing.dateCreated.getTime()) {
+        updateData.dateCreated = newDateCreated;
+        hasChanges = true;
+      }
+    }
+    // dateModified: Only update if at least one field actually changed (adjusted for user's timezone)
+    if (hasChanges) {
+      updateData.dateModified = getDateInUserTimezone();
+    }
+
+    // Only perform update if there are actual changes
+    const updatedProblem = hasChanges
+      ? await prisma.leetcode_Practice.update({
+          where: { id },
+          data: updateData,
+        })
+      : existing;
 
     return NextResponse.json(updatedProblem);
   } catch (error) {

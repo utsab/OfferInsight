@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db";
 import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+import { getDateInUserTimezone } from "@/app/lib/server-date-utils";
 
 // GET: Fetch all LinkedIn outreach for the current user (or specified user if instructor)
 export async function GET(request: NextRequest) {
@@ -50,8 +51,8 @@ export async function POST(request: NextRequest) {
         userId: userId,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: data.dateCreated ? new Date(data.dateCreated) : undefined,
-        // dateModified: Set to current date on create, unless ENABLE_DATE_FIELD_EDITING provides a value
-        dateModified: data.dateModified ? new Date(data.dateModified) : new Date(),
+        // dateModified: Set to current date on create, or use provided value if specified (adjusted for user's timezone)
+        dateModified: data.dateModified ? new Date(data.dateModified) : getDateInUserTimezone(),
       },
     });
 
@@ -82,7 +83,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { status, dateModified } = body;
+    const { status } = body;
 
     if (status === undefined) {
       return NextResponse.json(
@@ -106,11 +107,17 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Only update if status actually changed
+    if (status === outreach.status) {
+      // Status unchanged, return existing outreach without updating
+      return NextResponse.json(outreach);
+    }
+
     // Update status and dateModified
-    // dateModified: Always set to current date on status change, unless ENABLE_DATE_FIELD_EDITING provides a value
+    // dateModified: Set to current date when status changes (adjusted for user's timezone)
     const updateData: any = { 
       status,
-      dateModified: dateModified ? new Date(dateModified) : new Date(),
+      dateModified: getDateInUserTimezone(),
     };
 
     const updatedOutreach = await prisma.linkedin_Outreach.update({
@@ -158,35 +165,58 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update the outreach
-    const updatedOutreach = await prisma.linkedin_Outreach.update({
-      where: { id: data.id },
-      data: {
-        name: data.name !== undefined ? data.name : outreach.name,
-        company: data.company !== undefined ? data.company : outreach.company,
-        message: data.message !== undefined ? data.message : outreach.message,
-        linkedInUrl:
-          data.linkedInUrl !== undefined
-            ? data.linkedInUrl
-            : outreach.linkedInUrl,
-        notes: data.notes !== undefined ? data.notes : outreach.notes,
-        status: data.status !== undefined ? data.status : outreach.status,
-        recievedReferral:
-          data.recievedReferral !== undefined
-            ? data.recievedReferral
-            : outreach.recievedReferral,
-        // ===== DATE FIELD EDITING: Allow updating dateCreated and dateModified if provided =====
-        dateCreated:
-          data.dateCreated !== undefined
-            ? new Date(data.dateCreated)
-            : outreach.dateCreated,
-        // dateModified: Always set to current date on any field update, unless ENABLE_DATE_FIELD_EDITING provides a value
-        dateModified:
-          data.dateModified !== undefined
-            ? (data.dateModified ? new Date(data.dateModified) : new Date())
-            : new Date(),
-      },
-    });
+    // Build update data only for fields that have actually changed
+    const updateData: any = {};
+    let hasChanges = false;
+
+    if (data.name !== undefined && data.name !== outreach.name) {
+      updateData.name = data.name;
+      hasChanges = true;
+    }
+    if (data.company !== undefined && data.company !== outreach.company) {
+      updateData.company = data.company;
+      hasChanges = true;
+    }
+    if (data.message !== undefined && data.message !== outreach.message) {
+      updateData.message = data.message;
+      hasChanges = true;
+    }
+    if (data.linkedInUrl !== undefined && data.linkedInUrl !== outreach.linkedInUrl) {
+      updateData.linkedInUrl = data.linkedInUrl;
+      hasChanges = true;
+    }
+    if (data.notes !== undefined && data.notes !== outreach.notes) {
+      updateData.notes = data.notes;
+      hasChanges = true;
+    }
+    if (data.status !== undefined && data.status !== outreach.status) {
+      updateData.status = data.status;
+      hasChanges = true;
+    }
+    if (data.recievedReferral !== undefined && data.recievedReferral !== outreach.recievedReferral) {
+      updateData.recievedReferral = data.recievedReferral;
+      hasChanges = true;
+    }
+    // ===== DATE FIELD EDITING: Allow updating dateCreated if provided =====
+    if (data.dateCreated !== undefined) {
+      const newDateCreated = new Date(data.dateCreated);
+      if (newDateCreated.getTime() !== outreach.dateCreated.getTime()) {
+        updateData.dateCreated = newDateCreated;
+        hasChanges = true;
+      }
+    }
+    // dateModified: Only update if at least one field actually changed (adjusted for user's timezone)
+    if (hasChanges) {
+      updateData.dateModified = getDateInUserTimezone();
+    }
+
+    // Only perform update if there are actual changes
+    const updatedOutreach = hasChanges
+      ? await prisma.linkedin_Outreach.update({
+          where: { id: data.id },
+          data: updateData,
+        })
+      : outreach;
 
     return NextResponse.json(updatedOutreach);
   } catch (error) {

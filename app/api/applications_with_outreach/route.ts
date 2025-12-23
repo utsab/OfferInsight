@@ -3,6 +3,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/db";
 import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+import { getDateInUserTimezone } from "@/app/lib/server-date-utils";
 
 // GET all applications with outreach for the logged-in user (or specified user if instructor)
 export async function GET(request: NextRequest) {
@@ -74,8 +75,8 @@ export async function POST(request: NextRequest) {
         userId: userId,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
-        // dateModified: Set to current date on create, unless ENABLE_DATE_FIELD_EDITING provides a value
-        dateModified: dateModified ? new Date(dateModified) : new Date(),
+        // dateModified: Set to current date on create, or use provided value if specified (adjusted for user's timezone)
+        dateModified: dateModified ? new Date(dateModified) : getDateInUserTimezone(),
       },
     });
 
@@ -111,7 +112,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { status, dateModified } = body;
+    const { status } = body;
 
     if (status === undefined) {
       return NextResponse.json(
@@ -136,11 +137,17 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Only update if status actually changed
+    if (status === existingApplication.status) {
+      // Status unchanged, return existing application without updating
+      return NextResponse.json(existingApplication);
+    }
+
     // Update status and dateModified
-    // dateModified: Always set to current date on status change, unless ENABLE_DATE_FIELD_EDITING provides a value
+    // dateModified: Set to current date when status changes (adjusted for user's timezone)
     const updateData: any = { 
       status,
-      dateModified: dateModified ? new Date(dateModified) : new Date(),
+      dateModified: getDateInUserTimezone(),
     };
 
     const updatedApplication = await prisma.applications_With_Outreach.update({
@@ -179,7 +186,6 @@ export async function PUT(request: NextRequest) {
       notes,
       status,
       dateCreated, // ===== DATE FIELD EDITING =====
-      dateModified, // ===== DATE FIELD EDITING =====
     } = body;
 
     if (!id) {
@@ -205,28 +211,58 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Only include the fields that are being updated
+    // Only include the fields that are being updated and have actually changed
     const updateData: any = {};
+    let hasChanges = false;
 
-    if (company !== undefined) updateData.company = company;
-    if (hiringManager !== undefined) updateData.hiringManager = hiringManager;
-    if (msgToManager !== undefined) updateData.msgToManager = msgToManager;
-    if (recruiter !== undefined) updateData.recruiter = recruiter;
-    if (msgToRecruiter !== undefined)
+    if (company !== undefined && company !== existingApplication.company) {
+      updateData.company = company;
+      hasChanges = true;
+    }
+    if (hiringManager !== undefined && hiringManager !== existingApplication.hiringManager) {
+      updateData.hiringManager = hiringManager;
+      hasChanges = true;
+    }
+    if (msgToManager !== undefined && msgToManager !== existingApplication.msgToManager) {
+      updateData.msgToManager = msgToManager;
+      hasChanges = true;
+    }
+    if (recruiter !== undefined && recruiter !== existingApplication.recruiter) {
+      updateData.recruiter = recruiter;
+      hasChanges = true;
+    }
+    if (msgToRecruiter !== undefined && msgToRecruiter !== existingApplication.msgToRecruiter) {
       updateData.msgToRecruiter = msgToRecruiter;
-    if (notes !== undefined) updateData.notes = notes;
-    if (status !== undefined) updateData.status = status;
-    // ===== DATE FIELD EDITING: Allow updating dateCreated and dateModified if provided =====
-    if (dateCreated !== undefined) updateData.dateCreated = new Date(dateCreated);
-    // dateModified: Always set to current date on any field update, unless ENABLE_DATE_FIELD_EDITING provides a value
-    updateData.dateModified = dateModified ? new Date(dateModified) : new Date();
-
-    const updatedApplication = await prisma.applications_With_Outreach.update({
-      where: { id },
-      data: updateData,
-    });
-
-    return NextResponse.json(updatedApplication);
+      hasChanges = true;
+    }
+    if (notes !== undefined && notes !== existingApplication.notes) {
+      updateData.notes = notes;
+      hasChanges = true;
+    }
+    if (status !== undefined && status !== existingApplication.status) {
+      updateData.status = status;
+      hasChanges = true;
+    }
+    // ===== DATE FIELD EDITING: Allow updating dateCreated if provided =====
+    if (dateCreated !== undefined) {
+      const newDateCreated = new Date(dateCreated);
+      if (newDateCreated.getTime() !== existingApplication.dateCreated.getTime()) {
+        updateData.dateCreated = newDateCreated;
+        hasChanges = true;
+      }
+    }
+    // dateModified: Only update if at least one field actually changed (adjusted for user's timezone)
+    if (hasChanges) {
+      updateData.dateModified = getDateInUserTimezone();
+      const updatedApplication = await prisma.applications_With_Outreach.update({
+        where: { id },
+        data: updateData,
+      });
+      return NextResponse.json(updatedApplication);
+    } else {
+      // No changes, return existing application without updating
+      return NextResponse.json(existingApplication);
+    }
   } catch (error) {
     console.error("Error updating application:", error);
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/db";
 import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+import { getDateInUserTimezone } from "@/app/lib/server-date-utils";
 
 // GET all in-person events for the logged-in user (or specified user if instructor)
 export async function GET(request: NextRequest) {
@@ -65,8 +66,8 @@ export async function POST(request: NextRequest) {
         numOfInterviews: numOfInterviews ?? null,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
-        // dateModified: Set to current date on create, unless ENABLE_DATE_FIELD_EDITING provides a value
-        dateModified: dateModified ? new Date(dateModified) : new Date(),
+        // dateModified: Set to current date on create, or use provided value if specified (adjusted for user's timezone)
+        dateModified: dateModified ? new Date(dateModified) : getDateInUserTimezone(),
       },
     });
 
@@ -90,7 +91,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { status, dateModified } = body;
+    const { status } = body;
 
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
@@ -121,11 +122,17 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
+    // Only update if status actually changed
+    if (status === existingEvent.status) {
+      // Status unchanged, return existing event without updating
+      return NextResponse.json(existingEvent);
+    }
+
     // Update status and dateModified
-    // dateModified: Always set to current date on status change, unless ENABLE_DATE_FIELD_EDITING provides a value
+    // dateModified: Set to current date when status changes (adjusted for user's timezone)
     const updateData: any = { 
       status,
-      dateModified: dateModified ? new Date(dateModified) : new Date(),
+      dateModified: getDateInUserTimezone(),
     };
 
     const updatedEvent = await prisma.in_Person_Events.update({
@@ -166,7 +173,6 @@ export async function PUT(request: NextRequest) {
       numOfInterviews,
       careerFair,
       dateCreated, // ===== DATE FIELD EDITING =====
-      dateModified, // ===== DATE FIELD EDITING =====
     } = body;
 
     if (!id) {
@@ -188,34 +194,73 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Only include the fields that are being updated
+    // Only include the fields that are being updated and have actually changed
     const updateData: any = {};
+    let hasChanges = false;
 
-    if (status !== undefined) updateData.status = status;
-    if (eventName !== undefined) updateData.event = eventName;
-    if (date !== undefined) updateData.date = new Date(date);
-    if (location !== undefined) updateData.location = location;
-    if (url !== undefined) updateData.url = url;
-    if (notes !== undefined) updateData.notes = notes;
-    if (numPeopleSpokenTo !== undefined)
+    if (status !== undefined && status !== existingEvent.status) {
+      updateData.status = status;
+      hasChanges = true;
+    }
+    if (eventName !== undefined && eventName !== existingEvent.event) {
+      updateData.event = eventName;
+      hasChanges = true;
+    }
+    if (date !== undefined) {
+      const newDate = new Date(date);
+      if (newDate.getTime() !== existingEvent.date.getTime()) {
+        updateData.date = newDate;
+        hasChanges = true;
+      }
+    }
+    if (location !== undefined && location !== existingEvent.location) {
+      updateData.location = location;
+      hasChanges = true;
+    }
+    if (url !== undefined && url !== existingEvent.url) {
+      updateData.url = url;
+      hasChanges = true;
+    }
+    if (notes !== undefined && notes !== existingEvent.notes) {
+      updateData.notes = notes;
+      hasChanges = true;
+    }
+    if (numPeopleSpokenTo !== undefined && numPeopleSpokenTo !== existingEvent.numPeopleSpokenTo) {
       updateData.numPeopleSpokenTo = numPeopleSpokenTo;
-    if (numLinkedInRequests !== undefined)
+      hasChanges = true;
+    }
+    if (numLinkedInRequests !== undefined && numLinkedInRequests !== existingEvent.numLinkedInRequests) {
       updateData.numLinkedInRequests = numLinkedInRequests;
-    if (numOfInterviews !== undefined)
+      hasChanges = true;
+    }
+    if (numOfInterviews !== undefined && numOfInterviews !== existingEvent.numOfInterviews) {
       updateData.numOfInterviews = numOfInterviews;
-    if (careerFair !== undefined)
+      hasChanges = true;
+    }
+    if (careerFair !== undefined && careerFair !== existingEvent.careerFair) {
       updateData.careerFair = careerFair;
-    // ===== DATE FIELD EDITING: Allow updating dateCreated and dateModified if provided =====
-    if (dateCreated !== undefined) updateData.dateCreated = new Date(dateCreated);
-    // dateModified: Always set to current date on any field update, unless ENABLE_DATE_FIELD_EDITING provides a value
-    updateData.dateModified = dateModified ? new Date(dateModified) : new Date();
-
-    const updatedEvent = await prisma.in_Person_Events.update({
-      where: { id },
-      data: updateData,
-    });
-
-    return NextResponse.json(updatedEvent);
+      hasChanges = true;
+    }
+    // ===== DATE FIELD EDITING: Allow updating dateCreated if provided =====
+    if (dateCreated !== undefined) {
+      const newDateCreated = new Date(dateCreated);
+      if (newDateCreated.getTime() !== existingEvent.dateCreated.getTime()) {
+        updateData.dateCreated = newDateCreated;
+        hasChanges = true;
+      }
+    }
+    // dateModified: Only update if at least one field actually changed (adjusted for user's timezone)
+    if (hasChanges) {
+      updateData.dateModified = getDateInUserTimezone();
+      const updatedEvent = await prisma.in_Person_Events.update({
+        where: { id },
+        data: updateData,
+      });
+      return NextResponse.json(updatedEvent);
+    } else {
+      // No changes, return existing event without updating
+      return NextResponse.json(existingEvent);
+    }
   } catch (error) {
     console.error("Error updating event:", error);
     return NextResponse.json(
