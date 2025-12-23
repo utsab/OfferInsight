@@ -1,15 +1,51 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { InPersonEvent, EventColumnId, BoardTimeFilter, InPersonEventStatus } from './types';
 import { eventStatusToColumn, eventColumnToStatus } from './types';
-import { CardDateMeta, DroppableColumn } from './shared';
+import { CardDateMeta, DroppableColumn, DeleteModal } from './shared';
+
+const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+// ===== DATE FIELD EDITING TOGGLE START =====
+// Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
+const ENABLE_DATE_FIELD_EDITING = false;
+// ===== DATE FIELD EDITING TOGGLE END =====
+
+type TimeParts = {
+  hour: string;
+  minute: string;
+  period: 'AM' | 'PM';
+};
+
+const toLocalTimeParts = (value: string): TimeParts => {
+  try {
+    const date = new Date(value);
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const period = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+    return {
+      hour: String(hours).padStart(2, '0'),
+      minute: minutes,
+      period,
+    };
+  } catch {
+    return {
+      hour: '',
+      minute: '',
+      period: 'AM',
+    };
+  }
+};
 
 type EventsTabProps = {
   filteredEventColumns: Record<EventColumnId, InPersonEvent[]>;
@@ -26,8 +62,6 @@ type EventsTabProps = {
   handleEventsDragEnd: (event: any) => void;
   activeEventId: string | null;
   getEventColumnOfItem: (id: string) => EventColumnId | null;
-  InPersonEventModal: React.ComponentType<any>;
-  DeleteModal: React.ComponentType<any>;
   isEventModalOpen: boolean;
   editingEvent: InPersonEvent | null;
   setIsDeletingEvent: (id: number | null) => void;
@@ -146,6 +180,402 @@ function SortableEventCard(props: {
   );
 }
 
+// In-Person Event Modal Component
+function InPersonEventModal({
+  eventItem,
+  onClose,
+  onSave,
+  defaultStatus,
+}: {
+  eventItem: InPersonEvent | null;
+  onClose: () => void;
+  onSave: (data: Partial<InPersonEvent> & { date?: string }) => void;
+  defaultStatus?: InPersonEventStatus;
+}) {
+  const toLocalDate = (value: string) => {
+    try {
+      const date = new Date(value);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
+  type EventFormData = {
+    event: string;
+    date: string;
+    timeHour: string;
+    timeMinute: string;
+    timePeriod: 'AM' | 'PM';
+    location: string;
+    url: string;
+    notes: string;
+    status: InPersonEventStatus;
+    numPeopleSpokenTo: string;
+    numLinkedInRequests: string;
+    numOfInterviews: string;
+    careerFair: boolean;
+    dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+    dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+  };
+
+  const [formData, setFormData] = useState<EventFormData>({
+    event: eventItem?.event ?? '',
+    date: eventItem?.date ? toLocalDate(eventItem.date) : '',
+    timeHour: eventItem?.date ? toLocalTimeParts(eventItem.date).hour : '',
+    timeMinute: eventItem?.date ? toLocalTimeParts(eventItem.date).minute : '',
+    timePeriod: eventItem?.date ? toLocalTimeParts(eventItem.date).period : 'AM',
+    location: eventItem?.location ?? '',
+    url: eventItem?.url ?? '',
+    notes: eventItem?.notes ?? '',
+    status: eventItem?.status ?? (defaultStatus || 'scheduled'),
+    numPeopleSpokenTo: eventItem?.numPeopleSpokenTo?.toString() ?? '',
+    numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
+    numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
+    careerFair: eventItem?.careerFair ?? false,
+    dateCreated: eventItem?.dateCreated ? toLocalDate(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
+    dateModified: eventItem?.dateModified ? toLocalDate(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
+  });
+
+  useEffect(() => {
+    const timeParts = eventItem?.date ? toLocalTimeParts(eventItem.date) : { hour: '', minute: '', period: 'AM' as const };
+    setFormData({
+      event: eventItem?.event ?? '',
+      date: eventItem?.date ? toLocalDate(eventItem.date) : '',
+      timeHour: timeParts.hour,
+      timeMinute: timeParts.minute,
+      timePeriod: timeParts.period,
+      location: eventItem?.location ?? '',
+      url: eventItem?.url ?? '',
+      notes: eventItem?.notes ?? '',
+      status: eventItem?.status ?? (defaultStatus || 'scheduled'),
+      numPeopleSpokenTo: eventItem?.numPeopleSpokenTo?.toString() ?? '',
+      numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
+      numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
+      careerFair: eventItem?.careerFair ?? false,
+      dateCreated: eventItem?.dateCreated ? toLocalDate(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
+      dateModified: eventItem?.dateModified ? toLocalDate(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
+    });
+  }, [eventItem, defaultStatus]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.event.trim()) {
+      alert('Event name is required');
+      return;
+    }
+    if (!formData.date) {
+      alert('Event date is required');
+      return;
+    }
+
+    const combinedDate = (() => {
+      const datePart = formData.date;
+      const hasTimeSelection = formData.timeHour !== '' || formData.timeMinute !== '';
+
+      let hour24 = 0;
+      let minute = 0;
+
+      if (hasTimeSelection) {
+        let hour12 = parseInt(formData.timeHour || '12', 10);
+        if (Number.isNaN(hour12) || hour12 < 1 || hour12 > 12) {
+          hour12 = 12;
+        }
+
+        minute = parseInt(formData.timeMinute || '0', 10);
+        if (Number.isNaN(minute) || minute < 0 || minute > 59) {
+          minute = 0;
+        }
+
+        if (formData.timePeriod === 'PM') {
+          hour24 = hour12 === 12 ? 12 : hour12 + 12;
+        } else {
+          hour24 = hour12 === 12 ? 0 : hour12;
+        }
+      }
+
+      const timePart = `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      try {
+        const iso = new Date(`${datePart}T${timePart}`).toISOString();
+        return iso;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    if (!combinedDate) {
+      alert('Invalid date or time');
+      return;
+    }
+
+    // ===== DATE FIELD EDITING: Convert date strings to ISO DateTime if provided =====
+    const saveData: Partial<InPersonEvent> & { date?: string } = {
+      event: formData.event.trim(),
+      date: combinedDate,
+      location: formData.location ? formData.location.trim() : null,
+      url: formData.url ? formData.url.trim() : null,
+      notes: formData.notes ? formData.notes.trim() : null,
+      status: formData.status,
+      numPeopleSpokenTo: formData.numPeopleSpokenTo !== '' ? Number(formData.numPeopleSpokenTo) : null,
+      numLinkedInRequests: formData.numLinkedInRequests !== '' ? Number(formData.numLinkedInRequests) : null,
+      numOfInterviews: formData.numOfInterviews !== '' ? Number(formData.numOfInterviews) : null,
+      careerFair: formData.careerFair,
+    };
+    if (ENABLE_DATE_FIELD_EDITING) {
+      if (formData.dateCreated) {
+        try {
+          const date = new Date(formData.dateCreated);
+          if (!isNaN(date.getTime())) {
+            saveData.dateCreated = date.toISOString();
+          }
+        } catch (error) {
+          console.error('Error parsing dateCreated:', error);
+        }
+      }
+      if (formData.dateModified !== undefined) {
+        try {
+          if (formData.dateModified) {
+            const date = new Date(formData.dateModified);
+            if (!isNaN(date.getTime())) {
+              saveData.dateModified = date.toISOString();
+            }
+          } else {
+            saveData.dateModified = null;
+          }
+        } catch (error) {
+          console.error('Error parsing dateModified:', error);
+        }
+      }
+    }
+    onSave(saveData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">
+            {eventItem ? 'Edit Event' : 'Create New Event'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white font-semibold mb-2">Event Name *</label>
+              <input
+                type="text"
+                value={formData.event}
+                onChange={(e) => setFormData(prev => ({ ...prev, event: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="Conference, Meetup, etc."
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-white font-semibold mb-2">Date *</label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                required
+              />
+            </div>
+          </div>
+
+          {eventItem && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white font-semibold mb-2">Time</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.timeHour}
+                      onChange={(e) => setFormData(prev => ({ ...prev, timeHour: e.target.value }))}
+                      className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                    >
+                      {hourOptions.map(hour => (
+                        <option key={hour} value={hour}>{hour}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={formData.timeMinute}
+                      onChange={(e) => setFormData(prev => ({ ...prev, timeMinute: e.target.value }))}
+                      className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                    >
+                      {minuteOptions.map(minute => (
+                        <option key={minute} value={minute}>{minute}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={formData.timePeriod}
+                      onChange={(e) => setFormData(prev => ({ ...prev, timePeriod: e.target.value as 'AM' | 'PM' }))}
+                      className="w-20 bg-gray-700 border border-light-steel-blue rounded-lg px-3 py-2 text-white"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-white font-semibold mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                    placeholder="City, Online, etc."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Event URL</label>
+                <input
+                  type="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  placeholder="https://example.com/event"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as InPersonEventStatus }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                >
+                  <option value="scheduled">Scheduled</option>
+                  <option value="attended">Attended</option>
+                  <option value="linkedinRequestsSent">LinkedIn Requests Sent</option>
+                  <option value="followUp">Followed Up</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                  placeholder="Additional details or outcomes"
+                />
+              </div>
+
+              <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  id="careerFair"
+                  checked={formData.careerFair}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    careerFair: e.target.checked,
+                    numOfInterviews: e.target.checked ? prev.numOfInterviews : ''
+                  }))}
+                  className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
+                />
+                <label htmlFor="careerFair" className="ml-2 text-white font-semibold">
+                  This is a career fair
+                </label>
+              </div>
+
+              <div className={`grid gap-4 ${formData.careerFair ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <div>
+                  <label className="block text-white font-semibold mb-2">No. of People Spoken To</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.numPeopleSpokenTo}
+                    onChange={(e) => setFormData(prev => ({ ...prev, numPeopleSpokenTo: e.target.value }))}
+                    placeholder="#"
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white font-semibold mb-2">No. of LinkedIn Requests</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.numLinkedInRequests}
+                    onChange={(e) => setFormData(prev => ({ ...prev, numLinkedInRequests: e.target.value }))}
+                    placeholder="#"
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  />
+                </div>
+                {formData.careerFair && (
+                  <div>
+                    <label className="block text-white font-semibold mb-2">No. of Interviews</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={formData.numOfInterviews}
+                      onChange={(e) => setFormData(prev => ({ ...prev, numOfInterviews: e.target.value }))}
+                      placeholder="#"
+                      className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                    />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
+          {ENABLE_DATE_FIELD_EDITING && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+                <input
+                  type="date"
+                  value={formData.dateCreated}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dateCreated: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
+                <input
+                  type="date"
+                  value={formData.dateModified}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dateModified: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              {eventItem ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function EventsTab({
   filteredEventColumns,
   eventColumns,
@@ -161,8 +591,6 @@ export default function EventsTab({
   handleEventsDragEnd,
   activeEventId,
   getEventColumnOfItem,
-  InPersonEventModal,
-  DeleteModal,
   isEventModalOpen,
   editingEvent,
   setIsDeletingEvent,

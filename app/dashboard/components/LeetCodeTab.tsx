@@ -1,15 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { LeetEntry, LeetColumnId, BoardTimeFilter, LeetStatus } from './types';
 import { leetStatusToColumn, leetColumnToStatus } from './types';
-import { CardDateMeta, DroppableColumn } from './shared';
+import { CardDateMeta, DroppableColumn, DeleteModal } from './shared';
+
+// ===== DATE FIELD EDITING TOGGLE START =====
+// Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
+const ENABLE_DATE_FIELD_EDITING = false;
+// ===== DATE FIELD EDITING TOGGLE END =====
 
 type LeetCodeTabProps = {
   filteredLeetColumns: Record<LeetColumnId, LeetEntry[]>;
@@ -26,8 +31,6 @@ type LeetCodeTabProps = {
   handleLeetDragEnd: (event: any) => void;
   activeLeetId: string | null;
   getLeetColumnOfItem: (id: string) => LeetColumnId | null;
-  LeetModal: React.ComponentType<any>;
-  DeleteModal: React.ComponentType<any>;
   isLeetModalOpen: boolean;
   editingLeet: LeetEntry | null;
   setIsDeletingLeet: (id: number | null) => void;
@@ -122,6 +125,295 @@ function SortableLeetCard(props: {
   );
 }
 
+function LeetModal({
+  entry,
+  onClose,
+  onSave,
+  defaultStatus,
+}: {
+  entry: LeetEntry | null;
+  onClose: () => void;
+  onSave: (data: Partial<LeetEntry>) => void;
+  defaultStatus?: LeetStatus;
+}) {
+  // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
+  const toLocalDate = (value: string) => {
+    try {
+      const date = new Date(value);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
+  type LeetFormData = {
+    problem: string;
+    problemType: string;
+    difficulty: string;
+    url: string;
+    reflection: string;
+    status: LeetStatus;
+    dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+    dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+  };
+
+  const [formData, setFormData] = useState<LeetFormData>({
+    problem: entry?.problem ?? '',
+    problemType: entry?.problemType ?? '',
+    difficulty: entry?.difficulty ?? '',
+    url: entry?.url ?? '',
+    reflection: entry?.reflection ?? '',
+    status: entry?.status ?? (defaultStatus || 'planned'),
+    dateCreated: entry?.dateCreated ? toLocalDate(entry.dateCreated) : '', // ===== DATE FIELD EDITING =====
+    dateModified: entry?.dateModified ? toLocalDate(entry.dateModified) : '', // ===== DATE FIELD EDITING =====
+  });
+  const [isLeetHelpOpen, setIsLeetHelpOpen] = useState(false);
+  const tooltipRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    if (!isLeetHelpOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
+        setIsLeetHelpOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLeetHelpOpen]);
+
+  // ===== DATE FIELD EDITING: Update form data when entry changes =====
+  useEffect(() => {
+    if (entry) {
+      setFormData({
+        problem: entry.problem ?? '',
+        problemType: entry.problemType ?? '',
+        difficulty: entry.difficulty ?? '',
+        url: entry.url ?? '',
+        reflection: entry.reflection ?? '',
+        status: entry.status ?? 'planned',
+        dateCreated: entry.dateCreated ? toLocalDate(entry.dateCreated) : '',
+        dateModified: entry.dateModified ? toLocalDate(entry.dateModified) : '',
+      });
+    } else {
+      setFormData({
+        problem: '',
+        problemType: '',
+        difficulty: '',
+        url: '',
+        reflection: '',
+        status: defaultStatus || 'planned',
+        dateCreated: '',
+        dateModified: '',
+      });
+    }
+  }, [entry, defaultStatus]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.problem.trim()) {
+      alert('Problem name is required');
+      return;
+    }
+
+    // ===== DATE FIELD EDITING: Convert date strings to ISO DateTime if provided =====
+    const submitData: Partial<LeetEntry> = {
+      problem: formData.problem.trim(),
+      problemType: formData.problemType ? formData.problemType.trim() : null,
+      difficulty: formData.difficulty ? formData.difficulty.trim() : null,
+      url: formData.url ? formData.url.trim() : null,
+      reflection: formData.reflection ? formData.reflection.trim() : null,
+      status: formData.status,
+    };
+    if (ENABLE_DATE_FIELD_EDITING) {
+      if (formData.dateCreated) {
+        try {
+          const date = new Date(formData.dateCreated);
+          if (!isNaN(date.getTime())) {
+            submitData.dateCreated = date.toISOString();
+          }
+        } catch (error) {
+          console.error('Error parsing dateCreated:', error);
+        }
+      }
+      if (formData.dateModified !== undefined) {
+        try {
+          if (formData.dateModified) {
+            const date = new Date(formData.dateModified);
+            if (!isNaN(date.getTime())) {
+              submitData.dateModified = date.toISOString();
+            }
+          } else {
+            submitData.dateModified = null;
+          }
+        } catch (error) {
+          console.error('Error parsing dateModified:', error);
+        }
+      }
+    }
+    onSave(submitData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">{entry ? 'Edit Problem' : 'Log New Problem'}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-white font-semibold mb-2">Problem *</label>
+            <input
+              type="text"
+              value={formData.problem}
+              onChange={(e) => setFormData(prev => ({ ...prev, problem: e.target.value }))}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              placeholder="Problem title"
+              required
+            />
+          </div>
+
+          {entry && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white font-semibold mb-2">
+                    <span className="flex items-center gap-2">
+                      Data Structure / Algorithm
+                      <span ref={tooltipRef} className="relative inline-flex items-center">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => setIsLeetHelpOpen((prev: boolean) => !prev)}
+                          onFocus={() => setIsLeetHelpOpen(true)}
+                          onBlur={() => setIsLeetHelpOpen(false)}
+                          className="w-4 h-4 flex items-center justify-center rounded-full bg-electric-blue text-gray-900 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-electric-blue/60"
+                          aria-label="What data structure or algorithm was used?"
+                        >
+                          ?
+                        </button>
+                        {isLeetHelpOpen && (
+                          <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-72 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs shadow-lg z-10">
+                            What data structure, algorithm, or other problem solving technique was needed to solve this problem?
+                          </div>
+                        )}
+                      </span>
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.problemType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, problemType: e.target.value }))}
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                    placeholder="Arrays, DP, Graphs, ..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-white font-semibold mb-2">Difficulty</label>
+                  <select
+                    value={formData.difficulty}
+                    onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
+                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                  >
+                    <option value="">Select difficulty</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Problem URL</label>
+                <input
+                  type="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  placeholder="https://leetcode.com/problems/..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Signal / Cue</label>
+                <textarea
+                  value={formData.reflection}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reflection: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[120px]"
+                  placeholder="Was there anything in the original problem description that signaled to you that this problem requires the data structure/algorithm you listed above?"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as LeetStatus }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                >
+                  <option value="planned">Planned</option>
+                  <option value="solved">Solved</option>
+                  <option value="reflected">Reflected</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
+          {ENABLE_DATE_FIELD_EDITING && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+                <input
+                  type="date"
+                  value={formData.dateCreated}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dateCreated: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
+                <input
+                  type="date"
+                  value={formData.dateModified}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dateModified: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              {entry ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function LeetCodeTab({
   filteredLeetColumns,
   leetColumns,
@@ -137,8 +429,6 @@ export default function LeetCodeTab({
   handleLeetDragEnd,
   activeLeetId,
   getLeetColumnOfItem,
-  LeetModal,
-  DeleteModal,
   isLeetModalOpen,
   editingLeet,
   setIsDeletingLeet,

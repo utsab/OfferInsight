@@ -1,15 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Application, ApplicationColumnId, BoardTimeFilter, ApplicationStatus } from './types';
 import { applicationStatusToColumn, applicationColumnToStatus } from './types';
-import { CardDateMeta, DroppableColumn } from './shared';
+import { CardDateMeta, DroppableColumn, DeleteModal } from './shared';
+
+// ===== DATE FIELD EDITING TOGGLE START =====
+// Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
+const ENABLE_DATE_FIELD_EDITING = false;
+// ===== DATE FIELD EDITING TOGGLE END =====
 
 type ApplicationsTabProps = {
   filteredAppColumns: Record<ApplicationColumnId, Application[]>;
@@ -26,8 +31,6 @@ type ApplicationsTabProps = {
   handleApplicationsDragEnd: (event: any) => void;
   activeAppId: string | null;
   getApplicationColumnOfItem: (id: string) => ApplicationColumnId | null;
-  ApplicationModal: React.ComponentType<any>;
-  DeleteModal: React.ComponentType<any>;
   isModalOpen: boolean;
   editingApp: Application | null;
   setIsDeleting: (id: number | null) => void;
@@ -113,6 +116,266 @@ function SortableAppCard(props: {
   );
 }
 
+// Application Modal Component
+function ApplicationModal({ 
+  application, 
+  onClose, 
+  onSave,
+  defaultStatus
+}: { 
+  application: Application | null; 
+  onClose: () => void; 
+  onSave: (data: Partial<Application>) => void;
+  defaultStatus?: ApplicationStatus;
+}) {
+  // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
+  const toLocalDate = (value: string) => {
+    try {
+      const date = new Date(value);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
+  type ApplicationFormData = {
+    company: string;
+    hiringManager: string;
+    msgToManager: string;
+    recruiter: string;
+    msgToRecruiter: string;
+    notes: string;
+    status: ApplicationStatus;
+    dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+    dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+  };
+
+  const [formData, setFormData] = useState<ApplicationFormData>({
+    company: application?.company || '',
+    hiringManager: application?.hiringManager || '',
+    msgToManager: application?.msgToManager || '',
+    recruiter: application?.recruiter || '',
+    msgToRecruiter: application?.msgToRecruiter || '',
+    notes: application?.notes || '',
+    status: application?.status || defaultStatus || 'applied',
+    dateCreated: application?.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
+    dateModified: application?.dateModified ? toLocalDate(application.dateModified) : '', // ===== DATE FIELD EDITING =====
+  });
+
+  // Update form data when application changes
+  useEffect(() => {
+    if (application) {
+      setFormData({
+        company: application.company || '',
+        hiringManager: application.hiringManager || '',
+        msgToManager: application.msgToManager || '',
+        recruiter: application.recruiter || '',
+        msgToRecruiter: application.msgToRecruiter || '',
+        notes: application.notes || '',
+        status: application.status ?? 'applied',
+        dateCreated: application.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
+        dateModified: application.dateModified ? toLocalDate(application.dateModified) : '', // ===== DATE FIELD EDITING =====
+      });
+      } else {
+      setFormData({
+        company: '',
+        hiringManager: '',
+        msgToManager: '',
+        recruiter: '',
+        msgToRecruiter: '',
+        notes: '',
+        status: defaultStatus || 'applied',
+        dateCreated: '', // ===== DATE FIELD EDITING =====
+        dateModified: '', // ===== DATE FIELD EDITING =====
+      });
+    }
+  }, [application, defaultStatus]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.company.trim()) {
+      alert('Company name is required');
+      return;
+    }
+    // ===== DATE FIELD EDITING: Convert date strings to ISO DateTime if provided =====
+    const { dateCreated, dateModified, ...restFormData } = formData;
+    const submitData: Partial<Application> = { ...restFormData };
+    if (ENABLE_DATE_FIELD_EDITING) {
+      if (dateCreated) {
+        try {
+          const date = new Date(dateCreated);
+          if (!isNaN(date.getTime())) {
+            submitData.dateCreated = date.toISOString();
+          }
+        } catch (error) {
+          console.error('Error parsing dateCreated:', error);
+        }
+      }
+      if (dateModified !== undefined) {
+        try {
+          if (dateModified) {
+            const date = new Date(dateModified);
+            if (!isNaN(date.getTime())) {
+              submitData.dateModified = date.toISOString();
+            }
+          } else {
+            submitData.dateModified = null;
+          }
+        } catch (error) {
+          console.error('Error parsing dateModified:', error);
+        }
+      }
+    }
+    onSave(submitData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">
+            {application ? 'Edit Application' : 'Create New Application'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-white font-semibold mb-2">Company *</label>
+            <input
+              type="text"
+              value={formData.company}
+              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              placeholder="Enter company name"
+              required
+            />
+          </div>
+
+          {application && (
+            <>
+              <div className="flex items-center gap-4">
+                <label className="text-white font-semibold whitespace-nowrap">Hiring Manager:</label>
+                <input
+                  type="text"
+                  value={formData.hiringManager}
+                  onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
+                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  placeholder="Hiring manager name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Message to Hiring Manager</label>
+                <textarea
+                  value={formData.msgToManager}
+                  onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
+                  placeholder="Enter message sent to hiring manager"
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="text-white font-semibold whitespace-nowrap">Recruiter:</label>
+                <input
+                  type="text"
+                  value={formData.recruiter}
+                  onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
+                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  placeholder="Recruiter name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Message to Recruiter</label>
+                <textarea
+                  value={formData.msgToRecruiter}
+                  onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
+                  placeholder="Enter message sent to recruiter"
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="text-white font-semibold whitespace-nowrap">Status:</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as ApplicationStatus })}
+                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                >
+                  <option value="applied">Applied</option>
+                  <option value="messagedHiringManager">Messaged Hiring Manager</option>
+                  <option value="messagedRecruiter">Messaged Recruiter</option>
+                  <option value="followedUp">Followed Up</option>
+                  <option value="interview">Interview</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                  placeholder="Additional notes"
+                />
+              </div>
+            </>
+          )}
+
+          {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
+          {ENABLE_DATE_FIELD_EDITING && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+                <input
+                  type="date"
+                  value={formData.dateCreated}
+                  onChange={(e) => setFormData({ ...formData, dateCreated: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
+                <input
+                  type="date"
+                  value={formData.dateModified}
+                  onChange={(e) => setFormData({ ...formData, dateModified: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              {application ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function ApplicationsTab({
   filteredAppColumns,
   appColumns,
@@ -128,8 +391,6 @@ export default function ApplicationsTab({
   handleApplicationsDragEnd,
   activeAppId,
   getApplicationColumnOfItem,
-  ApplicationModal,
-  DeleteModal,
   isModalOpen,
   editingApp,
   setIsDeleting,

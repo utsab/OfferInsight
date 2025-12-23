@@ -3,6 +3,38 @@
 import { Plus } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 
+// Delete Confirmation Modal
+export function DeleteModal({ 
+  onConfirm, 
+  onCancel 
+}: { 
+  onConfirm: () => void; 
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-xl font-bold text-white mb-4">Delete Item</h3>
+        <p className="text-gray-300 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Shared components used across multiple tabs
 
 export function CardDateMeta({

@@ -1,15 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { LinkedinOutreach, LinkedinOutreachColumnId, BoardTimeFilter, LinkedinOutreachStatus } from './types';
 import { linkedinOutreachStatusToColumn, linkedinOutreachColumnToStatus } from './types';
-import { CardDateMeta, DroppableColumn } from './shared';
+import { CardDateMeta, DroppableColumn, DeleteModal } from './shared';
+
+// ===== DATE FIELD EDITING TOGGLE START =====
+// Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
+const ENABLE_DATE_FIELD_EDITING = false;
+// ===== DATE FIELD EDITING TOGGLE END =====
 
 type CoffeeChatsTabProps = {
   filteredLinkedinOutreachColumns: Record<LinkedinOutreachColumnId, LinkedinOutreach[]>;
@@ -26,8 +31,6 @@ type CoffeeChatsTabProps = {
   handleLinkedinOutreachDragEnd: (event: any) => void;
   activeLinkedinOutreachId: string | null;
   getLinkedinOutreachColumnOfItem: (id: string) => LinkedinOutreachColumnId | null;
-  LinkedinOutreachModal: React.ComponentType<any>;
-  DeleteModal: React.ComponentType<any>;
   isLinkedinOutreachModalOpen: boolean;
   editingLinkedinOutreach: LinkedinOutreach | null;
   setIsDeletingLinkedinOutreach: (id: number | null) => void;
@@ -121,6 +124,271 @@ function SortableLinkedinOutreachCard(props: {
   );
 }
 
+// Linkedin outreach modal component
+function LinkedinOutreachModal({ 
+  linkedinOutreach, 
+  onClose, 
+  onSave,
+  defaultStatus
+}: { 
+  linkedinOutreach: LinkedinOutreach | null; 
+  onClose: () => void; 
+  onSave: (data: Partial<LinkedinOutreach>) => void;
+  defaultStatus?: LinkedinOutreachStatus;
+}) {
+  // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
+  const toLocalDate = (value: string) => {
+    try {
+      const date = new Date(value);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
+  type LinkedinOutreachFormData = {
+    name: string;
+    company: string;
+    message: string;
+    linkedInUrl: string;
+    notes: string;
+    status: LinkedinOutreachStatus;
+    recievedReferral: boolean;
+    dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+    dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
+  };
+
+  const [formData, setFormData] = useState<LinkedinOutreachFormData>({
+    name: linkedinOutreach?.name || '',
+    company: linkedinOutreach?.company || '',
+    message: linkedinOutreach?.message || '',
+    linkedInUrl: linkedinOutreach?.linkedInUrl || '',
+    notes: linkedinOutreach?.notes || '',
+    status: linkedinOutreach ? linkedinOutreach.status : (defaultStatus || 'outreachRequestSent'),
+    recievedReferral: linkedinOutreach?.recievedReferral || false,
+    dateCreated: linkedinOutreach?.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
+    dateModified: linkedinOutreach?.dateModified ? toLocalDate(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
+  });
+
+  // Update form data when linkedin outreach changes
+  useEffect(() => {
+    if (linkedinOutreach) {
+      setFormData({
+        name: linkedinOutreach.name || '',
+        company: linkedinOutreach.company || '',
+        message: linkedinOutreach.message || '',
+        linkedInUrl: linkedinOutreach.linkedInUrl || '',
+        notes: linkedinOutreach.notes || '',
+        status: linkedinOutreach.status,
+        recievedReferral: linkedinOutreach.recievedReferral || false,
+        dateCreated: linkedinOutreach.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
+        dateModified: linkedinOutreach.dateModified ? toLocalDate(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
+      });
+      } else {
+      setFormData({
+        name: '',
+        company: '',
+        message: '',
+        linkedInUrl: '',
+        notes: '',
+        status: defaultStatus || 'outreachRequestSent',
+        recievedReferral: false,
+        dateCreated: '', // ===== DATE FIELD EDITING =====
+        dateModified: '', // ===== DATE FIELD EDITING =====
+      });
+    }
+  }, [linkedinOutreach, defaultStatus]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.company.trim()) {
+      alert('Name and company are required');
+      return;
+    }
+    // ===== DATE FIELD EDITING: Convert date strings to ISO DateTime if provided =====
+    const { dateCreated, dateModified, ...restFormData } = formData;
+    const submitData: Partial<LinkedinOutreach> = { ...restFormData };
+    if (ENABLE_DATE_FIELD_EDITING) {
+      if (dateCreated) {
+        try {
+          const date = new Date(dateCreated);
+          if (!isNaN(date.getTime())) {
+            submitData.dateCreated = date.toISOString();
+          }
+        } catch (error) {
+          console.error('Error parsing dateCreated:', error);
+        }
+      }
+      if (dateModified !== undefined) {
+        try {
+          if (dateModified) {
+            const date = new Date(dateModified);
+            if (!isNaN(date.getTime())) {
+              submitData.dateModified = date.toISOString();
+            }
+          } else {
+            submitData.dateModified = null;
+          }
+        } catch (error) {
+          console.error('Error parsing dateModified:', error);
+        }
+      }
+    }
+    onSave(submitData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">
+            {linkedinOutreach ? 'Edit Coffee Chat' : 'Create New Coffee Chat'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white font-semibold mb-2">Name *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="Person's name"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-white font-semibold mb-2">Company *</label>
+              <input
+                type="text"
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="Company name"
+                required
+              />
+            </div>
+          </div>
+
+          {linkedinOutreach && (
+            <>
+              <div>
+                <label className="block text-white font-semibold mb-2">LinkedIn URL</label>
+                <input
+                  type="url"
+                  value={formData.linkedInUrl}
+                  onChange={(e) => setFormData({ ...formData, linkedInUrl: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  placeholder="https://linkedin.com/in/..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Message</label>
+                <textarea
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                  placeholder="Message sent to the person"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as LinkedinOutreachStatus })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                >
+                  <option value="outreachRequestSent">Outreach Request Sent</option>
+                  <option value="accepted">Request Accepted</option>
+                  <option value="followedUp">Followed Up</option>
+                  <option value="linkedinOutreach">Coffee Chat</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                  placeholder="Additional notes"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="recievedReferral"
+                  checked={formData.recievedReferral}
+                  onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
+                  className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
+                />
+                <label htmlFor="recievedReferral" className="ml-2 text-white font-semibold">
+                  Received Referral
+                </label>
+              </div>
+            </>
+          )}
+
+          {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
+          {ENABLE_DATE_FIELD_EDITING && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+                <input
+                  type="date"
+                  value={formData.dateCreated}
+                  onChange={(e) => setFormData({ ...formData, dateCreated: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
+                <input
+                  type="date"
+                  value={formData.dateModified}
+                  onChange={(e) => setFormData({ ...formData, dateModified: e.target.value })}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              {linkedinOutreach ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function CoffeeChatsTab({
   filteredLinkedinOutreachColumns,
   linkedinOutreachColumns,
@@ -136,8 +404,6 @@ export default function CoffeeChatsTab({
   handleLinkedinOutreachDragEnd,
   activeLinkedinOutreachId,
   getLinkedinOutreachColumnOfItem,
-  LinkedinOutreachModal,
-  DeleteModal,
   isLinkedinOutreachModalOpen,
   editingLinkedinOutreach,
   setIsDeletingLinkedinOutreach,
