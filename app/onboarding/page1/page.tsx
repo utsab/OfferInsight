@@ -108,7 +108,7 @@ export default function Page1() {
               name="fullName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue focus:ring-opacity-50 transition-all" 
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all" 
               placeholder="Enter your full name"
               required
             />
@@ -124,7 +124,7 @@ export default function Page1() {
               name="school"
               value={school}
               onChange={(e) => setSchool(e.target.value)}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue focus:ring-opacity-50 transition-all" 
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all" 
               placeholder="e.g., Stanford University, MIT, UC Berkeley"
               required
             />
@@ -140,7 +140,7 @@ export default function Page1() {
               name="major"
               value={major}
               onChange={(e) => setMajor(e.target.value)}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue focus:ring-opacity-50 transition-all" 
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all" 
               placeholder="e.g., Computer Science, Business Administration"
               required
             />
