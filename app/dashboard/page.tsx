@@ -1241,7 +1241,6 @@ const hasSeededMockDataRef = useRef(false);
   useEffect(() => {
     if (ENABLE_DASHBOARD_MOCKS) return;
     let isMounted = true;
-    let retryCount = 0;
     const maxRetries = 3;
     const retryDelay = 500; // 500ms between retries
     
@@ -1799,7 +1798,7 @@ const hasSeededMockDataRef = useRef(false);
   };
 
   return (
-    <div className="bg-gray-900 text-white min-h-screen">
+    <div className="bg-gray-900 text-white">
       {/* Instructor View Banner */}
       {isInstructor && userIdParam && viewedUserName && (
         <div className="bg-electric-blue/20 border-b border-electric-blue/50">
