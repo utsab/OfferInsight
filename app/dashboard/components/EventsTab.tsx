@@ -450,12 +450,12 @@ function InPersonEventModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-white font-semibold mb-2">Status</label>
+              <div className="flex items-center gap-4">
+                <label className="text-white font-semibold whitespace-nowrap">Status:</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as InPersonEventStatus }))}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                 >
                   <option value="scheduled">Scheduled</option>
                   <option value="attended">Attended</option>

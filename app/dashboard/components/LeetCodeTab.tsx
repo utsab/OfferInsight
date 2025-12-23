@@ -16,6 +16,20 @@ import { CardDateMeta, DroppableColumn, DeleteModal } from './shared';
 const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
 
+// Helper function to get difficulty badge styling
+const getDifficultyBadgeClass = (difficulty: string | null | undefined): string => {
+  if (!difficulty) return '';
+  const diff = difficulty.toLowerCase();
+  if (diff === 'easy') {
+    return 'bg-cyan-500 text-gray-900';
+  } else if (diff === 'medium') {
+    return 'bg-yellow-500 text-gray-900';
+  } else if (diff === 'hard') {
+    return 'bg-pink-500 text-gray-900';
+  }
+  return 'bg-gray-500 text-white';
+};
+
 type LeetCodeTabProps = {
   filteredLeetColumns: Record<LeetColumnId, LeetEntry[]>;
   leetColumns: Record<LeetColumnId, LeetEntry[]>;
@@ -89,7 +103,7 @@ function SortableLeetCard(props: {
             {props.card.problemType ? props.card.problemType : '—'}
           </div>
           {props.card.difficulty && (
-            <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-electric-blue/20 text-electric-blue uppercase tracking-wide">
+            <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full ${getDifficultyBadgeClass(props.card.difficulty)} uppercase tracking-wide font-semibold`}>
               {props.card.difficulty}
             </span>
           )}
@@ -163,7 +177,7 @@ function LeetModal({
   const [formData, setFormData] = useState<LeetFormData>({
     problem: entry?.problem ?? '',
     problemType: entry?.problemType ?? '',
-    difficulty: entry?.difficulty ?? '',
+    difficulty: entry?.difficulty ?? 'Easy',
     url: entry?.url ?? '',
     reflection: entry?.reflection ?? '',
     status: entry?.status ?? (defaultStatus || 'planned'),
@@ -194,7 +208,7 @@ function LeetModal({
       setFormData({
         problem: entry.problem ?? '',
         problemType: entry.problemType ?? '',
-        difficulty: entry.difficulty ?? '',
+        difficulty: entry.difficulty ?? 'Easy',
         url: entry.url ?? '',
         reflection: entry.reflection ?? '',
         status: entry.status ?? 'planned',
@@ -205,7 +219,7 @@ function LeetModal({
       setFormData({
         problem: '',
         problemType: '',
-        difficulty: '',
+        difficulty: 'Easy',
         url: '',
         reflection: '',
         status: defaultStatus || 'planned',
@@ -285,6 +299,17 @@ function LeetModal({
 
           {entry && (
             <>
+              <div>
+                <label className="block text-white font-semibold mb-2">Problem URL</label>
+                <input
+                  type="url"
+                  value={formData.url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                  placeholder="https://leetcode.com/problems/..."
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-white font-semibold mb-2">
@@ -325,23 +350,11 @@ function LeetModal({
                     onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
                     className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                   >
-                    <option value="">Select difficulty</option>
                     <option value="Easy">Easy</option>
                     <option value="Medium">Medium</option>
                     <option value="Hard">Hard</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-white font-semibold mb-2">Problem URL</label>
-                <input
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                  placeholder="https://leetcode.com/problems/..."
-                />
               </div>
 
               <div>
@@ -354,12 +367,12 @@ function LeetModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-white font-semibold mb-2">Status</label>
+              <div className="flex items-center gap-4">
+                <label className="text-white font-semibold whitespace-nowrap">Status:</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as LeetStatus }))}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                 >
                   <option value="planned">Planned</option>
                   <option value="solved">Solved</option>
@@ -580,7 +593,9 @@ export default function LeetCodeTab({
                   <div className="text-white font-medium mb-1">{card.problem?.trim() || 'Untitled Problem'}</div>
                   <div className="text-gray-400 text-xs mb-1">{card.problemType || '—'}</div>
                   {card.difficulty && (
-                    <div className="text-[10px] text-electric-blue uppercase">{card.difficulty}</div>
+                    <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full ${getDifficultyBadgeClass(card.difficulty)} uppercase tracking-wide font-semibold`}>
+                      {card.difficulty}
+                    </span>
                   )}
                 </div>
               );

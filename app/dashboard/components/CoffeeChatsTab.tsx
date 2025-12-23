@@ -305,12 +305,12 @@ function LinkedinOutreachModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-white font-semibold mb-2">Status</label>
+              <div className="flex items-center gap-4">
+                <label className="text-white font-semibold whitespace-nowrap">Status:</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as LinkedinOutreachStatus })}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
+                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                 >
                   <option value="outreachRequestSent">Outreach Request Sent</option>
                   <option value="accepted">Request Accepted</option>
