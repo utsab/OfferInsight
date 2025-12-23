@@ -2059,11 +2059,13 @@ const hasSeededMockDataRef = useRef(false);
 function ApplicationModal({ 
   application, 
   onClose, 
-  onSave 
+  onSave,
+  defaultStatus
 }: { 
   application: Application | null; 
   onClose: () => void; 
   onSave: (data: Partial<Application>) => void;
+  defaultStatus?: ApplicationStatus;
 }) {
   // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
   const toLocalDate = (value: string) => {
@@ -2097,7 +2099,7 @@ function ApplicationModal({
     recruiter: application?.recruiter || '',
     msgToRecruiter: application?.msgToRecruiter || '',
     notes: application?.notes || '',
-    status: application?.status || 'applied',
+    status: application?.status || defaultStatus || 'applied',
     dateCreated: application?.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: application?.dateModified ? toLocalDate(application.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
@@ -2116,7 +2118,7 @@ function ApplicationModal({
         dateCreated: application.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
         dateModified: application.dateModified ? toLocalDate(application.dateModified) : '', // ===== DATE FIELD EDITING =====
       });
-    } else {
+      } else {
       setFormData({
         company: '',
         hiringManager: '',
@@ -2124,12 +2126,12 @@ function ApplicationModal({
         recruiter: '',
         msgToRecruiter: '',
         notes: '',
-        status: 'applied',
+        status: defaultStatus || 'applied',
         dateCreated: '', // ===== DATE FIELD EDITING =====
         dateModified: '', // ===== DATE FIELD EDITING =====
       });
     }
-  }, [application]);
+  }, [application, defaultStatus]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2319,11 +2321,13 @@ function ApplicationModal({
 function LinkedinOutreachModal({ 
   linkedinOutreach, 
   onClose, 
-  onSave 
+  onSave,
+  defaultStatus
 }: { 
   linkedinOutreach: LinkedinOutreach | null; 
   onClose: () => void; 
   onSave: (data: Partial<LinkedinOutreach>) => void;
+  defaultStatus?: LinkedinOutreachStatus;
 }) {
   // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
   const toLocalDate = (value: string) => {
@@ -2356,7 +2360,7 @@ function LinkedinOutreachModal({
     message: linkedinOutreach?.message || '',
     linkedInUrl: linkedinOutreach?.linkedInUrl || '',
     notes: linkedinOutreach?.notes || '',
-    status: linkedinOutreach ? linkedinOutreach.status : 'outreachRequestSent',
+    status: linkedinOutreach ? linkedinOutreach.status : (defaultStatus || 'outreachRequestSent'),
     recievedReferral: linkedinOutreach?.recievedReferral || false,
     dateCreated: linkedinOutreach?.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: linkedinOutreach?.dateModified ? toLocalDate(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
@@ -2376,20 +2380,20 @@ function LinkedinOutreachModal({
         dateCreated: linkedinOutreach.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
         dateModified: linkedinOutreach.dateModified ? toLocalDate(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
       });
-    } else {
+      } else {
       setFormData({
         name: '',
         company: '',
         message: '',
         linkedInUrl: '',
         notes: '',
-        status: 'outreachRequestSent',
+        status: defaultStatus || 'outreachRequestSent',
         recievedReferral: false,
         dateCreated: '', // ===== DATE FIELD EDITING =====
         dateModified: '', // ===== DATE FIELD EDITING =====
       });
     }
-  }, [linkedinOutreach]);
+  }, [linkedinOutreach, defaultStatus]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2615,10 +2619,12 @@ function InPersonEventModal({
   eventItem,
   onClose,
   onSave,
+  defaultStatus,
 }: {
   eventItem: InPersonEvent | null;
   onClose: () => void;
   onSave: (data: Partial<InPersonEvent> & { date?: string }) => void;
+  defaultStatus?: InPersonEventStatus;
 }) {
   const toLocalDate = (value: string) => {
     try {
@@ -2670,7 +2676,7 @@ function InPersonEventModal({
     location: eventItem?.location ?? '',
     url: eventItem?.url ?? '',
     notes: eventItem?.notes ?? '',
-    status: eventItem?.status ?? 'scheduled',
+    status: eventItem?.status ?? (defaultStatus || 'scheduled'),
     numPeopleSpokenTo: eventItem?.numPeopleSpokenTo?.toString() ?? '',
     numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
     numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
@@ -2690,7 +2696,7 @@ function InPersonEventModal({
       location: eventItem?.location ?? '',
       url: eventItem?.url ?? '',
       notes: eventItem?.notes ?? '',
-      status: eventItem?.status ?? 'scheduled',
+      status: eventItem?.status ?? (defaultStatus || 'scheduled'),
       numPeopleSpokenTo: eventItem?.numPeopleSpokenTo?.toString() ?? '',
       numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
       numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
@@ -3019,10 +3025,12 @@ function LeetModal({
   entry,
   onClose,
   onSave,
+  defaultStatus,
 }: {
   entry: LeetEntry | null;
   onClose: () => void;
   onSave: (data: Partial<LeetEntry>) => void;
+  defaultStatus?: LeetStatus;
 }) {
   // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
   const toLocalDate = (value: string) => {
@@ -3054,7 +3062,7 @@ function LeetModal({
     difficulty: entry?.difficulty ?? '',
     url: entry?.url ?? '',
     reflection: entry?.reflection ?? '',
-    status: entry?.status ?? 'planned',
+    status: entry?.status ?? (defaultStatus || 'planned'),
     dateCreated: entry?.dateCreated ? toLocalDate(entry.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: entry?.dateModified ? toLocalDate(entry.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
@@ -3096,12 +3104,12 @@ function LeetModal({
         difficulty: '',
         url: '',
         reflection: '',
-        status: 'planned',
+        status: defaultStatus || 'planned',
         dateCreated: '',
         dateModified: '',
       });
     }
-  }, [entry]);
+  }, [entry, defaultStatus]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,13 +1,14 @@
 'use client';
 
+import React from 'react';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
 import { Plus, Trash2 } from 'lucide-react';
-import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
+import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { InPersonEvent, EventColumnId, BoardTimeFilter } from './types';
-import { eventStatusToColumn } from './types';
+import type { InPersonEvent, EventColumnId, BoardTimeFilter, InPersonEventStatus } from './types';
+import { eventStatusToColumn, eventColumnToStatus } from './types';
 import { CardDateMeta, DroppableColumn } from './shared';
 
 type EventsTabProps = {
@@ -170,6 +171,8 @@ export default function EventsTab({
   isDraggingEventRef,
   userIdParam,
 }: EventsTabProps) {
+  const [defaultStatus, setDefaultStatus] = React.useState<InPersonEventStatus | undefined>(undefined);
+  
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -199,6 +202,7 @@ export default function EventsTab({
         </div>
         <button
           onClick={() => {
+            setDefaultStatus(undefined);
             setEditingEvent(null);
             setIsEventModalOpen(true);
           }}
@@ -218,7 +222,14 @@ export default function EventsTab({
                 Scheduled ({filteredEventColumns.upcoming.length})
               </h5>
               <SortableContext items={filteredEventColumns.upcoming.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="upcoming">
+                <DroppableColumn 
+                  id="upcoming"
+                  onAddCard={() => {
+                    setDefaultStatus(eventColumnToStatus.upcoming);
+                    setEditingEvent(null);
+                    setIsEventModalOpen(true);
+                  }}
+                >
                   {filteredEventColumns.upcoming.map(event => (
                     <SortableEventCard 
                       key={event.id} 
@@ -240,7 +251,14 @@ export default function EventsTab({
                 Attended ({filteredEventColumns.attended.length})
               </h5>
               <SortableContext items={filteredEventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="attended">
+                <DroppableColumn 
+                  id="attended"
+                  onAddCard={() => {
+                    setDefaultStatus(eventColumnToStatus.attended);
+                    setEditingEvent(null);
+                    setIsEventModalOpen(true);
+                  }}
+                >
                   {filteredEventColumns.attended.map(event => (
                     <SortableEventCard 
                       key={event.id} 
@@ -262,7 +280,14 @@ export default function EventsTab({
                 LinkedIn Requests Sent ({filteredEventColumns.linkedinRequestsSent.length})
               </h5>
               <SortableContext items={filteredEventColumns.linkedinRequestsSent.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="linkedinRequestsSent">
+                <DroppableColumn 
+                  id="linkedinRequestsSent"
+                  onAddCard={() => {
+                    setDefaultStatus(eventColumnToStatus.linkedinRequestsSent);
+                    setEditingEvent(null);
+                    setIsEventModalOpen(true);
+                  }}
+                >
                   {filteredEventColumns.linkedinRequestsSent.map(event => (
                     <SortableEventCard 
                       key={event.id} 
@@ -284,7 +309,14 @@ export default function EventsTab({
                 Followed Up ({filteredEventColumns.followups.length})
               </h5>
               <SortableContext items={filteredEventColumns.followups.map(event => String(event.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="followups">
+                <DroppableColumn 
+                  id="followups"
+                  onAddCard={() => {
+                    setDefaultStatus(eventColumnToStatus.followups);
+                    setEditingEvent(null);
+                    setIsEventModalOpen(true);
+                  }}
+                >
                   {filteredEventColumns.followups.map(event => (
                     <SortableEventCard 
                       key={event.id} 
@@ -336,9 +368,11 @@ export default function EventsTab({
       {isEventModalOpen && (
         <InPersonEventModal
           eventItem={editingEvent}
+          defaultStatus={defaultStatus}
           onClose={() => {
             setIsEventModalOpen(false);
             setEditingEvent(null);
+            setDefaultStatus(undefined);
           }}
           onSave={async (data: Partial<InPersonEvent> & { date?: string }) => {
             try {

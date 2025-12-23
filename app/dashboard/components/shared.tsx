@@ -1,5 +1,6 @@
 'use client';
 
+import { Plus } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 
 // Shared components used across multiple tabs
@@ -82,11 +83,23 @@ export function CardDateMeta({
   );
 }
 
-export function DroppableColumn(props: { id: string; children: React.ReactNode }) {
+export function DroppableColumn(props: { id: string; children: React.ReactNode; onAddCard?: () => void }) {
   const { setNodeRef, isOver } = useDroppable({ id: props.id });
   return (
     <div ref={setNodeRef} className={`space-y-3 min-h-32 ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-650/40' : ''}`}>
       {props.children}
+      {props.onAddCard && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onAddCard?.();
+          }}
+          className="w-full mt-2 py-2 px-3 text-sm text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg border border-dashed border-gray-600 hover:border-electric-blue transition-colors flex items-center justify-center gap-2"
+        >
+          <Plus size={16} />
+          Add Card
+        </button>
+      )}
       {/* When empty, provide space to drop */}
       <div className="h-2"></div>
     </div>

@@ -1,13 +1,14 @@
 'use client';
 
+import React from 'react';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
 import { Plus, Trash2 } from 'lucide-react';
-import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
+import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { LinkedinOutreach, LinkedinOutreachColumnId, BoardTimeFilter } from './types';
-import { linkedinOutreachStatusToColumn } from './types';
+import type { LinkedinOutreach, LinkedinOutreachColumnId, BoardTimeFilter, LinkedinOutreachStatus } from './types';
+import { linkedinOutreachStatusToColumn, linkedinOutreachColumnToStatus } from './types';
 import { CardDateMeta, DroppableColumn } from './shared';
 
 type CoffeeChatsTabProps = {
@@ -145,6 +146,8 @@ export default function CoffeeChatsTab({
   isDraggingLinkedinOutreachRef,
   userIdParam,
 }: CoffeeChatsTabProps) {
+  const [defaultStatus, setDefaultStatus] = React.useState<LinkedinOutreachStatus | undefined>(undefined);
+  
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -174,6 +177,7 @@ export default function CoffeeChatsTab({
         </div>
         <button 
           onClick={() => {
+            setDefaultStatus(undefined);
             setEditingLinkedinOutreach(null);
             setIsLinkedinOutreachModalOpen(true);
           }}
@@ -193,7 +197,14 @@ export default function CoffeeChatsTab({
                 Outreach Request Sent ({filteredLinkedinOutreachColumns.outreach.length})
               </h5>
               <SortableContext items={filteredLinkedinOutreachColumns.outreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="outreach">
+                <DroppableColumn 
+                  id="outreach"
+                  onAddCard={() => {
+                    setDefaultStatus(linkedinOutreachColumnToStatus.outreach);
+                    setEditingLinkedinOutreach(null);
+                    setIsLinkedinOutreachModalOpen(true);
+                  }}
+                >
                   {filteredLinkedinOutreachColumns.outreach.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
@@ -215,7 +226,14 @@ export default function CoffeeChatsTab({
                 Request Accepted ({filteredLinkedinOutreachColumns.accepted.length})
               </h5>
               <SortableContext items={filteredLinkedinOutreachColumns.accepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="accepted">
+                <DroppableColumn 
+                  id="accepted"
+                  onAddCard={() => {
+                    setDefaultStatus(linkedinOutreachColumnToStatus.accepted);
+                    setEditingLinkedinOutreach(null);
+                    setIsLinkedinOutreachModalOpen(true);
+                  }}
+                >
                   {filteredLinkedinOutreachColumns.accepted.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
@@ -237,7 +255,14 @@ export default function CoffeeChatsTab({
                 Followed Up ({filteredLinkedinOutreachColumns.followedUpLinkedin.length})
               </h5>
               <SortableContext items={filteredLinkedinOutreachColumns.followedUpLinkedin.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="followedUpLinkedin">
+                <DroppableColumn 
+                  id="followedUpLinkedin"
+                  onAddCard={() => {
+                    setDefaultStatus(linkedinOutreachColumnToStatus.followedUpLinkedin);
+                    setEditingLinkedinOutreach(null);
+                    setIsLinkedinOutreachModalOpen(true);
+                  }}
+                >
                   {filteredLinkedinOutreachColumns.followedUpLinkedin.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
@@ -259,7 +284,14 @@ export default function CoffeeChatsTab({
                 Coffee Chat ({filteredLinkedinOutreachColumns.linkedinOutreach.length})
               </h5>
               <SortableContext items={filteredLinkedinOutreachColumns.linkedinOutreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="linkedinOutreach">
+                <DroppableColumn 
+                  id="linkedinOutreach"
+                  onAddCard={() => {
+                    setDefaultStatus(linkedinOutreachColumnToStatus.linkedinOutreach);
+                    setEditingLinkedinOutreach(null);
+                    setIsLinkedinOutreachModalOpen(true);
+                  }}
+                >
                   {filteredLinkedinOutreachColumns.linkedinOutreach.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
@@ -297,9 +329,11 @@ export default function CoffeeChatsTab({
       {isLinkedinOutreachModalOpen && (
         <LinkedinOutreachModal
           linkedinOutreach={editingLinkedinOutreach}
+          defaultStatus={defaultStatus}
           onClose={() => {
             setIsLinkedinOutreachModalOpen(false);
             setEditingLinkedinOutreach(null);
+            setDefaultStatus(undefined);
           }}
           onSave={async (data: Partial<LinkedinOutreach>) => {
             try {

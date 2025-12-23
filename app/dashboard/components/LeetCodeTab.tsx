@@ -1,13 +1,14 @@
 'use client';
 
+import React from 'react';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
 import { Plus, Trash2 } from 'lucide-react';
-import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
+import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { LeetEntry, LeetColumnId, BoardTimeFilter } from './types';
-import { leetStatusToColumn } from './types';
+import type { LeetEntry, LeetColumnId, BoardTimeFilter, LeetStatus } from './types';
+import { leetStatusToColumn, leetColumnToStatus } from './types';
 import { CardDateMeta, DroppableColumn } from './shared';
 
 type LeetCodeTabProps = {
@@ -146,6 +147,8 @@ export default function LeetCodeTab({
   isDraggingLeetRef,
   userIdParam,
 }: LeetCodeTabProps) {
+  const [defaultStatus, setDefaultStatus] = React.useState<LeetStatus | undefined>(undefined);
+  
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -175,6 +178,7 @@ export default function LeetCodeTab({
         </div>
         <button
           onClick={() => {
+            setDefaultStatus(undefined);
             setEditingLeet(null);
             setIsLeetModalOpen(true);
           }}
@@ -194,7 +198,14 @@ export default function LeetCodeTab({
                 Planned ({filteredLeetColumns.planned.length})
               </h5>
               <SortableContext items={filteredLeetColumns.planned.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="planned">
+                <DroppableColumn 
+                  id="planned"
+                  onAddCard={() => {
+                    setDefaultStatus(leetColumnToStatus.planned);
+                    setEditingLeet(null);
+                    setIsLeetModalOpen(true);
+                  }}
+                >
                   {filteredLeetColumns.planned.map(entry => (
                     <SortableLeetCard 
                       key={entry.id} 
@@ -216,7 +227,14 @@ export default function LeetCodeTab({
                 Solved ({filteredLeetColumns.solved.length})
               </h5>
               <SortableContext items={filteredLeetColumns.solved.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="solved">
+                <DroppableColumn 
+                  id="solved"
+                  onAddCard={() => {
+                    setDefaultStatus(leetColumnToStatus.solved);
+                    setEditingLeet(null);
+                    setIsLeetModalOpen(true);
+                  }}
+                >
                   {filteredLeetColumns.solved.map(entry => (
                     <SortableLeetCard 
                       key={entry.id} 
@@ -238,7 +256,14 @@ export default function LeetCodeTab({
                 Reflected ({filteredLeetColumns.reflected.length})
               </h5>
               <SortableContext items={filteredLeetColumns.reflected.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
-                <DroppableColumn id="reflected">
+                <DroppableColumn 
+                  id="reflected"
+                  onAddCard={() => {
+                    setDefaultStatus(leetColumnToStatus.reflected);
+                    setEditingLeet(null);
+                    setIsLeetModalOpen(true);
+                  }}
+                >
                   {filteredLeetColumns.reflected.map(entry => (
                     <SortableLeetCard 
                       key={entry.id} 
@@ -278,9 +303,11 @@ export default function LeetCodeTab({
       {isLeetModalOpen && (
         <LeetModal
           entry={editingLeet}
+          defaultStatus={defaultStatus}
           onClose={() => {
             setIsLeetModalOpen(false);
             setEditingLeet(null);
+            setDefaultStatus(undefined);
           }}
           onSave={async (data: Partial<LeetEntry>) => {
             try {

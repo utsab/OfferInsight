@@ -1,14 +1,15 @@
 'use client';
 
+import React from 'react';
 import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
 
 import { Plus, Trash2 } from 'lucide-react';
-import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core';
+import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Application, ApplicationColumnId, BoardTimeFilter } from './types';
-import { applicationStatusToColumn } from './types';
-import { CardDateMeta } from './shared';
+import type { Application, ApplicationColumnId, BoardTimeFilter, ApplicationStatus } from './types';
+import { applicationStatusToColumn, applicationColumnToStatus } from './types';
+import { CardDateMeta, DroppableColumn } from './shared';
 
 type ApplicationsTabProps = {
   filteredAppColumns: Record<ApplicationColumnId, Application[]>;
@@ -112,16 +113,6 @@ function SortableAppCard(props: {
   );
 }
 
-function DroppableColumn(props: { id: string; children: React.ReactNode }) {
-  const { setNodeRef, isOver } = useDroppable({ id: props.id });
-  return (
-    <div ref={setNodeRef} className={`space-y-3 min-h-32 ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-600/40' : ''}`}>
-      {props.children}
-      <div className="h-2"></div>
-    </div>
-  );
-}
-
 export default function ApplicationsTab({
   filteredAppColumns,
   appColumns,
@@ -147,6 +138,8 @@ export default function ApplicationsTab({
   isDraggingAppRef,
   userIdParam,
 }: ApplicationsTabProps & { isDraggingAppRef: React.MutableRefObject<boolean> }) {
+  const [defaultStatus, setDefaultStatus] = React.useState<ApplicationStatus | undefined>(undefined);
+  
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -176,6 +169,7 @@ export default function ApplicationsTab({
         </div>
         <button 
           onClick={() => {
+            setDefaultStatus(undefined);
             setEditingApp(null);
             setIsModalOpen(true);
           }}
@@ -195,7 +189,14 @@ export default function ApplicationsTab({
                 Applied ({filteredAppColumns.applied.length})
               </h5>
               <SortableContext items={filteredAppColumns.applied.map(c => c.id)} strategy={rectSortingStrategy}>
-                <DroppableColumn id="applied">
+                <DroppableColumn 
+                  id="applied"
+                  onAddCard={() => {
+                    setDefaultStatus(applicationColumnToStatus.applied);
+                    setEditingApp(null);
+                    setIsModalOpen(true);
+                  }}
+                >
                   {filteredAppColumns.applied.map(card => (
                     <SortableAppCard 
                       key={card.id} 
@@ -217,7 +218,14 @@ export default function ApplicationsTab({
                 Messaged Hiring Manager ({filteredAppColumns.messagedHiringManager.length})
               </h5>
               <SortableContext items={filteredAppColumns.messagedHiringManager.map(c => c.id)} strategy={rectSortingStrategy}>
-                <DroppableColumn id="messagedHiringManager">
+                <DroppableColumn 
+                  id="messagedHiringManager"
+                  onAddCard={() => {
+                    setDefaultStatus(applicationColumnToStatus.messagedHiringManager);
+                    setEditingApp(null);
+                    setIsModalOpen(true);
+                  }}
+                >
                   {filteredAppColumns.messagedHiringManager.map(card => (
                     <SortableAppCard 
                       key={card.id} 
@@ -239,7 +247,14 @@ export default function ApplicationsTab({
                 Messaged Recruiter ({filteredAppColumns.messagedRecruiter.length})
               </h5>
               <SortableContext items={filteredAppColumns.messagedRecruiter.map(c => c.id)} strategy={rectSortingStrategy}>
-                <DroppableColumn id="messagedRecruiter">
+                <DroppableColumn 
+                  id="messagedRecruiter"
+                  onAddCard={() => {
+                    setDefaultStatus(applicationColumnToStatus.messagedRecruiter);
+                    setEditingApp(null);
+                    setIsModalOpen(true);
+                  }}
+                >
                   {filteredAppColumns.messagedRecruiter.map(card => (
                     <SortableAppCard 
                       key={card.id} 
@@ -261,7 +276,14 @@ export default function ApplicationsTab({
                 Followed Up ({filteredAppColumns.followedUp.length})
               </h5>
               <SortableContext items={filteredAppColumns.followedUp.map(c => c.id)} strategy={rectSortingStrategy}>
-                <DroppableColumn id="followedUp">
+                <DroppableColumn 
+                  id="followedUp"
+                  onAddCard={() => {
+                    setDefaultStatus(applicationColumnToStatus.followedUp);
+                    setEditingApp(null);
+                    setIsModalOpen(true);
+                  }}
+                >
                   {filteredAppColumns.followedUp.map(card => (
                     <SortableAppCard 
                       key={card.id} 
@@ -283,7 +305,14 @@ export default function ApplicationsTab({
                 Interview ({filteredAppColumns.interview.length})
               </h5>
               <SortableContext items={filteredAppColumns.interview.map(c => c.id)} strategy={rectSortingStrategy}>
-                <DroppableColumn id="interview">
+                <DroppableColumn 
+                  id="interview"
+                  onAddCard={() => {
+                    setDefaultStatus(applicationColumnToStatus.interview);
+                    setEditingApp(null);
+                    setIsModalOpen(true);
+                  }}
+                >
                   {filteredAppColumns.interview.map(card => (
                     <SortableAppCard 
                       key={card.id} 
@@ -326,9 +355,11 @@ export default function ApplicationsTab({
       {isModalOpen && (
         <ApplicationModal
           application={editingApp}
+          defaultStatus={defaultStatus}
           onClose={() => {
             setIsModalOpen(false);
             setEditingApp(null);
+            setDefaultStatus(undefined);
           }}
           onSave={async (data: Partial<Application>) => {
             try {
