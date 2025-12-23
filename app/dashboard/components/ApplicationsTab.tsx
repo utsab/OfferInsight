@@ -7,11 +7,13 @@ import { DndContext, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/c
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Application, ApplicationColumnId, BoardTimeFilter } from './types';
+import { applicationStatusToColumn } from './types';
 import { CardDateMeta } from './shared';
 
 type ApplicationsTabProps = {
   filteredAppColumns: Record<ApplicationColumnId, Application[]>;
   appColumns: Record<ApplicationColumnId, Application[]>;
+  setAppColumns: React.Dispatch<React.SetStateAction<Record<ApplicationColumnId, Application[]>>>;
   isLoading: boolean;
   applicationsFilter: BoardTimeFilter;
   setApplicationsFilter: (filter: BoardTimeFilter) => void;
@@ -123,6 +125,7 @@ function DroppableColumn(props: { id: string; children: React.ReactNode }) {
 export default function ApplicationsTab({
   filteredAppColumns,
   appColumns,
+  setAppColumns,
   isLoading,
   applicationsFilter,
   setApplicationsFilter,
@@ -330,6 +333,7 @@ export default function ApplicationsTab({
           onSave={async (data: Partial<Application>) => {
             try {
               const url = userIdParam ? `/api/applications_with_outreach?userId=${userIdParam}` : '/api/applications_with_outreach';
+              let updatedApp: Application;
               if (editingApp) {
                 const response = await fetch(url, {
                   method: 'PUT',
@@ -337,6 +341,58 @@ export default function ApplicationsTab({
                   body: JSON.stringify({ ...data, id: editingApp.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update application');
+                updatedApp = await response.json() as Application;
+                
+                // Optimistically update the state immediately
+                setAppColumns(prev => {
+                  // Create completely new arrays for all columns to ensure React detects the change
+                  const newColumns: Record<ApplicationColumnId, Application[]> = {
+                    applied: [...prev.applied],
+                    messagedRecruiter: [...prev.messagedRecruiter],
+                    messagedHiringManager: [...prev.messagedHiringManager],
+                    followedUp: [...prev.followedUp],
+                    interview: [...prev.interview],
+                  };
+                  const targetColumn = applicationStatusToColumn[updatedApp.status] || 'applied';
+                  
+                  // Find the old item's column and index
+                  let oldColumn: ApplicationColumnId | null = null;
+                  let oldIndex = -1;
+                  Object.keys(newColumns).forEach(colId => {
+                    const col = colId as ApplicationColumnId;
+                    const index = newColumns[col].findIndex(app => app.id === editingApp.id);
+                    if (index !== -1) {
+                      oldColumn = col;
+                      oldIndex = index;
+                    }
+                  });
+                  
+                  if (oldColumn !== null && oldIndex !== -1) {
+                    // Create a new object reference to ensure React detects the change
+                    const updatedCard: Application = { ...updatedApp };
+                    if (oldColumn === targetColumn) {
+                      // Same column: update in place with new array reference
+                      newColumns[targetColumn] = [
+                        ...newColumns[targetColumn].slice(0, oldIndex),
+                        updatedCard,
+                        ...newColumns[targetColumn].slice(oldIndex + 1)
+                      ];
+                    } else {
+                      // Different column: remove from old, add to new
+                      newColumns[oldColumn] = [
+                        ...newColumns[oldColumn].slice(0, oldIndex),
+                        ...newColumns[oldColumn].slice(oldIndex + 1)
+                      ];
+                      newColumns[targetColumn] = [...newColumns[targetColumn], updatedCard];
+                    }
+                  } else {
+                    // Not found (shouldn't happen), just add to target column
+                    const updatedCard: Application = { ...updatedApp };
+                    newColumns[targetColumn] = [...newColumns[targetColumn], updatedCard];
+                  }
+                  
+                  return newColumns;
+                });
               } else {
                 const response = await fetch(url, {
                   method: 'POST',
@@ -344,13 +400,34 @@ export default function ApplicationsTab({
                   body: JSON.stringify(data),
                 });
                 if (!response.ok) throw new Error('Failed to create application');
+                const responseData = await response.json();
+                updatedApp = (responseData.application || responseData) as Application;
+                
+                // Optimistically update the state immediately
+                setAppColumns(prev => {
+                  // Create completely new arrays for all columns to ensure React detects the change
+                  const newColumns: Record<ApplicationColumnId, Application[]> = {
+                    applied: [...prev.applied],
+                    messagedRecruiter: [...prev.messagedRecruiter],
+                    messagedHiringManager: [...prev.messagedHiringManager],
+                    followedUp: [...prev.followedUp],
+                    interview: [...prev.interview],
+                  };
+                  const targetColumn = applicationStatusToColumn[updatedApp.status] || 'applied';
+                  const newCard: Application = { ...updatedApp };
+                  newColumns[targetColumn] = [...newColumns[targetColumn], newCard];
+                  return newColumns;
+                });
               }
-              await fetchApplications();
               setIsModalOpen(false);
               setEditingApp(null);
+              // No need to refetch - we already have the updated item from the API response
+              // The optimistic update is sufficient since we're using the server's response data
             } catch (error) {
               console.error('Error saving application:', error);
               alert('Failed to save application. Please try again.');
+              // Refresh data on error to restore correct state
+              await fetchApplications();
             }
           }}
         />

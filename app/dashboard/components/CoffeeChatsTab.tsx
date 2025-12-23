@@ -7,11 +7,13 @@ import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { LinkedinOutreach, LinkedinOutreachColumnId, BoardTimeFilter } from './types';
+import { linkedinOutreachStatusToColumn } from './types';
 import { CardDateMeta, DroppableColumn } from './shared';
 
 type CoffeeChatsTabProps = {
   filteredLinkedinOutreachColumns: Record<LinkedinOutreachColumnId, LinkedinOutreach[]>;
   linkedinOutreachColumns: Record<LinkedinOutreachColumnId, LinkedinOutreach[]>;
+  setLinkedinOutreachColumns: React.Dispatch<React.SetStateAction<Record<LinkedinOutreachColumnId, LinkedinOutreach[]>>>;
   isLoadingLinkedinOutreach: boolean;
   linkedinOutreachFilter: BoardTimeFilter;
   setLinkedinOutreachFilter: (filter: BoardTimeFilter) => void;
@@ -121,6 +123,7 @@ function SortableLinkedinOutreachCard(props: {
 export default function CoffeeChatsTab({
   filteredLinkedinOutreachColumns,
   linkedinOutreachColumns,
+  setLinkedinOutreachColumns,
   isLoadingLinkedinOutreach,
   linkedinOutreachFilter,
   setLinkedinOutreachFilter,
@@ -301,6 +304,7 @@ export default function CoffeeChatsTab({
           onSave={async (data: Partial<LinkedinOutreach>) => {
             try {
               const url = userIdParam ? `/api/linkedin_outreach?userId=${userIdParam}` : '/api/linkedin_outreach';
+              let updatedOutreach: LinkedinOutreach;
               if (editingLinkedinOutreach) {
                 const response = await fetch(url, {
                   method: 'PUT',
@@ -308,6 +312,51 @@ export default function CoffeeChatsTab({
                   body: JSON.stringify({ ...data, id: editingLinkedinOutreach.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update LinkedIn outreach entry');
+                updatedOutreach = await response.json() as LinkedinOutreach;
+                
+                // Optimistically update the state immediately
+                setLinkedinOutreachColumns(prev => {
+                  const newColumns = { ...prev };
+                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'outreach';
+                  
+                  // Find the old item's column and index
+                  let oldColumn: LinkedinOutreachColumnId | null = null;
+                  let oldIndex = -1;
+                  Object.keys(newColumns).forEach(colId => {
+                    const col = colId as LinkedinOutreachColumnId;
+                    const index = newColumns[col].findIndex(outreach => outreach.id === editingLinkedinOutreach.id);
+                    if (index !== -1) {
+                      oldColumn = col;
+                      oldIndex = index;
+                    }
+                  });
+                  
+                  if (oldColumn !== null && oldIndex !== -1) {
+                    // Create a new object reference to ensure React detects the change
+                    const updatedCard = { ...updatedOutreach };
+                    if (oldColumn === targetColumn) {
+                      // Same column: update in place
+                      newColumns[targetColumn] = [
+                        ...newColumns[targetColumn].slice(0, oldIndex),
+                        updatedCard,
+                        ...newColumns[targetColumn].slice(oldIndex + 1)
+                      ];
+                    } else {
+                      // Different column: remove from old, add to new
+                      newColumns[oldColumn] = [
+                        ...newColumns[oldColumn].slice(0, oldIndex),
+                        ...newColumns[oldColumn].slice(oldIndex + 1)
+                      ];
+                      newColumns[targetColumn] = [...newColumns[targetColumn], updatedCard];
+                    }
+                  } else {
+                    // Not found (shouldn't happen), just add to target column
+                    const updatedCard = { ...updatedOutreach };
+                    newColumns[targetColumn] = [...newColumns[targetColumn], updatedCard];
+                  }
+                  
+                  return newColumns;
+                });
               } else {
                 const response = await fetch(url, {
                   method: 'POST',
@@ -315,13 +364,25 @@ export default function CoffeeChatsTab({
                   body: JSON.stringify(data),
                 });
                 if (!response.ok) throw new Error('Failed to create LinkedIn outreach entry');
+                updatedOutreach = await response.json() as LinkedinOutreach;
+                
+                // Optimistically update the state immediately
+                setLinkedinOutreachColumns(prev => {
+                  const newColumns = { ...prev };
+                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'outreach';
+                  newColumns[targetColumn] = [...newColumns[targetColumn], updatedOutreach];
+                  return newColumns;
+                });
               }
-              await fetchLinkedinOutreach();
               setIsLinkedinOutreachModalOpen(false);
               setEditingLinkedinOutreach(null);
+              // No need to refetch - we already have the updated item from the API response
+              // The optimistic update is sufficient since we're using the server's response data
             } catch (error) {
               console.error('Error saving LinkedIn outreach entry:', error);
               alert('Failed to save coffee chat. Please try again.');
+              // Refresh data on error to restore correct state
+              await fetchLinkedinOutreach();
             }
           }}
         />

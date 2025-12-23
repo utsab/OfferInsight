@@ -7,11 +7,13 @@ import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { InPersonEvent, EventColumnId, BoardTimeFilter } from './types';
+import { eventStatusToColumn } from './types';
 import { CardDateMeta, DroppableColumn } from './shared';
 
 type EventsTabProps = {
   filteredEventColumns: Record<EventColumnId, InPersonEvent[]>;
   eventColumns: Record<EventColumnId, InPersonEvent[]>;
+  setEventColumns: React.Dispatch<React.SetStateAction<Record<EventColumnId, InPersonEvent[]>>>;
   isLoadingEvents: boolean;
   eventsFilter: BoardTimeFilter;
   setEventsFilter: (filter: BoardTimeFilter) => void;
@@ -146,6 +148,7 @@ function SortableEventCard(props: {
 export default function EventsTab({
   filteredEventColumns,
   eventColumns,
+  setEventColumns,
   isLoadingEvents,
   eventsFilter,
   setEventsFilter,
@@ -340,6 +343,7 @@ export default function EventsTab({
           onSave={async (data: Partial<InPersonEvent> & { date?: string }) => {
             try {
               const url = userIdParam ? `/api/in_person_events?userId=${userIdParam}` : '/api/in_person_events';
+              let updatedEvent: InPersonEvent;
               if (editingEvent) {
                 const response = await fetch(url, {
                   method: 'PUT',
@@ -347,6 +351,51 @@ export default function EventsTab({
                   body: JSON.stringify({ ...data, id: editingEvent.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update event');
+                updatedEvent = await response.json() as InPersonEvent;
+                
+                // Optimistically update the state immediately
+                setEventColumns(prev => {
+                  const newColumns = { ...prev };
+                  const targetColumn = eventStatusToColumn[updatedEvent.status] ?? 'upcoming';
+                  
+                  // Find the old item's column and index
+                  let oldColumn: EventColumnId | null = null;
+                  let oldIndex = -1;
+                  Object.keys(newColumns).forEach(colId => {
+                    const col = colId as EventColumnId;
+                    const index = newColumns[col].findIndex(event => event.id === editingEvent.id);
+                    if (index !== -1) {
+                      oldColumn = col;
+                      oldIndex = index;
+                    }
+                  });
+                  
+                  if (oldColumn !== null && oldIndex !== -1) {
+                    // Create a new object reference to ensure React detects the change
+                    const updatedCard = { ...updatedEvent };
+                    if (oldColumn === targetColumn) {
+                      // Same column: update in place
+                      newColumns[targetColumn] = [
+                        ...newColumns[targetColumn].slice(0, oldIndex),
+                        updatedCard,
+                        ...newColumns[targetColumn].slice(oldIndex + 1)
+                      ];
+                    } else {
+                      // Different column: remove from old, add to new
+                      newColumns[oldColumn] = [
+                        ...newColumns[oldColumn].slice(0, oldIndex),
+                        ...newColumns[oldColumn].slice(oldIndex + 1)
+                      ];
+                      newColumns[targetColumn] = [...newColumns[targetColumn], updatedCard];
+                    }
+                  } else {
+                    // Not found (shouldn't happen), just add to target column
+                    const updatedCard = { ...updatedEvent };
+                    newColumns[targetColumn] = [...newColumns[targetColumn], updatedCard];
+                  }
+                  
+                  return newColumns;
+                });
               } else {
                 const response = await fetch(url, {
                   method: 'POST',
@@ -354,13 +403,25 @@ export default function EventsTab({
                   body: JSON.stringify(data),
                 });
                 if (!response.ok) throw new Error('Failed to create event');
+                updatedEvent = await response.json() as InPersonEvent;
+                
+                // Optimistically update the state immediately
+                setEventColumns(prev => {
+                  const newColumns = { ...prev };
+                  const targetColumn = eventStatusToColumn[updatedEvent.status] ?? 'upcoming';
+                  newColumns[targetColumn] = [...newColumns[targetColumn], updatedEvent];
+                  return newColumns;
+                });
               }
-              await fetchEvents();
               setIsEventModalOpen(false);
               setEditingEvent(null);
+              // No need to refetch - we already have the updated item from the API response
+              // The optimistic update is sufficient since we're using the server's response data
             } catch (error) {
               console.error('Error saving event:', error);
               alert('Failed to save event. Please try again.');
+              // Refresh data on error to restore correct state
+              await fetchEvents();
             }
           }}
         />

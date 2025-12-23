@@ -186,6 +186,7 @@ export async function PUT(request: NextRequest) {
       notes,
       status,
       dateCreated, // ===== DATE FIELD EDITING =====
+      dateModified, // ===== DATE FIELD EDITING =====
     } = body;
 
     if (!id) {
@@ -251,9 +252,26 @@ export async function PUT(request: NextRequest) {
         hasChanges = true;
       }
     }
-    // dateModified: Only update if at least one field actually changed (adjusted for user's timezone)
-    if (hasChanges) {
+    // ===== DATE FIELD EDITING: Allow updating dateModified if provided =====
+    if (dateModified !== undefined) {
+      if (dateModified === null) {
+        // Allow clearing dateModified
+        updateData.dateModified = null;
+        hasChanges = true;
+      } else {
+        const newDateModified = new Date(dateModified);
+        const existingDateModified = existingApplication.dateModified ? new Date(existingApplication.dateModified) : null;
+        if (!existingDateModified || newDateModified.getTime() !== existingDateModified.getTime()) {
+          updateData.dateModified = newDateModified;
+          hasChanges = true;
+        }
+      }
+    } else if (hasChanges) {
+      // Only auto-update dateModified if no explicit value was provided and other fields changed
       updateData.dateModified = getDateInUserTimezone();
+    }
+    
+    if (hasChanges) {
       const updatedApplication = await prisma.applications_With_Outreach.update({
         where: { id },
         data: updateData,

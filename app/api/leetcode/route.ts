@@ -142,7 +142,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
-    const { id, problem, problemType, difficulty, url, reflection, status, dateCreated } = await request.json(); // ===== DATE FIELD EDITING =====
+    const { id, problem, problemType, difficulty, url, reflection, status, dateCreated, dateModified } = await request.json(); // ===== DATE FIELD EDITING =====
 
     if (!id) {
       return NextResponse.json({ error: "Problem ID is required" }, { status: 400 });
@@ -210,8 +210,22 @@ export async function PUT(request: NextRequest) {
         hasChanges = true;
       }
     }
-    // dateModified: Only update if at least one field actually changed (adjusted for user's timezone)
-    if (hasChanges) {
+    // ===== DATE FIELD EDITING: Allow updating dateModified if provided =====
+    if (dateModified !== undefined) {
+      if (dateModified === null) {
+        // Allow clearing dateModified
+        updateData.dateModified = null;
+        hasChanges = true;
+      } else {
+        const newDateModified = new Date(dateModified);
+        const existingDateModified = existing.dateModified ? new Date(existing.dateModified) : null;
+        if (!existingDateModified || newDateModified.getTime() !== existingDateModified.getTime()) {
+          updateData.dateModified = newDateModified;
+          hasChanges = true;
+        }
+      }
+    } else if (hasChanges) {
+      // Only auto-update dateModified if no explicit value was provided and other fields changed
       updateData.dateModified = getDateInUserTimezone();
     }
 

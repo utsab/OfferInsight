@@ -97,7 +97,7 @@ const ENABLE_DASHBOARD_MOCKS = false;
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
 // When enabled, date input fields will appear in all modals allowing you to set/change the dateCreated and dateModified values.
 // The dates will be properly saved to the database as DateTime when creating or updating records.
-const ENABLE_DATE_FIELD_EDITING = false;
+const ENABLE_DATE_FIELD_EDITING = true;
 // ===== DATE FIELD EDITING TOGGLE END =====
 
 type TimeParts = {
@@ -440,10 +440,20 @@ export default function Page() {
       const updatedItem: Application = {
         ...movingItem,
         status: newStatus,
-        // dateModified will be set automatically by the server on PATCH
+        // Optimistically update dateModified to current date (server will confirm on PATCH)
+        dateModified: new Date().toISOString(),
       };
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
-      setAppColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+      // Create new column arrays to ensure React detects the change
+      setAppColumns(prev => ({
+        applied: [...prev.applied],
+        messagedRecruiter: [...prev.messagedRecruiter],
+        messagedHiringManager: [...prev.messagedHiringManager],
+        followedUp: [...prev.followedUp],
+        interview: [...prev.interview],
+        [fromCol]: newFrom,
+        [toCol]: newTo,
+      }));
       
       // Update status in database (debounced to prevent rapid-fire requests)
       // Server will automatically set dateModified to current date on PATCH
@@ -599,11 +609,20 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const updatedItem: LinkedinOutreach = {
         ...movingItem,
         status: newStatus,
-        // dateModified will be set automatically by the server on PATCH
+        // Optimistically update dateModified to current date (server will confirm on PATCH)
+        dateModified: new Date().toISOString(),
       };
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
-      setLinkedinOutreachColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+      // Create new column arrays to ensure React detects the change
+      setLinkedinOutreachColumns(prev => ({
+        outreach: [...prev.outreach],
+        accepted: [...prev.accepted],
+        followedUpLinkedin: [...prev.followedUpLinkedin],
+        linkedinOutreach: [...prev.linkedinOutreach],
+        [fromCol]: newFrom,
+        [toCol]: newTo,
+      }));
 
       // Update status in database (debounced to prevent rapid-fire requests)
       // Server will automatically set dateModified to current date on PATCH
@@ -757,10 +776,19 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const updatedItem: InPersonEvent = {
         ...movingItem,
         status: newStatus,
-        // dateModified will be set automatically by the server on PATCH
+        // Optimistically update dateModified to current date (server will confirm on PATCH)
+        dateModified: new Date().toISOString(),
       };
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
-      setEventColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+      // Create new column arrays to ensure React detects the change
+      setEventColumns(prev => ({
+        upcoming: [...prev.upcoming],
+        attended: [...prev.attended],
+        linkedinRequestsSent: [...prev.linkedinRequestsSent],
+        followups: [...prev.followups],
+        [fromCol]: newFrom,
+        [toCol]: newTo,
+      }));
 
       // Update status in database (debounced to prevent rapid-fire requests)
       // Server will automatically set dateModified to current date on PATCH
@@ -915,10 +943,18 @@ const hasSeededMockDataRef = useRef(false);
       const updatedItem: LeetEntry = {
         ...movingItem,
         status: newStatus,
-        // dateModified will be set automatically by the server on PATCH
+        // Optimistically update dateModified to current date (server will confirm on PATCH)
+        dateModified: new Date().toISOString(),
       };
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
-      setLeetColumns(prev => ({ ...prev, [fromCol]: newFrom, [toCol]: newTo }));
+      // Create new column arrays to ensure React detects the change
+      setLeetColumns(prev => ({
+        planned: [...prev.planned],
+        solved: [...prev.solved],
+        reflected: [...prev.reflected],
+        [fromCol]: newFrom,
+        [toCol]: newTo,
+      }));
 
       // Update status in database (debounced to prevent rapid-fire requests)
       // Server will automatically set dateModified to current date on PATCH
@@ -1904,6 +1940,7 @@ const hasSeededMockDataRef = useRef(false);
           <ApplicationsTab
             filteredAppColumns={filteredAppColumns}
             appColumns={appColumns}
+            setAppColumns={setAppColumns}
             isLoading={isLoading}
             applicationsFilter={applicationsFilter}
             setApplicationsFilter={setApplicationsFilter}
@@ -1932,6 +1969,7 @@ const hasSeededMockDataRef = useRef(false);
           <CoffeeChatsTab
             filteredLinkedinOutreachColumns={filteredLinkedinOutreachColumns}
             linkedinOutreachColumns={linkedinOutreachColumns}
+            setLinkedinOutreachColumns={setLinkedinOutreachColumns}
             isLoadingLinkedinOutreach={isLoadingLinkedinOutreach}
             linkedinOutreachFilter={linkedinOutreachFilter}
             setLinkedinOutreachFilter={setLinkedinOutreachFilter}
@@ -1960,6 +1998,7 @@ const hasSeededMockDataRef = useRef(false);
           <EventsTab
             filteredEventColumns={filteredEventColumns}
             eventColumns={eventColumns}
+            setEventColumns={setEventColumns}
             isLoadingEvents={isLoadingEvents}
             eventsFilter={eventsFilter}
             setEventsFilter={setEventsFilter}
@@ -1988,6 +2027,7 @@ const hasSeededMockDataRef = useRef(false);
           <LeetCodeTab
             filteredLeetColumns={filteredLeetColumns}
             leetColumns={leetColumns}
+            setLeetColumns={setLeetColumns}
             isLoadingLeet={isLoadingLeet}
             leetFilter={leetFilter}
             setLeetFilter={setLeetFilter}

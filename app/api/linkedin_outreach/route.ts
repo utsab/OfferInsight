@@ -205,8 +205,22 @@ export async function PUT(request: NextRequest) {
         hasChanges = true;
       }
     }
-    // dateModified: Only update if at least one field actually changed (adjusted for user's timezone)
-    if (hasChanges) {
+    // ===== DATE FIELD EDITING: Allow updating dateModified if provided =====
+    if (data.dateModified !== undefined) {
+      if (data.dateModified === null) {
+        // Allow clearing dateModified
+        updateData.dateModified = null;
+        hasChanges = true;
+      } else {
+        const newDateModified = new Date(data.dateModified);
+        const existingDateModified = outreach.dateModified ? new Date(outreach.dateModified) : null;
+        if (!existingDateModified || newDateModified.getTime() !== existingDateModified.getTime()) {
+          updateData.dateModified = newDateModified;
+          hasChanges = true;
+        }
+      }
+    } else if (hasChanges) {
+      // Only auto-update dateModified if no explicit value was provided and other fields changed
       updateData.dateModified = getDateInUserTimezone();
     }
 

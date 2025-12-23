@@ -7,11 +7,13 @@ import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { LeetEntry, LeetColumnId, BoardTimeFilter } from './types';
+import { leetStatusToColumn } from './types';
 import { CardDateMeta, DroppableColumn } from './shared';
 
 type LeetCodeTabProps = {
   filteredLeetColumns: Record<LeetColumnId, LeetEntry[]>;
   leetColumns: Record<LeetColumnId, LeetEntry[]>;
+  setLeetColumns: React.Dispatch<React.SetStateAction<Record<LeetColumnId, LeetEntry[]>>>;
   isLoadingLeet: boolean;
   leetFilter: BoardTimeFilter;
   setLeetFilter: (filter: BoardTimeFilter) => void;
@@ -122,6 +124,7 @@ function SortableLeetCard(props: {
 export default function LeetCodeTab({
   filteredLeetColumns,
   leetColumns,
+  setLeetColumns,
   isLoadingLeet,
   leetFilter,
   setLeetFilter,
@@ -282,6 +285,7 @@ export default function LeetCodeTab({
           onSave={async (data: Partial<LeetEntry>) => {
             try {
               const url = userIdParam ? `/api/leetcode?userId=${userIdParam}` : '/api/leetcode';
+              let updatedEntry: LeetEntry;
               if (editingLeet) {
                 const response = await fetch(url, {
                   method: 'PUT',
@@ -289,6 +293,51 @@ export default function LeetCodeTab({
                   body: JSON.stringify({ ...data, id: editingLeet.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update problem');
+                updatedEntry = await response.json() as LeetEntry;
+                
+                // Optimistically update the state immediately
+                setLeetColumns(prev => {
+                  const newColumns = { ...prev };
+                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'planned';
+                  
+                  // Find the old item's column and index
+                  let oldColumn: LeetColumnId | null = null;
+                  let oldIndex = -1;
+                  Object.keys(newColumns).forEach(colId => {
+                    const col = colId as LeetColumnId;
+                    const index = newColumns[col].findIndex(entry => entry.id === editingLeet.id);
+                    if (index !== -1) {
+                      oldColumn = col;
+                      oldIndex = index;
+                    }
+                  });
+                  
+                  if (oldColumn !== null && oldIndex !== -1) {
+                    // Create a new object reference to ensure React detects the change
+                    const updatedCard = { ...updatedEntry };
+                    if (oldColumn === targetColumn) {
+                      // Same column: update in place
+                      newColumns[targetColumn] = [
+                        ...newColumns[targetColumn].slice(0, oldIndex),
+                        updatedCard,
+                        ...newColumns[targetColumn].slice(oldIndex + 1)
+                      ];
+                    } else {
+                      // Different column: remove from old, add to new
+                      newColumns[oldColumn] = [
+                        ...newColumns[oldColumn].slice(0, oldIndex),
+                        ...newColumns[oldColumn].slice(oldIndex + 1)
+                      ];
+                      newColumns[targetColumn] = [...newColumns[targetColumn], updatedCard];
+                    }
+                  } else {
+                    // Not found (shouldn't happen), just add to target column
+                    const updatedCard = { ...updatedEntry };
+                    newColumns[targetColumn] = [...newColumns[targetColumn], updatedCard];
+                  }
+                  
+                  return newColumns;
+                });
               } else {
                 const response = await fetch(url, {
                   method: 'POST',
@@ -296,13 +345,25 @@ export default function LeetCodeTab({
                   body: JSON.stringify(data),
                 });
                 if (!response.ok) throw new Error('Failed to create problem');
+                updatedEntry = await response.json() as LeetEntry;
+                
+                // Optimistically update the state immediately
+                setLeetColumns(prev => {
+                  const newColumns = { ...prev };
+                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'planned';
+                  newColumns[targetColumn] = [...newColumns[targetColumn], updatedEntry];
+                  return newColumns;
+                });
               }
-              await fetchLeetEntries();
               setIsLeetModalOpen(false);
               setEditingLeet(null);
+              // No need to refetch - we already have the updated item from the API response
+              // The optimistic update is sufficient since we're using the server's response data
             } catch (error) {
               console.error('Error saving LeetCode problem:', error);
               alert('Failed to save problem. Please try again.');
+              // Refresh data on error to restore correct state
+              await fetchLeetEntries();
             }
           }}
         />
