@@ -28,14 +28,19 @@ type TimeParts = {
 const toLocalTimeParts = (value: string): TimeParts => {
   try {
     const date = new Date(value);
-    let hours = date.getUTCHours();
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    // Check if fingerprinting is active
+    const testDate = new Date('2024-01-01T12:00:00Z');
+    const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                    testDate.getHours() === 12;
+    
+    let hours = fingerprintingDetected ? date.getUTCHours() : date.getHours();
+    const minutes = fingerprintingDetected ? date.getUTCMinutes() : date.getMinutes();
     const period = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
     if (hours === 0) hours = 12;
     return {
       hour: String(hours).padStart(2, '0'),
-      minute: minutes,
+      minute: String(minutes).padStart(2, '0'),
       period,
     };
   } catch {
@@ -90,15 +95,20 @@ function SortableEventCard(props: {
   const formatDateTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
+      // Check if fingerprinting is active
+      const testDate = new Date('2024-01-01T12:00:00Z');
+      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                      testDate.getHours() === 12;
+      
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = monthNames[date.getUTCMonth()];
-      const day = date.getUTCDate();
-      let hours = date.getUTCHours();
-      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+      const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
+      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
+      let hours = fingerprintingDetected ? date.getUTCHours() : date.getHours();
+      const minutes = fingerprintingDetected ? date.getUTCMinutes() : date.getMinutes();
       const period = hours >= 12 ? 'PM' : 'AM';
       hours = hours % 12;
       if (hours === 0) hours = 12;
-      return `${month} ${day}, ${hours}:${minutes} ${period}`;
+      return `${month} ${day}, ${hours}:${String(minutes).padStart(2, '0')} ${period}`;
     } catch {
       return '';
     }
@@ -198,10 +208,16 @@ function InPersonEventModal({
   const toLocalDate = (value: string) => {
     try {
       const date = new Date(value);
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      // Check if fingerprinting is active
+      const testDate = new Date('2024-01-01T12:00:00Z');
+      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                      testDate.getHours() === 12;
+      
+      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
+      const month = fingerprintingDetected ? date.getUTCMonth() : date.getMonth();
+      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
+      
+      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     } catch {
       return '';
     }
@@ -772,15 +788,18 @@ export default function EventsTab({
               const formattedDate = (() => {
                 try {
                   const date = new Date(card.date);
+                  const testDate = new Date('2024-01-01T12:00:00Z');
+                  const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                                  testDate.getHours() === 12;
                   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                  const month = monthNames[date.getUTCMonth()];
-                  const day = date.getUTCDate();
-                  let hours = date.getUTCHours();
-                  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                  const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
+                  const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
+                  let hours = fingerprintingDetected ? date.getUTCHours() : date.getHours();
+                  const minutes = fingerprintingDetected ? date.getUTCMinutes() : date.getMinutes();
                   const period = hours >= 12 ? 'PM' : 'AM';
                   hours = hours % 12;
                   if (hours === 0) hours = 12;
-                  return `${month} ${day}, ${hours}:${minutes} ${period}`;
+                  return `${month} ${day}, ${hours}:${String(minutes).padStart(2, '0')} ${period}`;
                 } catch {
                   return '';
                 }

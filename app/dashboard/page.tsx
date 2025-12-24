@@ -1299,9 +1299,15 @@ const hasSeededMockDataRef = useRef(false);
   const targetOfferDateText = useMemo(() => {
     if (!targetOfferDate) return '—';
     try {
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const date = new Date(targetOfferDate);
-      return `${monthNames[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+      const testDate = new Date('2024-01-01T12:00:00Z');
+      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                      testDate.getHours() === 12;
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
+      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
+      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
+      return `${month} ${day}, ${year}`;
     } catch {
       return '—';
     }
@@ -1681,9 +1687,15 @@ const hasSeededMockDataRef = useRef(false);
   const projectedOfferDateText = useMemo(() => {
     if (!projectedOfferDate) return targetOfferDateText;
     try {
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const date = new Date(projectedOfferDate);
-      return `${monthNames[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+      const testDate = new Date('2024-01-01T12:00:00Z');
+      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                      testDate.getHours() === 12;
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
+      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
+      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
+      return `${month} ${day}, ${year}`;
     } catch {
       return '—';
     }
@@ -1797,10 +1809,16 @@ const hasSeededMockDataRef = useRef(false);
   const toLocalDate = (value: string) => {
     try {
       const date = new Date(value);
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      // Check if fingerprinting is active
+      const testDate = new Date('2024-01-01T12:00:00Z');
+      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                      testDate.getHours() === 12;
+      
+      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
+      const month = fingerprintingDetected ? date.getUTCMonth() : date.getMonth();
+      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
+      
+      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     } catch {
       return '';
     }

@@ -49,14 +49,30 @@ export function CardDateMeta({
   const formatCardDate = (value?: string | null) => {
     if (!value) return '-';
     try {
-      // Parse the date string from the database
+      // Parse the UTC date string from the database
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return '-';
       
-      // Display the date using UTC components (no timezone conversion)
+      // Try to use local timezone conversion (works for normal browsers)
+      // JavaScript automatically converts UTC to local when using getMonth(), getDate()
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = monthNames[date.getUTCMonth()];
-      const day = date.getUTCDate();
+      
+      // Check if browser is fingerprinting-resistant by comparing local vs UTC methods
+      // on a known UTC time (if they're the same, fingerprinting is likely active)
+      const testDate = new Date('2024-01-01T12:00:00Z');
+      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                      testDate.getHours() === 12;
+      
+      let month, day;
+      if (fingerprintingDetected) {
+        // Fallback to UTC for fingerprinting-resistant browsers
+        month = monthNames[date.getUTCMonth()];
+        day = date.getUTCDate();
+      } else {
+        // Use local timezone conversion for normal browsers
+        month = monthNames[date.getMonth()];
+        day = date.getDate();
+      }
       
       return `${month} ${day}`;
     } catch {

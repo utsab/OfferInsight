@@ -273,8 +273,14 @@ export default function Page3() {
                 <div className="text-3xl font-bold text-electric-blue mb-2">
                   {(() => {
                     const date = new Date(targetOfferDate);
+                    const testDate = new Date('2024-01-01T12:00:00Z');
+                    const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                                    testDate.getHours() === 12;
                     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                    return `${monthNames[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+                    const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
+                    const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
+                    const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
+                    return `${month} ${day}, ${year}`;
                   })()}
                 </div>
                 <div className="text-gray-300 text-sm font-medium">Target Offer Date</div>
