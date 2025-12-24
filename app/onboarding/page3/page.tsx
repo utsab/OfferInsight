@@ -271,7 +271,11 @@ export default function Page3() {
             <div className="flex flex-col items-center justify-center gap-6 md:flex-row md:gap-12">
               <div className="text-center bg-gray-800/50 rounded-lg p-6 min-w-[180px]">
                 <div className="text-3xl font-bold text-electric-blue mb-2">
-                  {targetOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                  {(() => {
+                    const date = new Date(targetOfferDate);
+                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                    return `${monthNames[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+                  })()}
                 </div>
                 <div className="text-gray-300 text-sm font-medium">Target Offer Date</div>
               </div>

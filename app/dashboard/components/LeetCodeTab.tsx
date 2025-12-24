@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
+import { getApiHeaders } from '@/app/lib/api-helpers';
 
 import { Plus, Trash2, X } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
@@ -154,9 +154,9 @@ function LeetModal({
   const toLocalDate = (value: string) => {
     try {
       const date = new Date(value);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     } catch {
       return '';
@@ -621,7 +621,7 @@ export default function LeetCodeTab({
               if (editingLeet) {
                 const response = await fetch(url, {
                   method: 'PUT',
-                  headers: getHeadersWithTimezone(),
+                  headers: getApiHeaders(),
                   body: JSON.stringify({ ...data, id: editingLeet.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update problem');
@@ -676,7 +676,7 @@ export default function LeetCodeTab({
               } else {
                 const response = await fetch(url, {
                   method: 'POST',
-                  headers: getHeadersWithTimezone(),
+                  headers: getApiHeaders(),
                   body: JSON.stringify(data),
                 });
                 if (!response.ok) throw new Error('Failed to create problem');

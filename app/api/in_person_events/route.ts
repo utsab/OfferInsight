@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/db";
 import { getUserIdForRequest } from "@/app/lib/api-user-helper";
-import { getDateInUserTimezone } from "@/app/lib/server-date-utils";
 
 // GET all in-person events for the logged-in user (or specified user if instructor)
 export async function GET(request: NextRequest) {
@@ -66,8 +65,8 @@ export async function POST(request: NextRequest) {
         numOfInterviews: numOfInterviews ?? null,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
-        // dateModified: Set to current date on create, or use provided value if specified (adjusted for user's timezone)
-        dateModified: dateModified ? new Date(dateModified) : getDateInUserTimezone(),
+        // dateModified: Set to current date on create, or use provided value if specified
+        dateModified: dateModified ? new Date(dateModified) : new Date(),
       },
     });
 
@@ -129,10 +128,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update status and dateModified
-    // dateModified: Set to current date when status changes (adjusted for user's timezone)
+    // dateModified: Set to current date when status changes
     const updateData: any = { 
       status,
-      dateModified: getDateInUserTimezone(),
+      dateModified: new Date(),
     };
 
     const updatedEvent = await prisma.in_Person_Events.update({
@@ -266,7 +265,7 @@ export async function PUT(request: NextRequest) {
       }
     } else if (hasChanges) {
       // Only auto-update dateModified if no explicit value was provided and other fields changed
-      updateData.dateModified = getDateInUserTimezone();
+      updateData.dateModified = new Date();
     }
     
     if (hasChanges) {

@@ -49,51 +49,14 @@ export function CardDateMeta({
   const formatCardDate = (value?: string | null) => {
     if (!value) return '-';
     try {
-      // Parse the UTC date string from the database
+      // Parse the date string from the database
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return '-';
       
-      // Get the timezone offset from the browser
-      // getTimezoneOffset() returns minutes to ADD to local time to get UTC
-      // PST (UTC-8): offset = 480
-      // EST (UTC+5): offset = -300
-      const detectedOffset = new Date().getTimezoneOffset();
-      
-      // If browser reports offset 0 (UTC), try to calculate actual offset
-      // by comparing local time components to UTC time components
-      let actualOffset = detectedOffset;
-      if (detectedOffset === 0) {
-        const now = new Date();
-        const localHours = now.getHours();
-        const utcHoursNow = now.getUTCHours();
-        const localMinutes = now.getMinutes();
-        const utcMinutesNow = now.getUTCMinutes();
-        
-        // Calculate hour difference, accounting for day rollover
-        let hourDiff = localHours - utcHoursNow;
-        let minuteDiff = localMinutes - utcMinutesNow;
-        
-        // Handle day rollover (e.g., local is 23:00, UTC is 07:00 next day)
-        if (hourDiff > 12) hourDiff -= 24;
-        if (hourDiff < -12) hourDiff += 24;
-        
-        // Convert to minutes offset
-        // Note: getTimezoneOffset() returns positive for timezones behind UTC
-        // So if local is behind UTC, offset should be positive
-        actualOffset = -(hourDiff * 60 + minuteDiff);
-      }
-      
-      // Convert UTC date to local time
-      // getTimezoneOffset() returns minutes to ADD to local to get UTC
-      // So: UTC = local + offset, therefore: local = UTC - offset
-      const utcTime = date.getTime();
-      const localTime = utcTime - (actualOffset * 60000);
-      const localDate = new Date(localTime);
-      
-      // Extract local date components
+      // Display the date using UTC components (no timezone conversion)
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = monthNames[localDate.getMonth()];
-      const day = localDate.getDate();
+      const month = monthNames[date.getUTCMonth()];
+      const day = date.getUTCDate();
       
       return `${month} ${day}`;
     } catch {

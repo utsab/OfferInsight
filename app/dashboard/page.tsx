@@ -12,7 +12,7 @@ import ApplicationsTab from './components/ApplicationsTab';
 import CoffeeChatsTab from './components/CoffeeChatsTab';
 import EventsTab from './components/EventsTab';
 import LeetCodeTab from './components/LeetCodeTab';
-import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
+import { getApiHeaders } from '@/app/lib/api-helpers';
 
 // ===== PROJECTED OFFER DATE FORMULA START =====
 // Copied from onboarding page3 so product engineers can tweak independently.
@@ -338,7 +338,7 @@ export default function Page() {
         const url = userIdParam ? `/api/applications_with_outreach?id=${id}&userId=${userIdParam}` : `/api/applications_with_outreach?id=${id}`;
         const response = await fetch(url, {
           method: 'PATCH',
-          headers: getHeadersWithTimezone(),
+          headers: getApiHeaders(),
           body: JSON.stringify({ status }),
         });
         if (!response.ok) {
@@ -519,7 +519,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
         const url = userIdParam ? `/api/linkedin_outreach?id=${id}&userId=${userIdParam}` : `/api/linkedin_outreach?id=${id}`;
         const response = await fetch(url, {
           method: 'PATCH',
-          headers: getHeadersWithTimezone(),
+          headers: getApiHeaders(),
           body: JSON.stringify({ status }),
         });
         if (!response.ok) throw new Error('Failed to update LinkedIn outreach status');
@@ -685,7 +685,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
         const url = userIdParam ? `/api/in_person_events?id=${id}&userId=${userIdParam}` : `/api/in_person_events?id=${id}`;
         const response = await fetch(url, {
           method: 'PATCH',
-          headers: getHeadersWithTimezone(),
+          headers: getApiHeaders(),
           body: JSON.stringify({ status }),
         });
         if (!response.ok) throw new Error('Failed to update event status');
@@ -852,7 +852,7 @@ const hasSeededMockDataRef = useRef(false);
         const url = userIdParam ? `/api/leetcode?id=${id}&userId=${userIdParam}` : `/api/leetcode?id=${id}`;
         const response = await fetch(url, {
           method: 'PATCH',
-          headers: getHeadersWithTimezone(),
+          headers: getApiHeaders(),
           body: JSON.stringify({ status }),
         });
         if (!response.ok) throw new Error('Failed to update LeetCode status');
@@ -1299,7 +1299,9 @@ const hasSeededMockDataRef = useRef(false);
   const targetOfferDateText = useMemo(() => {
     if (!targetOfferDate) return '—';
     try {
-      return targetOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const date = new Date(targetOfferDate);
+      return `${monthNames[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
     } catch {
       return '—';
     }
@@ -1679,7 +1681,9 @@ const hasSeededMockDataRef = useRef(false);
   const projectedOfferDateText = useMemo(() => {
     if (!projectedOfferDate) return targetOfferDateText;
     try {
-      return projectedOfferDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const date = new Date(projectedOfferDate);
+      return `${monthNames[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
     } catch {
       return '—';
     }
@@ -1693,7 +1697,7 @@ const hasSeededMockDataRef = useRef(false);
     const url = userIdParam ? `/api/users/projected-offer?userId=${userIdParam}` : '/api/users/projected-offer';
     fetch(url, {
       method: 'POST',
-      headers: getHeadersWithTimezone(),
+      headers: getApiHeaders(),
       body: JSON.stringify({ projectedOfferDate: iso }),
     })
       .then(response => {
@@ -1793,9 +1797,9 @@ const hasSeededMockDataRef = useRef(false);
   const toLocalDate = (value: string) => {
     try {
       const date = new Date(value);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     } catch {
       return '';

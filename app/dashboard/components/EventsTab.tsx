@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getHeadersWithTimezone } from '@/app/lib/api-helpers';
+import { getApiHeaders } from '@/app/lib/api-helpers';
 
 import { Plus, Trash2, X } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
@@ -28,8 +28,8 @@ type TimeParts = {
 const toLocalTimeParts = (value: string): TimeParts => {
   try {
     const date = new Date(value);
-    let hours = date.getHours();
-    const minutes = String(date.getMinutes()).padStart(2, '0');
+    let hours = date.getUTCHours();
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
     const period = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
     if (hours === 0) hours = 12;
@@ -90,12 +90,15 @@ function SortableEventCard(props: {
   const formatDateTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      });
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = monthNames[date.getUTCMonth()];
+      const day = date.getUTCDate();
+      let hours = date.getUTCHours();
+      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+      const period = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${month} ${day}, ${hours}:${minutes} ${period}`;
     } catch {
       return '';
     }
@@ -195,9 +198,9 @@ function InPersonEventModal({
   const toLocalDate = (value: string) => {
     try {
       const date = new Date(value);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     } catch {
       return '';
@@ -768,12 +771,16 @@ export default function EventsTab({
               if (!card) return null;
               const formattedDate = (() => {
                 try {
-                  return new Date(card.date).toLocaleString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  });
+                  const date = new Date(card.date);
+                  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                  const month = monthNames[date.getUTCMonth()];
+                  const day = date.getUTCDate();
+                  let hours = date.getUTCHours();
+                  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                  const period = hours >= 12 ? 'PM' : 'AM';
+                  hours = hours % 12;
+                  if (hours === 0) hours = 12;
+                  return `${month} ${day}, ${hours}:${minutes} ${period}`;
                 } catch {
                   return '';
                 }
@@ -809,7 +816,7 @@ export default function EventsTab({
               if (editingEvent) {
                 const response = await fetch(url, {
                   method: 'PUT',
-                  headers: getHeadersWithTimezone(),
+                  headers: getApiHeaders(),
                   body: JSON.stringify({ ...data, id: editingEvent.id }),
                 });
                 if (!response.ok) throw new Error('Failed to update event');
@@ -864,7 +871,7 @@ export default function EventsTab({
               } else {
                 const response = await fetch(url, {
                   method: 'POST',
-                  headers: getHeadersWithTimezone(),
+                  headers: getApiHeaders(),
                   body: JSON.stringify(data),
                 });
                 if (!response.ok) throw new Error('Failed to create event');
