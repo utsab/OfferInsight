@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "build": "prisma generate && prisma db push --accept-data-loss && prisma db execute --file scripts/seed-instructor.sql && next build",
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
     "start": "next start",
     "test": "jest",
     "postinstall": "prisma generate"
