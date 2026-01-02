@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { Application, ApplicationColumnId, BoardTimeFilter, ApplicationStatus } from './types';
 import { applicationStatusToColumn, applicationColumnToStatus } from './types';
-import { CardDateMeta, DroppableColumn, DeleteModal } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -111,7 +111,6 @@ function SortableAppCard(props: {
       {props.card.notes && (
         <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
       )}
-      <CardDateMeta created={props.card.dateCreated} modified={props.card.dateModified} />
     </div>
   );
 }
@@ -357,6 +356,15 @@ function ApplicationModal({
                   onChange={(e) => setFormData({ ...formData, dateModified: e.target.value })}
                   className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                 />
+              </div>
+            </div>
+          )}
+
+          {application && (
+            <div className="text-xs text-gray-400 pt-2 border-t border-gray-700">
+              <div className="flex items-center justify-between">
+                <span>Created: {formatModalDate(application.dateCreated)}</span>
+                <span>Modified: {formatModalDate(application.dateModified)}</span>
               </div>
             </div>
           )}

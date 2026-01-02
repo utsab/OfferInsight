@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { LinkedinOutreach, LinkedinOutreachColumnId, BoardTimeFilter, LinkedinOutreachStatus } from './types';
 import { linkedinOutreachStatusToColumn, linkedinOutreachColumnToStatus } from './types';
-import { CardDateMeta, DroppableColumn, DeleteModal } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -119,7 +119,6 @@ function SortableLinkedinOutreachCard(props: {
       {props.card.recievedReferral && (
         <div className="text-green-400 text-xs mb-2">✓ Referral Received</div>
       )}
-      <CardDateMeta created={props.card.dateCreated} modified={props.card.dateModified} />
     </div>
   );
 }

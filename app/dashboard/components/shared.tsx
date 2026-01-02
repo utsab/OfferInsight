@@ -37,61 +37,28 @@ export function DeleteModal({
 
 // Shared components used across multiple tabs
 
-export function CardDateMeta({
-  created,
-  modified,
-  className,
-}: {
-  created?: string | null;
-  modified?: string | null;
-  className?: string;
-}) {
-  const formatCardDate = (value?: string | null) => {
-    if (!value) return '-';
-    try {
-      // Parse the UTC date string from the database
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return '-';
-      
-      // Try to use local timezone conversion (works for normal browsers)
-      // JavaScript automatically converts UTC to local when using getMonth(), getDate()
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
-      // Check if browser is fingerprinting-resistant by comparing local vs UTC methods
-      // on a known UTC time (if they're the same, fingerprinting is likely active)
-      const testDate = new Date('2024-01-01T12:00:00Z');
-      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                      testDate.getHours() === 12;
-      
-      let month, day;
-      if (fingerprintingDetected) {
-        // Fallback to UTC for fingerprinting-resistant browsers
-        month = monthNames[date.getUTCMonth()];
-        day = date.getUTCDate();
-      } else {
-        // Use local timezone conversion for normal browsers
-        month = monthNames[date.getMonth()];
-        day = date.getDate();
-      }
-      
-      return `${month} ${day}`;
-    } catch {
-      return '-';
-    }
-  };
-
-  return (
-    <div className={className ? className : 'mt-3'}>
-      <div className="flex items-center justify-between text-[10px] tracking-wider text-gray-400 mb-1">
-        <span>CREATED:</span>
-        <span>MODIFIED:</span>
-      </div>
-      <div className="flex items-center justify-between text-xs text-yellow-400">
-        <span>{formatCardDate(created)}</span>
-        <span>{formatCardDate(modified)}</span>
-      </div>
-    </div>
-  );
+// Helper function to format dates for display in modals
+export function formatModalDate(value?: string | null): string {
+  if (!value) return '-';
+  try {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Check if browser is fingerprinting-resistant
+    const testDate = new Date('2024-01-01T12:00:00Z');
+    const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
+                                    testDate.getHours() === 12;
+    
+    const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
+    const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
+    const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
+    
+    return `${month} ${day}, ${year}`;
+  } catch {
+    return '-';
+  }
 }
 
 export function DroppableColumn(props: { id: string; children: React.ReactNode; onAddCard?: () => void }) {

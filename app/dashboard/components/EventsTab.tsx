@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { InPersonEvent, EventColumnId, BoardTimeFilter, InPersonEventStatus } from './types';
 import { eventStatusToColumn, eventColumnToStatus } from './types';
-import { CardDateMeta, DroppableColumn, DeleteModal } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate } from './shared';
 
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
@@ -188,7 +188,6 @@ function SortableEventCard(props: {
           <span className="px-2 py-0.5 rounded-full bg-gray-700">Interviews {props.card.numOfInterviews}</span>
         )}
       </div>
-      <CardDateMeta created={props.card.dateCreated} modified={props.card.dateModified} className="mt-3" />
     </div>
   );
 }
@@ -570,6 +569,15 @@ function InPersonEventModal({
                   onChange={(e) => setFormData(prev => ({ ...prev, dateModified: e.target.value }))}
                   className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
                 />
+              </div>
+            </div>
+          )}
+
+          {eventItem && (
+            <div className="text-xs text-gray-400 pt-2 border-t border-gray-700">
+              <div className="flex items-center justify-between">
+                <span>Created: {formatModalDate(eventItem.dateCreated)}</span>
+                <span>Modified: {formatModalDate(eventItem.dateModified)}</span>
               </div>
             </div>
           )}
