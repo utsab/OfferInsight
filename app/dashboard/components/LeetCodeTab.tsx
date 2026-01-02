@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { LeetEntry, LeetColumnId, BoardTimeFilter, LeetStatus } from './types';
 import { leetStatusToColumn, leetColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -157,24 +157,6 @@ function LeetModal({
   defaultStatus?: LeetStatus;
   onDelete?: () => void;
 }) {
-  // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
-  const toLocalDate = (value: string) => {
-    try {
-      const date = new Date(value);
-      // Check if fingerprinting is active
-      const testDate = new Date('2024-01-01T12:00:00Z');
-      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                      testDate.getHours() === 12;
-      
-      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
-      const month = fingerprintingDetected ? date.getUTCMonth() : date.getMonth();
-      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-      
-      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    } catch {
-      return '';
-    }
-  };
 
   type LeetFormData = {
     problem: string;
@@ -194,8 +176,8 @@ function LeetModal({
     url: entry?.url ?? '',
     reflection: entry?.reflection ?? '',
     status: entry?.status ?? (defaultStatus || 'planned'),
-    dateCreated: entry?.dateCreated ? toLocalDate(entry.dateCreated) : '', // ===== DATE FIELD EDITING =====
-    dateModified: entry?.dateModified ? toLocalDate(entry.dateModified) : '', // ===== DATE FIELD EDITING =====
+    dateCreated: entry?.dateCreated ? toLocalDateString(entry.dateCreated) : '', // ===== DATE FIELD EDITING =====
+    dateModified: entry?.dateModified ? toLocalDateString(entry.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
   const [isLeetHelpOpen, setIsLeetHelpOpen] = useState(false);
   const tooltipRef = useRef<HTMLSpanElement | null>(null);
@@ -225,8 +207,8 @@ function LeetModal({
         url: entry.url ?? '',
         reflection: entry.reflection ?? '',
         status: entry.status ?? 'planned',
-        dateCreated: entry.dateCreated ? toLocalDate(entry.dateCreated) : '',
-        dateModified: entry.dateModified ? toLocalDate(entry.dateModified) : '',
+        dateCreated: entry.dateCreated ? toLocalDateString(entry.dateCreated) : '',
+        dateModified: entry.dateModified ? toLocalDateString(entry.dateModified) : '',
       });
     } else {
       setFormData({

@@ -45,19 +45,72 @@ export function formatModalDate(value?: string | null): string {
     if (Number.isNaN(date.getTime())) return '-';
     
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    // Check if browser is fingerprinting-resistant
-    const testDate = new Date('2024-01-01T12:00:00Z');
-    const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                    testDate.getHours() === 12;
-    
-    const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
-    const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-    const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
+    const month = monthNames[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
     
     return `${month} ${day}, ${year}`;
   } catch {
     return '-';
+  }
+}
+
+// Helper function to convert ISO date string to local date string (YYYY-MM-DD format)
+// Used for date input fields in modals
+export function toLocalDateString(value: string): string {
+  try {
+    const date = new Date(value);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  } catch {
+    return '';
+  }
+}
+
+// Helper function to get local date parts (month, day, year) from ISO date string
+export function getLocalDateParts(value: string): { year: number; month: number; day: number } {
+  try {
+    const date = new Date(value);
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      day: date.getDate(),
+    };
+  } catch {
+    return { year: 0, month: 0, day: 0 };
+  }
+}
+
+// Helper function to get local time parts (hours, minutes) from ISO date string
+export function getLocalTimeParts(value: string): { hours: number; minutes: number } {
+  try {
+    const date = new Date(value);
+    return {
+      hours: date.getHours(),
+      minutes: date.getMinutes(),
+    };
+  } catch {
+    return { hours: 0, minutes: 0 };
+  }
+}
+
+// Helper function to format date with full month name (e.g., "January 15, 2024")
+export function formatDateWithFullMonth(value: string | Date): string {
+  try {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const month = monthNames[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+    
+    return `${month} ${day}, ${year}`;
+  } catch {
+    return '—';
   }
 }
 

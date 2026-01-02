@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { Application, ApplicationColumnId, BoardTimeFilter, ApplicationStatus } from './types';
 import { applicationStatusToColumn, applicationColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -135,24 +135,6 @@ function ApplicationModal({
   defaultStatus?: ApplicationStatus;
   onDelete?: () => void;
 }) {
-  // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
-  const toLocalDate = (value: string) => {
-    try {
-      const date = new Date(value);
-      // Check if fingerprinting is active
-      const testDate = new Date('2024-01-01T12:00:00Z');
-      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                      testDate.getHours() === 12;
-      
-      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
-      const month = fingerprintingDetected ? date.getUTCMonth() : date.getMonth();
-      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-      
-      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    } catch {
-      return '';
-    }
-  };
 
   type ApplicationFormData = {
     company: string;
@@ -174,8 +156,8 @@ function ApplicationModal({
     msgToRecruiter: application?.msgToRecruiter || '',
     notes: application?.notes || '',
     status: application?.status || defaultStatus || 'applied',
-    dateCreated: application?.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
-    dateModified: application?.dateModified ? toLocalDate(application.dateModified) : '', // ===== DATE FIELD EDITING =====
+    dateCreated: application?.dateCreated ? toLocalDateString(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
+    dateModified: application?.dateModified ? toLocalDateString(application.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
 
   // Update form data when application changes
@@ -189,8 +171,8 @@ function ApplicationModal({
         msgToRecruiter: application.msgToRecruiter || '',
         notes: application.notes || '',
         status: application.status ?? 'applied',
-        dateCreated: application.dateCreated ? toLocalDate(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
-        dateModified: application.dateModified ? toLocalDate(application.dateModified) : '', // ===== DATE FIELD EDITING =====
+        dateCreated: application.dateCreated ? toLocalDateString(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
+        dateModified: application.dateModified ? toLocalDateString(application.dateModified) : '', // ===== DATE FIELD EDITING =====
       });
       } else {
       setFormData({
@@ -648,18 +630,6 @@ export default function ApplicationsTab({
                   {card.recruiter && (
                     <div className="text-gray-400 text-xs mb-1">Recruiter: {card.recruiter}</div>
                   )}
-                  <div className="text-xs text-yellow-400">
-                    {(() => {
-                      const date = new Date(card.dateCreated);
-                      const testDate = new Date('2024-01-01T12:00:00Z');
-                      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                                      testDate.getHours() === 12;
-                      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                      const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
-                      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-                      return `${month} ${day}`;
-                    })()}
-                  </div>
                 </div>
               );
             })() : null}

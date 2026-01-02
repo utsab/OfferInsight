@@ -13,6 +13,7 @@ import CoffeeChatsTab from './components/CoffeeChatsTab';
 import EventsTab from './components/EventsTab';
 import LeetCodeTab from './components/LeetCodeTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
+import { formatDateWithFullMonth, getLocalDateParts } from './components/shared';
 
 // ===== PROJECTED OFFER DATE FORMULA START =====
 // Copied from onboarding page3 so product engineers can tweak independently.
@@ -1299,19 +1300,7 @@ const hasSeededMockDataRef = useRef(false);
 
   const targetOfferDateText = useMemo(() => {
     if (!targetOfferDate) return '—';
-    try {
-      const date = new Date(targetOfferDate);
-      const testDate = new Date('2024-01-01T12:00:00Z');
-      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                      testDate.getHours() === 12;
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
-      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
-      return `${month} ${day}, ${year}`;
-    } catch {
-      return '—';
-    }
+    return formatDateWithFullMonth(targetOfferDate);
   }, [targetOfferDate]);
 
   // Calculate applications metrics for this month
@@ -1687,19 +1676,7 @@ const hasSeededMockDataRef = useRef(false);
 
   const projectedOfferDateText = useMemo(() => {
     if (!projectedOfferDate) return targetOfferDateText;
-    try {
-      const date = new Date(projectedOfferDate);
-      const testDate = new Date('2024-01-01T12:00:00Z');
-      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                      testDate.getHours() === 12;
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
-      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
-      return `${month} ${day}, ${year}`;
-    } catch {
-      return '—';
-    }
+    return formatDateWithFullMonth(projectedOfferDate);
   }, [projectedOfferDate, targetOfferDateText]);
 
   // Debounced function to sync projected offer date (prevents rapid-fire requests)
@@ -1807,23 +1784,6 @@ const hasSeededMockDataRef = useRef(false);
     setActiveTab(cardId);
   };
 
-  const toLocalDate = (value: string) => {
-    try {
-      const date = new Date(value);
-      // Check if fingerprinting is active
-      const testDate = new Date('2024-01-01T12:00:00Z');
-      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                      testDate.getHours() === 12;
-      
-      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
-      const month = fingerprintingDetected ? date.getUTCMonth() : date.getMonth();
-      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-      
-      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    } catch {
-      return '';
-    }
-  };
 
   return (
     <div className="bg-gray-900 text-white min-h-screen w-full">

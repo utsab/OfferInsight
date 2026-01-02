@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { InPersonEvent, EventColumnId, BoardTimeFilter, InPersonEventStatus } from './types';
 import { eventStatusToColumn, eventColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, getLocalTimeParts, getLocalDateParts } from './shared';
 
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
@@ -27,20 +27,13 @@ type TimeParts = {
 
 const toLocalTimeParts = (value: string): TimeParts => {
   try {
-    const date = new Date(value);
-    // Check if fingerprinting is active
-    const testDate = new Date('2024-01-01T12:00:00Z');
-    const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                    testDate.getHours() === 12;
-    
-    let hours = fingerprintingDetected ? date.getUTCHours() : date.getHours();
-    const minutes = fingerprintingDetected ? date.getUTCMinutes() : date.getMinutes();
+    const { hours, minutes: mins } = getLocalTimeParts(value);
     const period = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    if (hours === 0) hours = 12;
+    let displayHours = hours % 12;
+    if (displayHours === 0) displayHours = 12;
     return {
-      hour: String(hours).padStart(2, '0'),
-      minute: String(minutes).padStart(2, '0'),
+      hour: String(displayHours).padStart(2, '0'),
+      minute: String(mins).padStart(2, '0'),
       period,
     };
   } catch {
@@ -95,16 +88,11 @@ function SortableEventCard(props: {
   const formatDateTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      // Check if fingerprinting is active
-      const testDate = new Date('2024-01-01T12:00:00Z');
-      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                      testDate.getHours() === 12;
-      
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
-      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-      let hours = fingerprintingDetected ? date.getUTCHours() : date.getHours();
-      const minutes = fingerprintingDetected ? date.getUTCMinutes() : date.getMinutes();
+      const month = monthNames[date.getMonth()];
+      const day = date.getDate();
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
       const period = hours >= 12 ? 'PM' : 'AM';
       hours = hours % 12;
       if (hours === 0) hours = 12;
@@ -212,23 +200,6 @@ function InPersonEventModal({
   defaultStatus?: InPersonEventStatus;
   onDelete?: () => void;
 }) {
-  const toLocalDate = (value: string) => {
-    try {
-      const date = new Date(value);
-      // Check if fingerprinting is active
-      const testDate = new Date('2024-01-01T12:00:00Z');
-      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                      testDate.getHours() === 12;
-      
-      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
-      const month = fingerprintingDetected ? date.getUTCMonth() : date.getMonth();
-      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-      
-      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    } catch {
-      return '';
-    }
-  };
 
   type EventFormData = {
     event: string;
@@ -250,7 +221,7 @@ function InPersonEventModal({
 
   const [formData, setFormData] = useState<EventFormData>({
     event: eventItem?.event ?? '',
-    date: eventItem?.date ? toLocalDate(eventItem.date) : '',
+    date: eventItem?.date ? toLocalDateString(eventItem.date) : '',
     timeHour: eventItem?.date ? toLocalTimeParts(eventItem.date).hour : '',
     timeMinute: eventItem?.date ? toLocalTimeParts(eventItem.date).minute : '',
     timePeriod: eventItem?.date ? toLocalTimeParts(eventItem.date).period : 'AM',
@@ -262,15 +233,15 @@ function InPersonEventModal({
     numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
     numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
     careerFair: eventItem?.careerFair ?? false,
-    dateCreated: eventItem?.dateCreated ? toLocalDate(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
-    dateModified: eventItem?.dateModified ? toLocalDate(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
+    dateCreated: eventItem?.dateCreated ? toLocalDateString(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
+    dateModified: eventItem?.dateModified ? toLocalDateString(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
 
   useEffect(() => {
     const timeParts = eventItem?.date ? toLocalTimeParts(eventItem.date) : { hour: '', minute: '', period: 'AM' as const };
     setFormData({
       event: eventItem?.event ?? '',
-      date: eventItem?.date ? toLocalDate(eventItem.date) : '',
+      date: eventItem?.date ? toLocalDateString(eventItem.date) : '',
       timeHour: timeParts.hour,
       timeMinute: timeParts.minute,
       timePeriod: timeParts.period,
@@ -282,8 +253,8 @@ function InPersonEventModal({
       numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
       numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
       careerFair: eventItem?.careerFair ?? false,
-      dateCreated: eventItem?.dateCreated ? toLocalDate(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
-      dateModified: eventItem?.dateModified ? toLocalDate(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
+      dateCreated: eventItem?.dateCreated ? toLocalDateString(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
+      dateModified: eventItem?.dateModified ? toLocalDateString(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
     });
   }, [eventItem, defaultStatus]);
 
@@ -855,19 +826,13 @@ export default function EventsTab({
               if (!card) return null;
               const formattedDate = (() => {
                 try {
-                  const date = new Date(card.date);
-                  const testDate = new Date('2024-01-01T12:00:00Z');
-                  const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                                  testDate.getHours() === 12;
+                  const { year, month, day } = getLocalDateParts(card.date);
+                  const { hours, minutes } = getLocalTimeParts(card.date);
                   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                  const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
-                  const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-                  let hours = fingerprintingDetected ? date.getUTCHours() : date.getHours();
-                  const minutes = fingerprintingDetected ? date.getUTCMinutes() : date.getMinutes();
                   const period = hours >= 12 ? 'PM' : 'AM';
-                  hours = hours % 12;
-                  if (hours === 0) hours = 12;
-                  return `${month} ${day}, ${hours}:${String(minutes).padStart(2, '0')} ${period}`;
+                  let displayHours = hours % 12;
+                  if (displayHours === 0) displayHours = 12;
+                  return `${monthNames[month]} ${day}, ${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
                 } catch {
                   return '';
                 }

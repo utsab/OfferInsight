@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { LinkedinOutreach, LinkedinOutreachColumnId, BoardTimeFilter, LinkedinOutreachStatus } from './types';
 import { linkedinOutreachStatusToColumn, linkedinOutreachColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -143,24 +143,6 @@ function LinkedinOutreachModal({
   defaultStatus?: LinkedinOutreachStatus;
   onDelete?: () => void;
 }) {
-  // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
-  const toLocalDate = (value: string) => {
-    try {
-      const date = new Date(value);
-      // Check if fingerprinting is active
-      const testDate = new Date('2024-01-01T12:00:00Z');
-      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                      testDate.getHours() === 12;
-      
-      const year = fingerprintingDetected ? date.getUTCFullYear() : date.getFullYear();
-      const month = fingerprintingDetected ? date.getUTCMonth() : date.getMonth();
-      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-      
-      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    } catch {
-      return '';
-    }
-  };
 
   type LinkedinOutreachFormData = {
     name: string;
@@ -182,8 +164,8 @@ function LinkedinOutreachModal({
     notes: linkedinOutreach?.notes || '',
     status: linkedinOutreach ? linkedinOutreach.status : (defaultStatus || 'outreachRequestSent'),
     recievedReferral: linkedinOutreach?.recievedReferral || false,
-    dateCreated: linkedinOutreach?.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
-    dateModified: linkedinOutreach?.dateModified ? toLocalDate(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
+    dateCreated: linkedinOutreach?.dateCreated ? toLocalDateString(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
+    dateModified: linkedinOutreach?.dateModified ? toLocalDateString(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
 
   // Update form data when linkedin outreach changes
@@ -197,8 +179,8 @@ function LinkedinOutreachModal({
         notes: linkedinOutreach.notes || '',
         status: linkedinOutreach.status,
         recievedReferral: linkedinOutreach.recievedReferral || false,
-        dateCreated: linkedinOutreach.dateCreated ? toLocalDate(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
-        dateModified: linkedinOutreach.dateModified ? toLocalDate(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
+        dateCreated: linkedinOutreach.dateCreated ? toLocalDateString(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
+        dateModified: linkedinOutreach.dateModified ? toLocalDateString(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
       });
       } else {
       setFormData({
@@ -627,18 +609,6 @@ export default function CoffeeChatsTab({
                 <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3" style={{ touchAction: 'none' }}>
                   <div className="text-white font-medium mb-1">{card.name}</div>
                   <div className="text-gray-400 text-xs mb-1">{card.company}</div>
-                  <div className="text-xs text-yellow-400">
-                    {(() => {
-                      const date = new Date(card.dateCreated);
-                      const testDate = new Date('2024-01-01T12:00:00Z');
-                      const fingerprintingDetected = testDate.getHours() === testDate.getUTCHours() && 
-                                                      testDate.getHours() === 12;
-                      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                      const month = monthNames[fingerprintingDetected ? date.getUTCMonth() : date.getMonth()];
-                      const day = fingerprintingDetected ? date.getUTCDate() : date.getDate();
-                      return `${month} ${day}`;
-                    })()}
-                  </div>
                 </div>
               );
             })() : null}
