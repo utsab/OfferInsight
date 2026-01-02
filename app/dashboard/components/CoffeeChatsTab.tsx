@@ -500,11 +500,6 @@ export default function CoffeeChatsTab({
               <SortableContext items={filteredLinkedinOutreachColumns.accepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="accepted"
-                  onAddCard={() => {
-                    setDefaultStatus(linkedinOutreachColumnToStatus.accepted);
-                    setEditingLinkedinOutreach(null);
-                    setIsLinkedinOutreachModalOpen(true);
-                  }}
                 >
                   {filteredLinkedinOutreachColumns.accepted.map(card => (
                     <SortableLinkedinOutreachCard 
@@ -529,11 +524,6 @@ export default function CoffeeChatsTab({
               <SortableContext items={filteredLinkedinOutreachColumns.followedUpLinkedin.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="followedUpLinkedin"
-                  onAddCard={() => {
-                    setDefaultStatus(linkedinOutreachColumnToStatus.followedUpLinkedin);
-                    setEditingLinkedinOutreach(null);
-                    setIsLinkedinOutreachModalOpen(true);
-                  }}
                 >
                   {filteredLinkedinOutreachColumns.followedUpLinkedin.map(card => (
                     <SortableLinkedinOutreachCard 
@@ -558,11 +548,6 @@ export default function CoffeeChatsTab({
               <SortableContext items={filteredLinkedinOutreachColumns.linkedinOutreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="linkedinOutreach"
-                  onAddCard={() => {
-                    setDefaultStatus(linkedinOutreachColumnToStatus.linkedinOutreach);
-                    setEditingLinkedinOutreach(null);
-                    setIsLinkedinOutreachModalOpen(true);
-                  }}
                 >
                   {filteredLinkedinOutreachColumns.linkedinOutreach.map(card => (
                     <SortableLinkedinOutreachCard 

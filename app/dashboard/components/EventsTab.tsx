@@ -700,11 +700,6 @@ export default function EventsTab({
               <SortableContext items={filteredEventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="attended"
-                  onAddCard={() => {
-                    setDefaultStatus(eventColumnToStatus.attended);
-                    setEditingEvent(null);
-                    setIsEventModalOpen(true);
-                  }}
                 >
                   {filteredEventColumns.attended.map(event => (
                     <SortableEventCard 
@@ -729,11 +724,6 @@ export default function EventsTab({
               <SortableContext items={filteredEventColumns.linkedinRequestsSent.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="linkedinRequestsSent"
-                  onAddCard={() => {
-                    setDefaultStatus(eventColumnToStatus.linkedinRequestsSent);
-                    setEditingEvent(null);
-                    setIsEventModalOpen(true);
-                  }}
                 >
                   {filteredEventColumns.linkedinRequestsSent.map(event => (
                     <SortableEventCard 
@@ -758,11 +748,6 @@ export default function EventsTab({
               <SortableContext items={filteredEventColumns.followups.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="followups"
-                  onAddCard={() => {
-                    setDefaultStatus(eventColumnToStatus.followups);
-                    setEditingEvent(null);
-                    setIsEventModalOpen(true);
-                  }}
                 >
                   {filteredEventColumns.followups.map(event => (
                     <SortableEventCard 

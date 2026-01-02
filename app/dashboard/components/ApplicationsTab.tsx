@@ -487,11 +487,6 @@ export default function ApplicationsTab({
               <SortableContext items={filteredAppColumns.messagedHiringManager.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="messagedHiringManager"
-                  onAddCard={() => {
-                    setDefaultStatus(applicationColumnToStatus.messagedHiringManager);
-                    setEditingApp(null);
-                    setIsModalOpen(true);
-                  }}
                 >
                   {filteredAppColumns.messagedHiringManager.map(card => (
                     <SortableAppCard 
@@ -516,11 +511,6 @@ export default function ApplicationsTab({
               <SortableContext items={filteredAppColumns.messagedRecruiter.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="messagedRecruiter"
-                  onAddCard={() => {
-                    setDefaultStatus(applicationColumnToStatus.messagedRecruiter);
-                    setEditingApp(null);
-                    setIsModalOpen(true);
-                  }}
                 >
                   {filteredAppColumns.messagedRecruiter.map(card => (
                     <SortableAppCard 
@@ -545,11 +535,6 @@ export default function ApplicationsTab({
               <SortableContext items={filteredAppColumns.followedUp.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="followedUp"
-                  onAddCard={() => {
-                    setDefaultStatus(applicationColumnToStatus.followedUp);
-                    setEditingApp(null);
-                    setIsModalOpen(true);
-                  }}
                 >
                   {filteredAppColumns.followedUp.map(card => (
                     <SortableAppCard 
@@ -574,11 +559,6 @@ export default function ApplicationsTab({
               <SortableContext items={filteredAppColumns.interview.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="interview"
-                  onAddCard={() => {
-                    setDefaultStatus(applicationColumnToStatus.interview);
-                    setEditingApp(null);
-                    setIsModalOpen(true);
-                  }}
                 >
                   {filteredAppColumns.interview.map(card => (
                     <SortableAppCard 
