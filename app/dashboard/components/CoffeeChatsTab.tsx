@@ -394,6 +394,15 @@ function LinkedinOutreachModal({
             </div>
           )}
 
+          {linkedinOutreach && (
+            <div className="text-xs text-gray-400 pt-2 border-t border-gray-700">
+              <div className="flex items-center justify-between">
+                <span>Created: {formatModalDate(linkedinOutreach.dateCreated)}</span>
+                <span>Modified: {formatModalDate(linkedinOutreach.dateModified)}</span>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
