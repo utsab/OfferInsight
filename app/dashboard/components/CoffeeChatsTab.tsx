@@ -287,67 +287,88 @@ function LinkedinOutreachModal({
             </div>
           </div>
 
-          {linkedinOutreach && (
-            <>
-              <div>
-                <label className="block text-white font-semibold mb-2">LinkedIn URL</label>
-                <input
-                  type="url"
-                  value={formData.linkedInUrl}
-                  onChange={(e) => setFormData({ ...formData, linkedInUrl: e.target.value })}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                  placeholder="https://linkedin.com/in/..."
-                />
-              </div>
+          <div>
+            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>LinkedIn URL</label>
+            <input
+              type="url"
+              value={formData.linkedInUrl}
+              onChange={(e) => setFormData({ ...formData, linkedInUrl: e.target.value })}
+              disabled={!linkedinOutreach}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
+                linkedinOutreach 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="https://linkedin.com/in/..."
+            />
+          </div>
 
-              <div>
-                <label className="block text-white font-semibold mb-2">Message</label>
-                <textarea
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
-                  placeholder="Message sent to the person"
-                />
-              </div>
+          <div>
+            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>Message</label>
+            <textarea
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              disabled={!linkedinOutreach}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
+                linkedinOutreach 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Message sent to the person"
+            />
+          </div>
 
-              <div className="flex items-center gap-4">
-                <label className="text-white font-semibold whitespace-nowrap">Status:</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as LinkedinOutreachStatus })}
-                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-                >
-                  <option value="outreachRequestSent">Outreach Request Sent</option>
-                  <option value="accepted">Request Accepted</option>
-                  <option value="followedUp">Followed Up</option>
-                  <option value="linkedinOutreach">Coffee Chat</option>
-                </select>
-              </div>
+          <div className="flex items-center gap-4">
+            <label className={`font-semibold whitespace-nowrap ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>Status:</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as LinkedinOutreachStatus })}
+              disabled={!linkedinOutreach}
+              className={`flex-1 border rounded-lg px-4 py-2 ${
+                linkedinOutreach 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <option value="outreachRequestSent">Outreach Request Sent</option>
+              <option value="accepted">Request Accepted</option>
+              <option value="followedUp">Followed Up</option>
+              <option value="linkedinOutreach">Coffee Chat</option>
+            </select>
+          </div>
 
-              <div>
-                <label className="block text-white font-semibold mb-2">Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
-                  placeholder="Additional notes"
-                />
-              </div>
+          <div>
+            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              disabled={!linkedinOutreach}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
+                linkedinOutreach 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Additional notes"
+            />
+          </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="recievedReferral"
-                  checked={formData.recievedReferral}
-                  onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
-                  className="w-4 h-4 bg-gray-700 border border-light-steel-blue rounded text-electric-blue focus:ring-electric-blue"
-                />
-                <label htmlFor="recievedReferral" className="ml-2 text-white font-semibold">
-                  Received Referral
-                </label>
-              </div>
-            </>
-          )}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="recievedReferral"
+              checked={formData.recievedReferral}
+              onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
+              disabled={!linkedinOutreach}
+              className={`w-4 h-4 border rounded ${
+                linkedinOutreach 
+                  ? 'bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue' 
+                  : 'bg-gray-800 border-gray-600 cursor-not-allowed opacity-50'
+              }`}
+            />
+            <label htmlFor="recievedReferral" className={`ml-2 font-semibold ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>
+              Received Referral
+            </label>
+          </div>
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (

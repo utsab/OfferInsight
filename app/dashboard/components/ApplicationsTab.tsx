@@ -265,76 +265,102 @@ function ApplicationModal({
             />
           </div>
 
-          {application && (
-            <>
-              <div className="flex items-center gap-4">
-                <label className="text-white font-semibold whitespace-nowrap">Hiring Manager:</label>
-                <input
-                  type="text"
-                  value={formData.hiringManager}
-                  onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
-                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                  placeholder="Hiring manager name"
-                />
-              </div>
+          <div className="flex items-center gap-4">
+            <label className={`font-semibold whitespace-nowrap ${application ? 'text-white' : 'text-gray-500'}`}>Hiring Manager:</label>
+            <input
+              type="text"
+              value={formData.hiringManager}
+              onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
+              disabled={!application}
+              className={`flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 ${
+                application 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Hiring manager name"
+            />
+          </div>
 
-              <div>
-                <label className="block text-white font-semibold mb-2">Message to Hiring Manager</label>
-                <textarea
-                  value={formData.msgToManager}
-                  onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
-                  placeholder="Enter message sent to hiring manager"
-                />
-              </div>
+          <div>
+            <label className={`block font-semibold mb-2 ${application ? 'text-white' : 'text-gray-500'}`}>Message to Hiring Manager</label>
+            <textarea
+              value={formData.msgToManager}
+              onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
+              disabled={!application}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] ${
+                application 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Enter message sent to hiring manager"
+            />
+          </div>
 
-              <div className="flex items-center gap-4">
-                <label className="text-white font-semibold whitespace-nowrap">Recruiter:</label>
-                <input
-                  type="text"
-                  value={formData.recruiter}
-                  onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
-                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                  placeholder="Recruiter name"
-                />
-              </div>
+          <div className="flex items-center gap-4">
+            <label className={`font-semibold whitespace-nowrap ${application ? 'text-white' : 'text-gray-500'}`}>Recruiter:</label>
+            <input
+              type="text"
+              value={formData.recruiter}
+              onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
+              disabled={!application}
+              className={`flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 ${
+                application 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Recruiter name"
+            />
+          </div>
 
-              <div>
-                <label className="block text-white font-semibold mb-2">Message to Recruiter</label>
-                <textarea
-                  value={formData.msgToRecruiter}
-                  onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
-                  placeholder="Enter message sent to recruiter"
-                />
-              </div>
+          <div>
+            <label className={`block font-semibold mb-2 ${application ? 'text-white' : 'text-gray-500'}`}>Message to Recruiter</label>
+            <textarea
+              value={formData.msgToRecruiter}
+              onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
+              disabled={!application}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] ${
+                application 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Enter message sent to recruiter"
+            />
+          </div>
 
-              <div className="flex items-center gap-4">
-                <label className="text-white font-semibold whitespace-nowrap">Status:</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as ApplicationStatus })}
-                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-                >
-                  <option value="applied">Applied</option>
-                  <option value="messagedHiringManager">Messaged Hiring Manager</option>
-                  <option value="messagedRecruiter">Messaged Recruiter</option>
-                  <option value="followedUp">Followed Up</option>
-                  <option value="interview">Interview</option>
-                </select>
-              </div>
+          <div className="flex items-center gap-4">
+            <label className={`font-semibold whitespace-nowrap ${application ? 'text-white' : 'text-gray-500'}`}>Status:</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as ApplicationStatus })}
+              disabled={!application}
+              className={`flex-1 border rounded-lg px-4 py-2 ${
+                application 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <option value="applied">Applied</option>
+              <option value="messagedHiringManager">Messaged Hiring Manager</option>
+              <option value="messagedRecruiter">Messaged Recruiter</option>
+              <option value="followedUp">Followed Up</option>
+              <option value="interview">Interview</option>
+            </select>
+          </div>
 
-              <div>
-                <label className="block text-white font-semibold mb-2">Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
-                  placeholder="Additional notes"
-                />
-              </div>
-            </>
-          )}
+          <div>
+            <label className={`block font-semibold mb-2 ${application ? 'text-white' : 'text-gray-500'}`}>Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              disabled={!application}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
+                application 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Additional notes"
+            />
+          </div>
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (

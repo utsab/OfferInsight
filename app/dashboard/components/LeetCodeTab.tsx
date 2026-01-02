@@ -302,90 +302,113 @@ function LeetModal({
             />
           </div>
 
-          {entry && (
-            <>
-              <div>
-                <label className="block text-white font-semibold mb-2">Problem URL</label>
-                <input
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                  placeholder="https://leetcode.com/problems/..."
-                />
-              </div>
+          <div>
+            <label className={`block font-semibold mb-2 ${entry ? 'text-white' : 'text-gray-500'}`}>Problem URL</label>
+            <input
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+              disabled={!entry}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
+                entry 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="https://leetcode.com/problems/..."
+            />
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white font-semibold mb-2">
-                    <span className="flex items-center gap-2">
-                      Data Structure / Algorithm
-                      <span ref={tooltipRef} className="relative inline-flex items-center">
-                        <button
-                          type="button"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => setIsLeetHelpOpen((prev: boolean) => !prev)}
-                          onFocus={() => setIsLeetHelpOpen(true)}
-                          onBlur={() => setIsLeetHelpOpen(false)}
-                          className="w-4 h-4 flex items-center justify-center rounded-full bg-electric-blue text-gray-900 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-electric-blue/60"
-                          aria-label="What data structure or algorithm was used?"
-                        >
-                          ?
-                        </button>
-                        {isLeetHelpOpen && (
-                          <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-72 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs shadow-lg z-10">
-                            What data structure, algorithm, or other problem solving technique was needed to solve this problem?
-                          </div>
-                        )}
-                      </span>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={`block font-semibold mb-2 ${entry ? 'text-white' : 'text-gray-500'}`}>
+                <span className="flex items-center gap-2">
+                  Data Structure / Algorithm
+                  {entry && (
+                    <span ref={tooltipRef} className="relative inline-flex items-center">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setIsLeetHelpOpen((prev: boolean) => !prev)}
+                        onFocus={() => setIsLeetHelpOpen(true)}
+                        onBlur={() => setIsLeetHelpOpen(false)}
+                        className="w-4 h-4 flex items-center justify-center rounded-full bg-electric-blue text-gray-900 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-electric-blue/60"
+                        aria-label="What data structure or algorithm was used?"
+                      >
+                        ?
+                      </button>
+                      {isLeetHelpOpen && (
+                        <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-72 px-3 py-2 rounded-lg bg-gray-900 text-white text-xs shadow-lg z-10">
+                          What data structure, algorithm, or other problem solving technique was needed to solve this problem?
+                        </div>
+                      )}
                     </span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.problemType}
-                    onChange={(e) => setFormData(prev => ({ ...prev, problemType: e.target.value }))}
-                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-                    placeholder="Arrays, DP, Graphs, ..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-white font-semibold mb-2">Difficulty</label>
-                  <select
-                    value={formData.difficulty}
-                    onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
-                    className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-                  >
-                    <option value="Easy">Easy</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Hard">Hard</option>
-                  </select>
-                </div>
-              </div>
+                  )}
+                </span>
+              </label>
+              <input
+                type="text"
+                value={formData.problemType}
+                onChange={(e) => setFormData(prev => ({ ...prev, problemType: e.target.value }))}
+                disabled={!entry}
+                className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
+                  entry 
+                    ? 'bg-gray-700 border-light-steel-blue text-white' 
+                    : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+                }`}
+                placeholder="Arrays, DP, Graphs, ..."
+              />
+            </div>
+            <div>
+              <label className={`block font-semibold mb-2 ${entry ? 'text-white' : 'text-gray-500'}`}>Difficulty</label>
+              <select
+                value={formData.difficulty}
+                onChange={(e) => setFormData(prev => ({ ...prev, difficulty: e.target.value }))}
+                disabled={!entry}
+                className={`w-full border rounded-lg px-4 py-2 ${
+                  entry 
+                    ? 'bg-gray-700 border-light-steel-blue text-white' 
+                    : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-white font-semibold mb-2">Signal / Cue</label>
-                <textarea
-                  value={formData.reflection}
-                  onChange={(e) => setFormData(prev => ({ ...prev, reflection: e.target.value }))}
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[120px]"
-                  placeholder="Was there anything in the original problem description that signaled to you that this problem requires the data structure/algorithm you listed above?"
-                />
-              </div>
+          <div>
+            <label className={`block font-semibold mb-2 ${entry ? 'text-white' : 'text-gray-500'}`}>Signal / Cue</label>
+            <textarea
+              value={formData.reflection}
+              onChange={(e) => setFormData(prev => ({ ...prev, reflection: e.target.value }))}
+              disabled={!entry}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[120px] ${
+                entry 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Was there anything in the original problem description that signaled to you that this problem requires the data structure/algorithm you listed above?"
+            />
+          </div>
 
-              <div className="flex items-center gap-4">
-                <label className="text-white font-semibold whitespace-nowrap">Status:</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as LeetStatus }))}
-                  className="flex-1 bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-                >
-                  <option value="planned">Planned</option>
-                  <option value="solved">Solved</option>
-                  <option value="reflected">Reflected</option>
-                </select>
-              </div>
-            </>
-          )}
+          <div className="flex items-center gap-4">
+            <label className={`font-semibold whitespace-nowrap ${entry ? 'text-white' : 'text-gray-500'}`}>Status:</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as LeetStatus }))}
+              disabled={!entry}
+              className={`flex-1 border rounded-lg px-4 py-2 ${
+                entry 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <option value="planned">Planned</option>
+              <option value="solved">Solved</option>
+              <option value="reflected">Reflected</option>
+            </select>
+          </div>
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
