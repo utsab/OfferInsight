@@ -16,10 +16,10 @@ const CALCULATOR_DATA: Record<TimelineKey, {
   interviews: number;
   offers: number;
 }> = {
-  '3': { range: '1-3 Months', commitment: '15 Hours', apps: '5 Weekly', interviewsOutreach: '15 Monthly', events: '4 Monthly', fairs: '1 Yearly', interviews: 10, offers: 1 },
-  '6': { range: '4-6 Months', commitment: '10 Hours', apps: '3 Weekly', interviewsOutreach: '10 Monthly', events: '3 Monthly', fairs: '1 Yearly', interviews: 15, offers: 1 },
-  '9': { range: '7-9 Months', commitment: '8 Hours', apps: '1 Weekly', interviewsOutreach: '7 Monthly', events: '2 Monthly', fairs: '1 Yearly', interviews: 20, offers: 1 },
-  '12': { range: '10-12 Months', commitment: '5 Hours', apps: '1 Weekly', interviewsOutreach: '5 Monthly', events: '1 Monthly', fairs: '1 Yearly', interviews: 25, offers: 1 },
+  '3': { range: '1-3 Months', commitment: '15 Hours', apps: '5 Weekly', interviewsOutreach: '4 Weekly', events: '4 Monthly', fairs: '1 Yearly', interviews: 10, offers: 1 },
+  '6': { range: '4-6 Months', commitment: '10 Hours', apps: '3 Weekly', interviewsOutreach: '2 Weekly', events: '3 Monthly', fairs: '1 Yearly', interviews: 15, offers: 1 },
+  '9': { range: '7-9 Months', commitment: '8 Hours', apps: '1 Weekly', interviewsOutreach: '2 Weekly', events: '2 Monthly', fairs: '1 Yearly', interviews: 20, offers: 1 },
+  '12': { range: '10-12 Months', commitment: '5 Hours', apps: '1 Weekly', interviewsOutreach: '1 Weekly', events: '1 Monthly', fairs: '1 Yearly', interviews: 25, offers: 1 },
 };
 
 export default function Page2() {
@@ -155,7 +155,7 @@ export default function Page2() {
               <div className="bg-gray-800/50 rounded-lg p-4">
                 <div className="text-sm text-gray-300 mb-1 flex items-center">
                   <Coffee className="mr-2 h-4 w-4" />
-                  LinkedIn Outreach
+                  Coffee Chats
                 </div>
                 <div className="text-xl font-bold text-electric-blue">{calculator?.interviewsOutreach || '-'}</div>
               </div>
