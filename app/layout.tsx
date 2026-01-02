@@ -9,8 +9,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <script dangerouslySetInnerHTML={{
           __html: `window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};`
         }} />
@@ -19,13 +20,13 @@ export default function RootLayout({
         <style dangerouslySetInnerHTML={{
           __html: `
             ::-webkit-scrollbar { display: none; }
-            body { font-family: 'Inter', sans-serif; }
+            html, body { font-family: 'Inter', sans-serif; width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
           `
         }} />
       </head>
-      <body className={`${inter.className} antialiased bg-gray-900`} suppressHydrationWarning={true}>
+      <body className={`${inter.className} antialiased bg-gray-900 h-full w-full`} suppressHydrationWarning={true}>
         <Navbar />
-        <main>{children}</main>
+        <main className="w-full">{children}</main>
       </body>
     </html>
   );

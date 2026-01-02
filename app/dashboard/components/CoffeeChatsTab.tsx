@@ -57,6 +57,12 @@ function SortableLinkedinOutreachCard(props: {
   } as React.CSSProperties;
 
   const handleClick = (e: React.MouseEvent) => {
+    // Prevent click during drag
+    if (isDragging || props.isDraggingLinkedinOutreachRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if (props.activeLinkedinOutreachId === String(props.card.id)) {
       return;
     }
@@ -76,7 +82,7 @@ function SortableLinkedinOutreachCard(props: {
   return (
     <div 
       ref={setNodeRef} 
-      style={style} 
+      style={{ ...style, touchAction: 'none' }} 
       {...attributes} 
       {...listeners}
       onClick={handleClick}
@@ -100,7 +106,7 @@ function SortableLinkedinOutreachCard(props: {
             </div>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={handleDelete}
             className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
@@ -128,12 +134,14 @@ function LinkedinOutreachModal({
   linkedinOutreach, 
   onClose, 
   onSave,
-  defaultStatus
+  defaultStatus,
+  onDelete
 }: { 
   linkedinOutreach: LinkedinOutreach | null; 
   onClose: () => void; 
   onSave: (data: Partial<LinkedinOutreach>) => void;
   defaultStatus?: LinkedinOutreachStatus;
+  onDelete?: () => void;
 }) {
   // ===== DATE CREATED EDITING: Helper function to convert ISO date to local date string =====
   const toLocalDate = (value: string) => {
@@ -247,7 +255,7 @@ function LinkedinOutreachModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-white">
             {linkedinOutreach ? 'Edit Coffee Chat' : 'Create New Coffee Chat'}
@@ -261,7 +269,7 @@ function LinkedinOutreachModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-white font-semibold mb-2">Name *</label>
               <input
@@ -372,7 +380,7 @@ function LinkedinOutreachModal({
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
                 <input
@@ -403,20 +411,34 @@ function LinkedinOutreachModal({
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-            >
-              {linkedinOutreach ? 'Update' : 'Create'}
-            </button>
+          <div className="flex flex-col sm:flex-row justify-between sm:justify-end gap-3 pt-4">
+            {linkedinOutreach && onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onDelete();
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors md:hidden order-3 sm:order-1"
+              >
+                <Trash2 className="inline mr-2 w-4 h-4" />Delete
+              </button>
+            )}
+            <div className="flex gap-3 order-1 sm:order-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+              >
+                {linkedinOutreach ? 'Update' : 'Create'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -450,8 +472,8 @@ export default function CoffeeChatsTab({
   const [defaultStatus, setDefaultStatus] = React.useState<LinkedinOutreachStatus | undefined>(undefined);
   
   return (
-    <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 mb-6">
         <h4 className="text-xl font-bold text-white">Coffee Chats</h4>
         <div className="flex items-center gap-2 text-sm text-gray-300">
           <span>Show:</span>
@@ -482,16 +504,17 @@ export default function CoffeeChatsTab({
             setEditingLinkedinOutreach(null);
             setIsLinkedinOutreachModalOpen(true);
           }}
-          className="bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center"
+          className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors flex items-center text-sm sm:text-base w-full sm:w-auto"
         >
-          <Plus className="mr-2" />New Outreach
+          <Plus className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />New Outreach
         </button>
       </div>
       {isLoadingLinkedinOutreach ? (
         <div className="text-center py-8 text-gray-400">Loading coffee chats...</div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLinkedinOutreachDragStart} onDragOver={handleLinkedinOutreachDragOver} onDragEnd={handleLinkedinOutreachDragEnd}>
-          <div className="grid grid-cols-4 gap-6">
+          <div className="overflow-x-auto -mx-4 px-4">
+            <div className="grid grid-cols-4 gap-6 min-w-[640px]">
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
@@ -593,14 +616,15 @@ export default function CoffeeChatsTab({
               </SortableContext>
             </div>
           </div>
-          <DragOverlay>
+          </div>
+          <DragOverlay style={{ touchAction: 'none' }}>
             {activeLinkedinOutreachId ? (() => {
               const col = getLinkedinOutreachColumnOfItem(activeLinkedinOutreachId);
               if (!col) return null;
               const card = linkedinOutreachColumns[col].find(c => String(c.id) === activeLinkedinOutreachId);
               if (!card) return null;
               return (
-                <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3">
+                <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3" style={{ touchAction: 'none' }}>
                   <div className="text-white font-medium mb-1">{card.name}</div>
                   <div className="text-gray-400 text-xs mb-1">{card.company}</div>
                   <div className="text-xs text-yellow-400">
@@ -631,6 +655,12 @@ export default function CoffeeChatsTab({
             setIsLinkedinOutreachModalOpen(false);
             setEditingLinkedinOutreach(null);
             setDefaultStatus(undefined);
+          }}
+          onDelete={() => {
+            if (editingLinkedinOutreach) {
+              setIsLinkedinOutreachModalOpen(false);
+              setIsDeletingLinkedinOutreach(editingLinkedinOutreach.id);
+            }
           }}
           onSave={async (data: Partial<LinkedinOutreach>) => {
             try {

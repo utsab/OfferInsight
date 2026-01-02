@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
-import { PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent } from '@dnd-kit/core';
+import { PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { Gauge, FileText, MessageCircle, Users, Code, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -272,7 +272,8 @@ export default function Page() {
   const isDraggingAppRef = useRef(false);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } })
   );
 
   const fetchApplications = useCallback(async () => {
@@ -1825,12 +1826,12 @@ const hasSeededMockDataRef = useRef(false);
   };
 
   return (
-    <div className="bg-gray-900 text-white">
+    <div className="bg-gray-900 text-white min-h-screen w-full">
       {/* Instructor View Banner */}
       {isInstructor && userIdParam && viewedUserName && (
-        <div className="bg-electric-blue/20 border-b border-electric-blue/50">
-          <div className="max-w-7xl mx-auto px-8 py-4">
-            <div className="flex items-center justify-between">
+        <div className="bg-electric-blue/20 border-b border-electric-blue/50 w-full">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="text-electric-blue font-semibold">
                   Viewing dashboard as instructor
@@ -1844,7 +1845,7 @@ const hasSeededMockDataRef = useRef(false);
                 className="flex items-center gap-2 text-electric-blue hover:text-blue-400 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Instructor Dashboard</span>
+                <span className="text-sm sm:text-base">Back to Instructor Dashboard</span>
               </Link>
             </div>
           </div>
@@ -1852,60 +1853,62 @@ const hasSeededMockDataRef = useRef(false);
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Main Navigation Tabs */}
         <section className="mb-8">
-          <div className="flex border-b border-light-steel-blue bg-gray-800 rounded-t-lg">
-            <button 
-              onClick={() => handleTabClick('overview')}
-              className={`main-tab-btn flex-1 py-4 px-6 text-center font-semibold border-r border-light-steel-blue transition-colors ${
-                activeTab === 'overview' 
-                  ? 'bg-electric-blue text-white' 
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              <Gauge className="inline mr-2" />Overview
-            </button>
-            <button 
-              onClick={() => handleTabClick('applications')}
-              className={`main-tab-btn flex-1 py-4 px-6 text-center font-semibold border-r border-light-steel-blue transition-colors ${
-                activeTab === 'applications' 
-                  ? 'bg-electric-blue text-white' 
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              <FileText className="inline mr-2" />Applications
-            </button>
-            <button 
-              onClick={() => handleTabClick('interviews')}
-              className={`main-tab-btn flex-1 py-4 px-6 text-center font-semibold border-r border-light-steel-blue transition-colors ${
-                activeTab === 'interviews' 
-                  ? 'bg-electric-blue text-white' 
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              <MessageCircle className="inline mr-2" />Coffee Chats
-            </button>
-            <button 
-              onClick={() => handleTabClick('events')}
-              className={`main-tab-btn flex-1 py-4 px-6 text-center font-semibold border-r border-light-steel-blue transition-colors ${
-                activeTab === 'events' 
-                  ? 'bg-electric-blue text-white' 
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              <Users className="inline mr-2" />Events
-            </button>
-            <button 
-              onClick={() => handleTabClick('leetcode')}
-              className={`main-tab-btn flex-1 py-4 px-6 text-center font-semibold transition-colors ${
-                activeTab === 'leetcode' 
-                  ? 'bg-electric-blue text-white' 
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              <Code className="inline mr-2" />LeetCode
-            </button>
+          <div className="flex border-b border-light-steel-blue bg-gray-800 rounded-t-lg overflow-x-auto">
+            <div className="flex min-w-full">
+              <button 
+                onClick={() => handleTabClick('overview')}
+                className={`main-tab-btn flex-1 py-3 sm:py-4 px-3 sm:px-6 text-center font-semibold border-r border-light-steel-blue transition-colors whitespace-nowrap ${
+                  activeTab === 'overview' 
+                    ? 'bg-electric-blue text-white' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                <Gauge className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />Overview
+              </button>
+              <button 
+                onClick={() => handleTabClick('applications')}
+                className={`main-tab-btn flex-1 py-3 sm:py-4 px-3 sm:px-6 text-center font-semibold border-r border-light-steel-blue transition-colors whitespace-nowrap ${
+                  activeTab === 'applications' 
+                    ? 'bg-electric-blue text-white' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                <FileText className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />Applications
+              </button>
+              <button 
+                onClick={() => handleTabClick('interviews')}
+                className={`main-tab-btn flex-1 py-3 sm:py-4 px-3 sm:px-6 text-center font-semibold border-r border-light-steel-blue transition-colors whitespace-nowrap ${
+                  activeTab === 'interviews' 
+                    ? 'bg-electric-blue text-white' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                <MessageCircle className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />Coffee Chats
+              </button>
+              <button 
+                onClick={() => handleTabClick('events')}
+                className={`main-tab-btn flex-1 py-3 sm:py-4 px-3 sm:px-6 text-center font-semibold border-r border-light-steel-blue transition-colors whitespace-nowrap ${
+                  activeTab === 'events' 
+                    ? 'bg-electric-blue text-white' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                <Users className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />Events
+              </button>
+              <button 
+                onClick={() => handleTabClick('leetcode')}
+                className={`main-tab-btn flex-1 py-3 sm:py-4 px-3 sm:px-6 text-center font-semibold transition-colors whitespace-nowrap ${
+                  activeTab === 'leetcode' 
+                    ? 'bg-electric-blue text-white' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                <Code className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />LeetCode
+              </button>
+            </div>
           </div>
         </section>
 

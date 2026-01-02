@@ -92,7 +92,7 @@ export default function OverviewTab({
       {/* Habit Overview Section */}
       <section>
         <h3 className="text-2xl font-bold text-white mb-6">Habit Overview</h3>
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <div 
             onClick={() => handleHabitCardClick('applications')}
             className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue transition-colors cursor-pointer"
