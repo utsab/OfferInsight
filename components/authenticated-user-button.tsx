@@ -58,10 +58,11 @@ export function AuthenticatedUserButton() {
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-            className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"
+            className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
             aria-label="Settings"
           >
             <Settings className="w-5 h-5" />
+            <span className="hidden md:inline text-sm">Settings</span>
           </button>
           
           {showSettingsDropdown && (
@@ -92,13 +93,16 @@ export function AuthenticatedUserButton() {
           )}
         </div>
       </nav>
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         {!loading && (
-          <img 
-            src={userData.image || "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"} 
-            className="w-8 h-8 rounded-full"
-            alt="User avatar"
-          />
+          <>
+            <span className="hidden md:inline text-sm text-white">{userData.name || 'User'}</span>
+            <img 
+              src={userData.image || "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"} 
+              className="w-8 h-8 rounded-full"
+              alt="User avatar"
+            />
+          </>
         )}
       </div>
     </div>
