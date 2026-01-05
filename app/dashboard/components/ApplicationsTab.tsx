@@ -255,79 +255,59 @@ function ApplicationModal({
             />
           </div>
 
-          <div className="flex items-center gap-4">
-            <label className={`font-semibold whitespace-nowrap ${application ? 'text-white' : 'text-gray-500'}`}>Hiring Manager:</label>
+          <div className={`flex items-center gap-4 ${!application ? 'blur-sm' : ''}`}>
+            <label className="font-semibold whitespace-nowrap text-white">Hiring Manager:</label>
             <input
               type="text"
               value={formData.hiringManager}
               onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
               disabled={!application}
-              className={`flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 ${
-                application 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
+              className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
               placeholder="Hiring manager name"
             />
           </div>
 
-          <div>
-            <label className={`block font-semibold mb-2 ${application ? 'text-white' : 'text-gray-500'}`}>Message to Hiring Manager</label>
+          <div className={!application ? 'blur-sm' : ''}>
+            <label className="block font-semibold mb-2 text-white">Message to Hiring Manager</label>
             <textarea
               value={formData.msgToManager}
               onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
               disabled={!application}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] ${
-                application 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
+              className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
               placeholder="Enter message sent to hiring manager"
             />
           </div>
 
-          <div className="flex items-center gap-4">
-            <label className={`font-semibold whitespace-nowrap ${application ? 'text-white' : 'text-gray-500'}`}>Recruiter:</label>
+          <div className={`flex items-center gap-4 ${!application ? 'blur-sm' : ''}`}>
+            <label className="font-semibold whitespace-nowrap text-white">Recruiter:</label>
             <input
               type="text"
               value={formData.recruiter}
               onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
               disabled={!application}
-              className={`flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 ${
-                application 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
+              className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
               placeholder="Recruiter name"
             />
           </div>
 
-          <div>
-            <label className={`block font-semibold mb-2 ${application ? 'text-white' : 'text-gray-500'}`}>Message to Recruiter</label>
+          <div className={!application ? 'blur-sm' : ''}>
+            <label className="block font-semibold mb-2 text-white">Message to Recruiter</label>
             <textarea
               value={formData.msgToRecruiter}
               onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
               disabled={!application}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] ${
-                application 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
+              className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
               placeholder="Enter message sent to recruiter"
             />
           </div>
 
-          <div className="flex items-center gap-4">
-            <label className={`font-semibold whitespace-nowrap ${application ? 'text-white' : 'text-gray-500'}`}>Status:</label>
+          <div className={`flex items-center gap-4 ${!application ? 'blur-sm' : ''}`}>
+            <label className="font-semibold whitespace-nowrap text-white">Status:</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value as ApplicationStatus })}
               disabled={!application}
-              className={`flex-1 border rounded-lg px-4 py-2 ${
-                application 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
+              className="flex-1 border rounded-lg px-4 py-2 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
             >
               <option value="applied">Applied</option>
               <option value="messagedHiringManager">Messaged Hiring Manager</option>
@@ -337,17 +317,13 @@ function ApplicationModal({
             </select>
           </div>
 
-          <div>
-            <label className={`block font-semibold mb-2 ${application ? 'text-white' : 'text-gray-500'}`}>Notes</label>
+          <div className={!application ? 'blur-sm' : ''}>
+            <label className="block font-semibold mb-2 text-white">Notes</label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               disabled={!application}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
-                application 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
+              className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
               placeholder="Additional notes"
             />
           </div>
