@@ -12,7 +12,7 @@ export function SignIn({
       action={handleSignIn.bind(null, provider)}
     >
       <Button 
-        className="bg-electric-blue hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+        className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-6 py-2 text-sm sm:text-base rounded-lg font-semibold transition-colors whitespace-nowrap"
         {...props}
       >
         Sign In

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, ChevronDown } from "lucide-react";
+import { Settings } from "lucide-react";
 import { Button } from "./ui/button";
 
 // Instructor Sign In Button - shown when not authenticated
@@ -11,7 +11,7 @@ export function InstructorSignInButton() {
   return (
     <Link href="/instructor/signin">
       <Button 
-        className="bg-electric-blue hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+        className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-6 py-2 text-sm sm:text-base rounded-lg font-semibold transition-colors whitespace-nowrap"
       >
         Instructor Sign In
       </Button>
@@ -84,15 +84,15 @@ export function InstructorAuthenticatedButton() {
   const defaultInstructorImage = "https://ui-avatars.com/api/?name=Instructor&background=007ACC&color=fff&size=128";
 
   return (
-    <div className="flex items-center space-x-6">
-      <nav className="flex items-center space-x-6">
+    <div className="flex items-center space-x-4">
+      <nav className="flex items-center">
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-            className="text-gray-400 hover:text-white font-semibold flex items-center"
+            className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"
+            aria-label="Settings"
           >
-            <Settings className="mr-2" />Settings
-            <ChevronDown className="ml-2 text-xs" />
+            <Settings className="w-5 h-5" />
           </button>
           
           {showSettingsDropdown && (
@@ -111,17 +111,14 @@ export function InstructorAuthenticatedButton() {
           )}
         </div>
       </nav>
-      <div className="flex items-center space-x-3">
-        {loading ? (
-          <span className="text-gray-300">Loading...</span>
-        ) : (
-          <span className="text-gray-300">{instructorData?.username || 'Instructor'}</span>
+      <div className="flex items-center">
+        {!loading && (
+          <img 
+            src={defaultInstructorImage}
+            className="w-8 h-8 rounded-full"
+            alt="Instructor avatar"
+          />
         )}
-        <img 
-          src={defaultInstructorImage}
-          className="w-8 h-8 rounded-full"
-          alt="Instructor avatar"
-        />
       </div>
     </div>
   );

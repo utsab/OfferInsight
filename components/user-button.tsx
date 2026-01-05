@@ -21,7 +21,7 @@ export async function UserButton() {
   
   // If no one is signed in, show both sign-in buttons
   return (
-    <div className="user-button-container flex items-center space-x-3">
+    <div className="user-button-container flex items-center space-x-2 sm:space-x-3">
       <SignIn />
       <InstructorSignInButton />
     </div>

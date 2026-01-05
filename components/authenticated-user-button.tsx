@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { SignOut } from "./auth-components"
-import { Settings, ChevronDown } from "lucide-react";
+import { Settings } from "lucide-react";
 
 interface UserData {
   name: string | null;
@@ -53,15 +53,15 @@ export function AuthenticatedUserButton() {
   }, []);
 
   return (
-    <div className="flex items-center space-x-6">
-      <nav className="flex items-center space-x-6">
+    <div className="flex items-center space-x-4">
+      <nav className="flex items-center">
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-            className="text-gray-400 hover:text-white font-semibold flex items-center"
+            className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"
+            aria-label="Settings"
           >
-            <Settings className="mr-2" />Settings
-            <ChevronDown className="ml-2 text-xs" />
+            <Settings className="w-5 h-5" />
           </button>
           
           {showSettingsDropdown && (
@@ -92,17 +92,14 @@ export function AuthenticatedUserButton() {
           )}
         </div>
       </nav>
-      <div className="flex items-center space-x-3">
-        {loading ? (
-          <span className="text-gray-300">Loading...</span>
-        ) : (
-          <span className="text-gray-300">{userData.name || 'User'}</span>
+      <div className="flex items-center">
+        {!loading && (
+          <img 
+            src={userData.image || "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"} 
+            className="w-8 h-8 rounded-full"
+            alt="User avatar"
+          />
         )}
-        <img 
-          src={userData.image || "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"} 
-          className="w-8 h-8 rounded-full"
-          alt="User avatar"
-        />
       </div>
     </div>
   )
