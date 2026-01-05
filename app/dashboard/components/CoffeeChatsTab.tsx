@@ -308,25 +308,6 @@ function LinkedinOutreachModal({
             />
           </div>
 
-          <div className="flex items-center gap-4">
-            <label className={`font-semibold whitespace-nowrap ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>Status:</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as LinkedinOutreachStatus })}
-              disabled={!linkedinOutreach}
-              className={`flex-1 border rounded-lg px-4 py-2 ${
-                linkedinOutreach 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <option value="outreachRequestSent">Outreach Request Sent</option>
-              <option value="accepted">Request Accepted</option>
-              <option value="followedUp">Followed Up</option>
-              <option value="linkedinOutreach">Coffee Chat</option>
-            </select>
-          </div>
-
           <div>
             <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>Notes</label>
             <textarea

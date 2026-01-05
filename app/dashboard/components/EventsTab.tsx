@@ -470,25 +470,6 @@ function InPersonEventModal({
             />
           </div>
 
-          <div className="flex items-center gap-4">
-            <label className={`font-semibold whitespace-nowrap ${eventItem ? 'text-white' : 'text-gray-500'}`}>Status:</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as InPersonEventStatus }))}
-              disabled={!eventItem}
-              className={`flex-1 border rounded-lg px-4 py-2 ${
-                eventItem 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <option value="scheduled">Scheduled</option>
-              <option value="attended">Attended</option>
-              <option value="linkedinRequestsSent">LinkedIn Requests Sent</option>
-              <option value="followUp">Followed Up</option>
-            </select>
-          </div>
-
           <div>
             <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Notes</label>
             <textarea

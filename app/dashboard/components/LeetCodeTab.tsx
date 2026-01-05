@@ -382,24 +382,6 @@ function LeetModal({
             />
           </div>
 
-          <div className="flex items-center gap-4">
-            <label className={`font-semibold whitespace-nowrap ${entry ? 'text-white' : 'text-gray-500'}`}>Status:</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as LeetStatus }))}
-              disabled={!entry}
-              className={`flex-1 border rounded-lg px-4 py-2 ${
-                entry 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <option value="planned">Planned</option>
-              <option value="solved">Solved</option>
-              <option value="reflected">Reflected</option>
-            </select>
-          </div>
-
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
