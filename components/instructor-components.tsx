@@ -1,23 +1,8 @@
 "use client"
 
-import Link from "next/link";
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Settings } from "lucide-react";
-import { Button } from "./ui/button";
-
-// Instructor Sign In Button - shown when not authenticated
-export function InstructorSignInButton() {
-  return (
-    <Link href="/instructor/signin">
-      <Button 
-        className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-6 py-2 text-sm sm:text-base rounded-lg font-semibold transition-colors whitespace-nowrap"
-      >
-        Instructor Sign In
-      </Button>
-    </Link>
-  );
-}
 
 // Instructor Authenticated Button - shown when instructor is signed in
 interface InstructorData {
