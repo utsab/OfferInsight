@@ -339,7 +339,6 @@ function ApplicationModal({
                         type="text"
                         value={formData.hiringManager}
                         onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
-                        disabled={false}
                         className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
                         placeholder="Hiring manager name"
                       />
@@ -349,7 +348,6 @@ function ApplicationModal({
                       <textarea
                         value={formData.msgToManager}
                         onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
-                        disabled={false}
                         className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white"
                         placeholder="Enter message sent to hiring manager"
                       />
@@ -365,7 +363,6 @@ function ApplicationModal({
                       type="text"
                       value={formData.hiringManager}
                       onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
-                      disabled={false}
                       className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
                       placeholder="Hiring manager name"
                     />
@@ -375,7 +372,6 @@ function ApplicationModal({
                     <textarea
                       value={formData.msgToManager}
                       onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
-                      disabled={false}
                       className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white"
                       placeholder="Enter message sent to hiring manager"
                     />
@@ -393,7 +389,6 @@ function ApplicationModal({
                         type="text"
                         value={formData.recruiter}
                         onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
-                        disabled={false}
                         className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
                         placeholder="Recruiter name"
                       />
@@ -403,7 +398,6 @@ function ApplicationModal({
                       <textarea
                         value={formData.msgToRecruiter}
                         onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
-                        disabled={false}
                         className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white"
                         placeholder="Enter message sent to recruiter"
                       />
@@ -419,7 +413,6 @@ function ApplicationModal({
                       type="text"
                       value={formData.recruiter}
                       onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
-                      disabled={false}
                       className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
                       placeholder="Recruiter name"
                     />
@@ -429,7 +422,6 @@ function ApplicationModal({
                     <textarea
                       value={formData.msgToRecruiter}
                       onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
-                      disabled={false}
                       className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white"
                       placeholder="Enter message sent to recruiter"
                     />
@@ -445,7 +437,6 @@ function ApplicationModal({
                     <textarea
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      disabled={false}
                       className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
                       placeholder="Additional notes"
                     />
@@ -458,7 +449,6 @@ function ApplicationModal({
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    disabled={false}
                     className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
                     placeholder="Additional notes"
                   />
