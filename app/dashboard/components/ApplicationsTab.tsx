@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X, Lock } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -117,6 +117,16 @@ function SortableAppCard(props: {
       {props.card.notes && (
         <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
       )}
+    </div>
+  );
+}
+
+// Lock Tooltip Component - centered in unified blur area
+function LockTooltip() {
+  return (
+    <div className="flex md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 md:absolute md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:z-10 items-center gap-2 bg-gray-900 border border-light-steel-blue rounded-lg px-3 py-2 shadow-lg whitespace-nowrap justify-center md:pointer-events-none">
+      <Lock className="w-4 h-4 text-electric-blue flex-shrink-0" />
+      <span className="text-sm text-white">Move to next column to unlock</span>
     </div>
   );
 }
@@ -255,78 +265,128 @@ function ApplicationModal({
             />
           </div>
 
-          <div className={`flex items-center gap-4 ${!application ? 'blur-sm' : ''}`}>
-            <label className="font-semibold whitespace-nowrap text-white">Hiring Manager:</label>
-            <input
-              type="text"
-              value={formData.hiringManager}
-              onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
-              disabled={!application}
-              className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
-              placeholder="Hiring manager name"
-            />
-          </div>
+          {!application ? (
+            <div className="relative group py-8">
+              <div className="blur-sm space-y-4">
+                <div className="flex items-center gap-4">
+                  <label className="font-semibold whitespace-nowrap text-white">Hiring Manager:</label>
+                  <input
+                    type="text"
+                    value={formData.hiringManager}
+                    onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
+                    disabled={!application}
+                    className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                    placeholder="Hiring manager name"
+                  />
+                </div>
 
-          <div className={!application ? 'blur-sm' : ''}>
-            <label className="block font-semibold mb-2 text-white">Message to Hiring Manager</label>
-            <textarea
-              value={formData.msgToManager}
-              onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
-              disabled={!application}
-              className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
-              placeholder="Enter message sent to hiring manager"
-            />
-          </div>
+                <div>
+                  <label className="block font-semibold mb-2 text-white">Message to Hiring Manager</label>
+                  <textarea
+                    value={formData.msgToManager}
+                    onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
+                    disabled={!application}
+                    className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                    placeholder="Enter message sent to hiring manager"
+                  />
+                </div>
 
-          <div className={`flex items-center gap-4 ${!application ? 'blur-sm' : ''}`}>
-            <label className="font-semibold whitespace-nowrap text-white">Recruiter:</label>
-            <input
-              type="text"
-              value={formData.recruiter}
-              onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
-              disabled={!application}
-              className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
-              placeholder="Recruiter name"
-            />
-          </div>
+                <div className="flex items-center gap-4">
+                  <label className="font-semibold whitespace-nowrap text-white">Recruiter:</label>
+                  <input
+                    type="text"
+                    value={formData.recruiter}
+                    onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
+                    disabled={!application}
+                    className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                    placeholder="Recruiter name"
+                  />
+                </div>
 
-          <div className={!application ? 'blur-sm' : ''}>
-            <label className="block font-semibold mb-2 text-white">Message to Recruiter</label>
-            <textarea
-              value={formData.msgToRecruiter}
-              onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
-              disabled={!application}
-              className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
-              placeholder="Enter message sent to recruiter"
-            />
-          </div>
+                <div>
+                  <label className="block font-semibold mb-2 text-white">Message to Recruiter</label>
+                  <textarea
+                    value={formData.msgToRecruiter}
+                    onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
+                    disabled={!application}
+                    className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                    placeholder="Enter message sent to recruiter"
+                  />
+                </div>
 
-          <div className={`flex items-center gap-4 ${!application ? 'blur-sm' : ''}`}>
-            <label className="font-semibold whitespace-nowrap text-white">Status:</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as ApplicationStatus })}
-              disabled={!application}
-              className="flex-1 border rounded-lg px-4 py-2 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
-            >
-              <option value="applied">Applied</option>
-              <option value="messagedHiringManager">Messaged Hiring Manager</option>
-              <option value="messagedRecruiter">Messaged Recruiter</option>
-              <option value="followedUp">Followed Up</option>
-              <option value="interview">Interview</option>
-            </select>
-          </div>
+                <div>
+                  <label className="block font-semibold mb-2 text-white">Notes</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    disabled={!application}
+                    className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                    placeholder="Additional notes"
+                  />
+                </div>
+              </div>
+              <LockTooltip />
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-4">
+                <label className="font-semibold whitespace-nowrap text-white">Hiring Manager:</label>
+                <input
+                  type="text"
+                  value={formData.hiringManager}
+                  onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
+                  disabled={!application}
+                  className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                  placeholder="Hiring manager name"
+                />
+              </div>
 
-          <div className={!application ? 'blur-sm' : ''}>
-            <label className="block font-semibold mb-2 text-white">Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              disabled={!application}
-              className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
-              placeholder="Additional notes"
-            />
-          </div>
+              <div>
+                <label className="block font-semibold mb-2 text-white">Message to Hiring Manager</label>
+                <textarea
+                  value={formData.msgToManager}
+                  onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
+                  disabled={!application}
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                  placeholder="Enter message sent to hiring manager"
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="font-semibold whitespace-nowrap text-white">Recruiter:</label>
+                <input
+                  type="text"
+                  value={formData.recruiter}
+                  onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
+                  disabled={!application}
+                  className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                  placeholder="Recruiter name"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-2 text-white">Message to Recruiter</label>
+                <textarea
+                  value={formData.msgToRecruiter}
+                  onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
+                  disabled={!application}
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                  placeholder="Enter message sent to recruiter"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-2 text-white">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  disabled={!application}
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                  placeholder="Additional notes"
+                />
+              </div>
+            </>
+          )}
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
