@@ -131,6 +131,7 @@ const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflected'];
 type Application = {
   id: number;
   company: string;
+  linkToJobPosting?: string | null;
   hiringManager?: string | null;
   msgToManager?: string | null;
   recruiter?: string | null;

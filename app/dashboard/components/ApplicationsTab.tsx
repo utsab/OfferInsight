@@ -148,6 +148,7 @@ function ApplicationModal({
 
   type ApplicationFormData = {
     company: string;
+    linkToJobPosting: string;
     hiringManager: string;
     msgToManager: string;
     recruiter: string;
@@ -160,6 +161,7 @@ function ApplicationModal({
 
   const [formData, setFormData] = useState<ApplicationFormData>({
     company: application?.company || '',
+    linkToJobPosting: application?.linkToJobPosting || '',
     hiringManager: application?.hiringManager || '',
     msgToManager: application?.msgToManager || '',
     recruiter: application?.recruiter || '',
@@ -175,6 +177,7 @@ function ApplicationModal({
     if (application) {
       setFormData({
         company: application.company || '',
+        linkToJobPosting: application.linkToJobPosting || '',
         hiringManager: application.hiringManager || '',
         msgToManager: application.msgToManager || '',
         recruiter: application.recruiter || '',
@@ -187,6 +190,7 @@ function ApplicationModal({
       } else {
       setFormData({
         company: '',
+        linkToJobPosting: '',
         hiringManager: '',
         msgToManager: '',
         recruiter: '',
@@ -262,6 +266,17 @@ function ApplicationModal({
               className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
               placeholder="Enter company name"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-white font-semibold mb-2">Link to Job Posting</label>
+            <input
+              type="url"
+              value={formData.linkToJobPosting}
+              onChange={(e) => setFormData({ ...formData, linkToJobPosting: e.target.value })}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+              placeholder="https://..."
             />
           </div>
 

@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "build": "prisma generate && prisma db push --accept-data-loss && prisma db execute --file scripts/seed-instructor.sql && next build",
+    "build": "prisma generate && prisma db push --accept-data-loss && prisma db execute --file scripts/seed-instructor.sql && prisma db execute --file scripts/migrate-status-to-present-tense.sql && next build",
     "dev": "next dev -H 0.0.0.0",
     "start": "next start",
     "test": "jest",

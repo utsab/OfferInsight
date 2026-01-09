@@ -17,6 +17,7 @@ export type BoardTimeFilter = 'modifiedThisMonth' | 'allTime';
 export type Application = {
   id: number;
   company: string;
+  linkToJobPosting?: string | null;
   hiringManager?: string | null;
   msgToManager?: string | null;
   recruiter?: string | null;

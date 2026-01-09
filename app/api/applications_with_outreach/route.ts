@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       company,
+      linkToJobPosting,
       hiringManager,
       msgToManager,
       recruiter,
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
     const newApplication = await prisma.applications_With_Outreach.create({
       data: {
         company,
+        linkToJobPosting: linkToJobPosting || null,
         hiringManager: hiringManager || null,
         msgToManager: msgToManager || null,
         recruiter: recruiter || null,
@@ -178,6 +180,7 @@ export async function PUT(request: NextRequest) {
     const {
       id,
       company,
+      linkToJobPosting,
       hiringManager,
       msgToManager,
       recruiter,
@@ -217,6 +220,10 @@ export async function PUT(request: NextRequest) {
 
     if (company !== undefined && company !== existingApplication.company) {
       updateData.company = company;
+      hasChanges = true;
+    }
+    if (linkToJobPosting !== undefined && linkToJobPosting !== existingApplication.linkToJobPosting) {
+      updateData.linkToJobPosting = linkToJobPosting;
       hasChanges = true;
     }
     if (hiringManager !== undefined && hiringManager !== existingApplication.hiringManager) {

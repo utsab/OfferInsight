@@ -17,6 +17,7 @@ datasource db {
 model Applications_With_Outreach {
   id                    Int       @id @default(autoincrement())
   company               String
+  linkToJobPosting      String?
   hiringManager         String?
   msgToManager          String?
   recruiter             String?
