@@ -477,7 +477,7 @@ export default function CoffeeChatsTab({
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLinkedinOutreachDragStart} onDragOver={handleLinkedinOutreachDragOver} onDragEnd={handleLinkedinOutreachDragEnd}>
           <div className="overflow-x-auto -mx-4 px-4">
-            <div className="grid grid-cols-4 gap-6 min-w-[640px]">
+            <div className="grid grid-cols-5 gap-6 min-w-[800px]">
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
@@ -565,6 +565,30 @@ export default function CoffeeChatsTab({
                   id="linkedinOutreach"
                 >
                   {filteredLinkedinOutreachColumns.linkedinOutreach.map(card => (
+                    <SortableLinkedinOutreachCard 
+                      key={card.id} 
+                      card={card}
+                      activeLinkedinOutreachId={activeLinkedinOutreachId}
+                      setEditingLinkedinOutreach={setEditingLinkedinOutreach}
+                      setIsLinkedinOutreachModalOpen={setIsLinkedinOutreachModalOpen}
+                      setIsDeletingLinkedinOutreach={setIsDeletingLinkedinOutreach}
+                      isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+                    />
+                  ))}
+                </DroppableColumn>
+              </SortableContext>
+            </div>
+
+            <div className="bg-gray-700 rounded-lg p-4">
+              <h5 className="text-white font-semibold mb-4 flex items-center">
+                <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                Asking For Referral ({filteredLinkedinOutreachColumns.askingForReferral.length})
+              </h5>
+              <SortableContext items={filteredLinkedinOutreachColumns.askingForReferral.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                <DroppableColumn 
+                  id="askingForReferral"
+                >
+                  {filteredLinkedinOutreachColumns.askingForReferral.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
                       card={card}

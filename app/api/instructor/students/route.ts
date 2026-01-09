@@ -11,7 +11,7 @@ const APPLICATION_COMPLETION_STATUSES = ['messagingHiringManager', 'messagingRec
 // LinkedIn: map completion column IDs to status values
 // Columns: ['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach']
 // Map to statuses: outreachRequestSent, accepted, followedUp, linkedinOutreach
-const LINKEDIN_COMPLETION_STATUSES = ['sendingOutreachRequest', 'acceptingRequest', 'followingUp', 'linkedinOutreach'];
+const LINKEDIN_COMPLETION_STATUSES = ['sendingOutreachRequest', 'acceptingRequest', 'followingUp', 'linkedinOutreach', 'askingForReferral'];
 
 // Events: map completion column IDs to status values  
 // Columns: ['attended', 'linkedinRequestsSent', 'followups']

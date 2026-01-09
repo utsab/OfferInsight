@@ -3,8 +3,8 @@
 export type ApplicationStatus = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
 export type ApplicationColumnId = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
 
-export type LinkedinOutreachStatus = 'sendingOutreachRequest' | 'acceptingRequest' | 'followingUp' | 'linkedinOutreach';
-export type LinkedinOutreachColumnId = 'outreach' | 'accepted' | 'followedUpLinkedin' | 'linkedinOutreach';
+export type LinkedinOutreachStatus = 'sendingOutreachRequest' | 'acceptingRequest' | 'followingUp' | 'linkedinOutreach' | 'askingForReferral';
+export type LinkedinOutreachColumnId = 'outreach' | 'accepted' | 'followedUpLinkedin' | 'linkedinOutreach' | 'askingForReferral';
 
 export type InPersonEventStatus = 'scheduling' | 'attending' | 'sendingLinkedInRequests' | 'followingUp';
 export type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | 'followups';
@@ -85,6 +85,7 @@ export const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
   'accepted',
   'followedUpLinkedin',
   'linkedinOutreach',
+  'askingForReferral',
 ];
 
 export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'linkedinRequestsSent', 'followups'];
@@ -111,6 +112,7 @@ export const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, Link
   acceptingRequest: 'accepted',
   followingUp: 'followedUpLinkedin',
   linkedinOutreach: 'linkedinOutreach',
+  askingForReferral: 'askingForReferral',
 };
 
 export const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinOutreachStatus> = {
@@ -118,6 +120,7 @@ export const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, Li
   accepted: 'acceptingRequest',
   followedUpLinkedin: 'followingUp',
   linkedinOutreach: 'linkedinOutreach',
+  askingForReferral: 'askingForReferral',
 };
 
 export const eventStatusToColumn: Record<InPersonEventStatus, EventColumnId> = {
