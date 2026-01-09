@@ -175,7 +175,7 @@ function LeetModal({
     difficulty: entry?.difficulty ?? 'Easy',
     url: entry?.url ?? '',
     reflection: entry?.reflection ?? '',
-    status: entry?.status ?? (defaultStatus || 'planned'),
+    status: entry?.status ?? (defaultStatus || 'planning'),
     dateCreated: entry?.dateCreated ? toLocalDateString(entry.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: entry?.dateModified ? toLocalDateString(entry.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
@@ -206,7 +206,7 @@ function LeetModal({
         difficulty: entry.difficulty ?? 'Easy',
         url: entry.url ?? '',
         reflection: entry.reflection ?? '',
-        status: entry.status ?? 'planned',
+        status: entry.status ?? 'planning',
         dateCreated: entry.dateCreated ? toLocalDateString(entry.dateCreated) : '',
         dateModified: entry.dateModified ? toLocalDateString(entry.dateModified) : '',
       });
@@ -217,7 +217,7 @@ function LeetModal({
         difficulty: 'Easy',
         url: '',
         reflection: '',
-        status: defaultStatus || 'planned',
+        status: defaultStatus || 'planning',
         dateCreated: '',
         dateModified: '',
       });
@@ -651,7 +651,7 @@ export default function LeetCodeTab({
                 // Optimistically update the state immediately
                 setLeetColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'planned';
+                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'planning';
                   
                   // Find the old item's column and index
                   let oldColumn: LeetColumnId | null = null;
@@ -706,7 +706,7 @@ export default function LeetCodeTab({
                 // Optimistically update the state immediately
                 setLeetColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'planned';
+                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'planning';
                   newColumns[targetColumn] = [...newColumns[targetColumn], updatedEntry];
                   return newColumns;
                 });

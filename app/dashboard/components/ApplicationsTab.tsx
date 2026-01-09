@@ -835,11 +835,11 @@ export default function ApplicationsTab({
                 setAppColumns(prev => {
                   // Create completely new arrays for all columns to ensure React detects the change
                   const newColumns: Record<ApplicationColumnId, Application[]> = {
-                    applied: [...prev.applied],
-                    messagedRecruiter: [...prev.messagedRecruiter],
-                    messagedHiringManager: [...prev.messagedHiringManager],
-                    followedUp: [...prev.followedUp],
-                    interview: [...prev.interview],
+                    applying: [...prev.applying],
+                    messagingRecruiter: [...prev.messagingRecruiter],
+                    messagingHiringManager: [...prev.messagingHiringManager],
+                    followingUp: [...prev.followingUp],
+                    interviewing: [...prev.interviewing],
                   };
                   const targetColumn = applicationStatusToColumn[updatedApp.status] || 'applying';
                   
@@ -898,11 +898,11 @@ export default function ApplicationsTab({
                 setAppColumns(prev => {
                   // Create completely new arrays for all columns to ensure React detects the change
                   const newColumns: Record<ApplicationColumnId, Application[]> = {
-                    applied: [...prev.applied],
-                    messagedRecruiter: [...prev.messagedRecruiter],
-                    messagedHiringManager: [...prev.messagedHiringManager],
-                    followedUp: [...prev.followedUp],
-                    interview: [...prev.interview],
+                    applying: [...prev.applying],
+                    messagingRecruiter: [...prev.messagingRecruiter],
+                    messagingHiringManager: [...prev.messagingHiringManager],
+                    followingUp: [...prev.followingUp],
+                    interviewing: [...prev.interviewing],
                   };
                   const targetColumn = applicationStatusToColumn[updatedApp.status] || 'applying';
                   const newCard: Application = { ...updatedApp };

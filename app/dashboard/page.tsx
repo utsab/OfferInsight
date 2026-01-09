@@ -1067,7 +1067,7 @@ const hasSeededMockDataRef = useRef(false);
           id: 2002,
           name: 'Leo Johnson',
           company: 'Initech',
-          status: 'accepted',
+          status: 'acceptingRequest',
           dateCreated: isoWithDelta({ months: -3, days: -10, hour: 15 }),
           recievedReferral: false,
           userId: 'mock-user',
@@ -1116,6 +1116,7 @@ const hasSeededMockDataRef = useRef(false);
           date: isoWithDelta({ months: 1, days: 5, hour: 9, minute: 30 }),
           location: 'San Francisco',
           status: 'scheduling',
+          sentLinkedInRequest: false,
           careerFair: false,
           userId: 'mock-user',
         },
@@ -1453,7 +1454,7 @@ const hasSeededMockDataRef = useRef(false);
     const now = new Date();
     const yearStart = new Date(now.getFullYear(), 0, 1);
     const yearEnd = new Date(now.getFullYear() + 1, 0, 1);
-    const eligibleStatuses: InPersonEventStatus[] = ['attended', 'linkedinRequestsSent', 'followUp'];
+    const eligibleStatuses: InPersonEventStatus[] = ['attending', 'sendingLinkedInRequests', 'followingUp'];
     let count = 0;
     (Object.values(eventColumns) as InPersonEvent[][]).forEach(columnEvents => {
       columnEvents.forEach(event => {
