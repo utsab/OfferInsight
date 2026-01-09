@@ -33,7 +33,8 @@ export type LinkedinOutreach = {
   id: number;
   name: string;
   company: string;
-  message?: string | null;
+  firstMessage?: string | null;
+  secondMessage?: string | null;
   linkedInUrl?: string | null;
   notes?: string | null;
   status: LinkedinOutreachStatus;

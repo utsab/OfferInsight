@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
       data: {
         name: data.name,
         company: data.company,
-        message: data.message || null,
+        firstMessage: data.firstMessage || null,
+        secondMessage: data.secondMessage || null,
         linkedInUrl: data.linkedInUrl || null,
         notes: data.notes || null,
         status: data.status || "sendingOutreachRequest", // TODO: This is apart of default status. eliminate redundancy (1/3)
@@ -176,8 +177,12 @@ export async function PUT(request: NextRequest) {
       updateData.company = data.company;
       hasChanges = true;
     }
-    if (data.message !== undefined && data.message !== outreach.message) {
-      updateData.message = data.message;
+    if (data.firstMessage !== undefined && data.firstMessage !== outreach.firstMessage) {
+      updateData.firstMessage = data.firstMessage;
+      hasChanges = true;
+    }
+    if (data.secondMessage !== undefined && data.secondMessage !== outreach.secondMessage) {
+      updateData.secondMessage = data.secondMessage;
       hasChanges = true;
     }
     if (data.linkedInUrl !== undefined && data.linkedInUrl !== outreach.linkedInUrl) {

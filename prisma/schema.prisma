@@ -34,7 +34,8 @@ model Linkedin_Outreach {
   id                  Int       @id @default(autoincrement())
   name                String
   company             String
-  message             String?
+  firstMessage        String?
+  secondMessage       String?
   linkedInUrl         String?
   notes               String?
   recievedReferral    Boolean   @default(false)

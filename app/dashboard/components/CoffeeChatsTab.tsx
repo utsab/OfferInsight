@@ -116,8 +116,8 @@ function SortableLinkedinOutreachCard(props: {
           </button>
         </div>
       </div>
-      {props.card.message && (
-        <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.message}</div>
+      {props.card.firstMessage && (
+        <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.firstMessage}</div>
       )}
       {props.card.notes && (
         <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
@@ -147,7 +147,8 @@ function LinkedinOutreachModal({
   type LinkedinOutreachFormData = {
     name: string;
     company: string;
-    message: string;
+    firstMessage: string;
+    secondMessage: string;
     linkedInUrl: string;
     notes: string;
     status: LinkedinOutreachStatus;
@@ -159,10 +160,11 @@ function LinkedinOutreachModal({
   const [formData, setFormData] = useState<LinkedinOutreachFormData>({
     name: linkedinOutreach?.name || '',
     company: linkedinOutreach?.company || '',
-    message: linkedinOutreach?.message || '',
+    firstMessage: linkedinOutreach?.firstMessage || '',
+    secondMessage: linkedinOutreach?.secondMessage || '',
     linkedInUrl: linkedinOutreach?.linkedInUrl || '',
     notes: linkedinOutreach?.notes || '',
-    status: linkedinOutreach ? linkedinOutreach.status : (defaultStatus || 'outreachRequestSent'),
+    status: linkedinOutreach ? linkedinOutreach.status : (defaultStatus || 'sendingOutreachRequest'),
     recievedReferral: linkedinOutreach?.recievedReferral || false,
     dateCreated: linkedinOutreach?.dateCreated ? toLocalDateString(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: linkedinOutreach?.dateModified ? toLocalDateString(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
@@ -174,7 +176,8 @@ function LinkedinOutreachModal({
       setFormData({
         name: linkedinOutreach.name || '',
         company: linkedinOutreach.company || '',
-        message: linkedinOutreach.message || '',
+        firstMessage: linkedinOutreach.firstMessage || '',
+        secondMessage: linkedinOutreach.secondMessage || '',
         linkedInUrl: linkedinOutreach.linkedInUrl || '',
         notes: linkedinOutreach.notes || '',
         status: linkedinOutreach.status,
@@ -186,10 +189,11 @@ function LinkedinOutreachModal({
       setFormData({
         name: '',
         company: '',
-        message: '',
+        firstMessage: '',
+        secondMessage: '',
         linkedInUrl: '',
         notes: '',
-        status: defaultStatus || 'outreachRequestSent',
+        status: defaultStatus || 'sendingOutreachRequest',
         recievedReferral: false,
         dateCreated: '', // ===== DATE FIELD EDITING =====
         dateModified: '', // ===== DATE FIELD EDITING =====
@@ -294,17 +298,32 @@ function LinkedinOutreachModal({
           </div>
 
           <div>
-            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>Message</label>
+            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>First Message</label>
             <textarea
-              value={formData.message}
-              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              value={formData.firstMessage}
+              onChange={(e) => setFormData({ ...formData, firstMessage: e.target.value })}
               disabled={!linkedinOutreach}
               className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
                 linkedinOutreach 
                   ? 'bg-gray-700 border-light-steel-blue text-white' 
                   : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
               }`}
-              placeholder="Message sent to the person"
+              placeholder="First message sent to the person"
+            />
+          </div>
+
+          <div>
+            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>Second Message</label>
+            <textarea
+              value={formData.secondMessage}
+              onChange={(e) => setFormData({ ...formData, secondMessage: e.target.value })}
+              disabled={!linkedinOutreach}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
+                linkedinOutreach 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Second message sent to the person"
             />
           </div>
 

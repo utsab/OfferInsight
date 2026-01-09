@@ -149,7 +149,8 @@ type LinkedinOutreach = {
   id: number;
   name: string;
   company: string;
-  message?: string | null;
+  firstMessage?: string | null;
+  secondMessage?: string | null;
   linkedInUrl?: string | null;
   notes?: string | null;
   status: LinkedinOutreachStatus;
@@ -1056,7 +1057,7 @@ const hasSeededMockDataRef = useRef(false);
           id: 2001,
           name: 'Priya Patel',
           company: 'Globex',
-          message: 'Introduced myself and shared interest in the team.',
+          firstMessage: 'Introduced myself and shared interest in the team.',
           status: 'sendingOutreachRequest',
           dateCreated: isoWithDelta({ months: 0, days: -8, hour: 12 }),
           recievedReferral: false,
