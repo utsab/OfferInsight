@@ -1,15 +1,15 @@
 // Shared types for dashboard components
 
-export type ApplicationStatus = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
-export type ApplicationColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
+export type ApplicationStatus = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
+export type ApplicationColumnId = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
 
-export type LinkedinOutreachStatus = 'outreachRequestSent' | 'accepted' | 'followedUp' | 'linkedinOutreach';
+export type LinkedinOutreachStatus = 'sendingOutreachRequest' | 'acceptingRequest' | 'followingUp' | 'linkedinOutreach';
 export type LinkedinOutreachColumnId = 'outreach' | 'accepted' | 'followedUpLinkedin' | 'linkedinOutreach';
 
-export type InPersonEventStatus = 'scheduled' | 'attended' | 'linkedinRequestsSent' | 'followUp';
+export type InPersonEventStatus = 'scheduling' | 'attending' | 'sendingLinkedInRequests' | 'followingUp';
 export type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | 'followups';
 
-export type LeetStatus = 'planned' | 'solved' | 'reflected';
+export type LeetStatus = 'planning' | 'solving' | 'reflecting';
 export type LeetColumnId = 'planned' | 'solved' | 'reflected';
 
 export type BoardTimeFilter = 'modifiedThisMonth' | 'allTime';
@@ -73,10 +73,10 @@ export type LeetEntry = {
 };
 
 export const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
-  'messagedHiringManager',
-  'messagedRecruiter',
-  'followedUp',
-  'interview',
+  'messagingHiringManager',
+  'messagingRecruiter',
+  'followingUp',
+  'interviewing',
 ];
 
 export const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
@@ -90,58 +90,58 @@ export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'linkedinR
 export const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflected'];
 
 export const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
-  applied: 'applied',
-  messagedRecruiter: 'messagedRecruiter',
-  messagedHiringManager: 'messagedHiringManager',
-  followedUp: 'followedUp',
-  interview: 'interview',
+  applying: 'applying',
+  messagingRecruiter: 'messagingRecruiter',
+  messagingHiringManager: 'messagingHiringManager',
+  followingUp: 'followingUp',
+  interviewing: 'interviewing',
 };
 
 export const applicationColumnToStatus: Record<ApplicationColumnId, ApplicationStatus> = {
-  applied: 'applied',
-  messagedRecruiter: 'messagedRecruiter',
-  messagedHiringManager: 'messagedHiringManager',
-  followedUp: 'followedUp',
-  interview: 'interview',
+  applying: 'applying',
+  messagingRecruiter: 'messagingRecruiter',
+  messagingHiringManager: 'messagingHiringManager',
+  followingUp: 'followingUp',
+  interviewing: 'interviewing',
 };
 
 export const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, LinkedinOutreachColumnId> = {
-  outreachRequestSent: 'outreach',
-  accepted: 'accepted',
-  followedUp: 'followedUpLinkedin',
+  sendingOutreachRequest: 'outreach',
+  acceptingRequest: 'accepted',
+  followingUp: 'followedUpLinkedin',
   linkedinOutreach: 'linkedinOutreach',
 };
 
 export const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinOutreachStatus> = {
-  outreach: 'outreachRequestSent',
-  accepted: 'accepted',
-  followedUpLinkedin: 'followedUp',
+  outreach: 'sendingOutreachRequest',
+  accepted: 'acceptingRequest',
+  followedUpLinkedin: 'followingUp',
   linkedinOutreach: 'linkedinOutreach',
 };
 
 export const eventStatusToColumn: Record<InPersonEventStatus, EventColumnId> = {
-  scheduled: 'upcoming',
-  attended: 'attended',
-  linkedinRequestsSent: 'linkedinRequestsSent',
-  followUp: 'followups',
+  scheduling: 'upcoming',
+  attending: 'attended',
+  sendingLinkedInRequests: 'linkedinRequestsSent',
+  followingUp: 'followups',
 };
 
 export const eventColumnToStatus: Record<EventColumnId, InPersonEventStatus> = {
-  upcoming: 'scheduled',
-  attended: 'attended',
-  linkedinRequestsSent: 'linkedinRequestsSent',
-  followups: 'followUp',
+  upcoming: 'scheduling',
+  attended: 'attending',
+  linkedinRequestsSent: 'sendingLinkedInRequests',
+  followups: 'followingUp',
 };
 
 export const leetStatusToColumn: Record<LeetStatus, LeetColumnId> = {
-  planned: 'planned',
-  solved: 'solved',
-  reflected: 'reflected',
+  planning: 'planned',
+  solving: 'solved',
+  reflecting: 'reflected',
 };
 
 export const leetColumnToStatus: Record<LeetColumnId, LeetStatus> = {
-  planned: 'planned',
-  solved: 'solved',
-  reflected: 'reflected',
+  planned: 'planning',
+  solved: 'solving',
+  reflected: 'reflecting',
 };
 

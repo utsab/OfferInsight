@@ -22,7 +22,7 @@ model Applications_With_Outreach {
   recruiter             String?
   msgToRecruiter        String?
   notes                 String?
-  status                String    @default("applied")
+  status                String    @default("applying")
   dateCreated           DateTime  @default(now())
   dateModified         DateTime?
   userId                String
@@ -37,7 +37,7 @@ model Linkedin_Outreach {
   linkedInUrl         String?
   notes               String?
   recievedReferral    Boolean   @default(false)
-  status              String    @default("outreachRequestSent")
+  status              String    @default("sendingOutreachRequest")
   dateCreated         DateTime  @default(now())
   dateModified       DateTime?
   userId              String
@@ -55,7 +55,7 @@ model In_Person_Events {
   numLinkedInRequests Int?
   careerFair          Boolean   @default(false)
   numOfInterviews     Int?
-  status              String    @default("scheduled")
+  status              String    @default("scheduling")
   dateCreated         DateTime  @default(now())
   dateModified       DateTime?
   userId              String
@@ -69,7 +69,7 @@ model Leetcode_Practice {
   difficulty  String?
   url         String?
   reflection  String?
-  status      String  @default("planned")
+  status      String  @default("planning")
   dateCreated         DateTime  @default(now())
   dateModified       DateTime?
   userId      String

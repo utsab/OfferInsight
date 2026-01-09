@@ -6,17 +6,17 @@ import { getCurrentMonthDateRange } from "@/app/lib/date-utils";
 // Completed status values based on dashboard completion column logic
 // Mapping completion column IDs to status values (same as dashboard)
 // Applications: completion columns map 1:1 to status values
-const APPLICATION_COMPLETION_STATUSES = ['messagedHiringManager', 'messagedRecruiter', 'followedUp', 'interview'];
+const APPLICATION_COMPLETION_STATUSES = ['messagingHiringManager', 'messagingRecruiter', 'followingUp', 'interviewing'];
 
 // LinkedIn: map completion column IDs to status values
 // Columns: ['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach']
 // Map to statuses: outreachRequestSent, accepted, followedUp, linkedinOutreach
-const LINKEDIN_COMPLETION_STATUSES = ['outreachRequestSent', 'accepted', 'followedUp', 'linkedinOutreach'];
+const LINKEDIN_COMPLETION_STATUSES = ['sendingOutreachRequest', 'acceptingRequest', 'followingUp', 'linkedinOutreach'];
 
 // Events: map completion column IDs to status values  
 // Columns: ['attended', 'linkedinRequestsSent', 'followups']
 // Map to statuses: attended, linkedinRequestsSent, followUp
-const EVENT_COMPLETION_STATUSES = ['attended', 'linkedinRequestsSent', 'followUp'];
+const EVENT_COMPLETION_STATUSES = ['attending', 'sendingLinkedInRequests', 'followingUp'];
 
 // LeetCode: completion column 'reflected' maps to status 'reflected'
 const LEET_COMPLETION_STATUSES = ['reflected'];

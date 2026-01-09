@@ -700,7 +700,7 @@ export default function EventsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                Scheduled ({filteredEventColumns.upcoming.length})
+                Scheduling ({filteredEventColumns.upcoming.length})
               </h5>
               <SortableContext items={filteredEventColumns.upcoming.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
@@ -729,7 +729,7 @@ export default function EventsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                Attended ({filteredEventColumns.attended.length})
+                Attending ({filteredEventColumns.attended.length})
               </h5>
               <SortableContext items={filteredEventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
@@ -753,7 +753,7 @@ export default function EventsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                LinkedIn Requests Sent ({filteredEventColumns.linkedinRequestsSent.length})
+                Sending LinkedIn Requests ({filteredEventColumns.linkedinRequestsSent.length})
               </h5>
               <SortableContext items={filteredEventColumns.linkedinRequestsSent.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
@@ -777,7 +777,7 @@ export default function EventsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                Followed Up ({filteredEventColumns.followups.length})
+                Following Up ({filteredEventColumns.followups.length})
               </h5>
               <SortableContext items={filteredEventColumns.followups.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 

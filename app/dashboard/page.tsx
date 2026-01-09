@@ -98,25 +98,25 @@ const ENABLE_DASHBOARD_MOCKS = false;
 const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
 
-type ApplicationStatus = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
-type ApplicationColumnId = 'applied' | 'messagedRecruiter' | 'messagedHiringManager' | 'followedUp' | 'interview';
+type ApplicationStatus = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
+type ApplicationColumnId = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
 
-type LinkedinOutreachStatus = 'outreachRequestSent' | 'accepted' | 'followedUp' | 'linkedinOutreach';
+type LinkedinOutreachStatus = 'sendingOutreachRequest' | 'acceptingRequest' | 'followingUp' | 'linkedinOutreach';
 type LinkedinOutreachColumnId = 'outreach' | 'accepted' | 'followedUpLinkedin' | 'linkedinOutreach';
 
-type InPersonEventStatus = 'scheduled' | 'attended' | 'linkedinRequestsSent' | 'followUp';
+type InPersonEventStatus = 'scheduling' | 'attending' | 'sendingLinkedInRequests' | 'followingUp';
 type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | 'followups';
 
-type LeetStatus = 'planned' | 'solved' | 'reflected';
+type LeetStatus = 'planning' | 'solving' | 'reflecting';
 type LeetColumnId = 'planned' | 'solved' | 'reflected';
 
 type BoardTimeFilter = 'modifiedThisMonth' | 'allTime';
 
 const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
-  'messagedHiringManager',
-  'messagedRecruiter',
-  'followedUp',
-  'interview',
+  'messagingHiringManager',
+  'messagingRecruiter',
+  'followingUp',
+  'interviewing',
 ];
 const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
   'outreach',
@@ -189,60 +189,60 @@ type LeetEntry = {
 
 // Map status values to column IDs (moved outside component to prevent re-renders)
 const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
-  applied: 'applied',
-  messagedRecruiter: 'messagedRecruiter',
-  messagedHiringManager: 'messagedHiringManager',
-  followedUp: 'followedUp',
-  interview: 'interview',
+  applying: 'applying',
+  messagingRecruiter: 'messagingRecruiter',
+  messagingHiringManager: 'messagingHiringManager',
+  followingUp: 'followingUp',
+  interviewing: 'interviewing',
 };
 
 const applicationColumnToStatus: Record<ApplicationColumnId, ApplicationStatus> = {
-  applied: 'applied',
-  messagedRecruiter: 'messagedRecruiter',
-  messagedHiringManager: 'messagedHiringManager',
-  followedUp: 'followedUp',
-  interview: 'interview',
+  applying: 'applying',
+  messagingRecruiter: 'messagingRecruiter',
+  messagingHiringManager: 'messagingHiringManager',
+  followingUp: 'followingUp',
+  interviewing: 'interviewing',
 };
 
 // Linkedin outreach status mappings
 const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, LinkedinOutreachColumnId> = {
-  outreachRequestSent: 'outreach',
-  accepted: 'accepted',
-  followedUp: 'followedUpLinkedin',
+  sendingOutreachRequest: 'outreach',
+  acceptingRequest: 'accepted',
+  followingUp: 'followedUpLinkedin',
   linkedinOutreach: 'linkedinOutreach',
 };
 
 const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinOutreachStatus> = {
-  outreach: 'outreachRequestSent',
-  accepted: 'accepted',
-  followedUpLinkedin: 'followedUp',
+  outreach: 'sendingOutreachRequest',
+  accepted: 'acceptingRequest',
+  followedUpLinkedin: 'followingUp',
   linkedinOutreach: 'linkedinOutreach',
 };
 
 const eventStatusToColumn: Record<InPersonEventStatus, EventColumnId> = {
-  scheduled: 'upcoming',
-  attended: 'attended',
-  linkedinRequestsSent: 'linkedinRequestsSent',
-  followUp: 'followups',
+  scheduling: 'upcoming',
+  attending: 'attended',
+  sendingLinkedInRequests: 'linkedinRequestsSent',
+  followingUp: 'followups',
 };
 
 const eventColumnToStatus: Record<EventColumnId, InPersonEventStatus> = {
-  upcoming: 'scheduled',
-  attended: 'attended',
-  linkedinRequestsSent: 'linkedinRequestsSent',
-  followups: 'followUp',
+  upcoming: 'scheduling',
+  attended: 'attending',
+  linkedinRequestsSent: 'sendingLinkedInRequests',
+  followups: 'followingUp',
 };
 
 const leetStatusToColumn: Record<LeetStatus, LeetColumnId> = {
-  planned: 'planned',
-  solved: 'solved',
-  reflected: 'reflected',
+  planning: 'planned',
+  solving: 'solved',
+  reflecting: 'reflected',
 };
 
 const leetColumnToStatus: Record<LeetColumnId, LeetStatus> = {
-  planned: 'planned',
-  solved: 'solved',
-  reflected: 'reflected',
+  planned: 'planning',
+  solved: 'solving',
+  reflected: 'reflecting',
 };
 
 export default function Page() {
@@ -256,11 +256,11 @@ export default function Page() {
   // dnd-kit: Applications board state
 
   const [appColumns, setAppColumns] = useState<Record<ApplicationColumnId, Application[]>>({
-    applied: [],
-    messagedRecruiter: [],
-    messagedHiringManager: [],
-    followedUp: [],
-    interview: [],
+    applying: [],
+    messagingRecruiter: [],
+    messagingHiringManager: [],
+    followingUp: [],
+    interviewing: [],
   });
   const [activeAppId, setActiveAppId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -294,15 +294,15 @@ export default function Page() {
       
       // Group applications by status
       const grouped: Record<ApplicationColumnId, Application[]> = {
-        applied: [],
-        messagedRecruiter: [],
-        messagedHiringManager: [],
-        followedUp: [],
-        interview: [],
+        applying: [],
+        messagingRecruiter: [],
+        messagingHiringManager: [],
+        followingUp: [],
+        interviewing: [],
       };
       
       data.forEach((app: Application) => {
-        const column = applicationStatusToColumn[app.status] || 'applied';
+        const column = applicationStatusToColumn[app.status] || 'applying';
         grouped[column].push(app);
       });
       
@@ -373,7 +373,7 @@ export default function Page() {
     const overId = String(over.id);
 
     const fromCol = getApplicationColumnOfItem(activeId);
-    const toCol = (['applied','messagedRecruiter','messagedHiringManager','followedUp','interview'] as ApplicationColumnId[]).includes(overId as ApplicationColumnId)
+    const toCol = (['applying','messagingRecruiter','messagingHiringManager','followingUp','interviewing'] as ApplicationColumnId[]).includes(overId as ApplicationColumnId)
       ? (overId as ApplicationColumnId)
       : getApplicationColumnOfItem(overId);
     if (!fromCol || !toCol) {
@@ -417,11 +417,11 @@ export default function Page() {
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       // Create new column arrays to ensure React detects the change
       setAppColumns(prev => ({
-        applied: [...prev.applied],
-        messagedRecruiter: [...prev.messagedRecruiter],
-        messagedHiringManager: [...prev.messagedHiringManager],
-        followedUp: [...prev.followedUp],
-        interview: [...prev.interview],
+        applying: [...prev.applying],
+        messagingRecruiter: [...prev.messagingRecruiter],
+        messagingHiringManager: [...prev.messagingHiringManager],
+        followingUp: [...prev.followingUp],
+        interviewing: [...prev.interviewing],
         [fromCol]: newFrom,
         [toCol]: newTo,
       }));
@@ -981,12 +981,12 @@ const hasSeededMockDataRef = useRef(false);
     };
 
     const mockApplications: Record<ApplicationColumnId, Application[]> = {
-      applied: [
+      applying: [
         {
           id: 1001,
           company: 'Acme Corp',
           notes: 'Submitted via careers site',
-          status: 'applied',
+          status: 'applying',
           dateCreated: isoWithDelta({ months: -1, days: -3, hour: 9 }),
           userId: 'mock-user',
         },
@@ -994,49 +994,49 @@ const hasSeededMockDataRef = useRef(false);
           id: 1002,
           company: 'Globex',
           recruiter: 'Jordan Smith',
-          status: 'applied',
+          status: 'applying',
           dateCreated: isoWithDelta({ months: -4, days: -12, hour: 14 }),
           userId: 'mock-user',
         },
       ],
-      messagedRecruiter: [
+      messagingRecruiter: [
         {
           id: 1003,
           company: 'Initech',
           recruiter: 'Ava Chen',
           msgToRecruiter: 'Followed up with recruiter on LinkedIn.',
-          status: 'messagedRecruiter',
+          status: 'messagingRecruiter',
           dateCreated: isoWithDelta({ months: -2, days: -6, hour: 11 }),
           userId: 'mock-user',
         },
       ],
-      messagedHiringManager: [
+      messagingHiringManager: [
         {
           id: 1004,
           company: 'Vandelay Industries',
           hiringManager: 'Art Vandelay',
           msgToManager: 'Sent tailored cover letter and message.',
-          status: 'messagedHiringManager',
+          status: 'messagingHiringManager',
           dateCreated: isoWithDelta({ months: -5, days: -9, hour: 16 }),
           userId: 'mock-user',
         },
       ],
-      followedUp: [
+      followingUp: [
         {
           id: 1005,
           company: 'Stark Industries',
           notes: 'Submitted product sense assignment.',
-          status: 'followedUp',
+          status: 'followingUp',
           dateCreated: isoWithDelta({ months: -7, days: -4, hour: 13 }),
           userId: 'mock-user',
         },
       ],
-      interview: [
+      interviewing: [
         {
           id: 1006,
           company: 'Wayne Enterprises',
           hiringManager: 'Lucius Fox',
-          status: 'interview',
+          status: 'interviewing',
           dateCreated: isoWithDelta({ months: -10, days: -15, hour: 10 }),
           userId: 'mock-user',
         },
@@ -1050,7 +1050,7 @@ const hasSeededMockDataRef = useRef(false);
           name: 'Priya Patel',
           company: 'Globex',
           message: 'Introduced myself and shared interest in the team.',
-          status: 'outreachRequestSent',
+          status: 'sendingOutreachRequest',
           dateCreated: isoWithDelta({ months: 0, days: -8, hour: 12 }),
           recievedReferral: false,
           userId: 'mock-user',
@@ -1073,7 +1073,7 @@ const hasSeededMockDataRef = useRef(false);
           name: 'Mia Garcia',
           company: 'Acme Corp',
           notes: 'Scheduled time to reconnect in two weeks.',
-          status: 'followedUp',
+          status: 'followingUp',
           dateCreated: isoWithDelta({ months: -6, days: -5, hour: 9 }),
           recievedReferral: false,
           userId: 'mock-user',
@@ -1100,7 +1100,7 @@ const hasSeededMockDataRef = useRef(false);
           event: 'ProductCon',
           date: isoWithDelta({ months: 1, days: 5, hour: 9, minute: 30 }),
           location: 'San Francisco',
-          status: 'scheduled',
+          status: 'scheduling',
           careerFair: false,
           userId: 'mock-user',
         },
@@ -1111,7 +1111,7 @@ const hasSeededMockDataRef = useRef(false);
           event: 'AI Hiring Fair',
           date: isoWithDelta({ months: -5, days: -7, hour: 13 }),
           location: 'Virtual',
-          status: 'attended',
+          status: 'attending',
           numPeopleSpokenTo: 6,
           numLinkedInRequests: 4,
           careerFair: true,
@@ -1124,7 +1124,7 @@ const hasSeededMockDataRef = useRef(false);
           event: 'Tech Mixer',
           date: isoWithDelta({ months: -2, days: -2, hour: 18 }),
           location: 'Seattle',
-          status: 'linkedinRequestsSent',
+          status: 'sendingLinkedInRequests',
           numLinkedInRequests: 5,
           careerFair: false,
           userId: 'mock-user',
@@ -1137,7 +1137,7 @@ const hasSeededMockDataRef = useRef(false);
           date: isoWithDelta({ months: -9, days: -3, hour: 15 }),
           location: 'Austin',
           notes: 'Need to send thank-you emails.',
-          status: 'followUp',
+          status: 'followingUp',
           numPeopleSpokenTo: 3,
           numOfInterviews: 1,
           careerFair: false,
@@ -1153,7 +1153,7 @@ const hasSeededMockDataRef = useRef(false);
           problem: 'Binary Tree Zigzag Level Order Traversal',
           problemType: 'Trees, BFS',
           difficulty: 'Medium',
-          status: 'planned',
+          status: 'planning',
           userId: 'mock-user',
           dateCreated: isoWithDelta({ months: -1, days: -4, hour: 8 }),
         },
@@ -1165,7 +1165,7 @@ const hasSeededMockDataRef = useRef(false);
           problemType: 'Hash Map',
           difficulty: 'Easy',
           url: 'https://leetcode.com/problems/two-sum/',
-          status: 'solved',
+          status: 'solving',
           userId: 'mock-user',
           dateCreated: isoWithDelta({ months: -4, days: -6, hour: 7 }),
         },
@@ -1177,7 +1177,7 @@ const hasSeededMockDataRef = useRef(false);
           problemType: 'Graphs, BFS',
           difficulty: 'Hard',
           reflection: 'Notice the transformation count hints at BFS on word graph.',
-          status: 'reflected',
+          status: 'reflecting',
           userId: 'mock-user',
           dateCreated: isoWithDelta({ months: -9, days: -2, hour: 20 }),
         },
@@ -1709,11 +1709,11 @@ const hasSeededMockDataRef = useRef(false);
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
     const filtered: Record<ApplicationColumnId, Application[]> = {
-      applied: [],
-      messagedRecruiter: [],
-      messagedHiringManager: [],
-      followedUp: [],
-      interview: [],
+      applying: [],
+      messagingRecruiter: [],
+      messagingHiringManager: [],
+      followingUp: [],
+      interviewing: [],
     };
     (Object.keys(appColumns) as ApplicationColumnId[]).forEach(columnId => {
       if (applicationsFilter === 'modifiedThisMonth') {

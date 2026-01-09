@@ -522,7 +522,7 @@ export default function LeetCodeTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                Planned ({filteredLeetColumns.planned.length})
+                Planning ({filteredLeetColumns.planned.length})
               </h5>
               <SortableContext items={filteredLeetColumns.planned.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
@@ -551,7 +551,7 @@ export default function LeetCodeTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                Solved ({filteredLeetColumns.solved.length})
+                Solving ({filteredLeetColumns.solved.length})
               </h5>
               <SortableContext items={filteredLeetColumns.solved.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
@@ -575,7 +575,7 @@ export default function LeetCodeTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                Reflected ({filteredLeetColumns.reflected.length})
+                Reflecting ({filteredLeetColumns.reflected.length})
               </h5>
               <SortableContext items={filteredLeetColumns.reflected.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 

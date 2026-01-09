@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         message: data.message || null,
         linkedInUrl: data.linkedInUrl || null,
         notes: data.notes || null,
-        status: data.status || "outreachRequestSent", // TODO: This is apart of default status. eliminate redundancy (1/3)
+        status: data.status || "sendingOutreachRequest", // TODO: This is apart of default status. eliminate redundancy (1/3)
         recievedReferral: data.recievedReferral || false,
         userId: userId,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====

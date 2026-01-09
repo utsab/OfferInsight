@@ -165,7 +165,7 @@ function ApplicationModal({
     recruiter: application?.recruiter || '',
     msgToRecruiter: application?.msgToRecruiter || '',
     notes: application?.notes || '',
-    status: application?.status || defaultStatus || 'applied',
+    status: application?.status || defaultStatus || 'applying',
     dateCreated: application?.dateCreated ? toLocalDateString(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: application?.dateModified ? toLocalDateString(application.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
@@ -180,7 +180,7 @@ function ApplicationModal({
         recruiter: application.recruiter || '',
         msgToRecruiter: application.msgToRecruiter || '',
         notes: application.notes || '',
-        status: application.status ?? 'applied',
+        status: application.status ?? 'applying',
         dateCreated: application.dateCreated ? toLocalDateString(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
         dateModified: application.dateModified ? toLocalDateString(application.dateModified) : '', // ===== DATE FIELD EDITING =====
       });
@@ -192,7 +192,7 @@ function ApplicationModal({
         recruiter: '',
         msgToRecruiter: '',
         notes: '',
-        status: defaultStatus || 'applied',
+        status: defaultStatus || 'applying',
         dateCreated: '', // ===== DATE FIELD EDITING =====
         dateModified: '', // ===== DATE FIELD EDITING =====
       });
@@ -329,8 +329,8 @@ function ApplicationModal({
             </div>
           ) : (
             <>
-              {/* Hiring Manager fields - blurred if status is 'applied' */}
-              {application?.status === 'applied' ? (
+              {/* Hiring Manager fields - blurred if status is 'applying' */}
+              {application?.status === 'applying' ? (
                 <div className="relative group py-4">
                   <div className="blur-sm space-y-4">
                     <div className="flex items-center gap-4">
@@ -379,8 +379,8 @@ function ApplicationModal({
                 </>
               )}
 
-              {/* Recruiter fields - blurred if status is 'applied' or 'messagedHiringManager' */}
-              {application?.status === 'applied' || application?.status === 'messagedHiringManager' ? (
+              {/* Recruiter fields - blurred if status is 'applying' or 'messagingHiringManager' */}
+              {application?.status === 'applying' || application?.status === 'messagingHiringManager' ? (
                 <div className="relative group py-4">
                   <div className="blur-sm space-y-4">
                     <div className="flex items-center gap-4">
@@ -429,8 +429,8 @@ function ApplicationModal({
                 </>
               )}
 
-              {/* Notes - blurred if status is 'applied', 'messagedHiringManager', or 'messagedRecruiter' */}
-              {application?.status === 'applied' || application?.status === 'messagedHiringManager' || application?.status === 'messagedRecruiter' ? (
+              {/* Notes - blurred if status is 'applying', 'messagingHiringManager', or 'messagingRecruiter' */}
+              {application?.status === 'applying' || application?.status === 'messagingHiringManager' || application?.status === 'messagingRecruiter' ? (
                 <div className="relative group py-4">
                   <div className="blur-sm">
                     <label className="block font-semibold mb-2 text-white">Notes</label>
@@ -597,18 +597,18 @@ export default function ApplicationsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                Applied ({filteredAppColumns.applied.length})
+                Applying ({filteredAppColumns.applying.length})
               </h5>
-              <SortableContext items={filteredAppColumns.applied.map(c => c.id)} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredAppColumns.applying.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="applied"
+                  id="applying"
                   onAddCard={() => {
-                    setDefaultStatus(applicationColumnToStatus.applied);
+                    setDefaultStatus(applicationColumnToStatus.applying);
                     setEditingApp(null);
                     setIsModalOpen(true);
                   }}
                 >
-                  {filteredAppColumns.applied.map(card => (
+                  {filteredAppColumns.applying.map(card => (
                     <SortableAppCard 
                       key={card.id} 
                       card={card}
@@ -626,13 +626,13 @@ export default function ApplicationsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                Messaged Hiring Manager ({filteredAppColumns.messagedHiringManager.length})
+                Messaging Hiring Manager ({filteredAppColumns.messagingHiringManager.length})
               </h5>
-              <SortableContext items={filteredAppColumns.messagedHiringManager.map(c => c.id)} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredAppColumns.messagingHiringManager.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="messagedHiringManager"
+                  id="messagingHiringManager"
                 >
-                  {filteredAppColumns.messagedHiringManager.map(card => (
+                  {filteredAppColumns.messagingHiringManager.map(card => (
                     <SortableAppCard 
                       key={card.id} 
                       card={card}
@@ -650,13 +650,13 @@ export default function ApplicationsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                Messaged Recruiter ({filteredAppColumns.messagedRecruiter.length})
+                Messaging Recruiter ({filteredAppColumns.messagingRecruiter.length})
               </h5>
-              <SortableContext items={filteredAppColumns.messagedRecruiter.map(c => c.id)} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredAppColumns.messagingRecruiter.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="messagedRecruiter"
+                  id="messagingRecruiter"
                 >
-                  {filteredAppColumns.messagedRecruiter.map(card => (
+                  {filteredAppColumns.messagingRecruiter.map(card => (
                     <SortableAppCard 
                       key={card.id} 
                       card={card}
@@ -674,13 +674,13 @@ export default function ApplicationsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                Followed Up ({filteredAppColumns.followedUp.length})
+                Following Up ({filteredAppColumns.followingUp.length})
               </h5>
-              <SortableContext items={filteredAppColumns.followedUp.map(c => c.id)} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredAppColumns.followingUp.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="followedUp"
+                  id="followingUp"
                 >
-                  {filteredAppColumns.followedUp.map(card => (
+                  {filteredAppColumns.followingUp.map(card => (
                     <SortableAppCard 
                       key={card.id} 
                       card={card}
@@ -698,13 +698,13 @@ export default function ApplicationsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-pink-500 rounded-full mr-2"></div>
-                Interview ({filteredAppColumns.interview.length})
+                Interviewing ({filteredAppColumns.interviewing.length})
               </h5>
-              <SortableContext items={filteredAppColumns.interview.map(c => c.id)} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredAppColumns.interviewing.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="interview"
+                  id="interviewing"
                 >
-                  {filteredAppColumns.interview.map(card => (
+                  {filteredAppColumns.interviewing.map(card => (
                     <SortableAppCard 
                       key={card.id} 
                       card={card}
@@ -781,7 +781,7 @@ export default function ApplicationsTab({
                     followedUp: [...prev.followedUp],
                     interview: [...prev.interview],
                   };
-                  const targetColumn = applicationStatusToColumn[updatedApp.status] || 'applied';
+                  const targetColumn = applicationStatusToColumn[updatedApp.status] || 'applying';
                   
                   // Find the old item's column and index
                   let oldColumn: ApplicationColumnId | null = null;
@@ -844,7 +844,7 @@ export default function ApplicationsTab({
                     followedUp: [...prev.followedUp],
                     interview: [...prev.interview],
                   };
-                  const targetColumn = applicationStatusToColumn[updatedApp.status] || 'applied';
+                  const targetColumn = applicationStatusToColumn[updatedApp.status] || 'applying';
                   const newCard: Application = { ...updatedApp };
                   newColumns[targetColumn] = [...newColumns[targetColumn], newCard];
                   return newColumns;

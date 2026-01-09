@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         recruiter: recruiter || null,
         msgToRecruiter: msgToRecruiter || null,
         notes: notes || null,
-        status: status || "applied",
+        status: status || "applying",
         userId: userId,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,

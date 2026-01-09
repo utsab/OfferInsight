@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         url,
         notes,
         userId: userId,
-        status: status || "scheduled",
+        status: status || "scheduling",
         careerFair: careerFair ?? false,
         numPeopleSpokenTo: numPeopleSpokenTo ?? null,
         numLinkedInRequests: numLinkedInRequests ?? null,
