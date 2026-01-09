@@ -8,7 +8,7 @@ import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Application, ApplicationColumnId, BoardTimeFilter, ApplicationStatus } from './types';
-import { applicationStatusToColumn, applicationColumnToStatus } from './types';
+import { applicationStatusToColumn } from './types';
 import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
@@ -128,18 +128,115 @@ function LockTooltip() {
   );
 }
 
+// Video Modal Component - displays YouTube video in a modal overlay
+function VideoModal({ videoUrl, isOpen, onClose }: { videoUrl: string; isOpen: boolean; onClose: () => void }) {
+  // Convert YouTube watch URL to embed format
+  const getEmbedUrl = (url: string) => {
+    // Extract video ID from various YouTube URL formats
+    const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    if (videoIdMatch && videoIdMatch[1]) {
+      return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+    }
+    return url; // Fallback to original URL if extraction fails
+  };
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-2"
+          aria-label="Close video"
+        >
+          <X size={24} />
+        </button>
+        <iframe
+          src={getEmbedUrl(videoUrl)}
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="YouTube video player"
+        />
+      </div>
+    </div>
+  );
+}
+
+// Helper Message Component - shows video link based on current column
+function HelperMessage({ status }: { status?: ApplicationStatus | null }) {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const videoUrl = 'https://www.youtube.com/watch?v=UgZrVViUQLk';
+
+  const getMessage = () => {
+    if (!status) return 'apply';
+    switch (status) {
+      case 'applying':
+        return 'apply';
+      case 'messagingHiringManager':
+        return 'message hiring manager';
+      case 'messagingRecruiter':
+        return 'message recruiter';
+      case 'followingUp':
+        return 'follow up';
+      case 'interviewing':
+        return 'interview';
+      default:
+        return 'apply';
+    }
+  };
+
+  return (
+    <>
+      <div className="text-center py-3">
+        <button
+          type="button"
+          onClick={() => setIsVideoOpen(true)}
+          className="text-electric-blue hover:text-blue-400 text-sm underline transition-colors cursor-pointer"
+        >
+          Check out this video on how to {getMessage()}
+        </button>
+      </div>
+      <VideoModal videoUrl={videoUrl} isOpen={isVideoOpen} onClose={() => setIsVideoOpen(false)} />
+    </>
+  );
+}
+
 // Application Modal Component
 function ApplicationModal({ 
   application, 
   onClose, 
   onSave,
-  defaultStatus,
   onDelete
 }: { 
   application: Application | null; 
   onClose: () => void; 
   onSave: (data: Partial<Application>) => void;
-  defaultStatus?: ApplicationStatus;
   onDelete?: () => void;
 }) {
 
@@ -162,7 +259,7 @@ function ApplicationModal({
     msgToManager: application?.msgToManager || '',
     recruiter: application?.recruiter || '',
     msgToRecruiter: application?.msgToRecruiter || '',
-    status: application?.status || defaultStatus || 'applying',
+    status: application?.status || 'applying',
     dateCreated: application?.dateCreated ? toLocalDateString(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: application?.dateModified ? toLocalDateString(application.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
@@ -189,12 +286,12 @@ function ApplicationModal({
         msgToManager: '',
         recruiter: '',
         msgToRecruiter: '',
-        status: defaultStatus || 'applying',
+        status: 'applying',
         dateCreated: '', // ===== DATE FIELD EDITING =====
         dateModified: '', // ===== DATE FIELD EDITING =====
       });
     }
-  }, [application, defaultStatus]);
+  }, [application]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,8 +370,14 @@ function ApplicationModal({
             />
           </div>
 
+          {/* Helper message for create mode or 'applying' status */}
+          {(!application || application?.status === 'applying') && (
+            <HelperMessage status={application?.status || 'applying'} />
+          )}
+
           {!application ? (
-            <div className="relative group py-8">
+            // Create mode: Show only Hiring Manager (blurred), hide Recruiter
+            <div className="relative group py-4">
               <div className="blur-sm space-y-4">
                 <div className="flex items-center gap-4">
                   <label className="font-semibold whitespace-nowrap text-white">Hiring Manager:</label>
@@ -282,53 +385,27 @@ function ApplicationModal({
                     type="text"
                     value={formData.hiringManager}
                     onChange={(e) => setFormData({ ...formData, hiringManager: e.target.value })}
-                    disabled={!application}
-                    className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                    className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
                     placeholder="Hiring manager name"
                   />
                 </div>
-
                 <div>
                   <label className="block font-semibold mb-2 text-white">Message to Hiring Manager</label>
                   <textarea
                     value={formData.msgToManager}
                     onChange={(e) => setFormData({ ...formData, msgToManager: e.target.value })}
-                    disabled={!application}
-                    className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
+                    className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white"
                     placeholder="Enter message sent to hiring manager"
                   />
                 </div>
-
-                <div className="flex items-center gap-4">
-                  <label className="font-semibold whitespace-nowrap text-white">Recruiter:</label>
-                  <input
-                    type="text"
-                    value={formData.recruiter}
-                    onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
-                    disabled={!application}
-                    className="flex-1 border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
-                    placeholder="Recruiter name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold mb-2 text-white">Message to Recruiter</label>
-                  <textarea
-                    value={formData.msgToRecruiter}
-                    onChange={(e) => setFormData({ ...formData, msgToRecruiter: e.target.value })}
-                    disabled={!application}
-                    className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[80px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
-                    placeholder="Enter message sent to recruiter"
-                  />
-                </div>
-
               </div>
               <LockTooltip />
             </div>
           ) : (
             <>
-              {/* Hiring Manager fields - blurred if status is 'applying' */}
+              {/* Hiring Manager fields */}
               {application?.status === 'applying' ? (
+                // Status 'applying': Show Hiring Manager blurred (unlocks in next column)
                 <div className="relative group py-4">
                   <div className="blur-sm space-y-4">
                     <div className="flex items-center gap-4">
@@ -354,6 +431,7 @@ function ApplicationModal({
                   <LockTooltip />
                 </div>
               ) : (
+                // Status 'messagingHiringManager' or beyond: Show Hiring Manager unblurred
                 <>
                   <div className="flex items-center gap-4">
                     <label className="font-semibold whitespace-nowrap text-white">Hiring Manager:</label>
@@ -377,8 +455,17 @@ function ApplicationModal({
                 </>
               )}
 
-              {/* Recruiter fields - blurred if status is 'applying' or 'messagingHiringManager' */}
-              {application?.status === 'applying' || application?.status === 'messagingHiringManager' ? (
+              {/* Helper message between revealed and blurred sections */}
+              {application?.status === 'messagingHiringManager' && (
+                <HelperMessage status={application.status} />
+              )}
+
+              {/* Recruiter fields */}
+              {application?.status === 'applying' ? (
+                // Status 'applying': Hide Recruiter (won't unlock in next column)
+                null
+              ) : application?.status === 'messagingHiringManager' ? (
+                // Status 'messagingHiringManager': Show Recruiter blurred (unlocks in next column)
                 <div className="relative group py-4">
                   <div className="blur-sm space-y-4">
                     <div className="flex items-center gap-4">
@@ -404,6 +491,7 @@ function ApplicationModal({
                   <LockTooltip />
                 </div>
               ) : (
+                // Status 'messagingRecruiter' or beyond: Show Recruiter unblurred
                 <>
                   <div className="flex items-center gap-4">
                     <label className="font-semibold whitespace-nowrap text-white">Recruiter:</label>
@@ -452,6 +540,11 @@ function ApplicationModal({
                 />
               </div>
             </div>
+          )}
+
+          {/* Helper message at bottom when all sections are revealed */}
+          {application && (application.status === 'messagingRecruiter' || application.status === 'followingUp' || application.status === 'interviewing') && (
+            <HelperMessage status={application.status} />
           )}
 
           {application && (
@@ -521,8 +614,6 @@ export default function ApplicationsTab({
   isDraggingAppRef,
   userIdParam,
 }: ApplicationsTabProps & { isDraggingAppRef: React.MutableRefObject<boolean> }) {
-  const [defaultStatus, setDefaultStatus] = React.useState<ApplicationStatus | undefined>(undefined);
-  
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 mb-6">
@@ -552,7 +643,6 @@ export default function ApplicationsTab({
         </div>
         <button 
           onClick={() => {
-            setDefaultStatus(undefined);
             setEditingApp(null);
             setIsModalOpen(true);
           }}
@@ -576,7 +666,6 @@ export default function ApplicationsTab({
                 <DroppableColumn 
                   id="applying"
                   onAddCard={() => {
-                    setDefaultStatus(applicationColumnToStatus.applying);
                     setEditingApp(null);
                     setIsModalOpen(true);
                   }}
@@ -719,11 +808,9 @@ export default function ApplicationsTab({
       {isModalOpen && (
         <ApplicationModal
           application={editingApp}
-          defaultStatus={defaultStatus}
           onClose={() => {
             setIsModalOpen(false);
             setEditingApp(null);
-            setDefaultStatus(undefined);
           }}
           onDelete={() => {
             if (editingApp) {
