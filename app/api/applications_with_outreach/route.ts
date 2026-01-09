@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
       msgToManager,
       recruiter,
       msgToRecruiter,
-      notes,
       status,
       dateCreated, // ===== DATE FIELD EDITING =====
       dateModified, // ===== DATE FIELD EDITING =====
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
         msgToManager: msgToManager || null,
         recruiter: recruiter || null,
         msgToRecruiter: msgToRecruiter || null,
-        notes: notes || null,
         status: status || "applying",
         userId: userId,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
@@ -185,7 +183,6 @@ export async function PUT(request: NextRequest) {
       msgToManager,
       recruiter,
       msgToRecruiter,
-      notes,
       status,
       dateCreated, // ===== DATE FIELD EDITING =====
       dateModified, // ===== DATE FIELD EDITING =====
@@ -240,10 +237,6 @@ export async function PUT(request: NextRequest) {
     }
     if (msgToRecruiter !== undefined && msgToRecruiter !== existingApplication.msgToRecruiter) {
       updateData.msgToRecruiter = msgToRecruiter;
-      hasChanges = true;
-    }
-    if (notes !== undefined && notes !== existingApplication.notes) {
-      updateData.notes = notes;
       hasChanges = true;
     }
     if (status !== undefined && status !== existingApplication.status) {

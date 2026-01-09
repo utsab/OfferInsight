@@ -114,9 +114,6 @@ function SortableAppCard(props: {
           {props.card.msgToRecruiter && '✓ Messaged Recruiter'}
         </div>
       )}
-      {props.card.notes && (
-        <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
-      )}
     </div>
   );
 }
@@ -153,7 +150,6 @@ function ApplicationModal({
     msgToManager: string;
     recruiter: string;
     msgToRecruiter: string;
-    notes: string;
     status: ApplicationStatus;
     dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
     dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
@@ -166,7 +162,6 @@ function ApplicationModal({
     msgToManager: application?.msgToManager || '',
     recruiter: application?.recruiter || '',
     msgToRecruiter: application?.msgToRecruiter || '',
-    notes: application?.notes || '',
     status: application?.status || defaultStatus || 'applying',
     dateCreated: application?.dateCreated ? toLocalDateString(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: application?.dateModified ? toLocalDateString(application.dateModified) : '', // ===== DATE FIELD EDITING =====
@@ -182,7 +177,6 @@ function ApplicationModal({
         msgToManager: application.msgToManager || '',
         recruiter: application.recruiter || '',
         msgToRecruiter: application.msgToRecruiter || '',
-        notes: application.notes || '',
         status: application.status ?? 'applying',
         dateCreated: application.dateCreated ? toLocalDateString(application.dateCreated) : '', // ===== DATE FIELD EDITING =====
         dateModified: application.dateModified ? toLocalDateString(application.dateModified) : '', // ===== DATE FIELD EDITING =====
@@ -195,7 +189,6 @@ function ApplicationModal({
         msgToManager: '',
         recruiter: '',
         msgToRecruiter: '',
-        notes: '',
         status: defaultStatus || 'applying',
         dateCreated: '', // ===== DATE FIELD EDITING =====
         dateModified: '', // ===== DATE FIELD EDITING =====
@@ -329,16 +322,6 @@ function ApplicationModal({
                   />
                 </div>
 
-                <div>
-                  <label className="block font-semibold mb-2 text-white">Notes</label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    disabled={!application}
-                    className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white disabled:cursor-not-allowed"
-                    placeholder="Additional notes"
-                  />
-                </div>
               </div>
               <LockTooltip />
             </div>
@@ -444,31 +427,6 @@ function ApplicationModal({
                 </>
               )}
 
-              {/* Notes - blurred if status is 'applying', 'messagingHiringManager', or 'messagingRecruiter' */}
-              {application?.status === 'applying' || application?.status === 'messagingHiringManager' || application?.status === 'messagingRecruiter' ? (
-                <div className="relative group py-4">
-                  <div className="blur-sm">
-                    <label className="block font-semibold mb-2 text-white">Notes</label>
-                    <textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
-                      placeholder="Additional notes"
-                    />
-                  </div>
-                  <LockTooltip />
-                </div>
-              ) : (
-                <div>
-                  <label className="block font-semibold mb-2 text-white">Notes</label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
-                    placeholder="Additional notes"
-                  />
-                </div>
-              )}
             </>
           )}
 

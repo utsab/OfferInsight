@@ -119,9 +119,6 @@ function SortableLinkedinOutreachCard(props: {
       {props.card.firstMessage && (
         <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.firstMessage}</div>
       )}
-      {props.card.notes && (
-        <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
-      )}
       {props.card.recievedReferral && (
         <div className="text-green-400 text-xs mb-2">✓ Referral Received</div>
       )}
@@ -150,7 +147,6 @@ function LinkedinOutreachModal({
     firstMessage: string;
     secondMessage: string;
     linkedInUrl: string;
-    notes: string;
     status: LinkedinOutreachStatus;
     recievedReferral: boolean;
     dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
@@ -163,7 +159,6 @@ function LinkedinOutreachModal({
     firstMessage: linkedinOutreach?.firstMessage || '',
     secondMessage: linkedinOutreach?.secondMessage || '',
     linkedInUrl: linkedinOutreach?.linkedInUrl || '',
-    notes: linkedinOutreach?.notes || '',
     status: linkedinOutreach ? linkedinOutreach.status : (defaultStatus || 'sendingOutreachRequest'),
     recievedReferral: linkedinOutreach?.recievedReferral || false,
     dateCreated: linkedinOutreach?.dateCreated ? toLocalDateString(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
@@ -179,7 +174,6 @@ function LinkedinOutreachModal({
         firstMessage: linkedinOutreach.firstMessage || '',
         secondMessage: linkedinOutreach.secondMessage || '',
         linkedInUrl: linkedinOutreach.linkedInUrl || '',
-        notes: linkedinOutreach.notes || '',
         status: linkedinOutreach.status,
         recievedReferral: linkedinOutreach.recievedReferral || false,
         dateCreated: linkedinOutreach.dateCreated ? toLocalDateString(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
@@ -192,7 +186,6 @@ function LinkedinOutreachModal({
         firstMessage: '',
         secondMessage: '',
         linkedInUrl: '',
-        notes: '',
         status: defaultStatus || 'sendingOutreachRequest',
         recievedReferral: false,
         dateCreated: '', // ===== DATE FIELD EDITING =====
@@ -327,20 +320,6 @@ function LinkedinOutreachModal({
             />
           </div>
 
-          <div>
-            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              disabled={!linkedinOutreach}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
-                linkedinOutreach 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
-              placeholder="Additional notes"
-            />
-          </div>
 
           <div className="flex items-center">
             <input

@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { event, date, location, url, notes, status, careerFair, nameOfPersonSpokenTo, sentLinkedInRequest, followUpMessage, dateCreated, dateModified } = body; // ===== DATE FIELD EDITING =====
+    const { event, date, location, url, status, careerFair, nameOfPersonSpokenTo, sentLinkedInRequest, followUpMessage, dateCreated, dateModified } = body; // ===== DATE FIELD EDITING =====
 
     if (!event || !date) {
       return NextResponse.json(
@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
         date: new Date(date),
         location,
         url,
-        notes,
         userId: userId,
         status: status || "scheduling",
         careerFair: careerFair ?? false,
@@ -166,7 +165,6 @@ export async function PUT(request: NextRequest) {
       date,
       location,
       url,
-      notes,
       nameOfPersonSpokenTo,
       sentLinkedInRequest,
       followUpMessage,
@@ -219,10 +217,6 @@ export async function PUT(request: NextRequest) {
     }
     if (url !== undefined && url !== existingEvent.url) {
       updateData.url = url;
-      hasChanges = true;
-    }
-    if (notes !== undefined && notes !== existingEvent.notes) {
-      updateData.notes = notes;
       hasChanges = true;
     }
     if (nameOfPersonSpokenTo !== undefined && nameOfPersonSpokenTo !== existingEvent.nameOfPersonSpokenTo) {

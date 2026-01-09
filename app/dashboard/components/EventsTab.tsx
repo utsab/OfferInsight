@@ -165,9 +165,6 @@ function SortableEventCard(props: {
           </button>
         </div>
       </div>
-      {props.card.notes && (
-        <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.notes}</div>
-      )}
       <div className="flex flex-wrap gap-2 text-[10px] text-gray-300">
         {props.card.careerFair && (
           <span className="text-green-400 text-xs">✓ Career Fair</span>
@@ -206,7 +203,6 @@ function InPersonEventModal({
     timePeriod: 'AM' | 'PM';
     location: string;
     url: string;
-    notes: string;
     status: InPersonEventStatus;
     nameOfPersonSpokenTo: string;
     sentLinkedInRequest: boolean;
@@ -224,7 +220,6 @@ function InPersonEventModal({
     timePeriod: eventItem?.date ? toLocalTimeParts(eventItem.date).period : 'AM',
     location: eventItem?.location ?? '',
     url: eventItem?.url ?? '',
-    notes: eventItem?.notes ?? '',
     status: eventItem?.status ?? (defaultStatus || 'scheduling'),
     nameOfPersonSpokenTo: eventItem?.nameOfPersonSpokenTo ?? '',
     sentLinkedInRequest: eventItem?.sentLinkedInRequest ?? false,
@@ -244,7 +239,6 @@ function InPersonEventModal({
       timePeriod: timeParts.period,
       location: eventItem?.location ?? '',
       url: eventItem?.url ?? '',
-      notes: eventItem?.notes ?? '',
       status: eventItem?.status ?? (defaultStatus || 'scheduling'),
       nameOfPersonSpokenTo: eventItem?.nameOfPersonSpokenTo ?? '',
       sentLinkedInRequest: eventItem?.sentLinkedInRequest ?? false,
@@ -311,7 +305,6 @@ function InPersonEventModal({
       date: combinedDate,
       location: formData.location ? formData.location.trim() : null,
       url: formData.url ? formData.url.trim() : null,
-      notes: formData.notes ? formData.notes.trim() : null,
       status: formData.status,
       nameOfPersonSpokenTo: formData.nameOfPersonSpokenTo ? formData.nameOfPersonSpokenTo.trim() : null,
       sentLinkedInRequest: formData.sentLinkedInRequest,
@@ -467,39 +460,41 @@ function InPersonEventModal({
             />
           </div>
 
-          <div>
-            <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              disabled={!eventItem}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
-                eventItem 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
-              placeholder="Additional details or outcomes"
-            />
-          </div>
-
-          <div>
-            <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Name Of 1 Person I Met</label>
+          <div className="flex items-center">
             <input
-              type="text"
-              value={formData.nameOfPersonSpokenTo}
-              onChange={(e) => setFormData(prev => ({ ...prev, nameOfPersonSpokenTo: e.target.value }))}
+              type="checkbox"
+              id="careerFair"
+              checked={formData.careerFair}
+              onChange={(e) => setFormData(prev => ({ ...prev, careerFair: e.target.checked }))}
               disabled={!eventItem}
-              placeholder="Enter name"
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
+              className={`w-4 h-4 border rounded ${
                 eventItem 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+                  ? 'bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue' 
+                  : 'bg-gray-800 border-gray-600 cursor-not-allowed opacity-50'
               }`}
             />
+            <label htmlFor="careerFair" className={`ml-2 font-semibold ${eventItem ? 'text-white' : 'text-gray-500'}`}>
+              This is a career fair
+            </label>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex items-center">
+          <div className="flex items-end gap-4">
+            <div className="flex-1">
+              <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Name Of 1 Person I Met</label>
+              <input
+                type="text"
+                value={formData.nameOfPersonSpokenTo}
+                onChange={(e) => setFormData(prev => ({ ...prev, nameOfPersonSpokenTo: e.target.value }))}
+                disabled={!eventItem}
+                placeholder="Enter name"
+                className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
+                  eventItem 
+                    ? 'bg-gray-700 border-light-steel-blue text-white' 
+                    : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+                }`}
+              />
+            </div>
+            <div className="flex items-center pb-2">
               <input
                 type="checkbox"
                 id="sentLinkedInRequest"
@@ -514,23 +509,6 @@ function InPersonEventModal({
               />
               <label htmlFor="sentLinkedInRequest" className={`ml-2 font-semibold ${eventItem ? 'text-white' : 'text-gray-500'}`}>
                 Sent LinkedIn Request
-              </label>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="careerFair"
-                checked={formData.careerFair}
-                onChange={(e) => setFormData(prev => ({ ...prev, careerFair: e.target.checked }))}
-                disabled={!eventItem}
-                className={`w-4 h-4 border rounded ${
-                  eventItem 
-                    ? 'bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue' 
-                    : 'bg-gray-800 border-gray-600 cursor-not-allowed opacity-50'
-                }`}
-              />
-              <label htmlFor="careerFair" className={`ml-2 font-semibold ${eventItem ? 'text-white' : 'text-gray-500'}`}>
-                This is a career fair
               </label>
             </div>
           </div>
