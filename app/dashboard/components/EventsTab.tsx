@@ -172,14 +172,11 @@ function SortableEventCard(props: {
         {props.card.careerFair && (
           <span className="text-green-400 text-xs">✓ Career Fair</span>
         )}
-        {typeof props.card.numPeopleSpokenTo === 'number' && (
-          <span className="px-2 py-0.5 rounded-full bg-gray-700">Spoke to {props.card.numPeopleSpokenTo}</span>
+        {props.card.nameOfPersonSpokenTo && (
+          <span className="px-2 py-0.5 rounded-full bg-gray-700">Met: {props.card.nameOfPersonSpokenTo}</span>
         )}
-        {typeof props.card.numLinkedInRequests === 'number' && (
-          <span className="px-2 py-0.5 rounded-full bg-gray-700">LinkedIn {props.card.numLinkedInRequests}</span>
-        )}
-        {typeof props.card.numOfInterviews === 'number' && (
-          <span className="px-2 py-0.5 rounded-full bg-gray-700">Interviews {props.card.numOfInterviews}</span>
+        {props.card.sentLinkedInRequest && (
+          <span className="px-2 py-0.5 rounded-full bg-gray-700">✓ LinkedIn Sent</span>
         )}
       </div>
     </div>
@@ -211,10 +208,10 @@ function InPersonEventModal({
     url: string;
     notes: string;
     status: InPersonEventStatus;
-    numPeopleSpokenTo: string;
-    numLinkedInRequests: string;
-    numOfInterviews: string;
+    nameOfPersonSpokenTo: string;
+    sentLinkedInRequest: boolean;
     careerFair: boolean;
+    followUpMessage: string;
     dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
     dateModified: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
   };
@@ -228,11 +225,11 @@ function InPersonEventModal({
     location: eventItem?.location ?? '',
     url: eventItem?.url ?? '',
     notes: eventItem?.notes ?? '',
-    status: eventItem?.status ?? (defaultStatus || 'scheduled'),
-    numPeopleSpokenTo: eventItem?.numPeopleSpokenTo?.toString() ?? '',
-    numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
-    numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
+    status: eventItem?.status ?? (defaultStatus || 'scheduling'),
+    nameOfPersonSpokenTo: eventItem?.nameOfPersonSpokenTo ?? '',
+    sentLinkedInRequest: eventItem?.sentLinkedInRequest ?? false,
     careerFair: eventItem?.careerFair ?? false,
+    followUpMessage: eventItem?.followUpMessage ?? '',
     dateCreated: eventItem?.dateCreated ? toLocalDateString(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: eventItem?.dateModified ? toLocalDateString(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
@@ -248,11 +245,11 @@ function InPersonEventModal({
       location: eventItem?.location ?? '',
       url: eventItem?.url ?? '',
       notes: eventItem?.notes ?? '',
-      status: eventItem?.status ?? (defaultStatus || 'scheduled'),
-      numPeopleSpokenTo: eventItem?.numPeopleSpokenTo?.toString() ?? '',
-      numLinkedInRequests: eventItem?.numLinkedInRequests?.toString() ?? '',
-      numOfInterviews: eventItem?.numOfInterviews?.toString() ?? '',
+      status: eventItem?.status ?? (defaultStatus || 'scheduling'),
+      nameOfPersonSpokenTo: eventItem?.nameOfPersonSpokenTo ?? '',
+      sentLinkedInRequest: eventItem?.sentLinkedInRequest ?? false,
       careerFair: eventItem?.careerFair ?? false,
+      followUpMessage: eventItem?.followUpMessage ?? '',
       dateCreated: eventItem?.dateCreated ? toLocalDateString(eventItem.dateCreated) : '', // ===== DATE FIELD EDITING =====
       dateModified: eventItem?.dateModified ? toLocalDateString(eventItem.dateModified) : '', // ===== DATE FIELD EDITING =====
     });
@@ -316,10 +313,10 @@ function InPersonEventModal({
       url: formData.url ? formData.url.trim() : null,
       notes: formData.notes ? formData.notes.trim() : null,
       status: formData.status,
-      numPeopleSpokenTo: formData.numPeopleSpokenTo !== '' ? Number(formData.numPeopleSpokenTo) : null,
-      numLinkedInRequests: formData.numLinkedInRequests !== '' ? Number(formData.numLinkedInRequests) : null,
-      numOfInterviews: formData.numOfInterviews !== '' ? Number(formData.numOfInterviews) : null,
+      nameOfPersonSpokenTo: formData.nameOfPersonSpokenTo ? formData.nameOfPersonSpokenTo.trim() : null,
+      sentLinkedInRequest: formData.sentLinkedInRequest,
       careerFair: formData.careerFair,
+      followUpMessage: formData.followUpMessage ? formData.followUpMessage.trim() : null,
     };
     if (ENABLE_DATE_FIELD_EDITING) {
       if (formData.dateCreated) {
@@ -485,79 +482,72 @@ function InPersonEventModal({
             />
           </div>
 
-          <div className="flex items-center mb-4">
+          <div>
+            <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Name Of 1 Person I Met</label>
             <input
-              type="checkbox"
-              id="careerFair"
-              checked={formData.careerFair}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                careerFair: e.target.checked,
-                numOfInterviews: e.target.checked ? prev.numOfInterviews : ''
-              }))}
+              type="text"
+              value={formData.nameOfPersonSpokenTo}
+              onChange={(e) => setFormData(prev => ({ ...prev, nameOfPersonSpokenTo: e.target.value }))}
               disabled={!eventItem}
-              className={`w-4 h-4 border rounded ${
+              placeholder="Enter name"
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
                 eventItem 
-                  ? 'bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue' 
-                  : 'bg-gray-800 border-gray-600 cursor-not-allowed opacity-50'
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
               }`}
             />
-            <label htmlFor="careerFair" className={`ml-2 font-semibold ${eventItem ? 'text-white' : 'text-gray-500'}`}>
-              This is a career fair
-            </label>
           </div>
 
-          <div className={`grid gap-4 ${formData.careerFair ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
-            <div>
-              <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>No. of People Spoken To</label>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center">
               <input
-                type="number"
-                min={0}
-                value={formData.numPeopleSpokenTo}
-                onChange={(e) => setFormData(prev => ({ ...prev, numPeopleSpokenTo: e.target.value }))}
+                type="checkbox"
+                id="sentLinkedInRequest"
+                checked={formData.sentLinkedInRequest}
+                onChange={(e) => setFormData(prev => ({ ...prev, sentLinkedInRequest: e.target.checked }))}
                 disabled={!eventItem}
-                placeholder="#"
-                className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
+                className={`w-4 h-4 border rounded ${
                   eventItem 
-                    ? 'bg-gray-700 border-light-steel-blue text-white' 
-                    : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue' 
+                    : 'bg-gray-800 border-gray-600 cursor-not-allowed opacity-50'
                 }`}
               />
+              <label htmlFor="sentLinkedInRequest" className={`ml-2 font-semibold ${eventItem ? 'text-white' : 'text-gray-500'}`}>
+                Sent LinkedIn Request
+              </label>
             </div>
-            <div>
-              <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>No. of LinkedIn Requests</label>
+            <div className="flex items-center">
               <input
-                type="number"
-                min={0}
-                value={formData.numLinkedInRequests}
-                onChange={(e) => setFormData(prev => ({ ...prev, numLinkedInRequests: e.target.value }))}
+                type="checkbox"
+                id="careerFair"
+                checked={formData.careerFair}
+                onChange={(e) => setFormData(prev => ({ ...prev, careerFair: e.target.checked }))}
                 disabled={!eventItem}
-                placeholder="#"
-                className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
+                className={`w-4 h-4 border rounded ${
                   eventItem 
-                    ? 'bg-gray-700 border-light-steel-blue text-white' 
-                    : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue' 
+                    : 'bg-gray-800 border-gray-600 cursor-not-allowed opacity-50'
                 }`}
               />
+              <label htmlFor="careerFair" className={`ml-2 font-semibold ${eventItem ? 'text-white' : 'text-gray-500'}`}>
+                This is a career fair
+              </label>
             </div>
-            {formData.careerFair && (
-              <div>
-                <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>No. of Interviews</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={formData.numOfInterviews}
-                  onChange={(e) => setFormData(prev => ({ ...prev, numOfInterviews: e.target.value }))}
-                  disabled={!eventItem}
-                  placeholder="#"
-                  className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
-                    eventItem 
-                      ? 'bg-gray-700 border-light-steel-blue text-white' 
-                      : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-                  }`}
-                />
-              </div>
-            )}
+          </div>
+
+          <div>
+            <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Follow-Up Message</label>
+            <textarea
+              value={formData.followUpMessage}
+              onChange={(e) => setFormData(prev => ({ ...prev, followUpMessage: e.target.value }))}
+              disabled={!eventItem}
+              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
+                eventItem 
+                  ? 'bg-gray-700 border-light-steel-blue text-white' 
+                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+              }`}
+              placeholder="Enter follow-up message"
+            />
           </div>
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}

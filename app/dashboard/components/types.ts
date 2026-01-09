@@ -52,10 +52,10 @@ export type InPersonEvent = {
   url?: string | null;
   notes?: string | null;
   status: InPersonEventStatus;
-  numPeopleSpokenTo?: number | null;
-  numLinkedInRequests?: number | null;
+  nameOfPersonSpokenTo?: string | null;
+  sentLinkedInRequest: boolean;
   careerFair: boolean;
-  numOfInterviews?: number | null;
+  followUpMessage?: string | null;
   userId: string;
   dateCreated?: string;
   dateModified?: string | null;

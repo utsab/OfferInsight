@@ -168,10 +168,10 @@ type InPersonEvent = {
   url?: string | null;
   notes?: string | null;
   status: InPersonEventStatus;
-  numPeopleSpokenTo?: number | null;
-  numLinkedInRequests?: number | null;
+  nameOfPersonSpokenTo?: string | null;
+  sentLinkedInRequest: boolean;
   careerFair: boolean;
-  numOfInterviews?: number | null;
+  followUpMessage?: string | null;
   userId: string;
   dateCreated?: string;
   dateModified?: string | null;
@@ -1132,8 +1132,8 @@ const hasSeededMockDataRef = useRef(false);
           date: isoWithDelta({ months: -5, days: -7, hour: 13 }),
           location: 'Virtual',
           status: 'attending',
-          numPeopleSpokenTo: 6,
-          numLinkedInRequests: 4,
+          nameOfPersonSpokenTo: 'John Smith',
+          sentLinkedInRequest: true,
           careerFair: true,
           userId: 'mock-user',
         },
@@ -1145,7 +1145,8 @@ const hasSeededMockDataRef = useRef(false);
           date: isoWithDelta({ months: -2, days: -2, hour: 18 }),
           location: 'Seattle',
           status: 'sendingLinkedInRequests',
-          numLinkedInRequests: 5,
+          nameOfPersonSpokenTo: 'Jane Doe',
+          sentLinkedInRequest: true,
           careerFair: false,
           userId: 'mock-user',
         },
@@ -1158,8 +1159,9 @@ const hasSeededMockDataRef = useRef(false);
           location: 'Austin',
           notes: 'Need to send thank-you emails.',
           status: 'followingUp',
-          numPeopleSpokenTo: 3,
-          numOfInterviews: 1,
+          nameOfPersonSpokenTo: 'Mike Johnson',
+          sentLinkedInRequest: false,
+          followUpMessage: 'Followed up with thank you message.',
           careerFair: false,
           userId: 'mock-user',
         },

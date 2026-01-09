@@ -47,21 +47,21 @@ model Linkedin_Outreach {
 }
 
 model In_Person_Events {
-  id                  Int       @id @default(autoincrement())
-  event               String
-  date                DateTime
-  location            String?
-  url                 String?
-  notes               String?
-  numPeopleSpokenTo   Int?
-  numLinkedInRequests Int?
-  careerFair          Boolean   @default(false)
-  numOfInterviews     Int?
-  status              String    @default("scheduling")
-  dateCreated         DateTime  @default(now())
-  dateModified       DateTime?
-  userId              String
-  user                User      @relation(fields: [userId], references: [id])
+  id                    Int       @id @default(autoincrement())
+  event                 String
+  date                  DateTime
+  location              String?
+  url                   String?
+  notes                 String?
+  nameOfPersonSpokenTo  String?
+  sentLinkedInRequest   Boolean   @default(false)
+  careerFair            Boolean   @default(false)
+  followUpMessage       String?
+  status                String    @default("scheduling")
+  dateCreated           DateTime  @default(now())
+  dateModified         DateTime?
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id])
 }
 
 model Leetcode_Practice {

@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { event, date, location, url, notes, status, careerFair, numPeopleSpokenTo, numLinkedInRequests, numOfInterviews, dateCreated, dateModified } = body; // ===== DATE FIELD EDITING =====
+    const { event, date, location, url, notes, status, careerFair, nameOfPersonSpokenTo, sentLinkedInRequest, followUpMessage, dateCreated, dateModified } = body; // ===== DATE FIELD EDITING =====
 
     if (!event || !date) {
       return NextResponse.json(
@@ -60,9 +60,9 @@ export async function POST(request: NextRequest) {
         userId: userId,
         status: status || "scheduling",
         careerFair: careerFair ?? false,
-        numPeopleSpokenTo: numPeopleSpokenTo ?? null,
-        numLinkedInRequests: numLinkedInRequests ?? null,
-        numOfInterviews: numOfInterviews ?? null,
+        nameOfPersonSpokenTo: nameOfPersonSpokenTo || null,
+        sentLinkedInRequest: sentLinkedInRequest ?? false,
+        followUpMessage: followUpMessage || null,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,
         // dateModified: Set to current date on create, or use provided value if specified
@@ -167,9 +167,9 @@ export async function PUT(request: NextRequest) {
       location,
       url,
       notes,
-      numPeopleSpokenTo,
-      numLinkedInRequests,
-      numOfInterviews,
+      nameOfPersonSpokenTo,
+      sentLinkedInRequest,
+      followUpMessage,
       careerFair,
       dateCreated, // ===== DATE FIELD EDITING =====
       dateModified, // ===== DATE FIELD EDITING =====
@@ -225,16 +225,16 @@ export async function PUT(request: NextRequest) {
       updateData.notes = notes;
       hasChanges = true;
     }
-    if (numPeopleSpokenTo !== undefined && numPeopleSpokenTo !== existingEvent.numPeopleSpokenTo) {
-      updateData.numPeopleSpokenTo = numPeopleSpokenTo;
+    if (nameOfPersonSpokenTo !== undefined && nameOfPersonSpokenTo !== existingEvent.nameOfPersonSpokenTo) {
+      updateData.nameOfPersonSpokenTo = nameOfPersonSpokenTo;
       hasChanges = true;
     }
-    if (numLinkedInRequests !== undefined && numLinkedInRequests !== existingEvent.numLinkedInRequests) {
-      updateData.numLinkedInRequests = numLinkedInRequests;
+    if (sentLinkedInRequest !== undefined && sentLinkedInRequest !== existingEvent.sentLinkedInRequest) {
+      updateData.sentLinkedInRequest = sentLinkedInRequest;
       hasChanges = true;
     }
-    if (numOfInterviews !== undefined && numOfInterviews !== existingEvent.numOfInterviews) {
-      updateData.numOfInterviews = numOfInterviews;
+    if (followUpMessage !== undefined && followUpMessage !== existingEvent.followUpMessage) {
+      updateData.followUpMessage = followUpMessage;
       hasChanges = true;
     }
     if (careerFair !== undefined && careerFair !== existingEvent.careerFair) {
