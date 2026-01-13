@@ -1,7 +1,7 @@
 // Shared types for dashboard components
 
-export type ApplicationStatus = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
-export type ApplicationColumnId = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
+export type ApplicationStatus = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
+export type ApplicationColumnId = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
 
 export type LinkedinOutreachStatus = 'sendingOutreachRequest' | 'acceptingRequest' | 'followingUp' | 'linkedinOutreach' | 'askingForReferral';
 export type LinkedinOutreachColumnId = 'outreach' | 'accepted' | 'followedUpLinkedin' | 'linkedinOutreach' | 'askingForReferral';
@@ -75,10 +75,10 @@ export type LeetEntry = {
 };
 
 export const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
-  'messagingHiringManager',
-  'messagingRecruiter',
-  'followingUp',
-  'interviewing',
+  'messageHiringManager',
+  'messageRecruiter',
+  'followUp',
+  'interview',
 ];
 
 export const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
@@ -93,19 +93,19 @@ export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'linkedinR
 export const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflected'];
 
 export const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
-  applying: 'applying',
-  messagingRecruiter: 'messagingRecruiter',
-  messagingHiringManager: 'messagingHiringManager',
-  followingUp: 'followingUp',
-  interviewing: 'interviewing',
+  apply: 'apply',
+  messageRecruiter: 'messageRecruiter',
+  messageHiringManager: 'messageHiringManager',
+  followUp: 'followUp',
+  interview: 'interview',
 };
 
 export const applicationColumnToStatus: Record<ApplicationColumnId, ApplicationStatus> = {
-  applying: 'applying',
-  messagingRecruiter: 'messagingRecruiter',
-  messagingHiringManager: 'messagingHiringManager',
-  followingUp: 'followingUp',
-  interviewing: 'interviewing',
+  apply: 'apply',
+  messageRecruiter: 'messageRecruiter',
+  messageHiringManager: 'messageHiringManager',
+  followUp: 'followUp',
+  interview: 'interview',
 };
 
 export const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, LinkedinOutreachColumnId> = {

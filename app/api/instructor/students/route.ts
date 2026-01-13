@@ -6,7 +6,7 @@ import { getCurrentMonthDateRange } from "@/app/lib/date-utils";
 // Completed status values based on dashboard completion column logic
 // Mapping completion column IDs to status values (same as dashboard)
 // Applications: completion columns map 1:1 to status values
-const APPLICATION_COMPLETION_STATUSES = ['messagingHiringManager', 'messagingRecruiter', 'followingUp', 'interviewing'];
+const APPLICATION_COMPLETION_STATUSES = ['messageHiringManager', 'messageRecruiter', 'followUp', 'interview'];
 
 // LinkedIn: map completion column IDs to status values
 // Columns: ['outreach', 'accepted', 'followedUpLinkedin', 'linkedinOutreach']

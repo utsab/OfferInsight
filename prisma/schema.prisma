@@ -23,7 +23,7 @@ model Applications_With_Outreach {
   recruiter             String?
   msgToRecruiter        String?
   notes                 String?
-  status                String    @default("applying")
+  status                String    @default("apply")
   dateCreated           DateTime  @default(now())
   dateModified         DateTime?
   userId                String

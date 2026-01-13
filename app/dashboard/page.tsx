@@ -98,8 +98,8 @@ const ENABLE_DASHBOARD_MOCKS = false;
 const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
 
-type ApplicationStatus = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
-type ApplicationColumnId = 'applying' | 'messagingRecruiter' | 'messagingHiringManager' | 'followingUp' | 'interviewing';
+type ApplicationStatus = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
+type ApplicationColumnId = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
 
 type LinkedinOutreachStatus = 'sendingOutreachRequest' | 'acceptingRequest' | 'followingUp' | 'linkedinOutreach' | 'askingForReferral';
 type LinkedinOutreachColumnId = 'outreach' | 'accepted' | 'followedUpLinkedin' | 'linkedinOutreach' | 'askingForReferral';
@@ -113,10 +113,10 @@ type LeetColumnId = 'planned' | 'solved' | 'reflected';
 type BoardTimeFilter = 'modifiedThisMonth' | 'allTime';
 
 const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
-  'messagingHiringManager',
-  'messagingRecruiter',
-  'followingUp',
-  'interviewing',
+  'messageHiringManager',
+  'messageRecruiter',
+  'followUp',
+  'interview',
 ];
 const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
   'outreach',
@@ -192,19 +192,19 @@ type LeetEntry = {
 
 // Map status values to column IDs (moved outside component to prevent re-renders)
 const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
-  applying: 'applying',
-  messagingRecruiter: 'messagingRecruiter',
-  messagingHiringManager: 'messagingHiringManager',
-  followingUp: 'followingUp',
-  interviewing: 'interviewing',
+  apply: 'apply',
+  messageRecruiter: 'messageRecruiter',
+  messageHiringManager: 'messageHiringManager',
+  followUp: 'followUp',
+  interview: 'interview',
 };
 
 const applicationColumnToStatus: Record<ApplicationColumnId, ApplicationStatus> = {
-  applying: 'applying',
-  messagingRecruiter: 'messagingRecruiter',
-  messagingHiringManager: 'messagingHiringManager',
-  followingUp: 'followingUp',
-  interviewing: 'interviewing',
+  apply: 'apply',
+  messageRecruiter: 'messageRecruiter',
+  messageHiringManager: 'messageHiringManager',
+  followUp: 'followUp',
+  interview: 'interview',
 };
 
 // Linkedin outreach status mappings
@@ -261,11 +261,11 @@ export default function Page() {
   // dnd-kit: Applications board state
 
   const [appColumns, setAppColumns] = useState<Record<ApplicationColumnId, Application[]>>({
-    applying: [],
-    messagingRecruiter: [],
-    messagingHiringManager: [],
-    followingUp: [],
-    interviewing: [],
+    apply: [],
+    messageRecruiter: [],
+    messageHiringManager: [],
+    followUp: [],
+    interview: [],
   });
   const [activeAppId, setActiveAppId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -299,15 +299,15 @@ export default function Page() {
       
       // Group applications by status
       const grouped: Record<ApplicationColumnId, Application[]> = {
-        applying: [],
-        messagingRecruiter: [],
-        messagingHiringManager: [],
-        followingUp: [],
-        interviewing: [],
+        apply: [],
+        messageRecruiter: [],
+        messageHiringManager: [],
+        followUp: [],
+        interview: [],
       };
       
       data.forEach((app: Application) => {
-        const column = applicationStatusToColumn[app.status] || 'applying';
+        const column = applicationStatusToColumn[app.status] || 'apply';
         grouped[column].push(app);
       });
       
@@ -378,7 +378,7 @@ export default function Page() {
     const overId = String(over.id);
 
     const fromCol = getApplicationColumnOfItem(activeId);
-    const toCol = (['applying','messagingRecruiter','messagingHiringManager','followingUp','interviewing'] as ApplicationColumnId[]).includes(overId as ApplicationColumnId)
+    const toCol = (['apply','messageRecruiter','messageHiringManager','followUp','interview'] as ApplicationColumnId[]).includes(overId as ApplicationColumnId)
       ? (overId as ApplicationColumnId)
       : getApplicationColumnOfItem(overId);
     if (!fromCol || !toCol) {
@@ -422,11 +422,11 @@ export default function Page() {
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       // Create new column arrays to ensure React detects the change
       setAppColumns(prev => ({
-        applying: [...prev.applying],
-        messagingRecruiter: [...prev.messagingRecruiter],
-        messagingHiringManager: [...prev.messagingHiringManager],
-        followingUp: [...prev.followingUp],
-        interviewing: [...prev.interviewing],
+        apply: [...prev.apply],
+        messageRecruiter: [...prev.messageRecruiter],
+        messageHiringManager: [...prev.messageHiringManager],
+        followUp: [...prev.followUp],
+        interview: [...prev.interview],
         [fromCol]: newFrom,
         [toCol]: newTo,
       }));
@@ -989,11 +989,11 @@ const hasSeededMockDataRef = useRef(false);
     };
 
     const mockApplications: Record<ApplicationColumnId, Application[]> = {
-      applying: [
+      apply: [
         {
           id: 1001,
           company: 'Acme Corp',
-          status: 'applying',
+          status: 'apply',
           dateCreated: isoWithDelta({ months: -1, days: -3, hour: 9 }),
           userId: 'mock-user',
         },
@@ -1001,48 +1001,48 @@ const hasSeededMockDataRef = useRef(false);
           id: 1002,
           company: 'Globex',
           recruiter: 'Jordan Smith',
-          status: 'applying',
+          status: 'apply',
           dateCreated: isoWithDelta({ months: -4, days: -12, hour: 14 }),
           userId: 'mock-user',
         },
       ],
-      messagingRecruiter: [
+      messageRecruiter: [
         {
           id: 1003,
           company: 'Initech',
           recruiter: 'Ava Chen',
           msgToRecruiter: 'Followed up with recruiter on LinkedIn.',
-          status: 'messagingRecruiter',
+          status: 'messageRecruiter',
           dateCreated: isoWithDelta({ months: -2, days: -6, hour: 11 }),
           userId: 'mock-user',
         },
       ],
-      messagingHiringManager: [
+      messageHiringManager: [
         {
           id: 1004,
           company: 'Vandelay Industries',
           hiringManager: 'Art Vandelay',
           msgToManager: 'Sent tailored cover letter and message.',
-          status: 'messagingHiringManager',
+          status: 'messageHiringManager',
           dateCreated: isoWithDelta({ months: -5, days: -9, hour: 16 }),
           userId: 'mock-user',
         },
       ],
-      followingUp: [
+      followUp: [
         {
           id: 1005,
           company: 'Stark Industries',
-          status: 'followingUp',
+          status: 'followUp',
           dateCreated: isoWithDelta({ months: -7, days: -4, hour: 13 }),
           userId: 'mock-user',
         },
       ],
-      interviewing: [
+      interview: [
         {
           id: 1006,
           company: 'Wayne Enterprises',
           hiringManager: 'Lucius Fox',
-          status: 'interviewing',
+          status: 'interview',
           dateCreated: isoWithDelta({ months: -10, days: -15, hour: 10 }),
           userId: 'mock-user',
         },
@@ -1726,11 +1726,11 @@ const hasSeededMockDataRef = useRef(false);
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
     const filtered: Record<ApplicationColumnId, Application[]> = {
-      applying: [],
-      messagingRecruiter: [],
-      messagingHiringManager: [],
-      followingUp: [],
-      interviewing: [],
+      apply: [],
+      messageRecruiter: [],
+      messageHiringManager: [],
+      followUp: [],
+      interview: [],
     };
     (Object.keys(appColumns) as ApplicationColumnId[]).forEach(columnId => {
       if (applicationsFilter === 'modifiedThisMonth') {
