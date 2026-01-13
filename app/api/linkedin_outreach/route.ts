@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
         firstMessage: data.firstMessage || null,
         secondMessage: data.secondMessage || null,
         linkedInUrl: data.linkedInUrl || null,
+        notes: data.notes || null,
         status: data.status || "prospects", // TODO: This is apart of default status. eliminate redundancy (1/3)
         recievedReferral: data.recievedReferral || false,
         userId: userId,
@@ -186,6 +187,10 @@ export async function PUT(request: NextRequest) {
     }
     if (data.linkedInUrl !== undefined && data.linkedInUrl !== outreach.linkedInUrl) {
       updateData.linkedInUrl = data.linkedInUrl;
+      hasChanges = true;
+    }
+    if (data.notes !== undefined && data.notes !== outreach.notes) {
+      updateData.notes = data.notes;
       hasChanges = true;
     }
     if (data.status !== undefined && data.status !== outreach.status) {

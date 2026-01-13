@@ -220,7 +220,7 @@ function HelperMessage({ status }: { status?: ApplicationStatus | null }) {
           className="inline-flex items-center gap-2 text-white font-semibold hover:text-electric-blue transition-colors cursor-pointer underline"
         >
           <PlayCircle className="w-5 h-5 text-electric-blue flex-shrink-0" />
-          <span>Check out this video on how to {getMessage()}</span>
+          <span>Helper video: How to {getMessage()}</span>
         </button>
       </div>
       <VideoModal videoUrl={videoUrl} isOpen={isVideoOpen} onClose={() => setIsVideoOpen(false)} />

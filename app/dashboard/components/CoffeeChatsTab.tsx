@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X, Lock, PlayCircle } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -15,6 +15,118 @@ import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString } from
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
 const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
+
+// Lock Tooltip Component - centered in unified blur area
+function LockTooltip() {
+  return (
+    <div className="flex md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 md:absolute md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:z-10 items-center gap-2 bg-gray-900 border border-light-steel-blue rounded-lg px-3 py-2 shadow-lg whitespace-nowrap justify-center md:pointer-events-none">
+      <Lock className="w-4 h-4 text-electric-blue flex-shrink-0" />
+      <span className="text-sm text-white">Drag card to next column to unlock next step</span>
+    </div>
+  );
+}
+
+// Video Modal Component - displays YouTube video in a modal overlay
+function VideoModal({ videoUrl, isOpen, onClose }: { videoUrl: string; isOpen: boolean; onClose: () => void }) {
+  // Convert YouTube watch URL to embed format
+  const getEmbedUrl = (url: string) => {
+    // Extract video ID from various YouTube URL formats
+    const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    if (videoIdMatch && videoIdMatch[1]) {
+      return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+    }
+    return url; // Fallback to original URL if extraction fails
+  };
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-2"
+          aria-label="Close video"
+        >
+          <X size={24} />
+        </button>
+        <iframe
+          src={getEmbedUrl(videoUrl)}
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="YouTube video player"
+        />
+      </div>
+    </div>
+  );
+}
+
+// Helper Message Component - shows video link based on current column
+function HelperMessage({ status }: { status?: LinkedinOutreachStatus | null }) {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const videoUrl = 'https://www.youtube.com/watch?v=UgZrVViUQLk'; // TODO: Update with actual Coffee Chats video URL
+
+  const getMessage = () => {
+    if (!status) return 'find prospects';
+    switch (status) {
+      case 'prospects':
+        return 'find prospects';
+      case 'sendFirstMessage':
+        return 'send your first message';
+      case 'requestAccepted':
+        return 'get your request accepted';
+      case 'followUp':
+        return 'follow up';
+      case 'coffeeChat':
+        return 'have a coffee chat';
+      case 'askForReferral':
+        return 'ask for a referral';
+      default:
+        return 'find prospects';
+    }
+  };
+
+  return (
+    <>
+      <div className="text-center py-3">
+        <button
+          type="button"
+          onClick={() => setIsVideoOpen(true)}
+          className="inline-flex items-center gap-2 text-white font-semibold hover:text-electric-blue transition-colors cursor-pointer underline"
+        >
+          <PlayCircle className="w-5 h-5 text-electric-blue flex-shrink-0" />
+          <span>Helper video: How to {getMessage()}</span>
+        </button>
+      </div>
+      <VideoModal videoUrl={videoUrl} isOpen={isVideoOpen} onClose={() => setIsVideoOpen(false)} />
+    </>
+  );
+}
 
 type CoffeeChatsTabProps = {
   filteredLinkedinOutreachColumns: Record<LinkedinOutreachColumnId, LinkedinOutreach[]>;
@@ -147,6 +259,7 @@ function LinkedinOutreachModal({
     firstMessage: string;
     secondMessage: string;
     linkedInUrl: string;
+    notes: string;
     status: LinkedinOutreachStatus;
     recievedReferral: boolean;
     dateCreated: string; // ===== DATE FIELD EDITING: Added for testing/debugging =====
@@ -159,6 +272,7 @@ function LinkedinOutreachModal({
     firstMessage: linkedinOutreach?.firstMessage || '',
     secondMessage: linkedinOutreach?.secondMessage || '',
     linkedInUrl: linkedinOutreach?.linkedInUrl || '',
+    notes: linkedinOutreach?.notes || '',
     status: linkedinOutreach ? linkedinOutreach.status : (defaultStatus || 'prospects'),
     recievedReferral: linkedinOutreach?.recievedReferral || false,
     dateCreated: linkedinOutreach?.dateCreated ? toLocalDateString(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
@@ -174,6 +288,7 @@ function LinkedinOutreachModal({
         firstMessage: linkedinOutreach.firstMessage || '',
         secondMessage: linkedinOutreach.secondMessage || '',
         linkedInUrl: linkedinOutreach.linkedInUrl || '',
+        notes: linkedinOutreach.notes || '',
         status: linkedinOutreach.status,
         recievedReferral: linkedinOutreach.recievedReferral || false,
         dateCreated: linkedinOutreach.dateCreated ? toLocalDateString(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
@@ -186,6 +301,7 @@ function LinkedinOutreachModal({
         firstMessage: '',
         secondMessage: '',
         linkedInUrl: '',
+        notes: '',
         status: defaultStatus || 'prospects',
         recievedReferral: false,
         dateCreated: '', // ===== DATE FIELD EDITING =====
@@ -275,69 +391,174 @@ function LinkedinOutreachModal({
           </div>
 
           <div>
-            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>LinkedIn URL</label>
+            <label className="block text-white font-semibold mb-2">LinkedIn URL</label>
             <input
               type="url"
               value={formData.linkedInUrl}
               onChange={(e) => setFormData({ ...formData, linkedInUrl: e.target.value })}
-              disabled={!linkedinOutreach}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
-                linkedinOutreach 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
               placeholder="https://linkedin.com/in/..."
             />
           </div>
 
-          <div>
-            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>First Message</label>
-            <textarea
-              value={formData.firstMessage}
-              onChange={(e) => setFormData({ ...formData, firstMessage: e.target.value })}
-              disabled={!linkedinOutreach}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
-                linkedinOutreach 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
-              placeholder="First message sent to the person"
-            />
-          </div>
+          {/* Helper message for create mode or 'prospects' status */}
+          {(!linkedinOutreach || linkedinOutreach?.status === 'prospects') && (
+            <HelperMessage status={linkedinOutreach?.status || 'prospects'} />
+          )}
 
-          <div>
-            <label className={`block font-semibold mb-2 ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>Second Message</label>
-            <textarea
-              value={formData.secondMessage}
-              onChange={(e) => setFormData({ ...formData, secondMessage: e.target.value })}
-              disabled={!linkedinOutreach}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
-                linkedinOutreach 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
-              placeholder="Second message sent to the person"
-            />
-          </div>
+          {/* First Message field - visible from sendFirstMessage, blurred in prospects */}
+          {!linkedinOutreach ? (
+            // Create mode: Show First Message blurred
+            <div className="relative group py-4">
+              <div className="blur-sm">
+                <label className="block font-semibold mb-2 text-white">First Message</label>
+                <textarea
+                  value={formData.firstMessage}
+                  onChange={(e) => setFormData({ ...formData, firstMessage: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
+                  placeholder="First message sent to the person"
+                />
+              </div>
+              <LockTooltip />
+            </div>
+          ) : linkedinOutreach.status === 'prospects' ? (
+            // Prospects status: Show First Message blurred
+            <div className="relative group py-4">
+              <div className="blur-sm">
+                <label className="block font-semibold mb-2 text-white">First Message</label>
+                <textarea
+                  value={formData.firstMessage}
+                  onChange={(e) => setFormData({ ...formData, firstMessage: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
+                  placeholder="First message sent to the person"
+                />
+              </div>
+              <LockTooltip />
+            </div>
+          ) : (
+            // sendFirstMessage or beyond: Show First Message unblurred
+            <div>
+              <label className="block text-white font-semibold mb-2">First Message</label>
+              <textarea
+                value={formData.firstMessage}
+                onChange={(e) => setFormData({ ...formData, firstMessage: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                placeholder="First message sent to the person"
+              />
+            </div>
+          )}
 
+          {/* Helper message between First Message and Second Message */}
+          {linkedinOutreach && linkedinOutreach.status === 'sendFirstMessage' && (
+            <HelperMessage status={linkedinOutreach.status} />
+          )}
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="recievedReferral"
-              checked={formData.recievedReferral}
-              onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
-              disabled={!linkedinOutreach}
-              className={`w-4 h-4 border rounded ${
-                linkedinOutreach 
-                  ? 'bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue' 
-                  : 'bg-gray-800 border-gray-600 cursor-not-allowed opacity-50'
-              }`}
-            />
-            <label htmlFor="recievedReferral" className={`ml-2 font-semibold ${linkedinOutreach ? 'text-white' : 'text-gray-500'}`}>
-              Received Referral
-            </label>
-          </div>
+          {/* Second Message field - visible from followUp */}
+          {linkedinOutreach && (linkedinOutreach.status === 'followUp' || linkedinOutreach.status === 'coffeeChat' || linkedinOutreach.status === 'askForReferral') ? (
+            // Follow up, Coffee Chat, or Ask for Referral: Show Second Message unblurred
+            <div>
+              <label className="block text-white font-semibold mb-2">Second Message</label>
+              <textarea
+                value={formData.secondMessage}
+                onChange={(e) => setFormData({ ...formData, secondMessage: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                placeholder="Second message sent to the person"
+              />
+            </div>
+          ) : linkedinOutreach && (linkedinOutreach.status === 'requestAccepted' || linkedinOutreach.status === 'sendFirstMessage') ? (
+            // Request Accepted or Send First Message: Show Second Message blurred (unlocks in next column)
+            <div className="relative group py-4">
+              <div className="blur-sm">
+                <label className="block font-semibold mb-2 text-white">Second Message</label>
+                <textarea
+                  value={formData.secondMessage}
+                  onChange={(e) => setFormData({ ...formData, secondMessage: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
+                  placeholder="Second message sent to the person"
+                />
+              </div>
+              <LockTooltip />
+            </div>
+          ) : null}
+
+          {/* Helper message between Second Message and Notes */}
+          {linkedinOutreach && linkedinOutreach.status === 'followUp' && (
+            <HelperMessage status={linkedinOutreach.status} />
+          )}
+
+          {/* Notes field - visible from coffeeChat */}
+          {linkedinOutreach && (linkedinOutreach.status === 'coffeeChat' || linkedinOutreach.status === 'askForReferral') ? (
+            // Coffee Chat or Ask for Referral status: Show Notes unblurred
+            <div>
+              <label className="block text-white font-semibold mb-2">Notes from coffee chat</label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
+                placeholder="Enter notes from the coffee chat"
+              />
+            </div>
+          ) : linkedinOutreach && linkedinOutreach.status === 'followUp' ? (
+            // Follow up status: Show Notes blurred (unlocks in next column)
+            <div className="relative group py-4">
+              <div className="blur-sm">
+                <label className="block font-semibold mb-2 text-white">Notes from coffee chat</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
+                  placeholder="Enter notes from the coffee chat"
+                />
+              </div>
+              <LockTooltip />
+            </div>
+          ) : null}
+
+          {/* Helper message between Notes and Received Referral */}
+          {linkedinOutreach && linkedinOutreach.status === 'coffeeChat' && (
+            <HelperMessage status={linkedinOutreach.status} />
+          )}
+
+          {/* Received Referral checkbox - visible from askForReferral */}
+          {linkedinOutreach && linkedinOutreach.status === 'askForReferral' ? (
+            // Ask for Referral status: Show checkbox unblurred
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="recievedReferral"
+                checked={formData.recievedReferral}
+                onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
+                className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
+              />
+              <label htmlFor="recievedReferral" className="ml-2 font-semibold text-white">
+                Received Referral
+              </label>
+            </div>
+          ) : linkedinOutreach && linkedinOutreach.status === 'coffeeChat' ? (
+            // Coffee Chat status: Show checkbox blurred (unlocks in next column)
+            <div className="relative group py-4">
+              <div className="blur-sm">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="recievedReferral"
+                    checked={formData.recievedReferral}
+                    onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
+                    className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
+                  />
+                  <label htmlFor="recievedReferral" className="ml-2 font-semibold text-white">
+                    Received Referral
+                  </label>
+                </div>
+              </div>
+              <LockTooltip />
+            </div>
+          ) : null}
+
+          {/* Helper message at bottom when all sections are revealed */}
+          {linkedinOutreach && linkedinOutreach.status === 'askForReferral' && (
+            <HelperMessage status={linkedinOutreach.status} />
+          )}
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
