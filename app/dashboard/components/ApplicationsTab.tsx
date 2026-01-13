@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 
-import { Plus, Trash2, X, Lock } from 'lucide-react';
+import { Plus, Trash2, X, Lock, PlayCircle } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -123,7 +123,7 @@ function LockTooltip() {
   return (
     <div className="flex md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 md:absolute md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:z-10 items-center gap-2 bg-gray-900 border border-light-steel-blue rounded-lg px-3 py-2 shadow-lg whitespace-nowrap justify-center md:pointer-events-none">
       <Lock className="w-4 h-4 text-electric-blue flex-shrink-0" />
-      <span className="text-sm text-white">Move to next column to unlock</span>
+      <span className="text-sm text-white">Drag card to next column to unlock next step</span>
     </div>
   );
 }
@@ -217,9 +217,10 @@ function HelperMessage({ status }: { status?: ApplicationStatus | null }) {
         <button
           type="button"
           onClick={() => setIsVideoOpen(true)}
-          className="text-electric-blue hover:text-blue-400 text-sm underline transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 text-white font-semibold hover:text-electric-blue transition-colors cursor-pointer underline"
         >
-          Check out this video on how to {getMessage()}
+          <PlayCircle className="w-5 h-5 text-electric-blue flex-shrink-0" />
+          <span>Check out this video on how to {getMessage()}</span>
         </button>
       </div>
       <VideoModal videoUrl={videoUrl} isOpen={isVideoOpen} onClose={() => setIsVideoOpen(false)} />
