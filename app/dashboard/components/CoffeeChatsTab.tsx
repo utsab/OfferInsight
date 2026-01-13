@@ -479,18 +479,18 @@ export default function CoffeeChatsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                Sending Outreach Request ({filteredLinkedinOutreachColumns.outreach.length})
+                Send outreach request ({filteredLinkedinOutreachColumns.sendOutreachRequest.length})
               </h5>
-              <SortableContext items={filteredLinkedinOutreachColumns.outreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredLinkedinOutreachColumns.sendOutreachRequest.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="outreach"
+                  id="sendOutreachRequest"
                   onAddCard={() => {
-                    setDefaultStatus(linkedinOutreachColumnToStatus.outreach);
+                    setDefaultStatus(linkedinOutreachColumnToStatus.sendOutreachRequest);
                     setEditingLinkedinOutreach(null);
                     setIsLinkedinOutreachModalOpen(true);
                   }}
                 >
-                  {filteredLinkedinOutreachColumns.outreach.map(card => (
+                  {filteredLinkedinOutreachColumns.sendOutreachRequest.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
                       card={card}
@@ -508,13 +508,13 @@ export default function CoffeeChatsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                Accepting Request ({filteredLinkedinOutreachColumns.accepted.length})
+                Request Accepted ({filteredLinkedinOutreachColumns.requestAccepted.length})
               </h5>
-              <SortableContext items={filteredLinkedinOutreachColumns.accepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredLinkedinOutreachColumns.requestAccepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="accepted"
+                  id="requestAccepted"
                 >
-                  {filteredLinkedinOutreachColumns.accepted.map(card => (
+                  {filteredLinkedinOutreachColumns.requestAccepted.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
                       card={card}
@@ -532,13 +532,13 @@ export default function CoffeeChatsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                Following Up ({filteredLinkedinOutreachColumns.followedUpLinkedin.length})
+                Follow up ({filteredLinkedinOutreachColumns.followUp.length})
               </h5>
-              <SortableContext items={filteredLinkedinOutreachColumns.followedUpLinkedin.map(c => String(c.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredLinkedinOutreachColumns.followUp.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="followedUpLinkedin"
+                  id="followUp"
                 >
-                  {filteredLinkedinOutreachColumns.followedUpLinkedin.map(card => (
+                  {filteredLinkedinOutreachColumns.followUp.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
                       card={card}
@@ -556,13 +556,13 @@ export default function CoffeeChatsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                Coffee Chat ({filteredLinkedinOutreachColumns.linkedinOutreach.length})
+                Coffee Chat ({filteredLinkedinOutreachColumns.coffeeChat.length})
               </h5>
-              <SortableContext items={filteredLinkedinOutreachColumns.linkedinOutreach.map(c => String(c.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredLinkedinOutreachColumns.coffeeChat.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="linkedinOutreach"
+                  id="coffeeChat"
                 >
-                  {filteredLinkedinOutreachColumns.linkedinOutreach.map(card => (
+                  {filteredLinkedinOutreachColumns.coffeeChat.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
                       card={card}
@@ -580,13 +580,13 @@ export default function CoffeeChatsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
-                Asking For Referral ({filteredLinkedinOutreachColumns.askingForReferral.length})
+                Ask for referral ({filteredLinkedinOutreachColumns.askForReferral.length})
               </h5>
-              <SortableContext items={filteredLinkedinOutreachColumns.askingForReferral.map(c => String(c.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredLinkedinOutreachColumns.askForReferral.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="askingForReferral"
+                  id="askForReferral"
                 >
-                  {filteredLinkedinOutreachColumns.askingForReferral.map(card => (
+                  {filteredLinkedinOutreachColumns.askForReferral.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
                       card={card}
@@ -651,7 +651,7 @@ export default function CoffeeChatsTab({
                 // Optimistically update the state immediately
                 setLinkedinOutreachColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'outreach';
+                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'sendOutreachRequest';
                   
                   // Find the old item's column and index
                   let oldColumn: LinkedinOutreachColumnId | null = null;
@@ -706,7 +706,7 @@ export default function CoffeeChatsTab({
                 // Optimistically update the state immediately
                 setLinkedinOutreachColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'outreach';
+                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'sendOutreachRequest';
                   newColumns[targetColumn] = [...newColumns[targetColumn], updatedOutreach];
                   return newColumns;
                 });
