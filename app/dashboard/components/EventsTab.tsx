@@ -668,18 +668,18 @@ export default function EventsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                Scheduling ({filteredEventColumns.upcoming.length})
+                Plan ({filteredEventColumns.plan.length})
               </h5>
-              <SortableContext items={filteredEventColumns.upcoming.map(event => String(event.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredEventColumns.plan.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="upcoming"
+                  id="plan"
                   onAddCard={() => {
-                    setDefaultStatus(eventColumnToStatus.upcoming);
+                    setDefaultStatus(eventColumnToStatus.plan);
                     setEditingEvent(null);
                     setIsEventModalOpen(true);
                   }}
                 >
-                  {filteredEventColumns.upcoming.map(event => (
+                  {filteredEventColumns.plan.map(event => (
                     <SortableEventCard 
                       key={event.id} 
                       card={event}
@@ -697,7 +697,7 @@ export default function EventsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                Attending ({filteredEventColumns.attended.length})
+                Attended ({filteredEventColumns.attended.length})
               </h5>
               <SortableContext items={filteredEventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
@@ -721,13 +721,13 @@ export default function EventsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                Sending LinkedIn Requests ({filteredEventColumns.linkedinRequestsSent.length})
+                Send LinkedIn Request ({filteredEventColumns.sendLinkedInRequest.length})
               </h5>
-              <SortableContext items={filteredEventColumns.linkedinRequestsSent.map(event => String(event.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredEventColumns.sendLinkedInRequest.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="linkedinRequestsSent"
+                  id="sendLinkedInRequest"
                 >
-                  {filteredEventColumns.linkedinRequestsSent.map(event => (
+                  {filteredEventColumns.sendLinkedInRequest.map(event => (
                     <SortableEventCard 
                       key={event.id} 
                       card={event}
@@ -745,13 +745,13 @@ export default function EventsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                Following Up ({filteredEventColumns.followups.length})
+                Follow up ({filteredEventColumns.followUp.length})
               </h5>
-              <SortableContext items={filteredEventColumns.followups.map(event => String(event.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredEventColumns.followUp.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="followups"
+                  id="followUp"
                 >
-                  {filteredEventColumns.followups.map(event => (
+                  {filteredEventColumns.followUp.map(event => (
                     <SortableEventCard 
                       key={event.id} 
                       card={event}
@@ -832,7 +832,7 @@ export default function EventsTab({
                 // Optimistically update the state immediately
                 setEventColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = eventStatusToColumn[updatedEvent.status] ?? 'upcoming';
+                  const targetColumn = eventStatusToColumn[updatedEvent.status] ?? 'plan';
                   
                   // Find the old item's column and index
                   let oldColumn: EventColumnId | null = null;
@@ -887,7 +887,7 @@ export default function EventsTab({
                 // Optimistically update the state immediately
                 setEventColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = eventStatusToColumn[updatedEvent.status] ?? 'upcoming';
+                  const targetColumn = eventStatusToColumn[updatedEvent.status] ?? 'plan';
                   newColumns[targetColumn] = [...newColumns[targetColumn], updatedEvent];
                   return newColumns;
                 });

@@ -522,18 +522,18 @@ export default function LeetCodeTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                Planning ({filteredLeetColumns.planned.length})
+                Plan ({filteredLeetColumns.plan.length})
               </h5>
-              <SortableContext items={filteredLeetColumns.planned.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredLeetColumns.plan.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="planned"
+                  id="plan"
                   onAddCard={() => {
-                    setDefaultStatus(leetColumnToStatus.planned);
+                    setDefaultStatus(leetColumnToStatus.plan);
                     setEditingLeet(null);
                     setIsLeetModalOpen(true);
                   }}
                 >
-                  {filteredLeetColumns.planned.map(entry => (
+                  {filteredLeetColumns.plan.map(entry => (
                     <SortableLeetCard 
                       key={entry.id} 
                       card={entry}
@@ -551,7 +551,7 @@ export default function LeetCodeTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                Solving ({filteredLeetColumns.solved.length})
+                Solved ({filteredLeetColumns.solved.length})
               </h5>
               <SortableContext items={filteredLeetColumns.solved.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
@@ -575,13 +575,13 @@ export default function LeetCodeTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                Reflecting ({filteredLeetColumns.reflected.length})
+                Reflect ({filteredLeetColumns.reflect.length})
               </h5>
-              <SortableContext items={filteredLeetColumns.reflected.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredLeetColumns.reflect.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="reflected"
+                  id="reflect"
                 >
-                  {filteredLeetColumns.reflected.map(entry => (
+                  {filteredLeetColumns.reflect.map(entry => (
                     <SortableLeetCard 
                       key={entry.id} 
                       card={entry}
@@ -651,7 +651,7 @@ export default function LeetCodeTab({
                 // Optimistically update the state immediately
                 setLeetColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'planning';
+                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'plan';
                   
                   // Find the old item's column and index
                   let oldColumn: LeetColumnId | null = null;
@@ -706,7 +706,7 @@ export default function LeetCodeTab({
                 // Optimistically update the state immediately
                 setLeetColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'planning';
+                  const targetColumn = leetStatusToColumn[updatedEntry.status] || 'plan';
                   newColumns[targetColumn] = [...newColumns[targetColumn], updatedEntry];
                   return newColumns;
                 });

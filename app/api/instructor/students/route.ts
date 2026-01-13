@@ -16,10 +16,10 @@ const LINKEDIN_COMPLETION_STATUSES = ['sendOutreachRequest', 'requestAccepted', 
 // Events: map completion column IDs to status values  
 // Columns: ['attended', 'linkedinRequestsSent', 'followups']
 // Map to statuses: attended, linkedinRequestsSent, followUp
-const EVENT_COMPLETION_STATUSES = ['attending', 'sendingLinkedInRequests', 'followingUp'];
+const EVENT_COMPLETION_STATUSES = ['attended', 'sendLinkedInRequest', 'followUp'];
 
-// LeetCode: completion column 'reflected' maps to status 'reflected'
-const LEET_COMPLETION_STATUSES = ['reflected'];
+// LeetCode: completion column 'reflect' maps to status 'reflect'
+const LEET_COMPLETION_STATUSES = ['reflect'];
 
 export async function GET() {
   try {

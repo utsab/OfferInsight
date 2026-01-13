@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         location,
         url,
         userId: userId,
-        status: status || "scheduling",
+        status: status || "plan",
         careerFair: careerFair ?? false,
         nameOfPersonSpokenTo: nameOfPersonSpokenTo || null,
         sentLinkedInRequest: sentLinkedInRequest ?? false,

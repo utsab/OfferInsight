@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         difficulty: difficulty?.trim() || null,
         url: url?.trim() || null,
         reflection: reflection?.trim() || null,
-        status: status || "planning",
+        status: status || "plan",
         userId: userId,
         // ===== DATE FIELD EDITING: Allow setting dateCreated and dateModified if provided =====
         dateCreated: dateCreated ? new Date(dateCreated) : undefined,

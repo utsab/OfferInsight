@@ -6,11 +6,11 @@ export type ApplicationColumnId = 'apply' | 'messageRecruiter' | 'messageHiringM
 export type LinkedinOutreachStatus = 'sendOutreachRequest' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
 export type LinkedinOutreachColumnId = 'sendOutreachRequest' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
 
-export type InPersonEventStatus = 'scheduling' | 'attending' | 'sendingLinkedInRequests' | 'followingUp';
-export type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | 'followups';
+export type InPersonEventStatus = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
+export type EventColumnId = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
 
-export type LeetStatus = 'planning' | 'solving' | 'reflecting';
-export type LeetColumnId = 'planned' | 'solved' | 'reflected';
+export type LeetStatus = 'plan' | 'solved' | 'reflect';
+export type LeetColumnId = 'plan' | 'solved' | 'reflect';
 
 export type BoardTimeFilter = 'modifiedThisMonth' | 'allTime';
 
@@ -89,8 +89,8 @@ export const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
   'askForReferral',
 ];
 
-export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'linkedinRequestsSent', 'followups'];
-export const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflected'];
+export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'sendLinkedInRequest', 'followUp'];
+export const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflect'];
 
 export const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
   apply: 'apply',
@@ -125,28 +125,28 @@ export const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, Li
 };
 
 export const eventStatusToColumn: Record<InPersonEventStatus, EventColumnId> = {
-  scheduling: 'upcoming',
-  attending: 'attended',
-  sendingLinkedInRequests: 'linkedinRequestsSent',
-  followingUp: 'followups',
+  plan: 'plan',
+  attended: 'attended',
+  sendLinkedInRequest: 'sendLinkedInRequest',
+  followUp: 'followUp',
 };
 
 export const eventColumnToStatus: Record<EventColumnId, InPersonEventStatus> = {
-  upcoming: 'scheduling',
-  attended: 'attending',
-  linkedinRequestsSent: 'sendingLinkedInRequests',
-  followups: 'followingUp',
+  plan: 'plan',
+  attended: 'attended',
+  sendLinkedInRequest: 'sendLinkedInRequest',
+  followUp: 'followUp',
 };
 
 export const leetStatusToColumn: Record<LeetStatus, LeetColumnId> = {
-  planning: 'planned',
-  solving: 'solved',
-  reflecting: 'reflected',
+  plan: 'plan',
+  solved: 'solved',
+  reflect: 'reflect',
 };
 
 export const leetColumnToStatus: Record<LeetColumnId, LeetStatus> = {
-  planned: 'planning',
-  solved: 'solving',
-  reflected: 'reflecting',
+  plan: 'plan',
+  solved: 'solved',
+  reflect: 'reflect',
 };
 

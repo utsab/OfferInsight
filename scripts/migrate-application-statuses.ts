@@ -17,6 +17,17 @@
  * - 'linkedinOutreach' -> 'coffeeChat'
  * - 'askingForReferral' -> 'askForReferral'
  * 
+ * In Person Events:
+ * - 'scheduling' -> 'plan'
+ * - 'attending' -> 'attended'
+ * - 'sendingLinkedInRequests' -> 'sendLinkedInRequest'
+ * - 'followingUp' -> 'followUp'
+ * 
+ * LeetCode:
+ * - 'planning' -> 'plan'
+ * - 'solving' -> 'solved'
+ * - 'reflecting' -> 'reflect'
+ * 
  * Run with: npx tsx scripts/migrate-application-statuses.ts
  */
 
@@ -36,6 +47,19 @@ const linkedinOutreachStatusMappings: Record<string, string> = {
   'followingUp': 'followUp',
   'linkedinOutreach': 'coffeeChat',
   'askingForReferral': 'askForReferral',
+};
+
+const inPersonEventStatusMappings: Record<string, string> = {
+  'scheduling': 'plan',
+  'attending': 'attended',
+  'sendingLinkedInRequests': 'sendLinkedInRequest',
+  'followingUp': 'followUp',
+};
+
+const leetCodeStatusMappings: Record<string, string> = {
+  'planning': 'plan',
+  'solving': 'solved',
+  'reflecting': 'reflect',
 };
 
 async function migrateApplicationStatuses() {
@@ -160,10 +184,132 @@ async function migrateLinkedinOutreachStatuses() {
   }
 }
 
+async function migrateInPersonEventStatuses() {
+  console.log('Starting migration of in-person event statuses...\n');
+
+  try {
+    // Get all in-person events
+    const events = await prisma.in_Person_Events.findMany({
+      select: {
+        id: true,
+        status: true,
+        event: true,
+      },
+    });
+
+    console.log(`Found ${events.length} in-person events to check.\n`);
+
+    let updatedCount = 0;
+    const updates: Array<{ id: number; oldStatus: string; newStatus: string; event: string }> = [];
+
+    // Check each event and prepare updates
+    for (const event of events) {
+      const oldStatus = event.status;
+      const newStatus = inPersonEventStatusMappings[oldStatus];
+
+      if (newStatus && oldStatus !== newStatus) {
+        updates.push({
+          id: event.id,
+          oldStatus,
+          newStatus,
+          event: event.event || 'Unknown',
+        });
+      }
+    }
+
+    console.log(`Found ${updates.length} in-person events that need status updates:\n`);
+    updates.forEach(update => {
+      console.log(`  - ID ${update.id} (${update.event}): "${update.oldStatus}" -> "${update.newStatus}"`);
+    });
+
+    if (updates.length > 0) {
+      // Perform updates
+      console.log('\nUpdating in-person event statuses...\n');
+      for (const update of updates) {
+        await prisma.in_Person_Events.update({
+          where: { id: update.id },
+          data: { status: update.newStatus },
+        });
+        updatedCount++;
+        console.log(`✓ Updated in-person event ${update.id} (${update.event})`);
+      }
+      console.log(`\n✅ In-person event migration completed successfully!`);
+      console.log(`   Updated ${updatedCount} in-person event(s).\n`);
+    } else {
+      console.log('No in-person event updates needed. All statuses are already up to date.\n');
+    }
+  } catch (error) {
+    console.error('\n❌ Error during in-person event migration:', error);
+    throw error;
+  }
+}
+
+async function migrateLeetCodeStatuses() {
+  console.log('Starting migration of LeetCode statuses...\n');
+
+  try {
+    // Get all LeetCode entries
+    const leetCodeEntries = await prisma.leetcode_Practice.findMany({
+      select: {
+        id: true,
+        status: true,
+        problem: true,
+      },
+    });
+
+    console.log(`Found ${leetCodeEntries.length} LeetCode entries to check.\n`);
+
+    let updatedCount = 0;
+    const updates: Array<{ id: number; oldStatus: string; newStatus: string; problem: string | null }> = [];
+
+    // Check each entry and prepare updates
+    for (const entry of leetCodeEntries) {
+      const oldStatus = entry.status;
+      const newStatus = leetCodeStatusMappings[oldStatus];
+
+      if (newStatus && oldStatus !== newStatus) {
+        updates.push({
+          id: entry.id,
+          oldStatus,
+          newStatus,
+          problem: entry.problem || 'Unknown',
+        });
+      }
+    }
+
+    console.log(`Found ${updates.length} LeetCode entries that need status updates:\n`);
+    updates.forEach(update => {
+      console.log(`  - ID ${update.id} (${update.problem}): "${update.oldStatus}" -> "${update.newStatus}"`);
+    });
+
+    if (updates.length > 0) {
+      // Perform updates
+      console.log('\nUpdating LeetCode statuses...\n');
+      for (const update of updates) {
+        await prisma.leetcode_Practice.update({
+          where: { id: update.id },
+          data: { status: update.newStatus },
+        });
+        updatedCount++;
+        console.log(`✓ Updated LeetCode entry ${update.id} (${update.problem})`);
+      }
+      console.log(`\n✅ LeetCode migration completed successfully!`);
+      console.log(`   Updated ${updatedCount} LeetCode entry/entries.\n`);
+    } else {
+      console.log('No LeetCode updates needed. All statuses are already up to date.\n');
+    }
+  } catch (error) {
+    console.error('\n❌ Error during LeetCode migration:', error);
+    throw error;
+  }
+}
+
 async function migrateAllStatuses() {
   try {
     await migrateApplicationStatuses();
     await migrateLinkedinOutreachStatuses();
+    await migrateInPersonEventStatuses();
+    await migrateLeetCodeStatuses();
     console.log('✅ All migrations completed successfully!');
   } catch (error) {
     console.error('\n❌ Migration failed:', error);

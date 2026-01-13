@@ -104,11 +104,11 @@ type ApplicationColumnId = 'apply' | 'messageRecruiter' | 'messageHiringManager'
 type LinkedinOutreachStatus = 'sendOutreachRequest' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
 type LinkedinOutreachColumnId = 'sendOutreachRequest' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
 
-type InPersonEventStatus = 'scheduling' | 'attending' | 'sendingLinkedInRequests' | 'followingUp';
-type EventColumnId = 'upcoming' | 'attended' | 'linkedinRequestsSent' | 'followups';
+type InPersonEventStatus = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
+type EventColumnId = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
 
-type LeetStatus = 'planning' | 'solving' | 'reflecting';
-type LeetColumnId = 'planned' | 'solved' | 'reflected';
+type LeetStatus = 'plan' | 'solved' | 'reflect';
+type LeetColumnId = 'plan' | 'solved' | 'reflect';
 
 type BoardTimeFilter = 'modifiedThisMonth' | 'allTime';
 
@@ -125,8 +125,8 @@ const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
   'coffeeChat',
   'askForReferral',
 ];
-const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'linkedinRequestsSent', 'followups'];
-const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflected'];
+const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'sendLinkedInRequest', 'followUp'];
+const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflect'];
 
 // Application type definition
 type Application = {
@@ -225,29 +225,29 @@ const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinO
 };
 
 const eventStatusToColumn: Record<InPersonEventStatus, EventColumnId> = {
-  scheduling: 'upcoming',
-  attending: 'attended',
-  sendingLinkedInRequests: 'linkedinRequestsSent',
-  followingUp: 'followups',
+  plan: 'plan',
+  attended: 'attended',
+  sendLinkedInRequest: 'sendLinkedInRequest',
+  followUp: 'followUp',
 };
 
 const eventColumnToStatus: Record<EventColumnId, InPersonEventStatus> = {
-  upcoming: 'scheduling',
-  attended: 'attending',
-  linkedinRequestsSent: 'sendingLinkedInRequests',
-  followups: 'followingUp',
+  plan: 'plan',
+  attended: 'attended',
+  sendLinkedInRequest: 'sendLinkedInRequest',
+  followUp: 'followUp',
 };
 
 const leetStatusToColumn: Record<LeetStatus, LeetColumnId> = {
-  planning: 'planned',
-  solving: 'solved',
-  reflecting: 'reflected',
+  plan: 'plan',
+  solved: 'solved',
+  reflect: 'reflect',
 };
 
 const leetColumnToStatus: Record<LeetColumnId, LeetStatus> = {
-  planned: 'planning',
-  solved: 'solving',
-  reflected: 'reflecting',
+  plan: 'plan',
+  solved: 'solved',
+  reflect: 'reflect',
 };
 
 export default function Page() {
@@ -622,10 +622,10 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
 
   // dnd-kit: Events board (In-Person Events)
   const [eventColumns, setEventColumns] = useState<Record<EventColumnId, InPersonEvent[]>>({
-    upcoming: [],
+    plan: [],
     attended: [],
-    linkedinRequestsSent: [],
-    followups: [],
+    sendLinkedInRequest: [],
+    followUp: [],
   });
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -651,14 +651,14 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const data = await response.json() as InPersonEvent[];
 
       const grouped: Record<EventColumnId, InPersonEvent[]> = {
-        upcoming: [],
+        plan: [],
         attended: [],
-        linkedinRequestsSent: [],
-        followups: [],
+        sendLinkedInRequest: [],
+        followUp: [],
       };
 
       data.forEach((event: InPersonEvent) => {
-        const column = eventStatusToColumn[event.status] ?? 'upcoming';
+        const column = eventStatusToColumn[event.status] ?? 'plan';
         grouped[column].push(event);
       });
 
@@ -718,7 +718,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     const overId = String(over.id);
 
     const fromCol = getEventColumnOfItem(activeId);
-    const toCol = (['upcoming', 'attended', 'linkedinRequestsSent', 'followups'] as EventColumnId[]).includes(overId as EventColumnId)
+    const toCol = (['plan', 'attended', 'sendLinkedInRequest', 'followUp'] as EventColumnId[]).includes(overId as EventColumnId)
       ? (overId as EventColumnId)
       : getEventColumnOfItem(overId);
     if (!fromCol || !toCol) {
@@ -751,7 +751,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
       const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
-      const newStatus = eventColumnToStatus[toCol] ?? 'scheduled';
+      const newStatus = eventColumnToStatus[toCol] ?? 'plan';
       const updatedItem: InPersonEvent = {
         ...movingItem,
         status: newStatus,
@@ -761,10 +761,10 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       // Create new column arrays to ensure React detects the change
       setEventColumns(prev => ({
-        upcoming: [...prev.upcoming],
+        plan: [...prev.plan],
         attended: [...prev.attended],
-        linkedinRequestsSent: [...prev.linkedinRequestsSent],
-        followups: [...prev.followups],
+        sendLinkedInRequest: [...prev.sendLinkedInRequest],
+        followUp: [...prev.followUp],
         [fromCol]: newFrom,
         [toCol]: newTo,
       }));
@@ -788,9 +788,9 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
 
   // dnd-kit: LeetCode board
   const [leetColumns, setLeetColumns] = useState<Record<LeetColumnId, LeetEntry[]>>({
-    planned: [],
+    plan: [],
     solved: [],
-    reflected: [],
+    reflect: [],
   });
   const [activeLeetId, setActiveLeetId] = useState<string | null>(null);
   const [isLeetModalOpen, setIsLeetModalOpen] = useState(false);
@@ -819,13 +819,13 @@ const hasSeededMockDataRef = useRef(false);
       const data = await response.json();
 
       const grouped: Record<LeetColumnId, LeetEntry[]> = {
-        planned: [],
+        plan: [],
         solved: [],
-        reflected: [],
+        reflect: [],
       };
 
       (data as LeetEntry[]).forEach(entry => {
-        const column = leetStatusToColumn[entry.status] ?? 'planned';
+        const column = leetStatusToColumn[entry.status] ?? 'plan';
         grouped[column].push(entry);
       });
 
@@ -885,7 +885,7 @@ const hasSeededMockDataRef = useRef(false);
     const overId = String(over.id);
 
     const fromCol = getLeetColumnOfItem(activeId);
-    const toCol = (['planned', 'solved', 'reflected'] as LeetColumnId[]).includes(overId as LeetColumnId)
+    const toCol = (['plan', 'solved', 'reflect'] as LeetColumnId[]).includes(overId as LeetColumnId)
       ? (overId as LeetColumnId)
       : getLeetColumnOfItem(overId);
     if (!fromCol || !toCol) {
@@ -928,9 +928,9 @@ const hasSeededMockDataRef = useRef(false);
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       // Create new column arrays to ensure React detects the change
       setLeetColumns(prev => ({
-        planned: [...prev.planned],
+        plan: [...prev.plan],
         solved: [...prev.solved],
-        reflected: [...prev.reflected],
+        reflect: [...prev.reflect],
         [fromCol]: newFrom,
         [toCol]: newTo,
       }));
@@ -1109,13 +1109,13 @@ const hasSeededMockDataRef = useRef(false);
     };
 
     const mockEvents: Record<EventColumnId, InPersonEvent[]> = {
-      upcoming: [
+      plan: [
         {
           id: 3001,
           event: 'ProductCon',
           date: isoWithDelta({ months: 1, days: 5, hour: 9, minute: 30 }),
           location: 'San Francisco',
-          status: 'scheduling',
+          status: 'plan',
           sentLinkedInRequest: false,
           careerFair: false,
           userId: 'mock-user',
@@ -1127,33 +1127,33 @@ const hasSeededMockDataRef = useRef(false);
           event: 'AI Hiring Fair',
           date: isoWithDelta({ months: -5, days: -7, hour: 13 }),
           location: 'Virtual',
-          status: 'attending',
+          status: 'attended',
           nameOfPersonSpokenTo: 'John Smith',
           sentLinkedInRequest: true,
           careerFair: true,
           userId: 'mock-user',
         },
       ],
-      linkedinRequestsSent: [
+      sendLinkedInRequest: [
         {
           id: 3002,
           event: 'Tech Mixer',
           date: isoWithDelta({ months: -2, days: -2, hour: 18 }),
           location: 'Seattle',
-          status: 'sendingLinkedInRequests',
+          status: 'sendLinkedInRequest',
           nameOfPersonSpokenTo: 'Jane Doe',
           sentLinkedInRequest: true,
           careerFair: false,
           userId: 'mock-user',
         },
       ],
-      followups: [
+      followUp: [
         {
           id: 3004,
           event: 'Startup Expo',
           date: isoWithDelta({ months: -9, days: -3, hour: 15 }),
           location: 'Austin',
-          status: 'followingUp',
+          status: 'followUp',
           nameOfPersonSpokenTo: 'Mike Johnson',
           sentLinkedInRequest: false,
           followUpMessage: 'Followed up with thank you message.',
@@ -1164,13 +1164,13 @@ const hasSeededMockDataRef = useRef(false);
     };
 
     const mockLeetEntries: Record<LeetColumnId, LeetEntry[]> = {
-      planned: [
+      plan: [
         {
           id: 4001,
           problem: 'Binary Tree Zigzag Level Order Traversal',
           problemType: 'Trees, BFS',
           difficulty: 'Medium',
-          status: 'planning',
+          status: 'plan',
           userId: 'mock-user',
           dateCreated: isoWithDelta({ months: -1, days: -4, hour: 8 }),
         },
@@ -1182,19 +1182,19 @@ const hasSeededMockDataRef = useRef(false);
           problemType: 'Hash Map',
           difficulty: 'Easy',
           url: 'https://leetcode.com/problems/two-sum/',
-          status: 'solving',
+          status: 'solved',
           userId: 'mock-user',
           dateCreated: isoWithDelta({ months: -4, days: -6, hour: 7 }),
         },
       ],
-      reflected: [
+      reflect: [
         {
           id: 4003,
           problem: 'Word Ladder',
           problemType: 'Graphs, BFS',
           difficulty: 'Hard',
           reflection: 'Notice the transformation count hints at BFS on word graph.',
-          status: 'reflecting',
+          status: 'reflect',
           userId: 'mock-user',
           dateCreated: isoWithDelta({ months: -9, days: -2, hour: 20 }),
         },
@@ -1454,7 +1454,7 @@ const hasSeededMockDataRef = useRef(false);
     const now = new Date();
     const yearStart = new Date(now.getFullYear(), 0, 1);
     const yearEnd = new Date(now.getFullYear() + 1, 0, 1);
-    const eligibleStatuses: InPersonEventStatus[] = ['attending', 'sendingLinkedInRequests', 'followingUp'];
+    const eligibleStatuses: InPersonEventStatus[] = ['attended', 'sendLinkedInRequest', 'followUp'];
     let count = 0;
     (Object.values(eventColumns) as InPersonEvent[][]).forEach(columnEvents => {
       columnEvents.forEach(event => {
@@ -1518,7 +1518,7 @@ const hasSeededMockDataRef = useRef(false);
 
   const leetMetrics = useMemo(() => {
     let count = 0;
-    leetColumns.reflected.forEach(entry => {
+    leetColumns.reflect.forEach(entry => {
       if (!entry.dateCreated) return;
       const entryDate = new Date(entry.dateCreated);
       if (!Number.isNaN(entryDate.getTime()) && entryDate >= metricsMonth && entryDate < metricsMonthEnd) {
@@ -1762,10 +1762,10 @@ const hasSeededMockDataRef = useRef(false);
   const filteredEventColumns = useMemo(() => {
     if (eventsFilter === 'allTime') return eventColumns;
     const filtered: Record<EventColumnId, InPersonEvent[]> = {
-      upcoming: [],
+      plan: [],
       attended: [],
-      linkedinRequestsSent: [],
-      followups: [],
+      sendLinkedInRequest: [],
+      followUp: [],
     };
     (Object.keys(eventColumns) as EventColumnId[]).forEach(columnId => {
       if (eventsFilter === 'modifiedThisMonth') {
@@ -1780,9 +1780,9 @@ const hasSeededMockDataRef = useRef(false);
   const filteredLeetColumns = useMemo(() => {
     if (leetFilter === 'allTime') return leetColumns;
     const filtered: Record<LeetColumnId, LeetEntry[]> = {
-      planned: [],
+      plan: [],
       solved: [],
-      reflected: [],
+      reflect: [],
     };
     (Object.keys(leetColumns) as LeetColumnId[]).forEach(columnId => {
       if (leetFilter === 'modifiedThisMonth') {

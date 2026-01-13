@@ -57,7 +57,7 @@ model In_Person_Events {
   sentLinkedInRequest   Boolean   @default(false)
   careerFair            Boolean   @default(false)
   followUpMessage       String?
-  status                String    @default("scheduling")
+  status                String    @default("plan")
   dateCreated           DateTime  @default(now())
   dateModified         DateTime?
   userId                String
@@ -71,7 +71,7 @@ model Leetcode_Practice {
   difficulty  String?
   url         String?
   reflection  String?
-  status      String  @default("planning")
+  status      String  @default("plan")
   dateCreated         DateTime  @default(now())
   dateModified       DateTime?
   userId      String
