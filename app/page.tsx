@@ -117,7 +117,7 @@ export default function Page() {
           </section>
 
           <section className="py-12 sm:py-20 px-4 sm:px-8">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-[1600px] mx-auto">
               <h3 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-16 text-white">Four Habits to Success</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
                 <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 sm:p-8 text-center">
