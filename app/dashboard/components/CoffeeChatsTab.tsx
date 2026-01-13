@@ -159,7 +159,7 @@ function LinkedinOutreachModal({
     firstMessage: linkedinOutreach?.firstMessage || '',
     secondMessage: linkedinOutreach?.secondMessage || '',
     linkedInUrl: linkedinOutreach?.linkedInUrl || '',
-    status: linkedinOutreach ? linkedinOutreach.status : (defaultStatus || 'sendingOutreachRequest'),
+    status: linkedinOutreach ? linkedinOutreach.status : (defaultStatus || 'prospects'),
     recievedReferral: linkedinOutreach?.recievedReferral || false,
     dateCreated: linkedinOutreach?.dateCreated ? toLocalDateString(linkedinOutreach.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: linkedinOutreach?.dateModified ? toLocalDateString(linkedinOutreach.dateModified) : '', // ===== DATE FIELD EDITING =====
@@ -186,7 +186,7 @@ function LinkedinOutreachModal({
         firstMessage: '',
         secondMessage: '',
         linkedInUrl: '',
-        status: defaultStatus || 'sendingOutreachRequest',
+        status: defaultStatus || 'prospects',
         recievedReferral: false,
         dateCreated: '', // ===== DATE FIELD EDITING =====
         dateModified: '', // ===== DATE FIELD EDITING =====
@@ -475,22 +475,46 @@ export default function CoffeeChatsTab({
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLinkedinOutreachDragStart} onDragOver={handleLinkedinOutreachDragOver} onDragEnd={handleLinkedinOutreachDragEnd}>
           <div className="overflow-x-auto -mx-4 px-4">
-            <div className="grid grid-cols-5 gap-6 min-w-[800px]">
+            <div className="grid grid-cols-6 gap-6 min-w-[1200px]">
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                Send outreach request ({filteredLinkedinOutreachColumns.sendOutreachRequest.length})
+                <div className="w-3 h-3 bg-gray-500 rounded-full mr-2"></div>
+                Prospects ({filteredLinkedinOutreachColumns.prospects.length})
               </h5>
-              <SortableContext items={filteredLinkedinOutreachColumns.sendOutreachRequest.map(c => String(c.id))} strategy={rectSortingStrategy}>
+              <SortableContext items={filteredLinkedinOutreachColumns.prospects.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
-                  id="sendOutreachRequest"
+                  id="prospects"
                   onAddCard={() => {
-                    setDefaultStatus(linkedinOutreachColumnToStatus.sendOutreachRequest);
+                    setDefaultStatus(linkedinOutreachColumnToStatus.prospects);
                     setEditingLinkedinOutreach(null);
                     setIsLinkedinOutreachModalOpen(true);
                   }}
                 >
-                  {filteredLinkedinOutreachColumns.sendOutreachRequest.map(card => (
+                  {filteredLinkedinOutreachColumns.prospects.map(card => (
+                    <SortableLinkedinOutreachCard 
+                      key={card.id} 
+                      card={card}
+                      activeLinkedinOutreachId={activeLinkedinOutreachId}
+                      setEditingLinkedinOutreach={setEditingLinkedinOutreach}
+                      setIsLinkedinOutreachModalOpen={setIsLinkedinOutreachModalOpen}
+                      setIsDeletingLinkedinOutreach={setIsDeletingLinkedinOutreach}
+                      isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+                    />
+                  ))}
+                </DroppableColumn>
+              </SortableContext>
+            </div>
+
+            <div className="bg-gray-700 rounded-lg p-4">
+              <h5 className="text-white font-semibold mb-4 flex items-center">
+                <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                Send First Message ({filteredLinkedinOutreachColumns.sendFirstMessage.length})
+              </h5>
+              <SortableContext items={filteredLinkedinOutreachColumns.sendFirstMessage.map(c => String(c.id))} strategy={rectSortingStrategy}>
+                <DroppableColumn 
+                  id="sendFirstMessage"
+                >
+                  {filteredLinkedinOutreachColumns.sendFirstMessage.map(card => (
                     <SortableLinkedinOutreachCard 
                       key={card.id} 
                       card={card}
@@ -651,7 +675,7 @@ export default function CoffeeChatsTab({
                 // Optimistically update the state immediately
                 setLinkedinOutreachColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'sendOutreachRequest';
+                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'prospects';
                   
                   // Find the old item's column and index
                   let oldColumn: LinkedinOutreachColumnId | null = null;
@@ -706,7 +730,7 @@ export default function CoffeeChatsTab({
                 // Optimistically update the state immediately
                 setLinkedinOutreachColumns(prev => {
                   const newColumns = { ...prev };
-                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'sendOutreachRequest';
+                  const targetColumn = linkedinOutreachStatusToColumn[updatedOutreach.status] ?? 'prospects';
                   newColumns[targetColumn] = [...newColumns[targetColumn], updatedOutreach];
                   return newColumns;
                 });

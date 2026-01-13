@@ -9,9 +9,9 @@ import { getCurrentMonthDateRange } from "@/app/lib/date-utils";
 const APPLICATION_COMPLETION_STATUSES = ['messageHiringManager', 'messageRecruiter', 'followUp', 'interview'];
 
 // LinkedIn: map completion column IDs to status values
-// Columns: ['sendOutreachRequest', 'requestAccepted', 'followUp', 'coffeeChat', 'askForReferral']
-// Map to statuses: sendOutreachRequest, requestAccepted, followUp, coffeeChat, askForReferral
-const LINKEDIN_COMPLETION_STATUSES = ['sendOutreachRequest', 'requestAccepted', 'followUp', 'coffeeChat', 'askForReferral'];
+// Columns: ['prospects', 'sendFirstMessage', 'requestAccepted', 'followUp', 'coffeeChat', 'askForReferral']
+// Map to statuses: prospects, sendFirstMessage, requestAccepted, followUp, coffeeChat, askForReferral
+const LINKEDIN_COMPLETION_STATUSES = ['prospects', 'sendFirstMessage', 'requestAccepted', 'followUp', 'coffeeChat', 'askForReferral'];
 
 // Events: map completion column IDs to status values  
 // Columns: ['attended', 'linkedinRequestsSent', 'followups']

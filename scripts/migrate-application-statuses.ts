@@ -11,7 +11,8 @@
  * - 'interviewing' -> 'interview'
  * 
  * LinkedIn Outreach (Coffee Chats):
- * - 'sendingOutreachRequest' -> 'sendOutreachRequest'
+ * - 'sendingOutreachRequest' -> 'prospects' (new starting column)
+ * - 'sendOutreachRequest' -> 'sendFirstMessage' (renamed column)
  * - 'acceptingRequest' -> 'requestAccepted'
  * - 'followingUp' -> 'followUp'
  * - 'linkedinOutreach' -> 'coffeeChat'
@@ -42,7 +43,8 @@ const applicationStatusMappings: Record<string, string> = {
 };
 
 const linkedinOutreachStatusMappings: Record<string, string> = {
-  'sendingOutreachRequest': 'sendOutreachRequest',
+  'sendingOutreachRequest': 'prospects', // Old status -> new starting column
+  'sendOutreachRequest': 'sendFirstMessage', // Previous new status -> renamed
   'acceptingRequest': 'requestAccepted',
   'followingUp': 'followUp',
   'linkedinOutreach': 'coffeeChat',

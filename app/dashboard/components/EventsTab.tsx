@@ -480,7 +480,7 @@ function InPersonEventModal({
 
           <div className="flex items-end gap-4">
             <div className="flex-1">
-              <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Name Of 1 Person I Met</label>
+              <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Name of one person I met</label>
               <input
                 type="text"
                 value={formData.nameOfPersonSpokenTo}

@@ -3,8 +3,8 @@
 export type ApplicationStatus = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
 export type ApplicationColumnId = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
 
-export type LinkedinOutreachStatus = 'sendOutreachRequest' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
-export type LinkedinOutreachColumnId = 'sendOutreachRequest' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
+export type LinkedinOutreachStatus = 'prospects' | 'sendFirstMessage' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
+export type LinkedinOutreachColumnId = 'prospects' | 'sendFirstMessage' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
 
 export type InPersonEventStatus = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
 export type EventColumnId = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
@@ -82,7 +82,8 @@ export const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
 ];
 
 export const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
-  'sendOutreachRequest',
+  'prospects',
+  'sendFirstMessage',
   'requestAccepted',
   'followUp',
   'coffeeChat',
@@ -109,7 +110,8 @@ export const applicationColumnToStatus: Record<ApplicationColumnId, ApplicationS
 };
 
 export const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, LinkedinOutreachColumnId> = {
-  sendOutreachRequest: 'sendOutreachRequest',
+  prospects: 'prospects',
+  sendFirstMessage: 'sendFirstMessage',
   requestAccepted: 'requestAccepted',
   followUp: 'followUp',
   coffeeChat: 'coffeeChat',
@@ -117,7 +119,8 @@ export const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, Link
 };
 
 export const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinOutreachStatus> = {
-  sendOutreachRequest: 'sendOutreachRequest',
+  prospects: 'prospects',
+  sendFirstMessage: 'sendFirstMessage',
   requestAccepted: 'requestAccepted',
   followUp: 'followUp',
   coffeeChat: 'coffeeChat',

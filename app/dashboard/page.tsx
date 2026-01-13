@@ -101,8 +101,8 @@ const ENABLE_DATE_FIELD_EDITING = false;
 type ApplicationStatus = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
 type ApplicationColumnId = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
 
-type LinkedinOutreachStatus = 'sendOutreachRequest' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
-type LinkedinOutreachColumnId = 'sendOutreachRequest' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
+type LinkedinOutreachStatus = 'prospects' | 'sendFirstMessage' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
+type LinkedinOutreachColumnId = 'prospects' | 'sendFirstMessage' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
 
 type InPersonEventStatus = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
 type EventColumnId = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
@@ -119,7 +119,8 @@ const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
   'interview',
 ];
 const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
-  'sendOutreachRequest',
+  'prospects',
+  'sendFirstMessage',
   'requestAccepted',
   'followUp',
   'coffeeChat',
@@ -209,7 +210,8 @@ const applicationColumnToStatus: Record<ApplicationColumnId, ApplicationStatus> 
 
 // Linkedin outreach status mappings
 const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, LinkedinOutreachColumnId> = {
-  sendOutreachRequest: 'sendOutreachRequest',
+  prospects: 'prospects',
+  sendFirstMessage: 'sendFirstMessage',
   requestAccepted: 'requestAccepted',
   followUp: 'followUp',
   coffeeChat: 'coffeeChat',
@@ -217,7 +219,8 @@ const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, LinkedinOut
 };
 
 const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinOutreachStatus> = {
-  sendOutreachRequest: 'sendOutreachRequest',
+  prospects: 'prospects',
+  sendFirstMessage: 'sendFirstMessage',
   requestAccepted: 'requestAccepted',
   followUp: 'followUp',
   coffeeChat: 'coffeeChat',
@@ -453,7 +456,8 @@ export default function Page() {
   // dnd-kit: Linkedin outreach board (Linkedin_Outreach)
 
 const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<LinkedinOutreachColumnId, LinkedinOutreach[]>>({
-  sendOutreachRequest: [],
+  prospects: [],
+  sendFirstMessage: [],
   requestAccepted: [],
   followUp: [],
   coffeeChat: [],
@@ -483,7 +487,8 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const data = await response.json() as LinkedinOutreach[];
 
       const grouped: Record<LinkedinOutreachColumnId, LinkedinOutreach[]> = {
-        sendOutreachRequest: [],
+        prospects: [],
+        sendFirstMessage: [],
         requestAccepted: [],
         followUp: [],
         coffeeChat: [],
@@ -491,7 +496,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       };
 
       (data as LinkedinOutreach[]).forEach(chat => {
-        const column = linkedinOutreachStatusToColumn[chat.status] ?? 'sendOutreachRequest';
+        const column = linkedinOutreachStatusToColumn[chat.status] ?? 'prospects';
         grouped[column].push(chat);
       });
 
@@ -551,7 +556,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     const overId = String(over.id);
 
     const fromCol = getLinkedinOutreachColumnOfItem(activeId);
-    const toCol = (['sendOutreachRequest', 'requestAccepted', 'followUp', 'coffeeChat', 'askForReferral'] as LinkedinOutreachColumnId[]).includes(overId as LinkedinOutreachColumnId)
+    const toCol = (['prospects', 'sendFirstMessage', 'requestAccepted', 'followUp', 'coffeeChat', 'askForReferral'] as LinkedinOutreachColumnId[]).includes(overId as LinkedinOutreachColumnId)
       ? (overId as LinkedinOutreachColumnId)
       : getLinkedinOutreachColumnOfItem(overId);
     if (!fromCol || !toCol) {
@@ -594,7 +599,8 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
       const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
       // Create new column arrays to ensure React detects the change
       setLinkedinOutreachColumns(prev => ({
-        sendOutreachRequest: [...prev.sendOutreachRequest],
+        prospects: [...prev.prospects],
+        sendFirstMessage: [...prev.sendFirstMessage],
         requestAccepted: [...prev.requestAccepted],
         followUp: [...prev.followUp],
         coffeeChat: [...prev.coffeeChat],
@@ -1050,13 +1056,24 @@ const hasSeededMockDataRef = useRef(false);
     };
 
     const mockLinkedinOutreach: Record<LinkedinOutreachColumnId, LinkedinOutreach[]> = {
-      sendOutreachRequest: [
+      prospects: [
+        {
+          id: 2000,
+          name: 'Alex Morgan',
+          company: 'TechStart',
+          status: 'prospects',
+          dateCreated: isoWithDelta({ months: 0, days: -2, hour: 10 }),
+          recievedReferral: false,
+          userId: 'mock-user',
+        },
+      ],
+      sendFirstMessage: [
         {
           id: 2001,
           name: 'Priya Patel',
           company: 'Globex',
           firstMessage: 'Introduced myself and shared interest in the team.',
-          status: 'sendOutreachRequest',
+          status: 'sendFirstMessage',
           dateCreated: isoWithDelta({ months: 0, days: -8, hour: 12 }),
           recievedReferral: false,
           userId: 'mock-user',
@@ -1743,7 +1760,8 @@ const hasSeededMockDataRef = useRef(false);
   const filteredLinkedinOutreachColumns = useMemo(() => {
     if (linkedinOutreachFilter === 'allTime') return linkedinOutreachColumns;
     const filtered: Record<LinkedinOutreachColumnId, LinkedinOutreach[]> = {
-      sendOutreachRequest: [],
+      prospects: [],
+      sendFirstMessage: [],
       requestAccepted: [],
       followUp: [],
       coffeeChat: [],
