@@ -588,9 +588,7 @@ function InPersonEventModal({
 
           {/* Helper message for Plan column */}
           {(!eventItem || eventItem.status === 'plan') && (
-            <div className="border border-yellow-500 rounded-lg p-4 bg-yellow-500/10">
-              <HelperMessage status={eventItem?.status ?? defaultStatus ?? 'plan'} />
-            </div>
+            <HelperMessage status={eventItem?.status ?? defaultStatus ?? 'plan'} />
           )}
 
           {/* Name of one person I met field - blurred in plan (revealed in next column "Attended"), visible from attended */}

@@ -403,9 +403,7 @@ function LinkedinOutreachModal({
 
           {/* Helper message for create mode or 'prospects' status */}
           {(!linkedinOutreach || linkedinOutreach?.status === 'prospects') && (
-            <div className="border border-yellow-500 rounded-lg p-4 bg-yellow-500/10">
-              <HelperMessage status={linkedinOutreach?.status || 'prospects'} />
-            </div>
+            <HelperMessage status={linkedinOutreach?.status || 'prospects'} />
           )}
 
           {/* First Message field - visible from sendFirstMessage, blurred in prospects */}
