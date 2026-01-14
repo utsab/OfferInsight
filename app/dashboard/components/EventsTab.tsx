@@ -490,17 +490,12 @@ function InPersonEventModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Time</label>
+              <label className="block font-semibold mb-2 text-white">Time</label>
               <div className="flex gap-2">
                 <select
                   value={formData.timeHour}
                   onChange={(e) => setFormData(prev => ({ ...prev, timeHour: e.target.value }))}
-                  disabled={!eventItem}
-                  className={`w-20 border rounded-lg px-3 py-2 ${
-                    eventItem 
-                      ? 'bg-gray-700 border-light-steel-blue text-white' 
-                      : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-                  }`}
+                  className="w-20 border rounded-lg px-3 py-2 bg-gray-700 border-light-steel-blue text-white"
                 >
                   {hourOptions.map(hour => (
                     <option key={hour} value={hour}>{hour}</option>
@@ -509,12 +504,7 @@ function InPersonEventModal({
                 <select
                   value={formData.timeMinute}
                   onChange={(e) => setFormData(prev => ({ ...prev, timeMinute: e.target.value }))}
-                  disabled={!eventItem}
-                  className={`w-20 border rounded-lg px-3 py-2 ${
-                    eventItem 
-                      ? 'bg-gray-700 border-light-steel-blue text-white' 
-                      : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-                  }`}
+                  className="w-20 border rounded-lg px-3 py-2 bg-gray-700 border-light-steel-blue text-white"
                 >
                   {minuteOptions.map(minute => (
                     <option key={minute} value={minute}>{minute}</option>
@@ -523,12 +513,7 @@ function InPersonEventModal({
                 <select
                   value={formData.timePeriod}
                   onChange={(e) => setFormData(prev => ({ ...prev, timePeriod: e.target.value as 'AM' | 'PM' }))}
-                  disabled={!eventItem}
-                  className={`w-20 border rounded-lg px-3 py-2 ${
-                    eventItem 
-                      ? 'bg-gray-700 border-light-steel-blue text-white' 
-                      : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-                  }`}
+                  className="w-20 border rounded-lg px-3 py-2 bg-gray-700 border-light-steel-blue text-white"
                 >
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
@@ -536,34 +521,24 @@ function InPersonEventModal({
               </div>
             </div>
             <div>
-              <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Location</label>
+              <label className="block font-semibold mb-2 text-white">Location</label>
               <input
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                disabled={!eventItem}
-                className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
-                  eventItem 
-                    ? 'bg-gray-700 border-light-steel-blue text-white' 
-                    : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-                }`}
+                className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
                 placeholder="City, Online, etc."
               />
             </div>
           </div>
 
           <div>
-            <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Event URL</label>
+            <label className="block font-semibold mb-2 text-white">Event URL</label>
             <input
               type="url"
               value={formData.url}
               onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-              disabled={!eventItem}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
-                eventItem 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
+              className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
               placeholder="https://example.com/event"
             />
           </div>
@@ -574,14 +549,9 @@ function InPersonEventModal({
               id="careerFair"
               checked={formData.careerFair}
               onChange={(e) => setFormData(prev => ({ ...prev, careerFair: e.target.checked }))}
-              disabled={!eventItem}
-              className={`w-4 h-4 border rounded ${
-                eventItem 
-                  ? 'bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue' 
-                  : 'bg-gray-800 border-gray-600 cursor-not-allowed opacity-50'
-              }`}
+              className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
             />
-            <label htmlFor="careerFair" className={`ml-2 font-semibold ${eventItem ? 'text-white' : 'text-gray-500'}`}>
+            <label htmlFor="careerFair" className="ml-2 font-semibold text-white">
               This is a career fair
             </label>
           </div>
