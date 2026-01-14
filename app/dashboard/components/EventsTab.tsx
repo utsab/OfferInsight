@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X, Lock, PlayCircle } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -18,6 +18,114 @@ const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2,
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
 const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
+
+// Lock Tooltip Component - centered in unified blur area
+function LockTooltip() {
+  return (
+    <div className="flex md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 md:absolute md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:z-10 items-center gap-2 bg-gray-900 border border-light-steel-blue rounded-lg px-3 py-2 shadow-lg whitespace-nowrap justify-center md:pointer-events-none">
+      <Lock className="w-4 h-4 text-electric-blue flex-shrink-0" />
+      <span className="text-sm text-white">Drag card to next column to unlock next step</span>
+    </div>
+  );
+}
+
+// Video Modal Component - displays YouTube video in a modal overlay
+function VideoModal({ videoUrl, isOpen, onClose }: { videoUrl: string; isOpen: boolean; onClose: () => void }) {
+  // Convert YouTube watch URL to embed format
+  const getEmbedUrl = (url: string) => {
+    // Extract video ID from various YouTube URL formats
+    const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    if (videoIdMatch && videoIdMatch[1]) {
+      return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+    }
+    return url; // Fallback to original URL if extraction fails
+  };
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-2"
+          aria-label="Close video"
+        >
+          <X size={24} />
+        </button>
+        <iframe
+          src={getEmbedUrl(videoUrl)}
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="YouTube video player"
+        />
+      </div>
+    </div>
+  );
+}
+
+// Helper Message Component - shows video link based on current column
+function HelperMessage({ status }: { status?: InPersonEventStatus | null }) {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const videoUrl = 'https://www.youtube.com/watch?v=UgZrVViUQLk'; // TODO: Update with actual Events video URL
+
+  const getMessage = () => {
+    if (!status) return 'plan events';
+    switch (status) {
+      case 'plan':
+        return 'plan events';
+      case 'attended':
+        return 'attend events';
+      case 'sendLinkedInRequest':
+        return 'send LinkedIn requests';
+      case 'followUp':
+        return 'follow up';
+      default:
+        return 'plan events';
+    }
+  };
+
+  return (
+    <>
+      <div className="text-center py-3">
+        <button
+          type="button"
+          onClick={() => setIsVideoOpen(true)}
+          className="inline-flex items-center gap-2 text-white font-semibold hover:text-electric-blue transition-colors cursor-pointer underline"
+        >
+          <PlayCircle className="w-5 h-5 text-electric-blue flex-shrink-0" />
+          <span>Helper video: How to {getMessage()}</span>
+        </button>
+      </div>
+      <VideoModal videoUrl={videoUrl} isOpen={isVideoOpen} onClose={() => setIsVideoOpen(false)} />
+    </>
+  );
+}
 
 type TimeParts = {
   hour: string;
@@ -220,7 +328,7 @@ function InPersonEventModal({
     timePeriod: eventItem?.date ? toLocalTimeParts(eventItem.date).period : 'AM',
     location: eventItem?.location ?? '',
     url: eventItem?.url ?? '',
-    status: eventItem?.status ?? (defaultStatus || 'scheduling'),
+    status: eventItem?.status ?? (defaultStatus || 'plan'),
     nameOfPersonSpokenTo: eventItem?.nameOfPersonSpokenTo ?? '',
     sentLinkedInRequest: eventItem?.sentLinkedInRequest ?? false,
     careerFair: eventItem?.careerFair ?? false,
@@ -239,7 +347,7 @@ function InPersonEventModal({
       timePeriod: timeParts.period,
       location: eventItem?.location ?? '',
       url: eventItem?.url ?? '',
-      status: eventItem?.status ?? (defaultStatus || 'scheduling'),
+      status: eventItem?.status ?? (defaultStatus || 'plan'),
       nameOfPersonSpokenTo: eventItem?.nameOfPersonSpokenTo ?? '',
       sentLinkedInRequest: eventItem?.sentLinkedInRequest ?? false,
       careerFair: eventItem?.careerFair ?? false,
@@ -478,55 +586,136 @@ function InPersonEventModal({
             </label>
           </div>
 
-          <div className="flex items-end gap-4">
-            <div className="flex-1">
-              <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Name of one person I met</label>
-              <input
-                type="text"
-                value={formData.nameOfPersonSpokenTo}
-                onChange={(e) => setFormData(prev => ({ ...prev, nameOfPersonSpokenTo: e.target.value }))}
-                disabled={!eventItem}
-                placeholder="Enter name"
-                className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 ${
-                  eventItem 
-                    ? 'bg-gray-700 border-light-steel-blue text-white' 
-                    : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-                }`}
-              />
-            </div>
-            <div className="flex items-center pb-2">
-              <input
-                type="checkbox"
-                id="sentLinkedInRequest"
-                checked={formData.sentLinkedInRequest}
-                onChange={(e) => setFormData(prev => ({ ...prev, sentLinkedInRequest: e.target.checked }))}
-                disabled={!eventItem}
-                className={`w-4 h-4 border rounded ${
-                  eventItem 
-                    ? 'bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue' 
-                    : 'bg-gray-800 border-gray-600 cursor-not-allowed opacity-50'
-                }`}
-              />
-              <label htmlFor="sentLinkedInRequest" className={`ml-2 font-semibold ${eventItem ? 'text-white' : 'text-gray-500'}`}>
-                Sent LinkedIn Request
-              </label>
-            </div>
-          </div>
+          {/* Helper message for Plan column */}
+          {(!eventItem || eventItem.status === 'plan') && (
+            <HelperMessage status={eventItem?.status ?? defaultStatus ?? 'plan'} />
+          )}
 
-          <div>
-            <label className={`block font-semibold mb-2 ${eventItem ? 'text-white' : 'text-gray-500'}`}>Follow-Up Message</label>
-            <textarea
-              value={formData.followUpMessage}
-              onChange={(e) => setFormData(prev => ({ ...prev, followUpMessage: e.target.value }))}
-              disabled={!eventItem}
-              className={`w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] ${
-                eventItem 
-                  ? 'bg-gray-700 border-light-steel-blue text-white' 
-                  : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-              }`}
-              placeholder="Enter follow-up message"
-            />
-          </div>
+          {/* Name of one person I met field - blurred in plan (revealed in next column "Attended"), visible from attended */}
+          {!eventItem ? (
+            // Create mode: Show Name of one person I met blurred (will be revealed in next column)
+            <div className="relative group py-4">
+              <div className="blur-sm">
+                <label className="block font-semibold mb-2 text-white">Name of one person I met</label>
+                <input
+                  type="text"
+                  value={formData.nameOfPersonSpokenTo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nameOfPersonSpokenTo: e.target.value }))}
+                  placeholder="Enter name"
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
+                />
+              </div>
+              <LockTooltip />
+            </div>
+          ) : eventItem.status === 'plan' ? (
+            // Plan status: Show Name of one person I met blurred (will be revealed in next column "Attended")
+            <div className="relative group py-4">
+              <div className="blur-sm">
+                <label className="block font-semibold mb-2 text-white">Name of one person I met</label>
+                <input
+                  type="text"
+                  value={formData.nameOfPersonSpokenTo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nameOfPersonSpokenTo: e.target.value }))}
+                  placeholder="Enter name"
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
+                />
+              </div>
+              <LockTooltip />
+            </div>
+          ) : (
+            // attended or beyond: Show Name of one person I met unblurred
+            <>
+              <div>
+                <label className="block font-semibold mb-2 text-white">Name of one person I met</label>
+                <input
+                  type="text"
+                  value={formData.nameOfPersonSpokenTo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nameOfPersonSpokenTo: e.target.value }))}
+                  placeholder="Enter name"
+                  className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
+                />
+              </div>
+              
+              {/* Helper message for Attended column */}
+              {eventItem.status === 'attended' && (
+                <HelperMessage status={eventItem.status} />
+              )}
+
+              {/* Sent LinkedIn Request checkbox - blurred in attended (revealed in next column "Send LinkedIn Request"), visible from sendLinkedInRequest */}
+              {eventItem.status === 'attended' ? (
+                // Attended status: Show Sent LinkedIn Request checkbox blurred (will be revealed in next column "Send LinkedIn Request")
+                <div className="relative group py-4">
+                  <div className="blur-sm">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="sentLinkedInRequest"
+                        checked={formData.sentLinkedInRequest}
+                        onChange={(e) => setFormData(prev => ({ ...prev, sentLinkedInRequest: e.target.checked }))}
+                        className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
+                      />
+                      <label htmlFor="sentLinkedInRequest" className="ml-2 font-semibold text-white">
+                        Sent LinkedIn Request
+                      </label>
+                    </div>
+                  </div>
+                  <LockTooltip />
+                </div>
+              ) : eventItem.status === 'sendLinkedInRequest' || eventItem.status === 'followUp' ? (
+                // sendLinkedInRequest or followUp status: Show checkbox unblurred
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="sentLinkedInRequest"
+                    checked={formData.sentLinkedInRequest}
+                    onChange={(e) => setFormData(prev => ({ ...prev, sentLinkedInRequest: e.target.checked }))}
+                    className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
+                  />
+                  <label htmlFor="sentLinkedInRequest" className="ml-2 font-semibold text-white">
+                    Sent LinkedIn Request
+                  </label>
+                </div>
+              ) : null}
+
+              {/* Helper message for Send LinkedIn Request column */}
+              {eventItem.status === 'sendLinkedInRequest' && (
+                <HelperMessage status={eventItem.status} />
+              )}
+
+              {/* Follow-Up Message field - blurred in sendLinkedInRequest (revealed in next column "Follow up"), visible from followUp */}
+              {eventItem.status === 'sendLinkedInRequest' ? (
+                // Send LinkedIn Request status: Show Follow-Up Message blurred (will be revealed in next column "Follow up")
+                <div className="relative group py-4">
+                  <div className="blur-sm">
+                    <label className="block font-semibold mb-2 text-white">Follow-Up Message</label>
+                    <textarea
+                      value={formData.followUpMessage}
+                      onChange={(e) => setFormData(prev => ({ ...prev, followUpMessage: e.target.value }))}
+                      className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
+                      placeholder="Enter follow-up message"
+                    />
+                  </div>
+                  <LockTooltip />
+                </div>
+              ) : eventItem.status === 'followUp' ? (
+                // Follow up status: Show Follow-Up Message unblurred
+                <div>
+                  <label className="block font-semibold mb-2 text-white">Follow-Up Message</label>
+                  <textarea
+                    value={formData.followUpMessage}
+                    onChange={(e) => setFormData(prev => ({ ...prev, followUpMessage: e.target.value }))}
+                    className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
+                    placeholder="Enter follow-up message"
+                  />
+                </div>
+              ) : null}
+
+              {/* Helper message for Follow up column */}
+              {eventItem.status === 'followUp' && (
+                <HelperMessage status={eventItem.status} />
+              )}
+            </>
+          )}
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
