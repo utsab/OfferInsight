@@ -588,7 +588,9 @@ function InPersonEventModal({
 
           {/* Helper message for Plan column */}
           {(!eventItem || eventItem.status === 'plan') && (
-            <HelperMessage status={eventItem?.status ?? defaultStatus ?? 'plan'} />
+            <div className="border border-yellow-500 rounded-lg p-4 bg-yellow-500/10">
+              <HelperMessage status={eventItem?.status ?? defaultStatus ?? 'plan'} />
+            </div>
           )}
 
           {/* Name of one person I met field - blurred in plan (revealed in next column "Attended"), visible from attended */}
@@ -625,7 +627,7 @@ function InPersonEventModal({
           ) : (
             // attended or beyond: Show Name of one person I met unblurred
             <>
-              <div>
+              <div className={eventItem.status === 'attended' ? 'border border-yellow-500 rounded-lg p-4 bg-yellow-500/10' : ''}>
                 <label className="block font-semibold mb-2 text-white">Name of one person I met</label>
                 <input
                   type="text"
@@ -634,12 +636,11 @@ function InPersonEventModal({
                   placeholder="Enter name"
                   className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
                 />
+                {/* Helper message inside highlighted section */}
+                {eventItem.status === 'attended' && (
+                  <HelperMessage status={eventItem.status} />
+                )}
               </div>
-              
-              {/* Helper message for Attended column */}
-              {eventItem.status === 'attended' && (
-                <HelperMessage status={eventItem.status} />
-              )}
 
               {/* Sent LinkedIn Request checkbox - blurred in attended (revealed in next column "Send LinkedIn Request"), visible from sendLinkedInRequest */}
               {eventItem.status === 'attended' ? (
@@ -663,28 +664,29 @@ function InPersonEventModal({
                 </div>
               ) : eventItem.status === 'sendLinkedInRequest' || eventItem.status === 'followUp' ? (
                 // sendLinkedInRequest or followUp status: Show checkbox unblurred
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="sentLinkedInRequest"
-                    checked={formData.sentLinkedInRequest}
-                    onChange={(e) => setFormData(prev => ({ ...prev, sentLinkedInRequest: e.target.checked }))}
-                    className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
-                  />
-                  <label htmlFor="sentLinkedInRequest" className="ml-2 font-semibold text-white">
-                    Sent LinkedIn Request
-                  </label>
+                <div className={eventItem.status === 'sendLinkedInRequest' ? 'border border-yellow-500 rounded-lg p-4 bg-yellow-500/10' : ''}>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="sentLinkedInRequest"
+                      checked={formData.sentLinkedInRequest}
+                      onChange={(e) => setFormData(prev => ({ ...prev, sentLinkedInRequest: e.target.checked }))}
+                      className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
+                    />
+                    <label htmlFor="sentLinkedInRequest" className="ml-2 font-semibold text-white">
+                      Sent LinkedIn Request
+                    </label>
+                  </div>
+                  {/* Helper message inside highlighted section */}
+                  {eventItem.status === 'sendLinkedInRequest' && (
+                    <HelperMessage status={eventItem.status} />
+                  )}
                 </div>
               ) : null}
 
-              {/* Helper message for Send LinkedIn Request column */}
-              {eventItem.status === 'sendLinkedInRequest' && (
-                <HelperMessage status={eventItem.status} />
-              )}
-
-              {/* Follow-Up Message field - blurred in sendLinkedInRequest (revealed in next column "Follow up"), visible from followUp */}
+              {/* Follow-Up Message field - blurred in sendLinkedInRequest (revealed in net column Follow Up"), visible from followUp */}
               {eventItem.status === 'sendLinkedInRequest' ? (
-                // Send LinkedIn Request status: Show Follow-Up Message blurred (will be revealed in next column "Follow up")
+                // Send LinkedIn Request status: Show Follow-Up Message blurred (will be revealed in next column "Follow Up")
                 <div className="relative group py-4">
                   <div className="blur-sm">
                     <label className="block font-semibold mb-2 text-white">Follow-Up Message</label>
@@ -698,8 +700,8 @@ function InPersonEventModal({
                   <LockTooltip />
                 </div>
               ) : eventItem.status === 'followUp' ? (
-                // Follow up status: Show Follow-Up Message unblurred
-                <div>
+                // Follow Up status: Show Follow-Up Message unblurred
+                <div className="border border-yellow-500 rounded-lg p-4 bg-yellow-500/10">
                   <label className="block font-semibold mb-2 text-white">Follow-Up Message</label>
                   <textarea
                     value={formData.followUpMessage}
@@ -707,13 +709,10 @@ function InPersonEventModal({
                     className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
                     placeholder="Enter follow-up message"
                   />
+                  {/* Helper message inside highlighted section */}
+                  <HelperMessage status={eventItem.status} />
                 </div>
               ) : null}
-
-              {/* Helper message for Follow up column */}
-              {eventItem.status === 'followUp' && (
-                <HelperMessage status={eventItem.status} />
-              )}
             </>
           )}
 
@@ -934,7 +933,7 @@ export default function EventsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                Follow up ({filteredEventColumns.followUp.length})
+                Follow Up ({filteredEventColumns.followUp.length})
               </h5>
               <SortableContext items={filteredEventColumns.followUp.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 

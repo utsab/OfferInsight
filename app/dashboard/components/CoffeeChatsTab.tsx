@@ -403,7 +403,9 @@ function LinkedinOutreachModal({
 
           {/* Helper message for create mode or 'prospects' status */}
           {(!linkedinOutreach || linkedinOutreach?.status === 'prospects') && (
-            <HelperMessage status={linkedinOutreach?.status || 'prospects'} />
+            <div className="border border-yellow-500 rounded-lg p-4 bg-yellow-500/10">
+              <HelperMessage status={linkedinOutreach?.status || 'prospects'} />
+            </div>
           )}
 
           {/* First Message field - visible from sendFirstMessage, blurred in prospects */}
@@ -437,7 +439,7 @@ function LinkedinOutreachModal({
             </div>
           ) : (
             // sendFirstMessage or beyond: Show First Message unblurred
-            <div>
+            <div className={linkedinOutreach?.status === 'sendFirstMessage' ? 'border border-yellow-500 rounded-lg p-4 bg-yellow-500/10' : ''}>
               <label className="block text-white font-semibold mb-2">First Message</label>
               <textarea
                 value={formData.firstMessage}
@@ -445,18 +447,17 @@ function LinkedinOutreachModal({
                 className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
                 placeholder="First message sent to the person"
               />
+              {/* Helper message inside highlighted section */}
+              {linkedinOutreach && linkedinOutreach.status === 'sendFirstMessage' && (
+                <HelperMessage status={linkedinOutreach.status} />
+              )}
             </div>
-          )}
-
-          {/* Helper message between First Message and Second Message */}
-          {linkedinOutreach && linkedinOutreach.status === 'sendFirstMessage' && (
-            <HelperMessage status={linkedinOutreach.status} />
           )}
 
           {/* Second Message field - visible from followUp */}
           {linkedinOutreach && (linkedinOutreach.status === 'followUp' || linkedinOutreach.status === 'coffeeChat' || linkedinOutreach.status === 'askForReferral') ? (
-            // Follow up, Coffee Chat, or Ask for Referral: Show Second Message unblurred
-            <div>
+            // Follow Up, Coffee Chat, or Ask for Referral: Show Second Message unblurred
+            <div className={linkedinOutreach.status === 'followUp' ? 'border border-yellow-500 rounded-lg p-4 bg-yellow-500/10' : ''}>
               <label className="block text-white font-semibold mb-2">Second Message</label>
               <textarea
                 value={formData.secondMessage}
@@ -464,9 +465,13 @@ function LinkedinOutreachModal({
                 className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
                 placeholder="Second message sent to the person"
               />
+              {/* Helper message inside highlighted section */}
+              {linkedinOutreach.status === 'followUp' && (
+                <HelperMessage status={linkedinOutreach.status} />
+              )}
             </div>
-          ) : linkedinOutreach && (linkedinOutreach.status === 'requestAccepted' || linkedinOutreach.status === 'sendFirstMessage') ? (
-            // Request Accepted or Send First Message: Show Second Message blurred (unlocks in next column)
+          ) : linkedinOutreach && (linkedinOutreach.status === 'sendFirstMessage' || linkedinOutreach.status === 'requestAccepted') ? (
+            // Send First Message or Request Accepted: Show Second Message blurred (unlocks in next column "Follow Up")
             <div className="relative group py-4">
               <div className="blur-sm">
                 <label className="block font-semibold mb-2 text-white">Second Message</label>
@@ -481,15 +486,10 @@ function LinkedinOutreachModal({
             </div>
           ) : null}
 
-          {/* Helper message between Second Message and Notes */}
-          {linkedinOutreach && linkedinOutreach.status === 'followUp' && (
-            <HelperMessage status={linkedinOutreach.status} />
-          )}
-
           {/* Notes field - visible from coffeeChat */}
           {linkedinOutreach && (linkedinOutreach.status === 'coffeeChat' || linkedinOutreach.status === 'askForReferral') ? (
             // Coffee Chat or Ask for Referral status: Show Notes unblurred
-            <div>
+            <div className={linkedinOutreach.status === 'coffeeChat' ? 'border border-yellow-500 rounded-lg p-4 bg-yellow-500/10' : ''}>
               <label className="block text-white font-semibold mb-2">Notes from coffee chat</label>
               <textarea
                 value={formData.notes}
@@ -497,9 +497,13 @@ function LinkedinOutreachModal({
                 className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[100px]"
                 placeholder="Enter notes from the coffee chat"
               />
+              {/* Helper message inside highlighted section */}
+              {linkedinOutreach.status === 'coffeeChat' && (
+                <HelperMessage status={linkedinOutreach.status} />
+              )}
             </div>
           ) : linkedinOutreach && linkedinOutreach.status === 'followUp' ? (
-            // Follow up status: Show Notes blurred (unlocks in next column)
+            // Follow Up status: Show Notes blurred (unlocks in next column)
             <div className="relative group py-4">
               <div className="blur-sm">
                 <label className="block font-semibold mb-2 text-white">Notes from coffee chat</label>
@@ -514,25 +518,24 @@ function LinkedinOutreachModal({
             </div>
           ) : null}
 
-          {/* Helper message between Notes and Received Referral */}
-          {linkedinOutreach && linkedinOutreach.status === 'coffeeChat' && (
-            <HelperMessage status={linkedinOutreach.status} />
-          )}
-
           {/* Received Referral checkbox - visible from askForReferral */}
           {linkedinOutreach && linkedinOutreach.status === 'askForReferral' ? (
             // Ask for Referral status: Show checkbox unblurred
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="recievedReferral"
-                checked={formData.recievedReferral}
-                onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
-                className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
-              />
-              <label htmlFor="recievedReferral" className="ml-2 font-semibold text-white">
-                Received Referral
-              </label>
+            <div className="border border-yellow-500 rounded-lg p-4 bg-yellow-500/10">
+              <div className="flex items-center mb-3">
+                <input
+                  type="checkbox"
+                  id="recievedReferral"
+                  checked={formData.recievedReferral}
+                  onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
+                  className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
+                />
+                <label htmlFor="recievedReferral" className="ml-2 font-semibold text-white">
+                  Received Referral
+                </label>
+              </div>
+              {/* Helper message inside highlighted section */}
+              <HelperMessage status={linkedinOutreach.status} />
             </div>
           ) : linkedinOutreach && linkedinOutreach.status === 'coffeeChat' ? (
             // Coffee Chat status: Show checkbox blurred (unlocks in next column)
@@ -555,10 +558,6 @@ function LinkedinOutreachModal({
             </div>
           ) : null}
 
-          {/* Helper message at bottom when all sections are revealed */}
-          {linkedinOutreach && linkedinOutreach.status === 'askForReferral' && (
-            <HelperMessage status={linkedinOutreach.status} />
-          )}
 
           {/* ===== DATE FIELD EDITING: Show dateCreated and dateModified fields when toggle is enabled ===== */}
           {ENABLE_DATE_FIELD_EDITING && (
@@ -777,7 +776,7 @@ export default function CoffeeChatsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                Follow up ({filteredLinkedinOutreachColumns.followUp.length})
+                Follow Up ({filteredLinkedinOutreachColumns.followUp.length})
               </h5>
               <SortableContext items={filteredLinkedinOutreachColumns.followUp.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
@@ -825,7 +824,7 @@ export default function CoffeeChatsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
-                Ask for referral ({filteredLinkedinOutreachColumns.askForReferral.length})
+                Ask for Referral ({filteredLinkedinOutreachColumns.askForReferral.length})
               </h5>
               <SortableContext items={filteredLinkedinOutreachColumns.askForReferral.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 

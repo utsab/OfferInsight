@@ -433,7 +433,7 @@ function ApplicationModal({
                 </div>
               ) : (
                 // Status 'messageHiringManager' or beyond: Show Hiring Manager unblurred
-                <>
+                <div className={application?.status === 'messageHiringManager' ? 'border border-yellow-500 rounded-lg p-4 bg-yellow-500/10' : ''}>
                   <div className="flex items-center gap-4">
                     <label className="font-semibold whitespace-nowrap text-white">Hiring Manager:</label>
                     <input
@@ -453,12 +453,11 @@ function ApplicationModal({
                       placeholder="Enter message sent to hiring manager"
                     />
                   </div>
-                </>
-              )}
-
-              {/* Helper message between revealed and blurred sections */}
-              {application?.status === 'messageHiringManager' && (
-                <HelperMessage status={application.status} />
+                  {/* Helper message inside highlighted section */}
+                  {application?.status === 'messageHiringManager' && (
+                    <HelperMessage status={application.status} />
+                  )}
+                </div>
               )}
 
               {/* Recruiter fields */}
@@ -493,7 +492,7 @@ function ApplicationModal({
                 </div>
               ) : (
                 // Status 'messageRecruiter' or beyond: Show Recruiter unblurred
-                <>
+                <div className={application?.status === 'messageRecruiter' ? 'border border-yellow-500 rounded-lg p-4 bg-yellow-500/10' : ''}>
                   <div className="flex items-center gap-4">
                     <label className="font-semibold whitespace-nowrap text-white">Recruiter:</label>
                     <input
@@ -513,7 +512,11 @@ function ApplicationModal({
                       placeholder="Enter message sent to recruiter"
                     />
                   </div>
-                </>
+                  {/* Helper message inside highlighted section */}
+                  {application?.status === 'messageRecruiter' && (
+                    <HelperMessage status={application.status} />
+                  )}
+                </div>
               )}
 
             </>
@@ -543,9 +546,11 @@ function ApplicationModal({
             </div>
           )}
 
-          {/* Helper message at bottom when all sections are revealed */}
-          {application && (application.status === 'messageRecruiter' || application.status === 'followUp' || application.status === 'interview') && (
-            <HelperMessage status={application.status} />
+          {/* Helper message at bottom when all sections are revealed (only for followUp and interview since messageRecruiter is now inside the highlighted section) */}
+          {application && (application.status === 'followUp' || application.status === 'interview') && (
+            <div className="border border-yellow-500 rounded-lg p-4 bg-yellow-500/10">
+              <HelperMessage status={application.status} />
+            </div>
           )}
 
           {application && (
@@ -737,7 +742,7 @@ export default function ApplicationsTab({
             <div className="bg-gray-700 rounded-lg p-4">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                Follow up ({filteredAppColumns.followUp.length})
+                Follow Up ({filteredAppColumns.followUp.length})
               </h5>
               <SortableContext items={filteredAppColumns.followUp.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
