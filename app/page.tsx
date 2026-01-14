@@ -43,7 +43,7 @@ export default function Page() {
     fetchOnboardingProgress();
   }, []);
 
-  const handleGetStarted = async () => {
+  const handleGoToDashboard = async () => {
     if (loading) return;
     
     // If user is not authenticated, trigger sign-in flow
@@ -107,11 +107,11 @@ export default function Page() {
                 OSRB helps you track your job search journey and build a comprehensive resume based on your applications, networking, and skill development. Master the four key habits that lead to success.
               </p>
               <button 
-                onClick={handleGetStarted}
+                onClick={handleGoToDashboard}
                 disabled={loading}
                 className="bg-electric-blue hover:bg-blue-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Loading...' : 'Get Started'}
+                {loading ? 'Loading...' : 'Go to Dashboard'}
               </button>
             </div>
           </section>
