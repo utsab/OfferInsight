@@ -14,6 +14,35 @@ import EventsTab from './components/EventsTab';
 import LeetCodeTab from './components/LeetCodeTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 import { formatDateWithFullMonth, getLocalDateParts } from './components/shared';
+import type {
+  Application,
+  ApplicationStatus,
+  ApplicationColumnId,
+  LinkedinOutreach,
+  LinkedinOutreachStatus,
+  LinkedinOutreachColumnId,
+  InPersonEvent,
+  InPersonEventStatus,
+  EventColumnId,
+  LeetEntry,
+  LeetStatus,
+  LeetColumnId,
+  BoardTimeFilter,
+} from './components/types';
+import {
+  applicationStatusToColumn,
+  applicationColumnToStatus,
+  linkedinOutreachStatusToColumn,
+  linkedinOutreachColumnToStatus,
+  eventStatusToColumn,
+  eventColumnToStatus,
+  leetStatusToColumn,
+  leetColumnToStatus,
+  APPLICATION_COMPLETION_COLUMNS,
+  LINKEDIN_COMPLETION_COLUMNS,
+  EVENT_COMPLETION_COLUMNS,
+  LEET_COMPLETION_COLUMNS,
+} from './components/types';
 
 // ===== PROJECTED OFFER DATE FORMULA START =====
 // Copied from onboarding page3 so product engineers can tweak independently.
@@ -97,161 +126,6 @@ const ENABLE_DASHBOARD_MOCKS = false;
 // The dates will be properly saved to the database as DateTime when creating or updating records.
 const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
-
-type ApplicationStatus = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
-type ApplicationColumnId = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
-
-type LinkedinOutreachStatus = 'prospects' | 'sendFirstMessage' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
-type LinkedinOutreachColumnId = 'prospects' | 'sendFirstMessage' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
-
-type InPersonEventStatus = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
-type EventColumnId = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
-
-type LeetStatus = 'plan' | 'solved' | 'reflect';
-type LeetColumnId = 'plan' | 'solved' | 'reflect';
-
-type BoardTimeFilter = 'modifiedThisMonth' | 'allTime';
-
-const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
-  'messageHiringManager',
-  'messageRecruiter',
-  'followUp',
-  'interview',
-];
-const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
-  'prospects',
-  'sendFirstMessage',
-  'requestAccepted',
-  'followUp',
-  'coffeeChat',
-  'askForReferral',
-];
-const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'sendLinkedInRequest', 'followUp'];
-const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflect'];
-
-// Application type definition
-type Application = {
-  id: number;
-  company: string;
-  linkToJobPosting?: string | null;
-  hiringManager?: string | null;
-  msgToManager?: string | null;
-  recruiter?: string | null;
-  msgToRecruiter?: string | null;
-  notes?: string | null;
-  status: ApplicationStatus;
-  dateCreated: string;
-  dateModified?: string | null;
-  userId: string;
-};
-
-// Linkedin outreach type definition
-type LinkedinOutreach = {
-  id: number;
-  name: string;
-  company: string;
-  firstMessage?: string | null;
-  secondMessage?: string | null;
-  linkedInUrl?: string | null;
-  notes?: string | null;
-  status: LinkedinOutreachStatus;
-  dateCreated: string;
-  dateModified?: string | null;
-  recievedReferral: boolean;
-  userId: string;
-};
-
-type InPersonEvent = {
-  id: number;
-  event: string;
-  date: string;
-  location?: string | null;
-  url?: string | null;
-  notes?: string | null;
-  status: InPersonEventStatus;
-  nameOfPersonSpokenTo?: string | null;
-  sentLinkedInRequest: boolean;
-  careerFair: boolean;
-  followUpMessage?: string | null;
-  userId: string;
-  dateCreated?: string;
-  dateModified?: string | null;
-};
-
-type LeetEntry = {
-  id: number;
-  problem?: string | null;
-  problemType?: string | null;
-  difficulty?: string | null;
-  url?: string | null;
-  reflection?: string | null;
-  status: LeetStatus;
-  userId: string;
-  dateCreated?: string;
-  dateModified?: string | null;
-};
-
-// Map status values to column IDs (moved outside component to prevent re-renders)
-const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
-  apply: 'apply',
-  messageRecruiter: 'messageRecruiter',
-  messageHiringManager: 'messageHiringManager',
-  followUp: 'followUp',
-  interview: 'interview',
-};
-
-const applicationColumnToStatus: Record<ApplicationColumnId, ApplicationStatus> = {
-  apply: 'apply',
-  messageRecruiter: 'messageRecruiter',
-  messageHiringManager: 'messageHiringManager',
-  followUp: 'followUp',
-  interview: 'interview',
-};
-
-// Linkedin outreach status mappings
-const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, LinkedinOutreachColumnId> = {
-  prospects: 'prospects',
-  sendFirstMessage: 'sendFirstMessage',
-  requestAccepted: 'requestAccepted',
-  followUp: 'followUp',
-  coffeeChat: 'coffeeChat',
-  askForReferral: 'askForReferral',
-};
-
-const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinOutreachStatus> = {
-  prospects: 'prospects',
-  sendFirstMessage: 'sendFirstMessage',
-  requestAccepted: 'requestAccepted',
-  followUp: 'followUp',
-  coffeeChat: 'coffeeChat',
-  askForReferral: 'askForReferral',
-};
-
-const eventStatusToColumn: Record<InPersonEventStatus, EventColumnId> = {
-  plan: 'plan',
-  attended: 'attended',
-  sendLinkedInRequest: 'sendLinkedInRequest',
-  followUp: 'followUp',
-};
-
-const eventColumnToStatus: Record<EventColumnId, InPersonEventStatus> = {
-  plan: 'plan',
-  attended: 'attended',
-  sendLinkedInRequest: 'sendLinkedInRequest',
-  followUp: 'followUp',
-};
-
-const leetStatusToColumn: Record<LeetStatus, LeetColumnId> = {
-  plan: 'plan',
-  solved: 'solved',
-  reflect: 'reflect',
-};
-
-const leetColumnToStatus: Record<LeetColumnId, LeetStatus> = {
-  plan: 'plan',
-  solved: 'solved',
-  reflect: 'reflect',
-};
 
 export default function Page() {
   const searchParams = useSearchParams();
