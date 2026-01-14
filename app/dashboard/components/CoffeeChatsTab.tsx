@@ -415,6 +415,7 @@ function LinkedinOutreachModal({
                 <textarea
                   value={formData.firstMessage}
                   onChange={(e) => setFormData({ ...formData, firstMessage: e.target.value })}
+                  disabled={true}
                   className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
                   placeholder="First message sent to the person"
                 />
@@ -429,6 +430,7 @@ function LinkedinOutreachModal({
                 <textarea
                   value={formData.firstMessage}
                   onChange={(e) => setFormData({ ...formData, firstMessage: e.target.value })}
+                  disabled={true}
                   className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
                   placeholder="First message sent to the person"
                 />
@@ -476,6 +478,7 @@ function LinkedinOutreachModal({
                 <textarea
                   value={formData.secondMessage}
                   onChange={(e) => setFormData({ ...formData, secondMessage: e.target.value })}
+                  disabled={true}
                   className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
                   placeholder="Second message sent to the person"
                 />
@@ -508,6 +511,7 @@ function LinkedinOutreachModal({
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  disabled={true}
                   className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
                   placeholder="Enter notes from the coffee chat"
                 />
@@ -545,6 +549,7 @@ function LinkedinOutreachModal({
                     id="recievedReferral"
                     checked={formData.recievedReferral}
                     onChange={(e) => setFormData({ ...formData, recievedReferral: e.target.checked })}
+                    disabled={true}
                     className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
                   />
                   <label htmlFor="recievedReferral" className="ml-2 font-semibold text-white">

@@ -571,6 +571,7 @@ function InPersonEventModal({
                   type="text"
                   value={formData.nameOfPersonSpokenTo}
                   onChange={(e) => setFormData(prev => ({ ...prev, nameOfPersonSpokenTo: e.target.value }))}
+                  disabled={true}
                   placeholder="Enter name"
                   className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
                 />
@@ -586,6 +587,7 @@ function InPersonEventModal({
                   type="text"
                   value={formData.nameOfPersonSpokenTo}
                   onChange={(e) => setFormData(prev => ({ ...prev, nameOfPersonSpokenTo: e.target.value }))}
+                  disabled={true}
                   placeholder="Enter name"
                   className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
                 />
@@ -621,6 +623,7 @@ function InPersonEventModal({
                         id="sentLinkedInRequest"
                         checked={formData.sentLinkedInRequest}
                         onChange={(e) => setFormData(prev => ({ ...prev, sentLinkedInRequest: e.target.checked }))}
+                        disabled={true}
                         className="w-4 h-4 border rounded bg-gray-700 border-light-steel-blue text-electric-blue focus:ring-electric-blue"
                       />
                       <label htmlFor="sentLinkedInRequest" className="ml-2 font-semibold text-white">
@@ -661,6 +664,7 @@ function InPersonEventModal({
                     <textarea
                       value={formData.followUpMessage}
                       onChange={(e) => setFormData(prev => ({ ...prev, followUpMessage: e.target.value }))}
+                      disabled={true}
                       className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 min-h-[100px] bg-gray-700 border-light-steel-blue text-white"
                       placeholder="Enter follow-up message"
                     />
