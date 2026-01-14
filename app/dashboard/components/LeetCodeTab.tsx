@@ -175,7 +175,7 @@ function LeetModal({
     difficulty: entry?.difficulty ?? 'Easy',
     url: entry?.url ?? '',
     reflection: entry?.reflection ?? '',
-    status: entry?.status ?? (defaultStatus || 'planning'),
+    status: entry?.status ?? (defaultStatus || 'plan'),
     dateCreated: entry?.dateCreated ? toLocalDateString(entry.dateCreated) : '', // ===== DATE FIELD EDITING =====
     dateModified: entry?.dateModified ? toLocalDateString(entry.dateModified) : '', // ===== DATE FIELD EDITING =====
   });
@@ -206,7 +206,7 @@ function LeetModal({
         difficulty: entry.difficulty ?? 'Easy',
         url: entry.url ?? '',
         reflection: entry.reflection ?? '',
-        status: entry.status ?? 'planning',
+        status: entry.status ?? 'plan',
         dateCreated: entry.dateCreated ? toLocalDateString(entry.dateCreated) : '',
         dateModified: entry.dateModified ? toLocalDateString(entry.dateModified) : '',
       });
@@ -217,7 +217,7 @@ function LeetModal({
         difficulty: 'Easy',
         url: '',
         reflection: '',
-        status: defaultStatus || 'planning',
+        status: defaultStatus || 'plan',
         dateCreated: '',
         dateModified: '',
       });
