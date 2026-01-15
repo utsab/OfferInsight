@@ -158,11 +158,15 @@ function SortableLinkedinOutreachCard(props: {
           </button>
         </div>
       </div>
-      {props.card.firstMessage && (
-        <div className="text-gray-400 text-xs mb-2 line-clamp-2">{props.card.firstMessage}</div>
+      {(props.card.firstMessage || props.card.secondMessage || props.card.notes) && (
+        <div className="text-green-400 text-xs mb-2 flex flex-col">
+          {props.card.firstMessage && <span>✓ First Message</span>}
+          {props.card.secondMessage && <span>✓ Second Message</span>}
+          {props.card.notes && <span>✓ Notes from coffee chat</span>}
+        </div>
       )}
       {props.card.recievedReferral && (
-        <div className="text-green-400 text-xs mb-2">✓ Referral Received</div>
+        <div className="text-yellow-500 text-sm font-semibold mb-2">✓ Referral Received</div>
       )}
     </div>
   );
