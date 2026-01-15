@@ -180,13 +180,13 @@ function SortableEventCard(props: {
             <div className="text-gray-400 text-xs mb-1">{props.card.location}</div>
           )}
           {props.card.url && (
-            <div className="text-gray-500 text-xs mb-1">
+            <div className="text-xs mb-1">
               <a
                 href={props.card.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="hover:text-electric-blue underline"
+                className="text-electric-blue hover:text-sky-300 underline"
               >
                 Event Link
               </a>
@@ -203,17 +203,18 @@ function SortableEventCard(props: {
           </button>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2 text-[10px] text-gray-300">
+      <div className="flex flex-wrap gap-2 text-[10px] text-gray-300 mb-2">
         {props.card.careerFair && (
           <span className="text-green-400 text-xs">✓ Career Fair</span>
         )}
-        {props.card.nameOfPersonSpokenTo && (
-          <span className="px-2 py-0.5 rounded-full bg-gray-700">Met: {props.card.nameOfPersonSpokenTo}</span>
-        )}
-        {props.card.sentLinkedInRequest && (
-          <span className="px-2 py-0.5 rounded-full bg-gray-700">✓ LinkedIn Sent</span>
-        )}
       </div>
+      {(props.card.nameOfPersonSpokenTo || props.card.sentLinkedInRequest || props.card.followUpMessage) && (
+        <div className="text-green-400 text-xs mb-2 flex flex-col">
+          {props.card.nameOfPersonSpokenTo && <span className="text-base font-medium">✓ Met: {props.card.nameOfPersonSpokenTo}</span>}
+          {props.card.sentLinkedInRequest && <span>✓ LinkedIn Sent</span>}
+          {props.card.followUpMessage && <span>✓ Follow-Up Message</span>}
+        </div>
+      )}
     </div>
   );
 }
