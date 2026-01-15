@@ -598,8 +598,8 @@ export default function ApplicationsTab({
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleApplicationsDragStart} onDragOver={handleApplicationsDragOver} onDragEnd={handleApplicationsDragEnd}>
           <div className="overflow-x-auto -mx-4 px-4">
-            <div className="grid grid-cols-5 gap-6 min-w-[800px]">
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="grid grid-cols-5 gap-3 min-w-[700px]">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
                 Apply ({filteredAppColumns.apply.length})
@@ -627,7 +627,7 @@ export default function ApplicationsTab({
               </SortableContext>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
                 Message Hiring Manager ({filteredAppColumns.messageHiringManager.length})
@@ -651,7 +651,7 @@ export default function ApplicationsTab({
               </SortableContext>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
                 Message Recruiter ({filteredAppColumns.messageRecruiter.length})
@@ -675,7 +675,7 @@ export default function ApplicationsTab({
               </SortableContext>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
                 Follow Up ({filteredAppColumns.followUp.length})
@@ -699,7 +699,7 @@ export default function ApplicationsTab({
               </SortableContext>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-pink-500 rounded-full mr-2"></div>
                 Interview ({filteredAppColumns.interview.length})

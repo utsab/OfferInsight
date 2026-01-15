@@ -628,8 +628,8 @@ export default function CoffeeChatsTab({
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleLinkedinOutreachDragStart} onDragOver={handleLinkedinOutreachDragOver} onDragEnd={handleLinkedinOutreachDragEnd}>
           <div className="overflow-x-auto -mx-4 px-4">
-            <div className="grid grid-cols-6 gap-6 min-w-[1200px]">
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="grid grid-cols-6 gap-3">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-gray-500 rounded-full mr-2"></div>
                 Prospects ({filteredLinkedinOutreachColumns.prospects.length})
@@ -658,7 +658,7 @@ export default function CoffeeChatsTab({
               </SortableContext>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
                 Send First Message ({filteredLinkedinOutreachColumns.sendFirstMessage.length})
@@ -682,7 +682,7 @@ export default function CoffeeChatsTab({
               </SortableContext>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
                 Request Accepted ({filteredLinkedinOutreachColumns.requestAccepted.length})
@@ -706,7 +706,7 @@ export default function CoffeeChatsTab({
               </SortableContext>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
                 Follow Up ({filteredLinkedinOutreachColumns.followUp.length})
@@ -730,7 +730,7 @@ export default function CoffeeChatsTab({
               </SortableContext>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
                 Coffee Chat ({filteredLinkedinOutreachColumns.coffeeChat.length})
@@ -754,7 +754,7 @@ export default function CoffeeChatsTab({
               </SortableContext>
             </div>
 
-            <div className="bg-gray-700 rounded-lg p-4">
+            <div className="bg-gray-700 rounded-lg p-2">
               <h5 className="text-white font-semibold mb-4 flex items-center">
                 <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
                 Ask for Referral ({filteredLinkedinOutreachColumns.askForReferral.length})
