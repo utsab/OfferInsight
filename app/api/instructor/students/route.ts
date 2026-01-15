@@ -183,6 +183,14 @@ export async function GET() {
           }),
         ]);
 
+        // Count referrals received (all time - referrals are exciting achievements!)
+        const referralCount = await prisma.linkedin_Outreach.count({
+          where: {
+            userId: user.id,
+            recievedReferral: true,
+          },
+        });
+
         // Calculate progressStatus based on metrics:
         // There are 3 categories:
         // 1. Applications (>= 1)
@@ -204,6 +212,7 @@ export async function GET() {
           email: user.email,
           activeStatus,
           progressStatus,
+          referralCount,
           applications: {
             lastMonth: applicationsLastMonth,
             allTime: applicationsAllTime,

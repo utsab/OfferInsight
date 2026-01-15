@@ -9,6 +9,7 @@ interface UserData {
   email: string | null;
   activeStatus: number; // 0 = red, 1 = yellow, 2 = green
   progressStatus: number; // 0 = red, 1 = yellow, 2 = green
+  referralCount: number; // Number of referrals received
   applications: {
     lastMonth: number;
     allTime: number;
@@ -64,12 +65,20 @@ function generateDebugUsers(): UserData[] {
     const coffeeChatsLastMonth = hasGoodProgress ? Math.floor(Math.random() * 6) + 4 : (hasMediumProgress ? Math.floor(Math.random() * 5) + 2 : Math.floor(Math.random() * 3));
     const leetCodeLastMonth = hasGoodProgress ? Math.floor(Math.random() * 10) + 4 : (hasMediumProgress ? Math.floor(Math.random() * 5) + 2 : Math.floor(Math.random() * 3));
 
+    // Generate referral count - some users have referrals (exciting!)
+    const referralCount = hasGoodProgress && index % 5 === 0 
+      ? Math.floor(Math.random() * 3) + 1  // 1-3 referrals for some successful users
+      : hasGoodProgress && index % 7 === 0
+      ? Math.floor(Math.random() * 2) + 1  // 1-2 referrals for others
+      : 0; // Most users have 0 referrals
+
     return {
       id: `debug-${index}`,
       name: name,
       email: `${name.toLowerCase().replace(' ', '.')}@example.com`,
       activeStatus,
       progressStatus,
+      referralCount,
       applications: {
         lastMonth: applicationsLastMonth,
         allTime: applicationsLastMonth * 5 + Math.floor(Math.random() * 20)
@@ -186,90 +195,104 @@ export default function InstructorDashboard() {
           </div>
         )}
         
-        <div 
-          className="grid gap-4"
-          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, auto))' }}
-        >
+        <div className="flex flex-col gap-3">
           {filteredAndSortedUsers.map((user) => (
             <div
               key={user.id}
-              className="bg-gray-600 border border-light-steel-blue rounded-lg px-3 py-3 hover:border-electric-blue transition-colors w-fit"
-              style={{ minWidth: '320px' }}
+              className="bg-gray-600 border border-light-steel-blue rounded-lg px-6 py-4 hover:border-electric-blue transition-colors w-full"
             >
-              {/* Name on first line */}
-              <div className="mb-2">
-                <h2 className="text-white font-medium text-lg whitespace-nowrap">{user.name}</h2>
-              </div>
+              <div className="flex items-center justify-between gap-6">
+                {/* Left side: Name, Status, and Referrals */}
+                <div className="flex items-center gap-6 min-w-0 flex-shrink-0">
+                  {/* Name */}
+                  <div className="min-w-[200px]">
+                    <h2 className="text-white font-medium text-lg whitespace-nowrap">{user.name}</h2>
+                  </div>
 
-              {/* Active and Progress status indicators on second line */}
-              <div className="flex items-center gap-3 mb-3">
-                {/* Active indicator */}
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-4 h-4 rounded-full ${
-                    user.activeStatus === 2 ? 'bg-green-500' : 
-                    user.activeStatus === 1 ? 'bg-yellow-500' : 
-                    'bg-red-500'
-                  }`}></div>
-                  <span className="text-gray-300 text-sm font-medium">Active</span>
-                </div>
-                {/* Progress indicator */}
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-4 h-4 rounded-full ${
-                    user.progressStatus === 2 ? 'bg-green-500' : 
-                    user.progressStatus === 1 ? 'bg-yellow-500' : 
-                    'bg-red-500'
-                  }`}></div>
-                  <span className="text-gray-300 text-sm font-medium">Progress</span>
-                </div>
-              </div>
+                  {/* Referrals - Prominent green display when user has referrals */}
+                  {user.referralCount > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-900/30 border border-green-500 rounded-lg">
+                      <span className="text-green-400 font-bold text-base whitespace-nowrap">
+                        🎉 {user.referralCount} Referral{user.referralCount !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
 
-              {/* Stats */}
-              <div className="space-y-2.5">
-                {/* Applications */}
-                <div>
-                  <div className="text-gray-300 text-sm font-medium mb-1"># of Applications</div>
-                  <div className="flex justify-between text-gray-400 text-sm">
-                    <span>Last Month: <span className="text-white">{user.applications.lastMonth}</span></span>
-                    <span>All Time: <span className="text-white">{user.applications.allTime}</span></span>
+                  {/* Active and Progress status indicators */}
+                  <div className="flex items-center gap-4">
+                    {/* Active indicator */}
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                        user.activeStatus === 2 ? 'bg-green-500' : 
+                        user.activeStatus === 1 ? 'bg-yellow-500' : 
+                        'bg-red-500'
+                      }`}></div>
+                      <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Active</span>
+                    </div>
+                    {/* Progress indicator */}
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                        user.progressStatus === 2 ? 'bg-green-500' : 
+                        user.progressStatus === 1 ? 'bg-yellow-500' : 
+                        'bg-red-500'
+                      }`}></div>
+                      <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Progress</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* In Person Events */}
-                <div>
-                  <div className="text-gray-300 text-sm font-medium mb-1"># of In Person Events</div>
-                  <div className="flex justify-between text-gray-400 text-sm">
-                    <span>Last Month: <span className="text-white">{user.events.lastMonth}</span></span>
-                    <span>All Time: <span className="text-white">{user.events.allTime}</span></span>
+                {/* Middle: Stats in horizontal layout */}
+                <div className="flex items-center gap-8 flex-1 min-w-0">
+                  {/* Applications */}
+                  <div className="min-w-[180px]">
+                    <div className="text-gray-300 text-sm font-medium mb-1">Applications</div>
+                    <div className="text-gray-400 text-sm">
+                      <span>Last Month: <span className="text-white font-medium">{user.applications.lastMonth}</span></span>
+                      <span className="mx-2">|</span>
+                      <span>All Time: <span className="text-white font-medium">{user.applications.allTime}</span></span>
+                    </div>
+                  </div>
+
+                  {/* In Person Events */}
+                  <div className="min-w-[180px]">
+                    <div className="text-gray-300 text-sm font-medium mb-1">Events</div>
+                    <div className="text-gray-400 text-sm">
+                      <span>Last Month: <span className="text-white font-medium">{user.events.lastMonth}</span></span>
+                      <span className="mx-2">|</span>
+                      <span>All Time: <span className="text-white font-medium">{user.events.allTime}</span></span>
+                    </div>
+                  </div>
+
+                  {/* Coffee Chats */}
+                  <div className="min-w-[180px]">
+                    <div className="text-gray-300 text-sm font-medium mb-1">Coffee Chats</div>
+                    <div className="text-gray-400 text-sm">
+                      <span>Last Month: <span className="text-white font-medium">{user.coffeeChats.lastMonth}</span></span>
+                      <span className="mx-2">|</span>
+                      <span>All Time: <span className="text-white font-medium">{user.coffeeChats.allTime}</span></span>
+                    </div>
+                  </div>
+
+                  {/* LeetCode Problems */}
+                  <div className="min-w-[180px]">
+                    <div className="text-gray-300 text-sm font-medium mb-1">LeetCode</div>
+                    <div className="text-gray-400 text-sm">
+                      <span>Last Month: <span className="text-white font-medium">{user.leetCode.lastMonth}</span></span>
+                      <span className="mx-2">|</span>
+                      <span>All Time: <span className="text-white font-medium">{user.leetCode.allTime}</span></span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Coffee Chats */}
-                <div>
-                  <div className="text-gray-300 text-sm font-medium mb-1"># of Coffee Chat Attempts</div>
-                  <div className="flex justify-between text-gray-400 text-sm">
-                    <span>Last Month: <span className="text-white">{user.coffeeChats.lastMonth}</span></span>
-                    <span>All Time: <span className="text-white">{user.coffeeChats.allTime}</span></span>
-                  </div>
+                {/* Right side: View Dashboard Button */}
+                <div className="flex-shrink-0">
+                  <Link
+                    href={`/dashboard?userId=${user.id}`}
+                    className="block px-6 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
+                  >
+                    View Dashboard
+                  </Link>
                 </div>
-
-                {/* LeetCode Problems */}
-                <div>
-                  <div className="text-gray-300 text-sm font-medium mb-1"># of LeetCode Problems</div>
-                  <div className="flex justify-between text-gray-400 text-sm">
-                    <span>Last Month: <span className="text-white">{user.leetCode.lastMonth}</span></span>
-                    <span>All Time: <span className="text-white">{user.leetCode.allTime}</span></span>
-                  </div>
-                </div>
-              </div>
-
-              {/* View Dashboard Button */}
-              <div className="mt-4 pt-4 border-t border-gray-500">
-                <Link
-                  href={`/dashboard?userId=${user.id}`}
-                  className="block w-full text-center px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
-                >
-                  View Dashboard
-                </Link>
               </div>
             </div>
           ))}
