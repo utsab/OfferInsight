@@ -768,6 +768,11 @@ export default function EventsTab({
                     setEditingEvent(null);
                     setIsEventModalOpen(true);
                   }}
+                  hasCardsToRight={
+                    filteredEventColumns.attended.length > 0 ||
+                    filteredEventColumns.sendLinkedInRequest.length > 0 ||
+                    filteredEventColumns.followUp.length > 0
+                  }
                 >
                   {filteredEventColumns.plan.map(event => (
                     <SortableEventCard 
@@ -792,6 +797,10 @@ export default function EventsTab({
               <SortableContext items={filteredEventColumns.attended.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="attended"
+                  hasCardsToRight={
+                    filteredEventColumns.sendLinkedInRequest.length > 0 ||
+                    filteredEventColumns.followUp.length > 0
+                  }
                 >
                   {filteredEventColumns.attended.map(event => (
                     <SortableEventCard 
@@ -816,6 +825,7 @@ export default function EventsTab({
               <SortableContext items={filteredEventColumns.sendLinkedInRequest.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="sendLinkedInRequest"
+                  hasCardsToRight={filteredEventColumns.followUp.length > 0}
                 >
                   {filteredEventColumns.sendLinkedInRequest.map(event => (
                     <SortableEventCard 
@@ -840,6 +850,7 @@ export default function EventsTab({
               <SortableContext items={filteredEventColumns.followUp.map(event => String(event.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="followUp"
+                  hasCardsToRight={false}
                 >
                   {filteredEventColumns.followUp.map(event => (
                     <SortableEventCard 

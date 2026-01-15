@@ -611,6 +611,12 @@ export default function ApplicationsTab({
                     setEditingApp(null);
                     setIsModalOpen(true);
                   }}
+                  hasCardsToRight={
+                    filteredAppColumns.messageHiringManager.length > 0 ||
+                    filteredAppColumns.messageRecruiter.length > 0 ||
+                    filteredAppColumns.followUp.length > 0 ||
+                    filteredAppColumns.interview.length > 0
+                  }
                 >
                   {filteredAppColumns.apply.map(card => (
                     <SortableAppCard 
@@ -635,6 +641,11 @@ export default function ApplicationsTab({
               <SortableContext items={filteredAppColumns.messageHiringManager.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="messageHiringManager"
+                  hasCardsToRight={
+                    filteredAppColumns.messageRecruiter.length > 0 ||
+                    filteredAppColumns.followUp.length > 0 ||
+                    filteredAppColumns.interview.length > 0
+                  }
                 >
                   {filteredAppColumns.messageHiringManager.map(card => (
                     <SortableAppCard 
@@ -659,6 +670,10 @@ export default function ApplicationsTab({
               <SortableContext items={filteredAppColumns.messageRecruiter.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="messageRecruiter"
+                  hasCardsToRight={
+                    filteredAppColumns.followUp.length > 0 ||
+                    filteredAppColumns.interview.length > 0
+                  }
                 >
                   {filteredAppColumns.messageRecruiter.map(card => (
                     <SortableAppCard 
@@ -683,6 +698,7 @@ export default function ApplicationsTab({
               <SortableContext items={filteredAppColumns.followUp.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="followUp"
+                  hasCardsToRight={filteredAppColumns.interview.length > 0}
                 >
                   {filteredAppColumns.followUp.map(card => (
                     <SortableAppCard 
@@ -707,6 +723,7 @@ export default function ApplicationsTab({
               <SortableContext items={filteredAppColumns.interview.map(c => c.id)} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="interview"
+                  hasCardsToRight={false}
                 >
                   {filteredAppColumns.interview.map(card => (
                     <SortableAppCard 

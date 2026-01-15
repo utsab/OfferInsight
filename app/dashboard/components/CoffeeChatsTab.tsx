@@ -642,6 +642,13 @@ export default function CoffeeChatsTab({
                     setEditingLinkedinOutreach(null);
                     setIsLinkedinOutreachModalOpen(true);
                   }}
+                  hasCardsToRight={
+                    filteredLinkedinOutreachColumns.sendFirstMessage.length > 0 ||
+                    filteredLinkedinOutreachColumns.requestAccepted.length > 0 ||
+                    filteredLinkedinOutreachColumns.followUp.length > 0 ||
+                    filteredLinkedinOutreachColumns.coffeeChat.length > 0 ||
+                    filteredLinkedinOutreachColumns.askForReferral.length > 0
+                  }
                 >
                   {filteredLinkedinOutreachColumns.prospects.map(card => (
                     <SortableLinkedinOutreachCard 
@@ -666,6 +673,12 @@ export default function CoffeeChatsTab({
               <SortableContext items={filteredLinkedinOutreachColumns.sendFirstMessage.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="sendFirstMessage"
+                  hasCardsToRight={
+                    filteredLinkedinOutreachColumns.requestAccepted.length > 0 ||
+                    filteredLinkedinOutreachColumns.followUp.length > 0 ||
+                    filteredLinkedinOutreachColumns.coffeeChat.length > 0 ||
+                    filteredLinkedinOutreachColumns.askForReferral.length > 0
+                  }
                 >
                   {filteredLinkedinOutreachColumns.sendFirstMessage.map(card => (
                     <SortableLinkedinOutreachCard 
@@ -690,6 +703,11 @@ export default function CoffeeChatsTab({
               <SortableContext items={filteredLinkedinOutreachColumns.requestAccepted.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="requestAccepted"
+                  hasCardsToRight={
+                    filteredLinkedinOutreachColumns.followUp.length > 0 ||
+                    filteredLinkedinOutreachColumns.coffeeChat.length > 0 ||
+                    filteredLinkedinOutreachColumns.askForReferral.length > 0
+                  }
                 >
                   {filteredLinkedinOutreachColumns.requestAccepted.map(card => (
                     <SortableLinkedinOutreachCard 
@@ -714,6 +732,10 @@ export default function CoffeeChatsTab({
               <SortableContext items={filteredLinkedinOutreachColumns.followUp.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="followUp"
+                  hasCardsToRight={
+                    filteredLinkedinOutreachColumns.coffeeChat.length > 0 ||
+                    filteredLinkedinOutreachColumns.askForReferral.length > 0
+                  }
                 >
                   {filteredLinkedinOutreachColumns.followUp.map(card => (
                     <SortableLinkedinOutreachCard 
@@ -738,6 +760,7 @@ export default function CoffeeChatsTab({
               <SortableContext items={filteredLinkedinOutreachColumns.coffeeChat.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="coffeeChat"
+                  hasCardsToRight={filteredLinkedinOutreachColumns.askForReferral.length > 0}
                 >
                   {filteredLinkedinOutreachColumns.coffeeChat.map(card => (
                     <SortableLinkedinOutreachCard 
@@ -762,6 +785,7 @@ export default function CoffeeChatsTab({
               <SortableContext items={filteredLinkedinOutreachColumns.askForReferral.map(c => String(c.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="askForReferral"
+                  hasCardsToRight={false}
                 >
                   {filteredLinkedinOutreachColumns.askForReferral.map(card => (
                     <SortableLinkedinOutreachCard 

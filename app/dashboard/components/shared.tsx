@@ -185,7 +185,7 @@ export function VideoModal({ videoUrl, isOpen, onClose }: { videoUrl: string; is
   );
 }
 
-export function DroppableColumn(props: { id: string; children: React.ReactNode; onAddCard?: () => void; showLockIcon?: boolean }) {
+export function DroppableColumn(props: { id: string; children: React.ReactNode; onAddCard?: () => void; showLockIcon?: boolean; hasCardsToRight?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: props.id });
   const [showTooltip, setShowTooltip] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
@@ -218,6 +218,9 @@ export function DroppableColumn(props: { id: string; children: React.ReactNode; 
     }
   };
   
+  // Don't show lock if there are cards in columns to the right (progress indication)
+  const shouldShowLock = isEmpty && !props.onAddCard && showLock && !props.hasCardsToRight;
+  
   return (
     <div ref={setNodeRef} className={`space-y-3 min-h-32 relative ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-650/40' : ''}`}>
       {props.children}
@@ -234,9 +237,9 @@ export function DroppableColumn(props: { id: string; children: React.ReactNode; 
         </button>
       )}
       
-      {/* Lock icon and tooltip for empty columns (but not for first column, and only if showLockIcon is true) */}
-      {isEmpty && !props.onAddCard && showLock && (
-        <div className="absolute inset-0 flex items-center justify-center">
+      {/* Lock icon and tooltip for empty columns (but not for first column, and only if showLockIcon is true, and no cards to the right) */}
+      {shouldShowLock && (
+        <div className="absolute inset-x-0 top-[40%] flex justify-center">
           <div 
             className="relative group cursor-pointer"
             onClick={handleClick}
