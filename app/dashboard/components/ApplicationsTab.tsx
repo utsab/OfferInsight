@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { Application, ApplicationColumnId, BoardTimeFilter, ApplicationStatus } from './types';
 import { applicationStatusToColumn } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip, VideoModal } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip, VideoModal, normalizeUrl } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -232,7 +232,10 @@ function ApplicationModal({
     }
     // ===== DATE FIELD EDITING: Convert date strings to ISO DateTime if provided =====
     const { dateCreated, dateModified, ...restFormData } = formData;
-    const submitData: Partial<Application> = { ...restFormData };
+    const submitData: Partial<Application> = { 
+      ...restFormData,
+      linkToJobPosting: normalizeUrl(formData.linkToJobPosting),
+    };
     if (ENABLE_DATE_FIELD_EDITING) {
       if (dateCreated) {
         try {
@@ -291,14 +294,14 @@ function ApplicationModal({
           </div>
 
           <div>
-            <label className="block text-white font-semibold mb-2">Link to Job Posting</label>
-            <input
-              type="url"
-              value={formData.linkToJobPosting}
-              onChange={(e) => setFormData({ ...formData, linkToJobPosting: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-              placeholder="https://..."
-            />
+              <label className="block text-white font-semibold mb-2">Link to Job Posting</label>
+              <input
+                type="text"
+                value={formData.linkToJobPosting}
+                onChange={(e) => setFormData({ ...formData, linkToJobPosting: e.target.value })}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                placeholder="example.com/job or https://example.com/job"
+              />
           </div>
 
           {/* Helper message for create mode or 'apply' status */}

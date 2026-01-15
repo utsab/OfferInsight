@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { LinkedinOutreach, LinkedinOutreachColumnId, BoardTimeFilter, LinkedinOutreachStatus } from './types';
 import { linkedinOutreachStatusToColumn, linkedinOutreachColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip, VideoModal } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip, VideoModal, normalizeUrl } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -248,7 +248,10 @@ function LinkedinOutreachModal({
     }
     // ===== DATE FIELD EDITING: Convert date strings to ISO DateTime if provided =====
     const { dateCreated, dateModified, ...restFormData } = formData;
-    const submitData: Partial<LinkedinOutreach> = { ...restFormData };
+    const submitData: Partial<LinkedinOutreach> = { 
+      ...restFormData,
+      linkedInUrl: normalizeUrl(formData.linkedInUrl),
+    };
     if (ENABLE_DATE_FIELD_EDITING) {
       if (dateCreated) {
         try {
@@ -323,11 +326,11 @@ function LinkedinOutreachModal({
           <div>
             <label className="block text-white font-semibold mb-2">LinkedIn URL</label>
             <input
-              type="url"
+              type="text"
               value={formData.linkedInUrl}
               onChange={(e) => setFormData({ ...formData, linkedInUrl: e.target.value })}
               className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-              placeholder="https://linkedin.com/in/..."
+              placeholder="linkedin.com/in/... or https://linkedin.com/in/..."
             />
           </div>
 

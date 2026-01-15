@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { InPersonEvent, EventColumnId, BoardTimeFilter, InPersonEventStatus } from './types';
 import { eventStatusToColumn, eventColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, getLocalTimeParts, getLocalDateParts, LockTooltip, VideoModal } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, getLocalTimeParts, getLocalDateParts, LockTooltip, VideoModal, normalizeUrl } from './shared';
 
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
@@ -342,7 +342,7 @@ function InPersonEventModal({
       event: formData.event.trim(),
       date: combinedDate,
       location: formData.location ? formData.location.trim() : null,
-      url: formData.url ? formData.url.trim() : null,
+      url: normalizeUrl(formData.url),
       status: formData.status,
       nameOfPersonSpokenTo: formData.nameOfPersonSpokenTo ? formData.nameOfPersonSpokenTo.trim() : null,
       sentLinkedInRequest: formData.sentLinkedInRequest,
@@ -465,11 +465,11 @@ function InPersonEventModal({
           <div>
             <label className="block font-semibold mb-2 text-white">Event URL</label>
             <input
-              type="url"
+              type="text"
               value={formData.url}
               onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
               className="w-full border rounded-lg px-4 py-2 placeholder-gray-400 bg-gray-700 border-light-steel-blue text-white"
-              placeholder="https://example.com/event"
+              placeholder="example.com/event or https://example.com/event"
             />
           </div>
 

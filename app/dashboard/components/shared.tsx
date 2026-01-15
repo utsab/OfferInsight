@@ -115,6 +115,20 @@ export function formatDateWithFullMonth(value: string | Date): string {
   }
 }
 
+// Helper function to normalize URLs - adds https:// if missing and value looks like a URL
+export function normalizeUrl(url: string | null | undefined): string | null {
+  if (!url || !url.trim()) return null;
+  const trimmed = url.trim();
+  // If it already starts with http:// or https://, return as is
+  if (trimmed.match(/^https?:\/\//i)) return trimmed;
+  // If it looks like a domain (contains a dot and doesn't start with a protocol), add https://
+  if (trimmed.includes('.') && !trimmed.match(/^[a-zA-Z]+:/)) {
+    return `https://${trimmed}`;
+  }
+  // Otherwise return as is (might be a relative URL or invalid)
+  return trimmed;
+}
+
 // Lock Tooltip Component - centered in unified blur area
 export function LockTooltip() {
   return (
@@ -222,7 +236,7 @@ export function DroppableColumn(props: { id: string; children: React.ReactNode; 
   const shouldShowLock = isEmpty && !props.onAddCard && showLock && !props.hasCardsToRight;
   
   return (
-    <div ref={setNodeRef} className={`space-y-3 min-h-32 relative ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-650/40' : ''}`}>
+    <div ref={setNodeRef} className={`space-y-3 min-h-64 relative ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-650/40' : ''}`}>
       {props.children}
       {props.onAddCard && (
         <button

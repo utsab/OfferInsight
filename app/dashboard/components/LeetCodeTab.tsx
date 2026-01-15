@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { LeetEntry, LeetColumnId, BoardTimeFilter, LeetStatus } from './types';
 import { leetStatusToColumn, leetColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, normalizeUrl } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -236,7 +236,7 @@ function LeetModal({
       problem: formData.problem.trim(),
       problemType: formData.problemType ? formData.problemType.trim() : null,
       difficulty: formData.difficulty ? formData.difficulty.trim() : null,
-      url: formData.url ? formData.url.trim() : null,
+      url: normalizeUrl(formData.url),
       reflection: formData.reflection ? formData.reflection.trim() : null,
       status: formData.status,
     };
@@ -295,7 +295,7 @@ function LeetModal({
           <div>
             <label className={`block font-semibold mb-2 ${entry ? 'text-white' : 'text-gray-500'}`}>Problem URL</label>
             <input
-              type="url"
+              type="text"
               value={formData.url}
               onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
               disabled={!entry}
@@ -304,7 +304,7 @@ function LeetModal({
                   ? 'bg-gray-700 border-light-steel-blue text-white' 
                   : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
               }`}
-              placeholder="https://leetcode.com/problems/..."
+              placeholder="leetcode.com/problems/... or https://leetcode.com/problems/..."
             />
           </div>
 
