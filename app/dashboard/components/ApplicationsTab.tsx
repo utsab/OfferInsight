@@ -108,10 +108,9 @@ function SortableAppCard(props: {
         </div>
       </div>
       {(props.card.msgToManager || props.card.msgToRecruiter) && (
-        <div className="text-green-400 text-xs mb-2">
-          {props.card.msgToManager && '✓ Messaged HM'}
-          {props.card.msgToManager && props.card.msgToRecruiter && ' • '}
-          {props.card.msgToRecruiter && '✓ Messaged Recruiter'}
+        <div className="text-green-400 text-xs mb-2 flex flex-col">
+          {props.card.msgToManager && <span>✓ Messaged HM</span>}
+          {props.card.msgToRecruiter && <span>✓ Messaged Recruiter</span>}
         </div>
       )}
     </div>
