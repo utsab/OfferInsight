@@ -125,20 +125,20 @@ function SortableLeetCard(props: {
         </div>
       </div>
       {props.card.url && (
-        <div className="text-gray-500 text-xs mb-2">
+        <div className="text-xs mb-2">
           <a
             href={props.card.url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="hover:text-electric-blue underline"
+            className="text-electric-blue hover:text-sky-300 underline"
           >
             Problem Link
           </a>
         </div>
       )}
       {props.card.reflection && (
-        <div className="text-gray-400 text-xs mb-2 line-clamp-3">{props.card.reflection}</div>
+        <div className="text-green-400 text-xs mb-2">✓ Signal / Cue</div>
       )}
     </div>
   );
