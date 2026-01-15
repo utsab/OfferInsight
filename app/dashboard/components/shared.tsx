@@ -1,7 +1,8 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Plus, Lock, X, PlayCircle } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
+import React, { useState, useEffect } from 'react';
 
 // Delete Confirmation Modal
 export function DeleteModal({ 
@@ -114,10 +115,111 @@ export function formatDateWithFullMonth(value: string | Date): string {
   }
 }
 
-export function DroppableColumn(props: { id: string; children: React.ReactNode; onAddCard?: () => void }) {
-  const { setNodeRef, isOver } = useDroppable({ id: props.id });
+// Lock Tooltip Component - centered in unified blur area
+export function LockTooltip() {
   return (
-    <div ref={setNodeRef} className={`space-y-3 min-h-32 ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-650/40' : ''}`}>
+    <div className="flex md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 md:absolute md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:z-10 items-center gap-2 bg-gray-900 border border-light-steel-blue rounded-lg px-3 py-2 shadow-lg whitespace-nowrap justify-center md:pointer-events-none">
+      <Lock className="w-4 h-4 text-electric-blue flex-shrink-0" />
+      <span className="text-sm text-white">Drag card to next column to unlock next step</span>
+    </div>
+  );
+}
+
+// Video Modal Component - displays YouTube video in a modal overlay
+export function VideoModal({ videoUrl, isOpen, onClose }: { videoUrl: string; isOpen: boolean; onClose: () => void }) {
+  // Convert YouTube watch URL to embed format
+  const getEmbedUrl = (url: string) => {
+    // Extract video ID from various YouTube URL formats
+    const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    if (videoIdMatch && videoIdMatch[1]) {
+      return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+    }
+    return url; // Fallback to original URL if extraction fails
+  };
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-2"
+          aria-label="Close video"
+        >
+          <X size={24} />
+        </button>
+        <iframe
+          src={getEmbedUrl(videoUrl)}
+          className="w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="YouTube video player"
+        />
+      </div>
+    </div>
+  );
+}
+
+export function DroppableColumn(props: { id: string; children: React.ReactNode; onAddCard?: () => void; showLockIcon?: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id: props.id });
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const showLock = props.showLockIcon !== false; // Default to true if not specified
+  
+  // Detect if device is primarily touch-based (mobile/tablet)
+  // We check for touch AND small screen to avoid false positives on touchscreen laptops
+  useEffect(() => {
+    const checkTouchDevice = () => {
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.matchMedia('(max-width: 768px)').matches;
+      // Consider it a touch device only if it has touch AND is a small screen
+      setIsTouchDevice(hasTouch && isSmallScreen);
+    };
+    checkTouchDevice();
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    mediaQuery.addEventListener('change', checkTouchDevice);
+    return () => mediaQuery.removeEventListener('change', checkTouchDevice);
+  }, []);
+  
+  // Check if column is empty (no cards, only potentially the Add Card button)
+  const childrenArray = React.Children.toArray(props.children);
+  const isEmpty = childrenArray.length === 0;
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Only toggle on touch devices; on desktop, hover handles it
+    if (isTouchDevice) {
+      setShowTooltip(prev => !prev);
+    }
+  };
+  
+  return (
+    <div ref={setNodeRef} className={`space-y-3 min-h-32 relative ${isOver ? 'outline outline-2 outline-electric-blue/60 outline-offset-2 bg-gray-650/40' : ''}`}>
       {props.children}
       {props.onAddCard && (
         <button
@@ -131,6 +233,32 @@ export function DroppableColumn(props: { id: string; children: React.ReactNode; 
           Add Card
         </button>
       )}
+      
+      {/* Lock icon and tooltip for empty columns (but not for first column, and only if showLockIcon is true) */}
+      {isEmpty && !props.onAddCard && showLock && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div 
+            className="relative group cursor-pointer"
+            onClick={handleClick}
+          >
+            <Lock className="w-12 h-12 text-gray-500" />
+            {/* Tooltip - visible on hover (desktop) or when showTooltip is true (mobile toggle) */}
+            <div 
+              className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-2 bg-gray-900 border border-light-steel-blue rounded-lg shadow-lg whitespace-nowrap z-10 pointer-events-none transition-opacity duration-200 ${
+                isTouchDevice
+                  ? (showTooltip ? 'opacity-100 visible' : 'opacity-0 invisible')
+                  : 'opacity-0 invisible md:group-hover:opacity-100 md:group-hover:visible'
+              }`}
+            >
+              <span className="text-sm text-white">Drag card to this column to unlock this step</span>
+              {/* Tooltip arrow */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-0 border-4 border-transparent border-b-gray-900"></div>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[1px] border-4 border-transparent border-b-light-steel-blue"></div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* When empty, provide space to drop */}
       <div className="h-2"></div>
     </div>

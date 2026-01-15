@@ -527,6 +527,7 @@ export default function LeetCodeTab({
               <SortableContext items={filteredLeetColumns.plan.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="plan"
+                  showLockIcon={false}
                   onAddCard={() => {
                     setDefaultStatus(leetColumnToStatus.plan);
                     setEditingLeet(null);
@@ -556,6 +557,7 @@ export default function LeetCodeTab({
               <SortableContext items={filteredLeetColumns.solved.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="solved"
+                  showLockIcon={false}
                 >
                   {filteredLeetColumns.solved.map(entry => (
                     <SortableLeetCard 
@@ -580,6 +582,7 @@ export default function LeetCodeTab({
               <SortableContext items={filteredLeetColumns.reflect.map(entry => String(entry.id))} strategy={rectSortingStrategy}>
                 <DroppableColumn 
                   id="reflect"
+                  showLockIcon={false}
                 >
                   {filteredLeetColumns.reflect.map(entry => (
                     <SortableLeetCard 
