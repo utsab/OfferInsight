@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { Plus, Trash2, X, ChevronDown } from 'lucide-react';
+import { Trash2, X, ChevronDown } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -413,15 +413,6 @@ export default function OpenSourceTab({
             All Time
           </button>
         </div>
-        <button 
-          onClick={() => {
-            setEditingEntry(null);
-            setIsModalOpen(true);
-          }}
-          className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors flex items-center text-sm sm:text-base"
-        >
-          <Plus className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />Add Entry
-        </button>
       </div>
 
       {/* Partnership Dropdown */}
@@ -433,7 +424,7 @@ export default function OpenSourceTab({
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="w-full sm:w-auto min-w-[200px] bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white flex items-center justify-between hover:border-electric-blue transition-colors"
           >
-            <span>{selectedPartnership || 'All Partnerships'}</span>
+            <span>{selectedPartnership || '<none selected>'}</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
           {isDropdownOpen && (
@@ -452,7 +443,7 @@ export default function OpenSourceTab({
                     selectedPartnership === null ? 'bg-gray-600 text-electric-blue' : 'text-white'
                   }`}
                 >
-                  All Partnerships
+                  &lt;none selected&gt;
                 </button>
                 {partnershipNames.map(name => (
                   <button
@@ -488,10 +479,6 @@ export default function OpenSourceTab({
                 <SortableContext items={filteredOpenSourceColumns.plan.map(c => c.id)} strategy={rectSortingStrategy}>
                   <DroppableColumn 
                     id="plan"
-                    onAddCard={() => {
-                      setEditingEntry(null);
-                      setIsModalOpen(true);
-                    }}
                     hasCardsToRight={
                       filteredOpenSourceColumns.babyStep.length > 0 ||
                       filteredOpenSourceColumns.inProgress.length > 0 ||
