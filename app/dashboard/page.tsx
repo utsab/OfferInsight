@@ -5,13 +5,14 @@ import { useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Gauge, FileText, MessageCircle, Users, Code, ArrowLeft } from 'lucide-react';
+import { Gauge, FileText, MessageCircle, Users, Code, ArrowLeft, GitBranch } from 'lucide-react';
 import Link from 'next/link';
 import OverviewTab from './components/OverviewTab';
 import ApplicationsTab from './components/ApplicationsTab';
 import CoffeeChatsTab from './components/CoffeeChatsTab';
 import EventsTab from './components/EventsTab';
 import LeetCodeTab from './components/LeetCodeTab';
+import OpenSourceTab from './components/OpenSourceTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 import { formatDateWithFullMonth, getLocalDateParts } from './components/shared';
 import type {
@@ -27,6 +28,9 @@ import type {
   LeetEntry,
   LeetStatus,
   LeetColumnId,
+  OpenSourceEntry,
+  OpenSourceStatus,
+  OpenSourceColumnId,
   BoardTimeFilter,
 } from './components/types';
 import {
@@ -38,6 +42,8 @@ import {
   eventColumnToStatus,
   leetStatusToColumn,
   leetColumnToStatus,
+  openSourceStatusToColumn,
+  openSourceColumnToStatus,
   APPLICATION_COMPLETION_COLUMNS,
   LINKEDIN_COMPLETION_COLUMNS,
   EVENT_COMPLETION_COLUMNS,
@@ -829,6 +835,188 @@ const hasSeededMockDataRef = useRef(false);
   };
 
   const handleLeetDragOver = (event: DragOverEvent) => {
+    // onDragOver is only for visual feedback via DroppableColumn
+  };
+
+  // dnd-kit: OpenSource board
+  const [openSourceColumns, setOpenSourceColumns] = useState<Record<OpenSourceColumnId, OpenSourceEntry[]>>({
+    plan: [],
+    babyStep: [],
+    inProgress: [],
+    done: [],
+  });
+  const [activeOpenSourceId, setActiveOpenSourceId] = useState<string | null>(null);
+  const [isOpenSourceModalOpen, setIsOpenSourceModalOpen] = useState(false);
+  const [editingOpenSource, setEditingOpenSource] = useState<OpenSourceEntry | null>(null);
+  const [isDeletingOpenSource, setIsDeletingOpenSource] = useState<number | null>(null);
+  const [isLoadingOpenSource, setIsLoadingOpenSource] = useState(true);
+  const [openSourceFilter, setOpenSourceFilter] = useState<BoardTimeFilter>('allTime');
+  const [selectedPartnership, setSelectedPartnership] = useState<string | null>(null);
+  const isFetchingOpenSourceRef = useRef(false);
+  const isDraggingOpenSourceRef = useRef(false);
+
+  const fetchOpenSourceEntries = useCallback(async () => {
+    // --- MOCK DATA BYPASS FOR OPENSOURCE FETCH START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR OPENSOURCE FETCH END ---
+    if (isFetchingOpenSourceRef.current) return;
+
+    try {
+      isFetchingOpenSourceRef.current = true;
+      setIsLoadingOpenSource(true);
+      // TODO: Replace with actual API endpoint when available
+      const url = userIdParam ? `/api/open_source?userId=${userIdParam}` : '/api/open_source';
+      const response = await fetch(url);
+      if (!response.ok) {
+        // If endpoint doesn't exist yet, just set empty columns
+        setOpenSourceColumns({
+          plan: [],
+          babyStep: [],
+          inProgress: [],
+          done: [],
+        });
+        setIsLoadingOpenSource(false);
+        isFetchingOpenSourceRef.current = false;
+        return;
+      }
+      const data = await response.json() as OpenSourceEntry[];
+
+      const grouped: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
+        plan: [],
+        babyStep: [],
+        inProgress: [],
+        done: [],
+      };
+
+      data.forEach((entry: OpenSourceEntry) => {
+        const column = openSourceStatusToColumn[entry.status] ?? 'plan';
+        grouped[column].push(entry);
+      });
+
+      setOpenSourceColumns(grouped);
+    } catch (error) {
+      console.error('Error fetching open source entries:', error);
+      // On error, set empty columns
+      setOpenSourceColumns({
+        plan: [],
+        babyStep: [],
+        inProgress: [],
+        done: [],
+      });
+    } finally {
+      setIsLoadingOpenSource(false);
+      isFetchingOpenSourceRef.current = false;
+    }
+  }, [userIdParam]);
+
+  useEffect(() => {
+    // --- MOCK DATA BYPASS FOR OPENSOURCE EFFECT START ---
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    // --- MOCK DATA BYPASS FOR OPENSOURCE EFFECT END ---
+    if ((activeTab === 'opensource' || activeTab === 'overview') && !isFetchingOpenSourceRef.current) {
+      fetchOpenSourceEntries();
+    }
+  }, [activeTab, fetchOpenSourceEntries]);
+
+  const getOpenSourceColumnOfItem = (id: string): OpenSourceColumnId | null => {
+    const entry = (Object.keys(openSourceColumns) as OpenSourceColumnId[]).find(col =>
+      openSourceColumns[col].some(entry => String(entry.id) === id)
+    );
+    return entry ?? null;
+  };
+
+  // Debounced function to update open source status
+  const debouncedUpdateOpenSourceStatus = useDebouncedCallback(
+    async (id: number, status: OpenSourceStatus) => {
+      try {
+        // TODO: Replace with actual API endpoint when available
+        const url = userIdParam ? `/api/open_source?id=${id}&userId=${userIdParam}` : `/api/open_source?id=${id}`;
+        const response = await fetch(url, {
+          method: 'PATCH',
+          headers: getApiHeaders(),
+          body: JSON.stringify({ status }),
+        });
+        if (!response.ok) throw new Error('Failed to update open source status');
+      } catch (error) {
+        console.error('Error updating open source status:', error);
+        fetchOpenSourceEntries();
+      }
+    },
+    300
+  );
+
+  const handleOpenSourceDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) {
+      isDraggingOpenSourceRef.current = false;
+      return;
+    }
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    const fromCol = getOpenSourceColumnOfItem(activeId);
+    const toCol = (['plan', 'babyStep', 'inProgress', 'done'] as OpenSourceColumnId[]).includes(overId as OpenSourceColumnId)
+      ? (overId as OpenSourceColumnId)
+      : getOpenSourceColumnOfItem(overId);
+    if (!fromCol || !toCol) {
+      setActiveOpenSourceId(null);
+      isDraggingOpenSourceRef.current = false;
+      return;
+    }
+
+    if (fromCol === toCol) {
+      const items = openSourceColumns[fromCol];
+      const oldIndex = items.findIndex(i => String(i.id) === activeId);
+      const newIndex = items.findIndex(i => String(i.id) === overId);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        setActiveOpenSourceId(null);
+        isDraggingOpenSourceRef.current = false;
+        return;
+      }
+      const newItems = arrayMove(items, oldIndex, newIndex);
+      setOpenSourceColumns(prev => ({ ...prev, [fromCol]: newItems }));
+    } else {
+      const fromItems = openSourceColumns[fromCol];
+      const toItems = openSourceColumns[toCol];
+      const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
+      if (movingIndex === -1) {
+        setActiveOpenSourceId(null);
+        isDraggingOpenSourceRef.current = false;
+        return;
+      }
+      const movingItem = fromItems[movingIndex];
+      const overIndex = toItems.findIndex(i => String(i.id) === overId);
+      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
+      const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
+      const newStatus = openSourceColumnToStatus[toCol];
+      const updatedItem: OpenSourceEntry = {
+        ...movingItem,
+        status: newStatus,
+        dateModified: new Date().toISOString(),
+      };
+      const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
+      setOpenSourceColumns(prev => ({
+        plan: [...prev.plan],
+        babyStep: [...prev.babyStep],
+        inProgress: [...prev.inProgress],
+        done: [...prev.done],
+        [fromCol]: newFrom,
+        [toCol]: newTo,
+      }));
+      
+      debouncedUpdateOpenSourceStatus(movingItem.id, newStatus);
+    }
+    setActiveOpenSourceId(null);
+    isDraggingOpenSourceRef.current = false;
+  };
+
+  const handleOpenSourceDragStart = (event: DragStartEvent) => {
+    setActiveOpenSourceId(String(event.active.id));
+    isDraggingOpenSourceRef.current = true;
+  };
+
+  const handleOpenSourceDragOver = (event: DragOverEvent) => {
     // onDragOver is only for visual feedback via DroppableColumn
   };
 
@@ -1686,6 +1874,39 @@ const hasSeededMockDataRef = useRef(false);
     return filtered;
   }, [leetColumns, leetFilter, isWithinCurrentMonth]);
 
+  const filteredOpenSourceColumns = useMemo(() => {
+    let filtered: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
+      plan: [],
+      babyStep: [],
+      inProgress: [],
+      done: [],
+    };
+
+    // First apply time filter
+    if (openSourceFilter === 'allTime') {
+      filtered = { ...openSourceColumns };
+    } else {
+      (Object.keys(openSourceColumns) as OpenSourceColumnId[]).forEach(columnId => {
+        if (openSourceFilter === 'modifiedThisMonth') {
+          filtered[columnId] = openSourceColumns[columnId].filter(entry =>
+            isWithinCurrentMonth(entry.dateModified)
+          );
+        }
+      });
+    }
+
+    // Then apply partnership filter if selected
+    if (selectedPartnership) {
+      (Object.keys(filtered) as OpenSourceColumnId[]).forEach(columnId => {
+        filtered[columnId] = filtered[columnId].filter(entry =>
+          entry.partnershipName === selectedPartnership
+        );
+      });
+    }
+
+    return filtered;
+  }, [openSourceColumns, openSourceFilter, selectedPartnership, isWithinCurrentMonth]);
+
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
   };
@@ -1737,6 +1958,16 @@ const hasSeededMockDataRef = useRef(false);
                 }`}
               >
                 <Gauge className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />Overview
+              </button>
+              <button 
+                onClick={() => handleTabClick('opensource')}
+                className={`main-tab-btn flex-1 py-3 sm:py-4 px-3 sm:px-6 text-center font-semibold border-r border-light-steel-blue transition-colors whitespace-nowrap ${
+                  activeTab === 'opensource' 
+                    ? 'bg-electric-blue text-white' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                <GitBranch className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />Open Source
               </button>
               <button 
                 onClick={() => handleTabClick('applications')}
@@ -1904,6 +2135,35 @@ const hasSeededMockDataRef = useRef(false);
             fetchLeetEntries={fetchLeetEntries}
             isDraggingLeetRef={isDraggingLeetRef}
             userIdParam={userIdParam}
+          />
+        )}
+
+        {/* Open Source Content */}
+        {activeTab === 'opensource' && (
+          <OpenSourceTab
+            filteredOpenSourceColumns={filteredOpenSourceColumns}
+            openSourceColumns={openSourceColumns}
+            setOpenSourceColumns={setOpenSourceColumns}
+            isLoading={isLoadingOpenSource}
+            openSourceFilter={openSourceFilter}
+            setOpenSourceFilter={setOpenSourceFilter}
+            setIsModalOpen={setIsOpenSourceModalOpen}
+            setEditingEntry={setEditingOpenSource}
+            sensors={sensors}
+            handleOpenSourceDragStart={handleOpenSourceDragStart}
+            handleOpenSourceDragOver={handleOpenSourceDragOver}
+            handleOpenSourceDragEnd={handleOpenSourceDragEnd}
+            activeOpenSourceId={activeOpenSourceId}
+            getOpenSourceColumnOfItem={getOpenSourceColumnOfItem}
+            isModalOpen={isOpenSourceModalOpen}
+            editingEntry={editingOpenSource}
+            setIsDeleting={setIsDeletingOpenSource}
+            isDeleting={isDeletingOpenSource}
+            fetchOpenSourceEntries={fetchOpenSourceEntries}
+            isDraggingOpenSourceRef={isDraggingOpenSourceRef}
+            userIdParam={userIdParam}
+            selectedPartnership={selectedPartnership}
+            setSelectedPartnership={setSelectedPartnership}
           />
         )}
     </main>

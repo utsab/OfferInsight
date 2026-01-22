@@ -12,6 +12,9 @@ export type EventColumnId = 'plan' | 'attended' | 'sendLinkedInRequest' | 'follo
 export type LeetStatus = 'plan' | 'solved' | 'reflect';
 export type LeetColumnId = 'plan' | 'solved' | 'reflect';
 
+export type OpenSourceStatus = 'plan' | 'babyStep' | 'inProgress' | 'done';
+export type OpenSourceColumnId = 'plan' | 'babyStep' | 'inProgress' | 'done';
+
 export type BoardTimeFilter = 'modifiedThisMonth' | 'allTime';
 
 export type Application = {
@@ -74,6 +77,19 @@ export type LeetEntry = {
   dateModified?: string | null;
 };
 
+export type OpenSourceEntry = {
+  id: number;
+  partnershipName: string;
+  title?: string | null;
+  description?: string | null;
+  url?: string | null;
+  notes?: string | null;
+  status: OpenSourceStatus;
+  userId: string;
+  dateCreated?: string;
+  dateModified?: string | null;
+};
+
 export const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
   'messageHiringManager',
   'messageRecruiter',
@@ -92,6 +108,7 @@ export const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
 
 export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'sendLinkedInRequest', 'followUp'];
 export const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflect'];
+export const OPENSOURCE_COMPLETION_COLUMNS: OpenSourceColumnId[] = ['done'];
 
 export const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
   apply: 'apply',
@@ -151,5 +168,19 @@ export const leetColumnToStatus: Record<LeetColumnId, LeetStatus> = {
   plan: 'plan',
   solved: 'solved',
   reflect: 'reflect',
+};
+
+export const openSourceStatusToColumn: Record<OpenSourceStatus, OpenSourceColumnId> = {
+  plan: 'plan',
+  babyStep: 'babyStep',
+  inProgress: 'inProgress',
+  done: 'done',
+};
+
+export const openSourceColumnToStatus: Record<OpenSourceColumnId, OpenSourceStatus> = {
+  plan: 'plan',
+  babyStep: 'babyStep',
+  inProgress: 'inProgress',
+  done: 'done',
 };
 
