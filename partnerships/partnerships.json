@@ -1,0 +1,100 @@
+{
+    "partnerships": [
+        {
+            "id": 1, 
+            "name": "Mark Flores",
+            "linkedIn": "https://www.linkedin.com/in/mark-f-flores-8184815/",
+            "company": "Whoop",
+            "role": "VP of Software",
+            "criteria": [
+                { "type": "issue", "count": 6 },
+                { "type": "receive_feedback", "count": 2 },
+                { "type": "closer", "count": 6 }
+            ]
+        }, 
+
+        {
+            "id": 2, 
+            "name": "Krishna Pitchikala,",
+            "linkedIn": "https://www.linkedin.com/in/nskmohan/",
+            "company": "Amazon",
+            "role": "Software Engineer",
+            "criteria": [
+                { "type": "issue", "count": 3 },
+                { "type": "blog_post", "count": 1 },
+                { "type": "edge_cases", "count": 1 },
+                { "type": "high_quality_question", "count": 1 },
+                { "type": "propose_implementation_plan", "count": 1 },
+                { "type": "above_and_beyond", "count": 1 }
+            ]
+        }, 
+
+        {
+            "id": 3, 
+            "name": "Brianna Potvin",
+            "linkedIn": "https://www.linkedin.com/in/bripot/",
+            "company": "Microsoft",
+            "role": "Principal SWE Lead",
+            "criteria": [
+                { "type": "issue", "count": 6 },
+                { "type": "give_feedback", "count": 2 },
+                { "type": "receive_feedback", "count": 2 },
+                { "type": "find_bug", "count": 2 },
+                { "type": "complex_bug", "count": 1 },
+                { "type": "find_bug", "count": 2 },
+                { "type": "initiative", "count": 2 },
+                { "type": "use_product", "count": 1 }
+            ]
+        }, 
+
+        {
+            "id": 4, 
+            "name": "Jagbir Kaur",
+            "linkedIn": "https://www.linkedin.com/in/jagbir-kaur/",
+            "company": "Google",
+            "role": "Strategy and Ops Manager",
+            "criteria": [
+                { "type": "issue", "count": 3 },
+                { "type": "multiple_choice", "choices": [
+                    {"type": "propose_implementation_plan", "count": 1}, 
+                    {"type": "high_quality_question", "count": 1}, 
+                    {"type": "initiative", "count": 1}] },
+                { "type": "advocate", "count": 1 }, 
+                { "type": "receive_feedback", "count": 1 },
+                { "type": "blog_post", "count": 1 }
+            ]
+        }, 
+        {
+            "id": 5, 
+            "name": "Nikhil Maddirala",
+            "linkedIn": "https://www.linkedin.com/in/nikhilmaddirala/",
+            "company": "Meta",
+            "role": "Product Manager",
+            "criteria": [
+                { "type": "issue", "count": 6 },
+                { "type": "above_and_beyond", "count": 2}, 
+                { "type": "seek_feedback", "count": 2 },
+                { "type": "thorough_documentation", "count": 1 },
+                { "type": "AI_usage", "count": 1 }
+
+            ]
+        },
+        {
+            "id": 6, 
+            "name": "Akshatha Anantharamu",
+            "linkedIn": "https://www.linkedin.com/in/akshathaanantharamu/",
+            "company": "Adobe",
+            "role": "Software Engineer",
+            "criteria": [
+                { "type": "issue", "count": 4 },
+                { "type": "blog_post", "count": 1 },
+                { "type": "edge_cases", "count": 1 },
+                { "type": "multiple_choice", "choices": [
+                    { "type": "above_and_beyond", "count": 1 },
+                    { "type": "case_study", "count": 1 }
+                ]}, 
+                { "type": "outside_comfort_zone", "count": 1 }
+            ]
+        }
+    ]
+}

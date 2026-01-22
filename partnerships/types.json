@@ -1,0 +1,247 @@
+{
+    "types": {
+        "issue": {
+            "is_primary": true,
+            "quality": "Problem-solving skills", 
+            "metric": "Solve 1 open source issue", 
+            "baby_steps": ["Find an issue to work on."], 
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Pull request link: "
+            }]
+        }, 
+        "receive_feedback": {
+            "is_primary": false,
+            "quality": "Coachability", 
+            "metric": "Received critical feedback on a PR/issue which was then followed up with a resubmission that was eventually accepted.", 
+            "baby_steps": ["Write out your plan as a comment on the issue thread asap. Ask for feedback."],  
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [
+                {
+                    "type": "Checkbox",
+                    "text": "Did you receive (and act on) one point of critical feedback on this issue?"
+                },
+                {
+                    "type": "text",
+                    "text": "Write a 1 sentence summary of the feedback you received and the action you took to address it."
+                }
+            ]
+        },
+        "closer": {
+            "is_primary": false,
+            "quality": "Closer", 
+            "metric": "Solve the issue within 3 months", 
+            "baby_steps": ["Find out what resources are available to you within the project's ecosystem (join their Discord, find the project's wiki page, etc.). Be prepared to ask a high-quality question on the Github thread within 1-2 weeks to confirm whether you are on the right track."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "Checkbox",
+                "text": "Did you solve the issue within 3 months?"
+            }]
+        },
+        "blog_post": {
+            "is_primary": true,
+            "quality": "Understanding the impact of the work", 
+            "metric": "1 concise (< 750 words) technical blog post", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],  
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [
+                {
+                    "type": "URL",
+                    "text": "Link to the blog post: "
+                }
+            ]
+        },
+        "edge_cases": {
+            "is_primary": false,
+            "quality": "Critical thinking skills", 
+            "metric": "1 PR with a detailed breakdown of edge cases considered.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "Checkbox",
+                "text": "Did you write a detailed breakdown of edges cases in the pull request description?"
+            }]
+        },
+        "high_quality_question": {
+            "is_primary": false,
+            "quality": "Critical thinking skills", 
+            "metric": "1 example of a high-quality question asked on the Github thread", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the github comment where you asked a high-quality question: "
+            }]
+        },
+        "propose_implementation_plan": {
+            "is_primary": false,
+            "quality": "Critical thinking skills", 
+            "metric": "1 example of a proposal where you seek feedback on how you plan to solve the issue", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the github comment where you proposed your implementation plan: "
+            }]
+        },
+        "above_and_beyond": {
+            "is_primary": false,
+            "quality": "Ownership / Initiative", 
+            "metric": "Solution goes beyond the acceptance criteria for the issue.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "Write a 1 sentence explanation of how your solution went beyond the acceptance criteria for the issue."
+            }]
+        },
+        "give_feedback": {
+            "is_primary": true,
+            "quality": "Collaboration/Teamwork", 
+            "metric": "Leave a comment on a PR/issue that is not your own.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."], 
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the github issue or PR where you left a comment: "
+            }]
+        },
+        "find_bug": {
+            "is_primary": true,
+            "quality": "Curiosity", 
+            "metric": "Find and file a new bug.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],  
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [
+                {
+                    "type": "URL",
+                    "text": "Link to the new issue you created: "
+                }
+            ]
+        },
+        "complex_bug": {
+            "is_primary": false,
+            "quality": "Curiosity", 
+            "metric": "Solve a complex bug, explore multiple branches, get to the root cause.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],  
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [
+                {
+                    "type": "URL",
+                    "text": "Link to a blog post, video, or detailed pull request description where you explain the solution: "
+                }
+            ]
+        },
+        "initiative": {
+            "is_primary": true,
+            "quality": "Initiative", 
+            "metric": "Submit a proposal for solving a problem for the project that wasn't directly asked for.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],  
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [
+                {
+                    "type": "URL",
+                    "text": "Link to the new issue you created where you described your proposal: "
+                }
+            ]
+        },
+        "use_product": {
+            "is_primary": true,
+            "quality": "Product sense", 
+            "metric": "Self-host the product and use it in a meaningful way or use the product/library in a personal project.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to a video walkthrough demonstrating how you used the product: "
+            }]
+        }, 
+        "advocate": {
+            "is_primary": false,
+            "quality": "Collaboration/Conflict resolution", 
+            "metric": "1 example of back-and-forth conversation where you advocate for your perspective while also demonstrating flexibility.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "Write a 1 sentence summary of the conversation you had and the outcome."
+            }]
+        }, 
+        "seek_feedback": {
+            "is_primary": false,
+            "quality": "Teamworok/Collaboration", 
+            "metric": "Feedback was proactively sought either from maintainers or users", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the github comment where you sought feedback: "
+            }, 
+            {
+                "type": "text",
+                "text": "Write a 1 sentence summary of the feedback you received and how you incorporated it into your work."
+            }
+            ]
+        }, 
+        "thorough_documentation": {
+            "is_primary": false,
+            "quality": "Teamwork/Collaboration", 
+            "metric": "1 example of a PR with thorough documentation explaining the contribution.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "checkbox",
+                "text": "Did you include a thorough explanation of the contribution in the pull request description?"
+            }],
+            "notes": "TODO: Add an optional checkbox to ask whether they left comments throughout the timeline of the PR."
+        }, 
+        "AI_usage": {
+            "is_primary": true,
+            "quality": "Apply AI to solve every day problems", 
+            "metric": "1 example of using AI APIs to simplify or automate personal or business workflows", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to a personal project or blog post describing how you used AI to simplify or automate a workflow: "
+            }, 
+            {
+                "type": "text",
+                "text": "Write a 1 sentence summary of how you used AI to simplify or automate a workflow."
+            }]
+        }, 
+        "case_study": {
+            "is_primary": true,
+            "quality": "Curiosity", 
+            "metric": "Blog post exploring a specfic aspect of the project", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the blog post: "
+            }]
+        }, 
+        "outside_comfort_zone": {
+            "is_primary": false,
+            "quality": "Self-learner", 
+            "metric": "1 example of a large/complex issue where you pick a task outside of your comfort zone.", 
+            "baby_steps": ["Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."],
+            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
+            "proof_of_completion": [
+                {
+                    "type": "checkbox",
+                    "text": "Did you write comments throughout the timeline of the PR?"
+                },
+                {
+                    "type": "text",
+                    "text": "Write a 1 sentence explanation of one new thing you had to learn to solve the issue: "
+                },
+                {
+                    "type": "URL",
+                    "text": "Link to a short (<750 words) blog post where you describe the solution:"
+                }
+            ]
+        }
+    }
+}
