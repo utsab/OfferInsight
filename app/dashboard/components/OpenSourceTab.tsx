@@ -384,88 +384,128 @@ export default function OpenSourceTab({
   setSelectedPartnership,
 }: OpenSourceTabProps & { isDraggingOpenSourceRef: React.MutableRefObject<boolean> }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hasSavedSelection, setHasSavedSelection] = useState(selectedPartnership !== null);
+  const [tempSelection, setTempSelection] = useState<string | null>(selectedPartnership);
   const partnershipNames = partnershipsData.partnerships.map(p => p.name);
+
+  // Reset saved state when selectedPartnership changes externally to null
+  useEffect(() => {
+    if (selectedPartnership === null) {
+      setHasSavedSelection(false);
+      setTempSelection(null);
+    }
+  }, [selectedPartnership]);
+
+  const handleSaveSelection = () => {
+    if (tempSelection !== null) {
+      setSelectedPartnership(tempSelection);
+      setHasSavedSelection(true);
+      setIsDropdownOpen(false);
+    }
+  };
 
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 mb-6">
-        <h4 className="text-xl font-bold text-white">Open Source Contributions</h4>
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-          <span>Show:</span>
-          <button
-            onClick={() => setOpenSourceFilter('modifiedThisMonth')}
-            className={`px-3 py-1 rounded-md border transition-colors ${
-              openSourceFilter === 'modifiedThisMonth'
-                ? 'bg-electric-blue text-white border-electric-blue'
-                : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-            }`}
-          >
-            This Month
-          </button>
-          <button
-            onClick={() => setOpenSourceFilter('allTime')}
-            className={`px-3 py-1 rounded-md border transition-colors ${
-              openSourceFilter === 'allTime'
-                ? 'bg-electric-blue text-white border-electric-blue'
-                : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
-            }`}
-          >
-            All Time
-          </button>
+      {hasSavedSelection && (
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 mb-6">
+          <h4 className="text-xl font-bold text-white">Open Source Contributions</h4>
+          <div className="flex items-center gap-2 text-sm text-gray-300">
+            <span>Show:</span>
+            <button
+              onClick={() => setOpenSourceFilter('modifiedThisMonth')}
+              className={`px-3 py-1 rounded-md border transition-colors ${
+                openSourceFilter === 'modifiedThisMonth'
+                  ? 'bg-electric-blue text-white border-electric-blue'
+                  : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+              }`}
+            >
+              This Month
+            </button>
+            <button
+              onClick={() => setOpenSourceFilter('allTime')}
+              className={`px-3 py-1 rounded-md border transition-colors ${
+                openSourceFilter === 'allTime'
+                  ? 'bg-electric-blue text-white border-electric-blue'
+                  : 'bg-gray-700 text-gray-300 border-transparent hover:border-light-steel-blue'
+              }`}
+            >
+              All Time
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Partnership Dropdown */}
-      <div className="mb-6">
-        <label className="block text-white font-semibold mb-2">Filter by Partnership</label>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full sm:w-auto min-w-[200px] bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white flex items-center justify-between hover:border-electric-blue transition-colors"
-          >
-            <span>{selectedPartnership || '<none selected>'}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {isDropdownOpen && (
-            <>
-              <div 
-                className="fixed inset-0 z-10" 
-                onClick={() => setIsDropdownOpen(false)}
-              />
-              <div className="absolute z-20 mt-1 w-full sm:w-auto min-w-[200px] bg-gray-700 border border-light-steel-blue rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                <button
-                  onClick={() => {
-                    setSelectedPartnership(null);
-                    setIsDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 hover:bg-gray-600 transition-colors ${
-                    selectedPartnership === null ? 'bg-gray-600 text-electric-blue' : 'text-white'
-                  }`}
-                >
-                  &lt;none selected&gt;
-                </button>
-                {partnershipNames.map(name => (
-                  <button
-                    key={name}
-                    onClick={() => {
-                      setSelectedPartnership(name);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 hover:bg-gray-600 transition-colors ${
-                      selectedPartnership === name ? 'bg-gray-600 text-electric-blue' : 'text-white'
-                    }`}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+      {/* Show centered dropdown when no selection has been saved */}
+      {!hasSavedSelection ? (
+        <div className="flex flex-col items-center justify-center py-16 min-h-[400px]">
+          <div className="w-full max-w-md">
+            <label className="block text-white font-semibold mb-4 text-center text-2xl">Choose Partnership Agreement</label>
+            <div className="relative mb-6">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white flex items-center justify-between hover:border-electric-blue transition-colors"
+              >
+                <span>{tempSelection || '<none selected>'}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isDropdownOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                  <div className="absolute z-20 mt-1 w-full bg-gray-700 border border-light-steel-blue rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <button
+                      onClick={() => {
+                        setTempSelection(null);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-600 transition-colors ${
+                        tempSelection === null ? 'bg-gray-600 text-electric-blue' : 'text-white'
+                      }`}
+                    >
+                      &lt;none selected&gt;
+                    </button>
+                    {partnershipNames.map(name => (
+                      <button
+                        key={name}
+                        onClick={() => {
+                          setTempSelection(name);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 hover:bg-gray-600 transition-colors ${
+                          tempSelection === name ? 'bg-gray-600 text-electric-blue' : 'text-white'
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <button
+              onClick={handleSaveSelection}
+              disabled={tempSelection === null}
+              className={`w-full px-4 py-3 rounded-lg font-semibold transition-colors ${
+                tempSelection === null
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  : 'bg-electric-blue hover:bg-blue-600 text-white'
+              }`}
+            >
+              Save Selection
+            </button>
+          </div>
         </div>
-      </div>
-
-      {isLoading ? (
+      ) : (
+        <>
+          <div className="mb-4 text-center">
+            <span className="text-white text-sm">
+              Chosen Partnership Agreement: <span className="font-semibold text-electric-blue">{selectedPartnership}</span>
+            </span>
+          </div>
+          {isLoading ? (
         <div className="text-center py-8 text-gray-400">Loading open source entries...</div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleOpenSourceDragStart} onDragOver={handleOpenSourceDragOver} onDragEnd={handleOpenSourceDragEnd}>
@@ -625,6 +665,8 @@ export default function OpenSourceTab({
             })() : null}
           </DragOverlay>
         </DndContext>
+          )}
+        </>
       )}
       
       {/* Create/Edit Modal */}
