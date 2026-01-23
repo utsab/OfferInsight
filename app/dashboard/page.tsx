@@ -852,7 +852,14 @@ const hasSeededMockDataRef = useRef(false);
   const [isLoadingOpenSource, setIsLoadingOpenSource] = useState(true);
   const [openSourceFilter, setOpenSourceFilter] = useState<BoardTimeFilter>('allTime');
   const [selectedPartnership, setSelectedPartnership] = useState<string | null>(null);
+  const [selectedPartnershipId, setSelectedPartnershipId] = useState<number | null>(null);
+  const [activePartnershipDbId, setActivePartnershipDbId] = useState<number | null>(null);
+  const [availablePartnerships, setAvailablePartnerships] = useState<Array<{ id: number; name: string; spotsRemaining: number }>>([]);
+  const [fullPartnerships, setFullPartnerships] = useState<Array<{ id: number; name: string }>>([]);
+  const [isLoadingPartnerships, setIsLoadingPartnerships] = useState(true);
   const isFetchingOpenSourceRef = useRef(false);
+  const isFetchingPartnershipRef = useRef(false);
+  const isFetchingAvailablePartnershipsRef = useRef(false);
   const isDraggingOpenSourceRef = useRef(false);
 
   const fetchOpenSourceEntries = useCallback(async () => {
@@ -917,6 +924,71 @@ const hasSeededMockDataRef = useRef(false);
       fetchOpenSourceEntries();
     }
   }, [activeTab, fetchOpenSourceEntries]);
+
+  // Fetch user's active partnership on load
+  const fetchActivePartnership = useCallback(async () => {
+    if (isFetchingPartnershipRef.current) return;
+
+    try {
+      isFetchingPartnershipRef.current = true;
+      const url = userIdParam ? `/api/users/partnership?userId=${userIdParam}` : '/api/users/partnership';
+      const response = await fetch(url);
+      if (!response.ok) {
+        // No partnership saved yet
+        setSelectedPartnership(null);
+        setSelectedPartnershipId(null);
+        setActivePartnershipDbId(null);
+        return;
+      }
+      const data = await response.json();
+      if (data.active) {
+        setSelectedPartnership(data.active.partnershipName);
+        setSelectedPartnershipId(data.active.partnershipId);
+        setActivePartnershipDbId(data.active.id);
+      }
+    } catch (error) {
+      console.error('Error fetching active partnership:', error);
+    } finally {
+      isFetchingPartnershipRef.current = false;
+    }
+  }, [userIdParam]);
+
+  useEffect(() => {
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    if ((activeTab === 'opensource' || activeTab === 'overview') && !isFetchingPartnershipRef.current) {
+      fetchActivePartnership();
+    }
+  }, [activeTab, fetchActivePartnership]);
+
+  // Fetch available partnerships
+  const fetchAvailablePartnerships = useCallback(async () => {
+    if (isFetchingAvailablePartnershipsRef.current) return;
+
+    try {
+      isFetchingAvailablePartnershipsRef.current = true;
+      setIsLoadingPartnerships(true);
+      const response = await fetch('/api/partnerships/available');
+      if (!response.ok) {
+        console.error('Failed to fetch available partnerships');
+        return;
+      }
+      const data = await response.json();
+      setAvailablePartnerships(data.available || []);
+      setFullPartnerships(data.full || []);
+    } catch (error) {
+      console.error('Error fetching available partnerships:', error);
+    } finally {
+      setIsLoadingPartnerships(false);
+      isFetchingAvailablePartnershipsRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (ENABLE_DASHBOARD_MOCKS) return;
+    if ((activeTab === 'opensource' || activeTab === 'overview') && !isFetchingAvailablePartnershipsRef.current) {
+      fetchAvailablePartnerships();
+    }
+  }, [activeTab, fetchAvailablePartnerships]);
 
   const getOpenSourceColumnOfItem = (id: string): OpenSourceColumnId | null => {
     const entry = (Object.keys(openSourceColumns) as OpenSourceColumnId[]).find(col =>
@@ -2164,6 +2236,14 @@ const hasSeededMockDataRef = useRef(false);
             userIdParam={userIdParam}
             selectedPartnership={selectedPartnership}
             setSelectedPartnership={setSelectedPartnership}
+            selectedPartnershipId={selectedPartnershipId}
+            setSelectedPartnershipId={setSelectedPartnershipId}
+            activePartnershipDbId={activePartnershipDbId}
+            setActivePartnershipDbId={setActivePartnershipDbId}
+            availablePartnerships={availablePartnerships}
+            fullPartnerships={fullPartnerships}
+            isLoadingPartnerships={isLoadingPartnerships}
+            fetchAvailablePartnerships={fetchAvailablePartnerships}
           />
         )}
     </main>
