@@ -9,7 +9,6 @@ import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
 import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString } from './shared';
-import partnershipsData from '@/partnerships/partnerships.json';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 const ENABLE_DATE_FIELD_EDITING = false;
@@ -38,6 +37,14 @@ type OpenSourceTabProps = {
   userIdParam: string | null;
   selectedPartnership: string | null;
   setSelectedPartnership: (name: string | null) => void;
+  selectedPartnershipId: number | null;
+  setSelectedPartnershipId: (id: number | null) => void;
+  activePartnershipDbId: number | null;
+  setActivePartnershipDbId: (id: number | null) => void;
+  availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number }>;
+  fullPartnerships: Array<{ id: number; name: string }>;
+  isLoadingPartnerships: boolean;
+  fetchAvailablePartnerships: () => Promise<void>;
 };
 
 function SortableOpenSourceCard(props: { 
@@ -115,13 +122,17 @@ function OpenSourceModal({
   onClose, 
   onSave,
   onDelete,
-  selectedPartnership
+  selectedPartnership,
+  availablePartnerships,
+  fullPartnerships
 }: { 
   entry: OpenSourceEntry | null; 
   onClose: () => void; 
   onSave: (data: Partial<OpenSourceEntry>) => void;
   onDelete?: () => void;
   selectedPartnership: string | null;
+  availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number }>;
+  fullPartnerships: Array<{ id: number; name: string }>;
 }) {
 
   type OpenSourceFormData = {
@@ -215,8 +226,6 @@ function OpenSourceModal({
     onSave(submitData);
   };
 
-  const partnershipNames = partnershipsData.partnerships.map(p => p.name);
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0" onClick={(e) => e.stopPropagation()}>
@@ -242,8 +251,11 @@ function OpenSourceModal({
               required
             >
               <option value="">Select a partnership</option>
-              {partnershipNames.map(name => (
-                <option key={name} value={name}>{name}</option>
+              {availablePartnerships.map(p => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+              ))}
+              {fullPartnerships.map(p => (
+                <option key={p.id} value={p.name} disabled className="text-gray-500">{p.name} (Not available)</option>
               ))}
             </select>
           </div>
@@ -382,25 +394,67 @@ export default function OpenSourceTab({
   userIdParam,
   selectedPartnership,
   setSelectedPartnership,
+  selectedPartnershipId,
+  setSelectedPartnershipId,
+  activePartnershipDbId,
+  setActivePartnershipDbId,
+  availablePartnerships,
+  fullPartnerships,
+  isLoadingPartnerships,
+  fetchAvailablePartnerships,
 }: OpenSourceTabProps & { isDraggingOpenSourceRef: React.MutableRefObject<boolean> }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasSavedSelection, setHasSavedSelection] = useState(selectedPartnership !== null);
   const [tempSelection, setTempSelection] = useState<string | null>(selectedPartnership);
-  const partnershipNames = partnershipsData.partnerships.map(p => p.name);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Reset saved state when selectedPartnership changes externally to null
   useEffect(() => {
     if (selectedPartnership === null) {
       setHasSavedSelection(false);
       setTempSelection(null);
+    } else {
+      setHasSavedSelection(true);
+      setTempSelection(selectedPartnership);
     }
   }, [selectedPartnership]);
 
-  const handleSaveSelection = () => {
-    if (tempSelection !== null) {
+  const handleSaveSelection = async () => {
+    if (tempSelection === null || isSaving) return;
+
+    const selectedPartnershipData = availablePartnerships.find(p => p.name === tempSelection);
+    if (!selectedPartnershipData) return;
+
+    setIsSaving(true);
+    try {
+      const url = userIdParam ? `/api/users/partnership?userId=${userIdParam}` : '/api/users/partnership';
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partnershipId: selectedPartnershipData.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to save partnership');
+        return;
+      }
+
+      const data = await response.json();
       setSelectedPartnership(tempSelection);
+      setSelectedPartnershipId(selectedPartnershipData.id);
+      setActivePartnershipDbId(data.id);
       setHasSavedSelection(true);
       setIsDropdownOpen(false);
+      // Refresh available partnerships to update spots remaining
+      fetchAvailablePartnerships();
+    } catch (error) {
+      console.error('Error saving partnership:', error);
+      alert('Failed to save partnership. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -467,19 +521,29 @@ export default function OpenSourceTab({
                     >
                       &lt;none selected&gt;
                     </button>
-                    {partnershipNames.map(name => (
+                    {availablePartnerships.map(partnership => (
                       <button
-                        key={name}
+                        key={partnership.id}
                         onClick={() => {
-                          setTempSelection(name);
+                          setTempSelection(partnership.name);
                           setIsDropdownOpen(false);
                         }}
                         className={`w-full text-left px-4 py-2 hover:bg-gray-600 transition-colors ${
-                          tempSelection === name ? 'bg-gray-600 text-electric-blue' : 'text-white'
+                          tempSelection === partnership.name ? 'bg-gray-600 text-electric-blue' : 'text-white'
                         }`}
                       >
-                        {name}
+                        <span>{partnership.name}</span>
+                        <span className="text-gray-400 text-sm ml-2">({partnership.spotsRemaining} spot{partnership.spotsRemaining !== 1 ? 's' : ''} left)</span>
                       </button>
+                    ))}
+                    {fullPartnerships.map(partnership => (
+                      <div
+                        key={partnership.id}
+                        className="w-full text-left px-4 py-2 text-gray-500 cursor-not-allowed"
+                      >
+                        <span>{partnership.name}</span>
+                        <span className="text-gray-600 text-sm ml-2">(Not available)</span>
+                      </div>
                     ))}
                   </div>
                 </>
@@ -487,14 +551,14 @@ export default function OpenSourceTab({
             </div>
             <button
               onClick={handleSaveSelection}
-              disabled={tempSelection === null}
+              disabled={tempSelection === null || isSaving}
               className={`w-full px-4 py-3 rounded-lg font-semibold transition-colors ${
-                tempSelection === null
+                tempSelection === null || isSaving
                   ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                   : 'bg-electric-blue hover:bg-blue-600 text-white'
               }`}
             >
-              Save Selection
+              {isSaving ? 'Saving...' : 'Save Selection'}
             </button>
           </div>
         </div>
@@ -773,6 +837,8 @@ export default function OpenSourceTab({
             }
           }}
           selectedPartnership={selectedPartnership}
+          availablePartnerships={availablePartnerships}
+          fullPartnerships={fullPartnerships}
         />
       )}
 

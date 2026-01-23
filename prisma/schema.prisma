@@ -106,6 +106,31 @@ model User {
   linkedinOutreachPerWeek Int?
   inPersonEventsPerMonth Int?
   careerFairsPerYear     Int?
+  partnerships           UserPartnership[]
+}
+
+model Partnership {
+  id              Int       @id
+  name            String
+  linkedIn        String?
+  company         String?
+  role            String?
+  activeUserCount Int       @default(0)
+  maxUsers        Int       @default(5)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  userPartnerships UserPartnership[]
+}
+
+model UserPartnership {
+  id              Int         @id @default(autoincrement())
+  userId          String
+  partnershipId   Int
+  status          String      @default("active")  // "active", "completed", "abandoned"
+  startedAt       DateTime    @default(now())
+  completedAt     DateTime?
+  user            User        @relation(fields: [userId], references: [id])
+  partnership     Partnership @relation(fields: [partnershipId], references: [id])
 }
 
 model VerificationToken {
