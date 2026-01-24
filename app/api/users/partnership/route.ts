@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db";
 import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+import partnershipsData from "@/partnerships/partnerships.json";
+import typesData from "@/partnerships/types.json";
 
 // GET: Fetch user's active partnership and history
 export async function GET(request: NextRequest) {
@@ -36,10 +38,41 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Transform to include partnershipName for backwards compatibility
+    // Transform to include partnershipName and full criteria for extras
+    // We filter multiple_choice options based on user selections so only their choice is available as an extra
+    const selections = activePartnership.selections as Record<string, string> || {};
+    let mcIndex = 0;
+    const criteria = (partnershipsData.partnerships.find(p => p.id === activePartnership.partnershipId)?.criteria || []).flatMap((c) => {
+      if (c.type === 'multiple_choice' && c.choices) {
+        // Only include the choice the user actually made
+        // Use the index within the set of multiple_choice blocks to match frontend
+        const selectedType = selections[String(mcIndex)];
+        mcIndex++;
+        
+        if (!selectedType) return [];
+        
+        const selectedChoice = c.choices.find((choice: any) => choice.type === selectedType);
+        if (!selectedChoice) return [];
+
+        const typeDef = (typesData.types as any)[selectedChoice.type];
+        return [{
+          ...selectedChoice,
+          ...typeDef,
+          isFromChoice: true
+        }];
+      }
+      
+      return [{
+        ...c,
+        ...((typesData.types as any)[c.type] || {})
+      }];
+    });
+    
+
     const activeResponse = activePartnership ? {
       ...activePartnership,
       partnershipName: activePartnership.partnership.name,
+      criteria
     } : null;
 
     const completedResponse = completedPartnerships.map(p => ({
@@ -69,7 +102,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
-    const { partnershipId } = await request.json();
+    const { partnershipId, multipleChoiceSelections } = await request.json();
 
     if (!partnershipId) {
       return NextResponse.json(
@@ -135,6 +168,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Find the partnership definition from the JSON to get criteria
+    const partnershipDef = partnershipsData.partnerships.find(p => p.id === partnershipId);
+    if (!partnershipDef) {
+      return NextResponse.json({ error: "Partnership definition not found" }, { status: 404 });
+    }
+
     // Use transaction to create partnership and increment count atomically
     const result = await prisma.$transaction(async (tx) => {
       // Create new user partnership
@@ -143,6 +182,7 @@ export async function POST(request: NextRequest) {
           userId,
           partnershipId,
           status: "active",
+          selections: multipleChoiceSelections || {},
         },
         include: {
           partnership: true,
@@ -159,13 +199,103 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Populate left-most column (Plan) with primary criteria cards
+      let mcBlockIndex = 0;
+      for (const criteria of partnershipDef.criteria) {
+        if (criteria.type === 'multiple_choice' && criteria.choices) {
+          // Find what the user selected for this specific block
+          const selectedType = multipleChoiceSelections?.[mcBlockIndex];
+          const selectedChoice = criteria.choices.find((c: any) => c.type === selectedType);
+          
+          if (selectedChoice) {
+            const typeDef = (typesData.types as any)[selectedChoice.type];
+            // ONLY create a separate card if it's a primary criteria
+            if (typeDef?.is_primary) {
+              for (let i = 0; i < (selectedChoice.count || 1); i++) {
+                await tx.openSourceEntry.create({
+                  data: {
+                    userId,
+                    partnershipName: partnershipDef.name,
+                    criteriaType: selectedChoice.type,
+                    metric: typeDef?.metric || selectedChoice.type,
+                    status: "plan",
+                    planFields: typeDef?.plan_column_fields || null,
+                    planResponses: null,
+                    babyStepFields: typeDef?.baby_step_column_fields || null,
+                    babyStepResponses: null,
+                    proofOfCompletion: typeDef?.proof_of_completion_column_fields || typeDef?.proof_of_completion || null,
+                    proofResponses: null,
+                    dateModified: new Date(),
+                  },
+                });
+              }
+            }
+          }
+          mcBlockIndex++;
+        } else {
+          // Normal criteria
+          const typeDef = (typesData.types as any)[criteria.type];
+          
+          if (typeDef && typeDef.is_primary) {
+            // Create 'count' number of cards for this criteria
+            for (let i = 0; i < (criteria.count || 1); i++) {
+              await tx.openSourceEntry.create({
+                data: {
+                  userId,
+                  partnershipName: partnershipDef.name,
+                  criteriaType: criteria.type,
+                  metric: typeDef.metric || criteria.type,
+                  status: "plan",
+                  planFields: typeDef.plan_column_fields || null,
+                  planResponses: null,
+                  babyStepFields: typeDef.baby_step_column_fields || null,
+                  babyStepResponses: null,
+                  proofOfCompletion: typeDef.proof_of_completion_column_fields || typeDef.proof_of_completion || null,
+                  proofResponses: null,
+                  selectedExtras: [], // Default to empty, user will select which card to attach their chosen extra to
+                  dateModified: new Date(),
+                },
+              });
+            }
+          }
+        }
+      }
+
       return newPartnership;
     });
 
-    return NextResponse.json({
+    const selections = multipleChoiceSelections || {};
+    let mcCount = 0;
+    const criteria = (partnershipsData.partnerships.find(p => p.id === partnershipId)?.criteria || []).flatMap((c) => {
+      if (c.type === 'multiple_choice' && c.choices) {
+        const selectedType = selections[String(mcCount)];
+        mcCount++;
+        
+        if (!selectedType) return [];
+        
+        const selectedChoice = c.choices.find((choice: any) => choice.type === selectedType);
+        if (!selectedChoice) return [];
+
+        const typeDef = (typesData.types as any)[selectedChoice.type];
+        return [{
+          ...selectedChoice,
+          ...typeDef,
+          isFromChoice: true
+        }];
+      }
+      return [{
+        ...c,
+        ...((typesData.types as any)[c.type] || {})
+      }];
+    });
+
+    const responseData = {
       ...result,
       partnershipName: result.partnership.name,
-    });
+      criteria
+    };
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Error creating partnership:", error);
     return NextResponse.json(

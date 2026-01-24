@@ -1,0 +1,171 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/db";
+import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+
+// GET: Fetch all open source entries for a user
+export async function GET(request: NextRequest) {
+  try {
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
+    }
+
+    const entries = await prisma.openSourceEntry.findMany({
+      where: { userId },
+      orderBy: { dateCreated: 'desc' },
+    });
+
+    return NextResponse.json(entries);
+  } catch (error) {
+    console.error("Error fetching open source entries:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch open source entries" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST: Create a new open source criteria
+export async function POST(request: NextRequest) {
+  try {
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
+    }
+
+    const data = await request.json();
+
+    const entry = await prisma.openSourceEntry.create({
+      data: {
+        partnershipName: data.partnershipName,
+        criteriaType: data.criteriaType,
+        metric: data.metric,
+        status: data.status || "plan",
+        selectedExtras: data.selectedExtras || null,
+        planFields: data.planFields || null,
+        planResponses: data.planResponses || null,
+        babyStepFields: data.babyStepFields || null,
+        babyStepResponses: data.babyStepResponses || null,
+        proofOfCompletion: data.proofOfCompletion || null,
+        proofResponses: data.proofResponses || null,
+        userId: userId,
+        dateCreated: data.dateCreated ? new Date(data.dateCreated) : new Date(),
+        dateModified: new Date(),
+      },
+    });
+
+    return NextResponse.json(entry);
+  } catch (error) {
+    console.error("Error creating open source criteria:", error);
+    return NextResponse.json(
+      { error: "Failed to create open source criteria" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT: Update an existing open source criteria
+export async function PUT(request: NextRequest) {
+  try {
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
+    }
+
+    const data = await request.json();
+
+    const entry = await prisma.openSourceEntry.update({
+      where: { id: data.id, userId: userId },
+      data: {
+        partnershipName: data.partnershipName,
+        criteriaType: data.criteriaType,
+        metric: data.metric,
+        status: data.status,
+        selectedExtras: data.selectedExtras,
+        planFields: data.planFields,
+        planResponses: data.planResponses,
+        babyStepFields: data.babyStepFields,
+        babyStepResponses: data.babyStepResponses,
+        proofOfCompletion: data.proofOfCompletion,
+        proofResponses: data.proofResponses,
+        dateModified: new Date(),
+      },
+    });
+
+    return NextResponse.json(entry);
+  } catch (error) {
+    console.error("Error updating open source criteria:", error);
+    return NextResponse.json(
+      { error: "Failed to update open source criteria" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE: Remove an open source criteria
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    await prisma.openSourceEntry.delete({
+      where: { id: parseInt(id), userId: userId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting open source criteria:", error);
+    return NextResponse.json(
+      { error: "Failed to delete open source criteria" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH: Update status only (for drag and drop)
+export async function PATCH(request: NextRequest) {
+  try {
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+    const { status } = await request.json();
+
+    if (!id || !status) {
+      return NextResponse.json({ error: "ID and status are required" }, { status: 400 });
+    }
+
+    const entry = await prisma.openSourceEntry.update({
+      where: { id: parseInt(id), userId: userId },
+      data: {
+        status: status,
+        dateModified: new Date(),
+      },
+    });
+
+    return NextResponse.json(entry);
+  } catch (error) {
+    console.error("Error updating status:", error);
+    return NextResponse.json(
+      { error: "Failed to update status" },
+      { status: 500 }
+    );
+  }
+}

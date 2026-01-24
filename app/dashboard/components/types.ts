@@ -80,11 +80,16 @@ export type LeetEntry = {
 export type OpenSourceEntry = {
   id: number;
   partnershipName: string;
-  title?: string | null;
-  description?: string | null;
-  url?: string | null;
-  notes?: string | null;
+  criteriaType?: string | null;
+  metric?: string | null;
   status: OpenSourceStatus;
+  selectedExtras?: string[] | null;
+  planFields?: any[] | null;
+  planResponses?: Record<string, any> | null;
+  babyStepFields?: any[] | null;
+  babyStepResponses?: Record<string, any> | null;
+  proofOfCompletion?: any[] | null;
+  proofResponses?: Record<string, any> | null;
   userId: string;
   dateCreated?: string;
   dateModified?: string | null;

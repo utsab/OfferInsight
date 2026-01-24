@@ -854,6 +854,7 @@ const hasSeededMockDataRef = useRef(false);
   const [selectedPartnership, setSelectedPartnership] = useState<string | null>(null);
   const [selectedPartnershipId, setSelectedPartnershipId] = useState<number | null>(null);
   const [activePartnershipDbId, setActivePartnershipDbId] = useState<number | null>(null);
+  const [activePartnershipCriteria, setActivePartnershipCriteria] = useState<any[]>([]);
   const [availablePartnerships, setAvailablePartnerships] = useState<Array<{ id: number; name: string; spotsRemaining: number }>>([]);
   const [fullPartnerships, setFullPartnerships] = useState<Array<{ id: number; name: string }>>([]);
   const [isLoadingPartnerships, setIsLoadingPartnerships] = useState(true);
@@ -945,6 +946,7 @@ const hasSeededMockDataRef = useRef(false);
         setSelectedPartnership(data.active.partnershipName);
         setSelectedPartnershipId(data.active.partnershipId);
         setActivePartnershipDbId(data.active.id);
+        setActivePartnershipCriteria(data.active.criteria || []);
       }
     } catch (error) {
       console.error('Error fetching active partnership:', error);
@@ -2240,6 +2242,8 @@ const hasSeededMockDataRef = useRef(false);
             setSelectedPartnershipId={setSelectedPartnershipId}
             activePartnershipDbId={activePartnershipDbId}
             setActivePartnershipDbId={setActivePartnershipDbId}
+            activePartnershipCriteria={activePartnershipCriteria}
+            setActivePartnershipCriteria={setActivePartnershipCriteria}
             availablePartnerships={availablePartnerships}
             fullPartnerships={fullPartnerships}
             isLoadingPartnerships={isLoadingPartnerships}

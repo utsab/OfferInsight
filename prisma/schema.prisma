@@ -92,6 +92,7 @@ model User {
   linkedinOutreach       Linkedin_Outreach[]
   inPersonEvents         In_Person_Events[]
   leetCode               Leetcode_Practice[]
+  openSource             OpenSourceEntry[]
   emailVerified          DateTime?
   accounts               Account[]
   onboardingProgress     Int                   @default(0)
@@ -127,10 +128,30 @@ model UserPartnership {
   userId          String
   partnershipId   Int
   status          String      @default("active")  // "active", "completed", "abandoned"
+  selections      Json?       // Store multiple choice selections: { "0": "high_quality_question" }
   startedAt       DateTime    @default(now())
   completedAt     DateTime?
   user            User        @relation(fields: [userId], references: [id])
   partnership     Partnership @relation(fields: [partnershipId], references: [id])
+}
+
+model OpenSourceEntry {
+  id                Int       @id @default(autoincrement())
+  partnershipName   String
+  criteriaType      String?   // e.g., "issue", "blog_post", "multiple_choice"
+  metric            String?
+  status          String    @default("plan")
+  selectedExtras  Json?     // Array of criteria types: ["receive_feedback", "closer"]
+  planFields      Json?     // Definition: [{ type: "URL", text: "Link..." }]
+  planResponses   Json?     // Answers for plan phase
+  babyStepFields  Json?     // Definition: [{ type: "URL", text: "Find..." }]
+  babyStepResponses Json?   // Answers for baby step phase
+  proofOfCompletion Json?     // Definition: [{ type: "URL", text: "Link..." }]
+  proofResponses    Json?     // Answers for completion phase
+  dateCreated     DateTime  @default(now())
+  dateModified    DateTime?
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
 }
 
 model VerificationToken {

@@ -8,7 +8,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 const ENABLE_DATE_FIELD_EDITING = false;
@@ -41,8 +41,10 @@ type OpenSourceTabProps = {
   setSelectedPartnershipId: (id: number | null) => void;
   activePartnershipDbId: number | null;
   setActivePartnershipDbId: (id: number | null) => void;
-  availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number }>;
-  fullPartnerships: Array<{ id: number; name: string }>;
+  activePartnershipCriteria: any[];
+  setActivePartnershipCriteria: (criteria: any[]) => void;
+  availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number; criteria?: any[] }>;
+  fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
   isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
 };
@@ -96,8 +98,14 @@ function SortableOpenSourceCard(props: {
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
-          <div className="text-white font-medium mb-1">{props.card.title || 'Untitled'}</div>
-          <div className="text-gray-400 text-xs mb-1">Partnership: {props.card.partnershipName}</div>
+          <div className="text-white font-medium mb-1">{props.card.metric || 'Untitled'}</div>
+          {props.card.selectedExtras && (props.card.selectedExtras as string[]).length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              <span className="text-[9px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded border border-purple-500/30 font-bold uppercase tracking-wider">
+                +{(props.card.selectedExtras as string[]).length} Extra{(props.card.selectedExtras as string[]).length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
           <button
@@ -109,9 +117,6 @@ function SortableOpenSourceCard(props: {
           </button>
         </div>
       </div>
-      {props.card.description && (
-        <div className="text-gray-300 text-xs mb-2 line-clamp-2">{props.card.description}</div>
-      )}
     </div>
   );
 }
@@ -123,6 +128,7 @@ function OpenSourceModal({
   onSave,
   onDelete,
   selectedPartnership,
+  activePartnershipCriteria,
   availablePartnerships,
   fullPartnerships
 }: { 
@@ -131,28 +137,39 @@ function OpenSourceModal({
   onSave: (data: Partial<OpenSourceEntry>) => void;
   onDelete?: () => void;
   selectedPartnership: string | null;
-  availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number }>;
-  fullPartnerships: Array<{ id: number; name: string }>;
+  activePartnershipCriteria: any[];
+  availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number; criteria?: any[] }>;
+  fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
 }) {
 
   type OpenSourceFormData = {
     partnershipName: string;
-    title: string;
-    description: string;
-    url: string;
-    notes: string;
+    metric: string;
     status: OpenSourceStatus;
+    criteriaType: string;
+    selectedExtras: string[];
+    planFields: any[];
+    planResponses: Record<string, any>;
+    babyStepFields: any[];
+    babyStepResponses: Record<string, any>;
+    proofOfCompletion: any[];
+    proofResponses: Record<string, any>;
     dateCreated: string;
     dateModified: string;
   };
 
   const [formData, setFormData] = useState<OpenSourceFormData>({
     partnershipName: entry?.partnershipName || selectedPartnership || '',
-    title: entry?.title || '',
-    description: entry?.description || '',
-    url: entry?.url || '',
-    notes: entry?.notes || '',
+    metric: entry?.metric || '',
     status: entry?.status || 'plan',
+    criteriaType: entry?.criteriaType || '',
+    selectedExtras: (entry?.selectedExtras as string[]) || [],
+    planFields: entry?.planFields || [],
+    planResponses: entry?.planResponses || {},
+    babyStepFields: entry?.babyStepFields || [],
+    babyStepResponses: entry?.babyStepResponses || {},
+    proofOfCompletion: entry?.proofOfCompletion || [],
+    proofResponses: entry?.proofResponses || {},
     dateCreated: entry?.dateCreated ? toLocalDateString(entry.dateCreated) : '',
     dateModified: entry?.dateModified ? toLocalDateString(entry.dateModified) : '',
   });
@@ -161,27 +178,195 @@ function OpenSourceModal({
     if (entry) {
       setFormData({
         partnershipName: entry.partnershipName || '',
-        title: entry.title || '',
-        description: entry.description || '',
-        url: entry.url || '',
-        notes: entry.notes || '',
+        metric: entry.metric || '',
         status: entry.status ?? 'plan',
+        criteriaType: entry.criteriaType || '',
+        selectedExtras: (entry.selectedExtras as string[]) || [],
+        planFields: entry.planFields || [],
+        planResponses: entry.planResponses || {},
+        babyStepFields: entry.babyStepFields || [],
+        babyStepResponses: entry.babyStepResponses || {},
+        proofOfCompletion: entry.proofOfCompletion || [],
+        proofResponses: entry.proofResponses || {},
         dateCreated: entry.dateCreated ? toLocalDateString(entry.dateCreated) : '',
         dateModified: entry.dateModified ? toLocalDateString(entry.dateModified) : '',
       });
     } else {
       setFormData({
         partnershipName: selectedPartnership || '',
-        title: '',
-        description: '',
-        url: '',
-        notes: '',
+        metric: '',
         status: 'plan',
+        criteriaType: '',
+        selectedExtras: [],
+        planFields: [],
+        planResponses: {},
+        babyStepFields: [],
+        babyStepResponses: {},
+        proofOfCompletion: [],
+        proofResponses: {},
         dateCreated: '',
         dateModified: '',
       });
     }
   }, [entry, selectedPartnership]);
+
+  const handleProofResponseChange = (text: string, value: any, targetStatus?: OpenSourceStatus) => {
+    const status = targetStatus || formData.status;
+    setFormData(prev => {
+      if (status === 'plan') {
+        return {
+          ...prev,
+          planResponses: { ...prev.planResponses, [text]: value }
+        };
+      } else if (status === 'babyStep') {
+        return {
+          ...prev,
+          babyStepResponses: { ...prev.babyStepResponses, [text]: value }
+        };
+      } else {
+        return {
+          ...prev,
+          proofResponses: { ...prev.proofResponses, [text]: value }
+        };
+      }
+    });
+  };
+
+
+  // Helper to get effective fields including extras
+  const getEffectiveFields = () => {
+    let effectiveBabySteps = [...formData.babyStepFields];
+    let effectiveProofOfWork = [...formData.proofOfCompletion];
+    let effectivePlan = [...formData.planFields];
+
+    if (formData.criteriaType === 'issue') {
+      formData.selectedExtras.forEach(extraType => {
+        const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
+        if (extraCriteria) {
+          if (extraCriteria.baby_step_column_fields) {
+            effectiveBabySteps = [...effectiveBabySteps, ...extraCriteria.baby_step_column_fields];
+          }
+          if (extraCriteria.proof_of_completion) {
+            effectiveProofOfWork = [...effectiveProofOfWork, ...extraCriteria.proof_of_completion];
+          }
+          if (extraCriteria.plan_column_fields) {
+            effectivePlan = [...effectivePlan, ...extraCriteria.plan_column_fields];
+          }
+        }
+      });
+    }
+
+    return { 
+      babySteps: effectiveBabySteps, 
+      proofOfWork: effectiveProofOfWork,
+      plan: effectivePlan
+    };
+  };
+
+  // Helper to get grouped baby steps
+  const getBabyStepGroups = () => {
+    const groups: Array<{ name: string; fields: any[] }> = [];
+    
+    // Add primary baby steps if any
+    if (formData.babyStepFields && formData.babyStepFields.length > 0) {
+      const primaryType = activePartnershipCriteria.find(c => c.type === formData.criteriaType);
+      groups.push({
+        name: primaryType?.short_name || formData.criteriaType || 'issue',
+        fields: formData.babyStepFields
+      });
+    }
+
+    // Add extra baby steps
+    if (formData.criteriaType === 'issue') {
+      formData.selectedExtras.forEach(extraType => {
+        const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
+        if (extraCriteria && extraCriteria.baby_step_column_fields && extraCriteria.baby_step_column_fields.length > 0) {
+          groups.push({
+            name: extraCriteria.short_name || extraType,
+            fields: extraCriteria.baby_step_column_fields
+          });
+        }
+      });
+    }
+    
+    return groups;
+  };
+
+  const { babySteps: effectiveBabySteps, proofOfWork: effectiveProofOfWork, plan: effectivePlan } = getEffectiveFields();
+  const babyStepGroups = getBabyStepGroups();
+
+  const renderProofField = (requirement: any, index: number, forcedStatus?: OpenSourceStatus, disabled?: boolean) => {
+    const status = forcedStatus || formData.status;
+    let value = '';
+    if (status === 'plan') {
+      value = formData.planResponses[requirement.text] || '';
+    } else if (status === 'babyStep') {
+      value = formData.babyStepResponses[requirement.text] || '';
+    } else {
+      value = formData.proofResponses[requirement.text] || '';
+    }
+
+    return (
+      <div key={index} className="space-y-2">
+        <div className="flex justify-between items-center gap-4">
+          <label className="block text-white font-semibold">{requirement.text}</label>
+          {requirement.helper_video && (
+            <a 
+              href={requirement.helper_video} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-electric-blue hover:underline text-xs whitespace-nowrap"
+            >
+              Watch Helper Video
+            </a>
+          )}
+        </div>
+        {requirement.type === 'URL' && (
+          <input
+            type="url"
+            value={value}
+            onChange={(e) => handleProofResponseChange(requirement.text, e.target.value, forcedStatus)}
+            disabled={disabled}
+            className={`w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+            placeholder="https://..."
+          />
+        )}
+        {requirement.type === 'Checkbox' && (
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!value}
+              onChange={(e) => handleProofResponseChange(requirement.text, e.target.checked, forcedStatus)}
+              disabled={disabled}
+              className={`w-5 h-5 rounded border-light-steel-blue bg-gray-700 text-electric-blue focus:ring-electric-blue ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+            />
+            <span className="text-gray-300">Done</span>
+          </div>
+        )}
+        {requirement.type === 'checkbox' && ( // Handle lowercase checkbox as well
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!value}
+              onChange={(e) => handleProofResponseChange(requirement.text, e.target.checked, forcedStatus)}
+              disabled={disabled}
+              className={`w-5 h-5 rounded border-light-steel-blue bg-gray-700 text-electric-blue focus:ring-electric-blue ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+            />
+            <span className="text-gray-300">Done</span>
+          </div>
+        )}
+        {requirement.type === 'text' && (
+          <textarea
+            value={value}
+            onChange={(e) => handleProofResponseChange(requirement.text, e.target.value, forcedStatus)}
+            disabled={disabled}
+            className={`w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px] ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+            placeholder="Write your response here..."
+          />
+        )}
+      </div>
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,8 +374,8 @@ function OpenSourceModal({
       alert('Partnership name is required');
       return;
     }
-    if (!formData.title.trim()) {
-      alert('Title is required');
+    if (!formData.metric.trim()) {
+      alert('Metric is required');
       return;
     }
     const { dateCreated, dateModified, ...restFormData } = formData;
@@ -231,7 +416,7 @@ function OpenSourceModal({
       <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-white">
-            {entry ? 'Edit Open Source Entry' : 'Create New Open Source Entry'}
+            {entry ? 'Edit Open Source Criteria' : 'Create New Open Source Criteria'}
           </h3>
           <button
             onClick={onClose}
@@ -243,65 +428,103 @@ function OpenSourceModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-white font-semibold mb-2">Partnership *</label>
-            <select
-              value={formData.partnershipName}
-              onChange={(e) => setFormData({ ...formData, partnershipName: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white"
-              required
-            >
-              <option value="">Select a partnership</option>
-              {availablePartnerships.map(p => (
-                <option key={p.id} value={p.name}>{p.name}</option>
+            <label className="block text-white font-semibold mb-2">Metric</label>
+            <div className="w-full bg-gray-700/50 border border-light-steel-blue/30 rounded-lg px-4 py-3 text-gray-300 italic">
+              <div className={formData.criteriaType === 'issue' && formData.selectedExtras.length > 0 ? 'pb-2 border-b border-gray-600 mb-2 font-medium text-white' : ''}>
+                {formData.metric || 'No metric defined'}
+              </div>
+              {formData.criteriaType === 'issue' && formData.selectedExtras.map(extraType => {
+                const extra = activePartnershipCriteria.find(c => c.type === extraType);
+                return extra ? (
+                  <div key={extraType} className="text-sm flex gap-2 items-start py-1">
+                    <span className="text-electric-blue text-[10px] font-bold uppercase mt-1 shrink-0">Extra:</span>
+                    <span>
+                      {extra.metric || extraType}
+                    </span>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          </div>
+
+          {/* Extras selection - only in Plan column and only for 'issue' type cards */}
+          {formData.status === 'plan' && formData.criteriaType === 'issue' && activePartnershipCriteria.some(c => !c.is_primary && c.type !== 'multiple_choice') && (
+                <div className="space-y-3 p-4 bg-gray-700/50 rounded-lg border border-light-steel-blue/30 my-6">
+                  <label className="block text-white font-semibold text-sm">Knock two birds with one stone</label>
+                  <p className="text-xs text-gray-400 italic">Select additional requirements you plan to complete while working on the issue.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                    {activePartnershipCriteria.filter(c => !c.is_primary && c.type !== 'multiple_choice').map(extra => (
+                      <label key={extra.type} className="flex items-center gap-3 p-2 hover:bg-gray-600 rounded cursor-pointer transition-colors border border-transparent hover:border-light-steel-blue/20">
+                    <input
+                      type="checkbox"
+                      checked={formData.selectedExtras.includes(extra.type)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData(prev => ({
+                            ...prev,
+                            selectedExtras: [...prev.selectedExtras, extra.type]
+                          }));
+                        } else {
+                          setFormData(prev => ({
+                            ...prev,
+                            selectedExtras: prev.selectedExtras.filter(t => t !== extra.type)
+                          }));
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-light-steel-blue bg-gray-700 text-electric-blue focus:ring-electric-blue"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-200">
+                        {extra.metric || extra.type}
+                      </span>
+                      <span className="text-[10px] text-gray-400 italic">
+                        {extra.quality || 'Extra Goal'}
+                      </span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Baby Step Requirements (Always visible, blurred in Plan) */}
+          {babyStepGroups.length > 0 && (
+            <div className="relative group space-y-4">
+              {babyStepGroups.map((group, gIdx) => (
+                <div key={gIdx} className={`${formData.status === 'plan' ? 'blur-sm pointer-events-none' : ''} space-y-6 bg-gray-700/30 rounded-lg p-4 border border-gray-600`}>
+                  <h4 className="text-electric-blue font-bold uppercase tracking-wider text-xs">
+                    Baby Step for {group.name}
+                  </h4>
+                  {group.fields.map((req, index) => renderProofField(req, index, 'babyStep', formData.status === 'plan'))}
+                </div>
               ))}
-              {fullPartnerships.map(p => (
-                <option key={p.id} value={p.name} disabled className="text-gray-500">{p.name} (Not available)</option>
-              ))}
-            </select>
-          </div>
+              {formData.status === 'plan' && <LockTooltip />}
+            </div>
+          )}
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Title *</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-              placeholder="Enter title"
-              required
-            />
-          </div>
+          {/* Plan Column Fields (Always visible) */}
+          {effectivePlan.length > 0 && (
+            <div className="space-y-6 border-y border-gray-700 py-6 my-6">
+              <h4 className="text-electric-blue font-bold flex items-center gap-2 text-xs uppercase tracking-wider">
+                Plan
+              </h4>
+              {effectivePlan.map((req, index) => renderProofField(req, index))}
+            </div>
+          )}
 
-          <div>
-            <label className="block text-white font-semibold mb-2">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
-              placeholder="Enter description"
-            />
-          </div>
+          {/* Proof of Work Fields (Visible starting from babyStep, blurred in babyStep) */}
+          {(formData.status === 'babyStep' || formData.status === 'inProgress' || formData.status === 'done') && effectiveProofOfWork.length > 0 && (
+            <div className="relative group">
+              <div className={`${formData.status === 'babyStep' ? 'blur-sm pointer-events-none' : ''} space-y-6 border-y border-gray-700 py-6 my-6`}>
+                <h4 className="text-electric-blue font-bold flex items-center gap-2 text-xs uppercase tracking-wider">
+                  Proof of Work
+                </h4>
+                {effectiveProofOfWork.map((req, index) => renderProofField(req, index, undefined, formData.status === 'babyStep'))}
+              </div>
+              {formData.status === 'babyStep' && <LockTooltip />}
+            </div>
+          )}
 
-          <div>
-            <label className="block text-white font-semibold mb-2">URL</label>
-            <input
-              type="text"
-              value={formData.url}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400"
-              placeholder="https://example.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-white font-semibold mb-2">Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px]"
-              placeholder="Enter notes"
-            />
-          </div>
 
           {ENABLE_DATE_FIELD_EDITING && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -398,6 +621,8 @@ export default function OpenSourceTab({
   setSelectedPartnershipId,
   activePartnershipDbId,
   setActivePartnershipDbId,
+  activePartnershipCriteria,
+  setActivePartnershipCriteria,
   availablePartnerships,
   fullPartnerships,
   isLoadingPartnerships,
@@ -406,6 +631,7 @@ export default function OpenSourceTab({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasSavedSelection, setHasSavedSelection] = useState(selectedPartnership !== null);
   const [tempSelection, setTempSelection] = useState<string | null>(selectedPartnership);
+  const [multipleChoiceSelections, setMultipleChoiceSelections] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
 
   // Reset saved state when selectedPartnership changes externally to null
@@ -433,6 +659,7 @@ export default function OpenSourceTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           partnershipId: selectedPartnershipData.id,
+          multipleChoiceSelections,
         }),
       });
 
@@ -446,10 +673,13 @@ export default function OpenSourceTab({
       setSelectedPartnership(tempSelection);
       setSelectedPartnershipId(selectedPartnershipData.id);
       setActivePartnershipDbId(data.id);
+      setActivePartnershipCriteria(data.criteria || []);
       setHasSavedSelection(true);
       setIsDropdownOpen(false);
       // Refresh available partnerships to update spots remaining
       fetchAvailablePartnerships();
+      // Refresh open source entries to show the auto-generated cards
+      fetchOpenSourceEntries();
     } catch (error) {
       console.error('Error saving partnership:', error);
       alert('Failed to save partnership. Please try again.');
@@ -513,6 +743,7 @@ export default function OpenSourceTab({
                     <button
                       onClick={() => {
                         setTempSelection(null);
+                        setMultipleChoiceSelections({});
                         setIsDropdownOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 hover:bg-gray-600 transition-colors ${
@@ -526,6 +757,7 @@ export default function OpenSourceTab({
                         key={partnership.id}
                         onClick={() => {
                           setTempSelection(partnership.name);
+                          setMultipleChoiceSelections({});
                           setIsDropdownOpen(false);
                         }}
                         className={`w-full text-left px-4 py-2 hover:bg-gray-600 transition-colors ${
@@ -549,11 +781,61 @@ export default function OpenSourceTab({
                 </>
               )}
             </div>
+
+            {/* Multiple Choice Selection */}
+            {tempSelection && (() => {
+              const selectedP = availablePartnerships.find(p => p.name === tempSelection);
+              if (!selectedP) return null;
+              const mcBlocks = selectedP.criteria?.filter(c => c.type === 'multiple_choice') || [];
+              if (mcBlocks.length === 0) return null;
+
+              return (
+                <div className="space-y-4 mt-6 p-4 bg-gray-700/50 rounded-lg border border-light-steel-blue/30">
+                  <p className="text-white font-semibold text-sm mb-2 italic">This partnership requires some additional choices:</p>
+                  {mcBlocks.map((block, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <label className="block text-electric-blue text-xs uppercase tracking-wider font-bold">
+                        {block.quality}
+                      </label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {block.choices.map((choice: any) => (
+                          <button
+                            key={choice.type}
+                            onClick={() => setMultipleChoiceSelections(prev => ({
+                              ...prev,
+                              [idx]: choice.type
+                            }))}
+                            className={`text-left px-3 py-2 rounded border transition-colors text-sm ${
+                              multipleChoiceSelections[idx] === choice.type
+                                ? 'bg-electric-blue border-electric-blue text-white'
+                                : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-light-steel-blue'
+                            }`}
+                          >
+                            <div className="font-medium">{choice.label}</div>
+                            {choice.quality && <div className={`text-[10px] ${multipleChoiceSelections[idx] === choice.type ? 'text-blue-100' : 'text-gray-400'}`}>{choice.quality}</div>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
             <button
               onClick={handleSaveSelection}
-              disabled={tempSelection === null || isSaving}
-              className={`w-full px-4 py-3 rounded-lg font-semibold transition-colors ${
-                tempSelection === null || isSaving
+              disabled={tempSelection === null || isSaving || (() => {
+                const selectedP = availablePartnerships.find(p => p.name === tempSelection);
+                if (!selectedP) return false;
+                const mcBlocks = selectedP.criteria?.filter(c => c.type === 'multiple_choice') || [];
+                return mcBlocks.some((_, idx) => !multipleChoiceSelections[idx]);
+              })()}
+              className={`w-full px-4 py-3 rounded-lg font-semibold transition-colors mt-6 ${
+                tempSelection === null || isSaving || (() => {
+                  const selectedP = availablePartnerships.find(p => p.name === tempSelection);
+                  if (!selectedP) return false;
+                  const mcBlocks = selectedP.criteria?.filter(c => c.type === 'multiple_choice') || [];
+                  return mcBlocks.some((_, idx) => !multipleChoiceSelections[idx]);
+                })()
                   ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                   : 'bg-electric-blue hover:bg-blue-600 text-white'
               }`}
@@ -722,7 +1004,7 @@ export default function OpenSourceTab({
               if (!card) return null;
               return (
                 <div className="bg-gray-600 border border-light-steel-blue rounded-lg p-3" style={{ touchAction: 'none' }}>
-                  <div className="text-white font-medium mb-1">{card.title || 'Untitled'}</div>
+                  <div className="text-white font-medium mb-1">{card.metric || 'Untitled'}</div>
                   <div className="text-gray-400 text-xs mb-1">Partnership: {card.partnershipName}</div>
                 </div>
               );
@@ -758,7 +1040,7 @@ export default function OpenSourceTab({
                   headers: getApiHeaders(),
                   body: JSON.stringify({ ...data, id: editingEntry.id }),
                 });
-                if (!response.ok) throw new Error('Failed to update open source entry');
+                if (!response.ok) throw new Error('Failed to update open source criteria');
                 updatedEntry = await response.json() as OpenSourceEntry;
                 
                 setOpenSourceColumns(prev => {
@@ -811,7 +1093,7 @@ export default function OpenSourceTab({
                   headers: getApiHeaders(),
                   body: JSON.stringify(data),
                 });
-                if (!response.ok) throw new Error('Failed to create open source entry');
+                if (!response.ok) throw new Error('Failed to create open source criteria');
                 const responseData = await response.json();
                 updatedEntry = (responseData.entry || responseData) as OpenSourceEntry;
                 
@@ -831,12 +1113,13 @@ export default function OpenSourceTab({
               setIsModalOpen(false);
               setEditingEntry(null);
             } catch (error) {
-              console.error('Error saving open source entry:', error);
-              alert('Failed to save open source entry. Please try again.');
+              console.error('Error saving open source criteria:', error);
+              alert('Failed to save open source criteria. Please try again.');
               await fetchOpenSourceEntries();
             }
           }}
           selectedPartnership={selectedPartnership}
+          activePartnershipCriteria={activePartnershipCriteria}
           availablePartnerships={availablePartnerships}
           fullPartnerships={fullPartnerships}
         />
@@ -852,12 +1135,12 @@ export default function OpenSourceTab({
               const response = await fetch(url, {
                 method: 'DELETE',
               });
-              if (!response.ok) throw new Error('Failed to delete open source entry');
+              if (!response.ok) throw new Error('Failed to delete open source criteria');
               await fetchOpenSourceEntries();
               setIsDeleting(null);
             } catch (error) {
-              console.error('Error deleting open source entry:', error);
-              alert('Failed to delete open source entry. Please try again.');
+              console.error('Error deleting open source criteria:', error);
+              alert('Failed to delete open source criteria. Please try again.');
               setIsDeleting(null);
             }
           }}
