@@ -38,6 +38,17 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // If no active partnership, just return completed ones
+    if (!activePartnership) {
+      return NextResponse.json({
+        active: null,
+        completed: completedPartnerships.map(p => ({
+          ...p,
+          partnershipName: p.partnership.name,
+        })),
+      });
+    }
+
     // Transform to include partnershipName and full criteria for extras
     // We filter multiple_choice options based on user selections so only their choice is available as an extra
     const selections = activePartnership.selections as Record<string, string> || {};
@@ -219,12 +230,12 @@ export async function POST(request: NextRequest) {
                     criteriaType: selectedChoice.type,
                     metric: typeDef?.metric || selectedChoice.type,
                     status: "plan",
-                    planFields: typeDef?.plan_column_fields || null,
-                    planResponses: null,
-                    babyStepFields: typeDef?.baby_step_column_fields || null,
-                    babyStepResponses: null,
-                    proofOfCompletion: typeDef?.proof_of_completion_column_fields || typeDef?.proof_of_completion || null,
-                    proofResponses: null,
+                    planFields: typeDef?.plan_column_fields || [],
+                    planResponses: {},
+                    babyStepFields: typeDef?.baby_step_column_fields || [],
+                    babyStepResponses: {},
+                    proofOfCompletion: typeDef?.proof_of_completion_column_fields || typeDef?.proof_of_completion || [],
+                    proofResponses: {},
                     dateModified: new Date(),
                   },
                 });
@@ -246,12 +257,12 @@ export async function POST(request: NextRequest) {
                   criteriaType: criteria.type,
                   metric: typeDef.metric || criteria.type,
                   status: "plan",
-                  planFields: typeDef.plan_column_fields || null,
-                  planResponses: null,
-                  babyStepFields: typeDef.baby_step_column_fields || null,
-                  babyStepResponses: null,
-                  proofOfCompletion: typeDef.proof_of_completion_column_fields || typeDef.proof_of_completion || null,
-                  proofResponses: null,
+                  planFields: typeDef.plan_column_fields || [],
+                  planResponses: {},
+                  babyStepFields: typeDef.baby_step_column_fields || [],
+                  babyStepResponses: {},
+                  proofOfCompletion: typeDef.proof_of_completion_column_fields || typeDef.proof_of_completion || [],
+                  proofResponses: {},
                   selectedExtras: [], // Default to empty, user will select which card to attach their chosen extra to
                   dateModified: new Date(),
                 },
