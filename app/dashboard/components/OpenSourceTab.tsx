@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { Trash2, X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip } from './shared';
+import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip } from './shared';
+import typesData from '@/partnerships/types.json';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 const ENABLE_DATE_FIELD_EDITING = false;
@@ -31,8 +32,6 @@ type OpenSourceTabProps = {
   getOpenSourceColumnOfItem: (id: string) => OpenSourceColumnId | null;
   isModalOpen: boolean;
   editingEntry: OpenSourceEntry | null;
-  setIsDeleting: (id: number | null) => void;
-  isDeleting: number | null;
   fetchOpenSourceEntries: () => Promise<void>;
   userIdParam: string | null;
   selectedPartnership: string | null;
@@ -54,7 +53,6 @@ function SortableOpenSourceCard(props: {
   activeOpenSourceId: string | null;
   setEditingEntry: (entry: OpenSourceEntry) => void;
   setIsModalOpen: (open: boolean) => void;
-  setIsDeleting: (id: number) => void;
   isDraggingOpenSourceRef: React.MutableRefObject<boolean>;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
@@ -82,11 +80,6 @@ function SortableOpenSourceCard(props: {
     }, 50);
   };
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    props.setIsDeleting(props.card.id);
-  };
-
   return (
     <div 
       ref={setNodeRef} 
@@ -107,15 +100,6 @@ function SortableOpenSourceCard(props: {
             </div>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={handleDelete}
-            className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
-            title="Delete"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -126,7 +110,6 @@ function OpenSourceModal({
   entry, 
   onClose, 
   onSave,
-  onDelete,
   selectedPartnership,
   activePartnershipCriteria,
   availablePartnerships,
@@ -135,7 +118,6 @@ function OpenSourceModal({
   entry: OpenSourceEntry | null; 
   onClose: () => void; 
   onSave: (data: Partial<OpenSourceEntry>) => void;
-  onDelete?: () => void;
   selectedPartnership: string | null;
   activePartnershipCriteria: any[];
   availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number; criteria?: any[] }>;
@@ -331,19 +313,7 @@ function OpenSourceModal({
             placeholder="https://..."
           />
         )}
-        {requirement.type === 'Checkbox' && (
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={!!value}
-              onChange={(e) => handleProofResponseChange(requirement.text, e.target.checked, forcedStatus)}
-              disabled={disabled}
-              className={`w-5 h-5 rounded border-light-steel-blue bg-gray-700 text-electric-blue focus:ring-electric-blue ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
-            />
-            <span className="text-gray-300">Done</span>
-          </div>
-        )}
-        {requirement.type === 'checkbox' && ( // Handle lowercase checkbox as well
+        {(requirement.type === 'Checkbox' || requirement.type === 'checkbox') && (
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -558,20 +528,8 @@ function OpenSourceModal({
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row justify-between sm:justify-end gap-3 pt-4">
-            {entry && onDelete && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onDelete();
-                }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors md:hidden order-3 sm:order-1"
-              >
-                <Trash2 className="inline mr-2 w-4 h-4" />Delete
-              </button>
-            )}
-            <div className="flex gap-3 order-1 sm:order-2">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={onClose}
@@ -593,6 +551,16 @@ function OpenSourceModal({
   );
 }
 
+// Helper function to convert snake_case or camelCase to proper display name
+const formatDisplayName = (name: string): string => {
+  return name
+    .replace(/_/g, ' ') // Replace underscores with spaces
+    .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space before capital letters
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export default function OpenSourceTab({
   filteredOpenSourceColumns,
   openSourceColumns,
@@ -610,8 +578,6 @@ export default function OpenSourceTab({
   getOpenSourceColumnOfItem,
   isModalOpen,
   editingEntry,
-  setIsDeleting,
-  isDeleting,
   fetchOpenSourceEntries,
   isDraggingOpenSourceRef,
   userIdParam,
@@ -878,7 +844,6 @@ export default function OpenSourceTab({
                         activeOpenSourceId={activeOpenSourceId}
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
-                        setIsDeleting={setIsDeleting}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
                       />
                     ))}
@@ -906,7 +871,6 @@ export default function OpenSourceTab({
                         activeOpenSourceId={activeOpenSourceId}
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
-                        setIsDeleting={setIsDeleting}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
                       />
                     ))}
@@ -931,7 +895,6 @@ export default function OpenSourceTab({
                         activeOpenSourceId={activeOpenSourceId}
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
-                        setIsDeleting={setIsDeleting}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
                       />
                     ))}
@@ -956,7 +919,6 @@ export default function OpenSourceTab({
                         activeOpenSourceId={activeOpenSourceId}
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
-                        setIsDeleting={setIsDeleting}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
                       />
                     ))}
@@ -964,34 +926,114 @@ export default function OpenSourceTab({
                 </SortableContext>
               </div>
 
-              {/* Progress Column - Stats Only */}
-              <div className="bg-gray-700 rounded-lg p-2">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-electric-blue rounded-full mr-2"></div>
-                  Progress
-                </h5>
-                <div className="space-y-4">
-                  <div className="text-white">
-                    <div className="text-sm text-gray-400 mb-1">Total Entries</div>
-                    <div className="text-2xl font-bold">
-                      {filteredOpenSourceColumns.plan.length + 
-                       filteredOpenSourceColumns.babyStep.length + 
-                       filteredOpenSourceColumns.inProgress.length + 
-                       filteredOpenSourceColumns.done.length}
+              {/* Progress Column - Partnership Requirements */}
+              <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg p-4 border-2 border-electric-blue/30 shadow-lg">
+                <div className="mb-4 pb-3 border-b border-electric-blue/20">
+                  <h5 className="text-white font-bold text-lg flex items-center mb-1">
+                    <div className="w-4 h-4 bg-electric-blue rounded-full mr-2 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                    Partnership Progress
+                  </h5>
+                  <p className="text-xs text-gray-400 mt-1">Track your requirements</p>
+                </div>
+                <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+                  {activePartnershipCriteria && activePartnershipCriteria.length > 0 ? (
+                    activePartnershipCriteria.map((criteria: any, index: number) => {
+                      // Skip multiple_choice criteria as they're handled separately
+                      if (criteria.type === 'multiple_choice') return null;
+                      
+                      const requiredCount = criteria.count || 1;
+                      const allEntries = [
+                        ...filteredOpenSourceColumns.plan,
+                        ...filteredOpenSourceColumns.babyStep,
+                        ...filteredOpenSourceColumns.inProgress,
+                        ...filteredOpenSourceColumns.done,
+                      ];
+                      
+                      // Count completed entries for this criteria type
+                      // This includes both standalone cards and extras attached to other cards
+                      const completedCount = filteredOpenSourceColumns.done.filter(entry => {
+                        // Check if this card is directly for this criteria type
+                        if (entry.criteriaType === criteria.type) {
+                          return true;
+                        }
+                        // Check if this card has this criteria type as an extra
+                        const extras = entry.selectedExtras as string[] | null;
+                        if (extras && Array.isArray(extras) && extras.includes(criteria.type)) {
+                          return true;
+                        }
+                        return false;
+                      }).length;
+                      
+                      // Get display name from types.json
+                      const typeInfo = (typesData.types as any)[criteria.type];
+                      const displayName = typeInfo?.metric || criteria.metric || criteria.type || 'Unknown';
+                      const shortName = formatDisplayName(typeInfo?.short_name || criteria.type);
+                      
+                      const progressPercent = requiredCount > 0 ? (completedCount / requiredCount) * 100 : 0;
+                      const isComplete = completedCount >= requiredCount;
+                      
+                      return (
+                        <div key={`${criteria.type}-${index}`} className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50 hover:border-electric-blue/50 transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-white truncate flex-1" title={displayName}>
+                              {shortName}
+                            </span>
+                            <span className={`ml-2 flex-shrink-0 font-bold text-base ${
+                              isComplete ? 'text-green-400' : 'text-electric-blue'
+                            }`}>
+                              {completedCount}/{requiredCount}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className={`h-2.5 rounded-full transition-all ${
+                                isComplete 
+                                  ? 'bg-gradient-to-r from-green-500 to-green-400 shadow-[0_0_8px_rgba(34,197,94,0.4)]' 
+                                  : 'bg-gradient-to-r from-electric-blue to-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.3)]'
+                              }`}
+                              style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                            />
+                          </div>
+                          {isComplete && (
+                            <div className="mt-1.5 text-xs text-green-400 flex items-center">
+                              <span className="mr-1">✓</span>
+                              Complete
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }).filter(Boolean)
+                  ) : (
+                    <div className="text-center py-8 text-gray-400 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                      <div className="text-sm mb-1">
+                        {selectedPartnership ? (
+                          'No requirements defined'
+                        ) : (
+                          'Select a partnership to see progress'
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-white">
-                    <div className="text-sm text-gray-400 mb-1">Completed</div>
-                    <div className="text-2xl font-bold text-green-400">
-                      {filteredOpenSourceColumns.done.length}
+                  )}
+                  
+                  {/* Summary stats */}
+                  {activePartnershipCriteria && activePartnershipCriteria.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-electric-blue/20">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                          <div className="text-xs text-gray-400 mb-1">Completed</div>
+                          <div className="text-2xl font-bold text-green-400">
+                            {filteredOpenSourceColumns.done.length}
+                          </div>
+                        </div>
+                        <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                          <div className="text-xs text-gray-400 mb-1">In Progress</div>
+                          <div className="text-2xl font-bold text-purple-400">
+                            {filteredOpenSourceColumns.inProgress.length + filteredOpenSourceColumns.babyStep.length}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-white">
-                    <div className="text-sm text-gray-400 mb-1">In Progress</div>
-                    <div className="text-2xl font-bold text-purple-400">
-                      {filteredOpenSourceColumns.inProgress.length}
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1023,15 +1065,8 @@ export default function OpenSourceTab({
             setIsModalOpen(false);
             setEditingEntry(null);
           }}
-          onDelete={() => {
-            if (editingEntry) {
-              setIsModalOpen(false);
-              setIsDeleting(editingEntry.id);
-            }
-          }}
           onSave={async (data: Partial<OpenSourceEntry>) => {
             try {
-              // TODO: Replace with actual API endpoint when available
               const url = userIdParam ? `/api/open_source?userId=${userIdParam}` : '/api/open_source';
               let updatedEntry: OpenSourceEntry;
               if (editingEntry) {
@@ -1125,28 +1160,6 @@ export default function OpenSourceTab({
         />
       )}
 
-      {/* Delete Confirmation Modal */}
-      {isDeleting !== null && (
-        <DeleteModal
-          onConfirm={async () => {
-            try {
-              // TODO: Replace with actual API endpoint when available
-              const url = userIdParam ? `/api/open_source?id=${isDeleting}&userId=${userIdParam}` : `/api/open_source?id=${isDeleting}`;
-              const response = await fetch(url, {
-                method: 'DELETE',
-              });
-              if (!response.ok) throw new Error('Failed to delete open source criteria');
-              await fetchOpenSourceEntries();
-              setIsDeleting(null);
-            } catch (error) {
-              console.error('Error deleting open source criteria:', error);
-              alert('Failed to delete open source criteria. Please try again.');
-              setIsDeleting(null);
-            }
-          }}
-          onCancel={() => setIsDeleting(null)}
-        />
-      )}
     </section>
   );
 }

@@ -105,36 +105,6 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE: Remove an open source criteria
-export async function DELETE(request: NextRequest) {
-  try {
-    const { userId, error } = await getUserIdForRequest(request);
-
-    if (error || !userId) {
-      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
-    }
-
-    const url = new URL(request.url);
-    const id = url.searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
-    }
-
-    await prisma.openSourceEntry.delete({
-      where: { id: parseInt(id), userId: userId },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting open source criteria:", error);
-    return NextResponse.json(
-      { error: "Failed to delete open source criteria" },
-      { status: 500 }
-    );
-  }
-}
-
 // PATCH: Update status only (for drag and drop)
 export async function PATCH(request: NextRequest) {
   try {

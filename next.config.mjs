@@ -13,7 +13,7 @@ const nextConfig = {
           ]
         : [
             'localhost:3000', // localhost
-            '192.168.1.43:3000', // Phone access via WiFi
+            '192.168.1.45:3000', // Phone access via WiFi
             'https://scaling-memory-pj7rj746pv929rqg-3000.app.github.dev/', // Codespaces
           ],
     },
@@ -21,8 +21,8 @@ const nextConfig = {
   // Suppresses cross-origin warnings for local development (e.g., phone access via WiFi)
   allowedDevOrigins: [
     'localhost:3000',
-    '192.168.1.43',
-    '192.168.1.43:3000',
+    '192.168.1.45',
+    '192.168.1.45:3000',
   ],
 };
 
