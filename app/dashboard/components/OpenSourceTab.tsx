@@ -9,6 +9,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
 import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip } from './shared';
+import typesData from '@/partnerships/types.json';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 const ENABLE_DATE_FIELD_EDITING = false;
@@ -593,6 +594,16 @@ function OpenSourceModal({
   );
 }
 
+// Helper function to convert snake_case or camelCase to proper display name
+const formatDisplayName = (name: string): string => {
+  return name
+    .replace(/_/g, ' ') // Replace underscores with spaces
+    .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space before capital letters
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export default function OpenSourceTab({
   filteredOpenSourceColumns,
   openSourceColumns,
@@ -964,34 +975,111 @@ export default function OpenSourceTab({
                 </SortableContext>
               </div>
 
-              {/* Progress Column - Stats Only */}
+              {/* Progress Column - Partnership Requirements */}
               <div className="bg-gray-700 rounded-lg p-2">
                 <h5 className="text-white font-semibold mb-4 flex items-center">
                   <div className="w-3 h-3 bg-electric-blue rounded-full mr-2"></div>
                   Progress
                 </h5>
-                <div className="space-y-4">
-                  <div className="text-white">
-                    <div className="text-sm text-gray-400 mb-1">Total Entries</div>
-                    <div className="text-2xl font-bold">
-                      {filteredOpenSourceColumns.plan.length + 
-                       filteredOpenSourceColumns.babyStep.length + 
-                       filteredOpenSourceColumns.inProgress.length + 
-                       filteredOpenSourceColumns.done.length}
+                <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto">
+                  {activePartnershipCriteria && activePartnershipCriteria.length > 0 ? (
+                    activePartnershipCriteria.map((criteria: any, index: number) => {
+                      // Skip multiple_choice criteria as they're handled separately
+                      if (criteria.type === 'multiple_choice') return null;
+                      
+                      const requiredCount = criteria.count || 1;
+                      const allEntries = [
+                        ...filteredOpenSourceColumns.plan,
+                        ...filteredOpenSourceColumns.babyStep,
+                        ...filteredOpenSourceColumns.inProgress,
+                        ...filteredOpenSourceColumns.done,
+                      ];
+                      
+                      // Count completed entries for this criteria type
+                      // This includes both standalone cards and extras attached to other cards
+                      const completedCount = filteredOpenSourceColumns.done.filter(entry => {
+                        // Check if this card is directly for this criteria type
+                        if (entry.criteriaType === criteria.type) {
+                          return true;
+                        }
+                        // Check if this card has this criteria type as an extra
+                        const extras = entry.selectedExtras as string[] | null;
+                        if (extras && Array.isArray(extras) && extras.includes(criteria.type)) {
+                          return true;
+                        }
+                        return false;
+                      }).length;
+                      
+                      // Count total entries for this criteria type (including extras)
+                      const totalCount = allEntries.filter(entry => {
+                        if (entry.criteriaType === criteria.type) {
+                          return true;
+                        }
+                        const extras = entry.selectedExtras as string[] | null;
+                        if (extras && Array.isArray(extras) && extras.includes(criteria.type)) {
+                          return true;
+                        }
+                        return false;
+                      }).length;
+                      
+                      // Get display name from types.json
+                      const typeInfo = (typesData.types as any)[criteria.type];
+                      const displayName = typeInfo?.metric || criteria.metric || criteria.type || 'Unknown';
+                      const shortName = formatDisplayName(typeInfo?.short_name || criteria.type);
+                      
+                      const progressPercent = requiredCount > 0 ? (completedCount / requiredCount) * 100 : 0;
+                      const isComplete = completedCount >= requiredCount;
+                      
+                      return (
+                        <div key={`${criteria.type}-${index}`} className="text-white">
+                          <div className="text-xs text-gray-400 mb-1 flex items-center justify-between">
+                            <span className="truncate flex-1" title={displayName}>
+                              {shortName}
+                            </span>
+                            <span className="ml-2 flex-shrink-0 font-semibold">
+                              {completedCount}/{requiredCount}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-600 rounded-full h-2 mb-2">
+                            <div
+                              className={`h-2 rounded-full transition-all ${
+                                isComplete ? 'bg-green-500' : 'bg-electric-blue'
+                              }`}
+                              style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    }).filter(Boolean)
+                  ) : (
+                    <div className="text-white text-sm text-gray-400">
+                      {selectedPartnership ? (
+                        'No requirements defined'
+                      ) : (
+                        'Select a partnership to see progress'
+                      )}
                     </div>
-                  </div>
-                  <div className="text-white">
-                    <div className="text-sm text-gray-400 mb-1">Completed</div>
-                    <div className="text-2xl font-bold text-green-400">
-                      {filteredOpenSourceColumns.done.length}
-                    </div>
-                  </div>
-                  <div className="text-white">
-                    <div className="text-sm text-gray-400 mb-1">In Progress</div>
-                    <div className="text-2xl font-bold text-purple-400">
-                      {filteredOpenSourceColumns.inProgress.length}
-                    </div>
-                  </div>
+                  )}
+                  
+                  {/* Summary stats */}
+                  {activePartnershipCriteria && activePartnershipCriteria.length > 0 && (
+                    <>
+                      <div className="border-t border-gray-600 pt-3 mt-3">
+                        <div className="text-white">
+                          <div className="text-xs text-gray-400 mb-1">Total Completed</div>
+                          <div className="text-lg font-bold text-green-400">
+                            {filteredOpenSourceColumns.done.length}
+                          </div>
+                        </div>
+                        <div className="text-white mt-2">
+                          <div className="text-xs text-gray-400 mb-1">In Progress</div>
+                          <div className="text-lg font-bold text-purple-400">
+                            {filteredOpenSourceColumns.inProgress.length + filteredOpenSourceColumns.babyStep.length}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
