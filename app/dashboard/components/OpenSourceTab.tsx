@@ -976,12 +976,15 @@ export default function OpenSourceTab({
               </div>
 
               {/* Progress Column - Partnership Requirements */}
-              <div className="bg-gray-700 rounded-lg p-2">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
-                  <div className="w-3 h-3 bg-electric-blue rounded-full mr-2"></div>
-                  Progress
-                </h5>
-                <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg p-4 border-2 border-electric-blue/30 shadow-lg">
+                <div className="mb-4 pb-3 border-b border-electric-blue/20">
+                  <h5 className="text-white font-bold text-lg flex items-center mb-1">
+                    <div className="w-4 h-4 bg-electric-blue rounded-full mr-2 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                    Partnership Progress
+                  </h5>
+                  <p className="text-xs text-gray-400 mt-1">Track your requirements</p>
+                </div>
+                <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
                   {activePartnershipCriteria && activePartnershipCriteria.length > 0 ? (
                     activePartnershipCriteria.map((criteria: any, index: number) => {
                       // Skip multiple_choice criteria as they're handled separately
@@ -1031,54 +1034,66 @@ export default function OpenSourceTab({
                       const isComplete = completedCount >= requiredCount;
                       
                       return (
-                        <div key={`${criteria.type}-${index}`} className="text-white">
-                          <div className="text-xs text-gray-400 mb-1 flex items-center justify-between">
-                            <span className="truncate flex-1" title={displayName}>
+                        <div key={`${criteria.type}-${index}`} className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50 hover:border-electric-blue/50 transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-white truncate flex-1" title={displayName}>
                               {shortName}
                             </span>
-                            <span className="ml-2 flex-shrink-0 font-semibold">
+                            <span className={`ml-2 flex-shrink-0 font-bold text-base ${
+                              isComplete ? 'text-green-400' : 'text-electric-blue'
+                            }`}>
                               {completedCount}/{requiredCount}
                             </span>
                           </div>
-                          <div className="w-full bg-gray-600 rounded-full h-2 mb-2">
+                          <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
                             <div
-                              className={`h-2 rounded-full transition-all ${
-                                isComplete ? 'bg-green-500' : 'bg-electric-blue'
+                              className={`h-2.5 rounded-full transition-all ${
+                                isComplete 
+                                  ? 'bg-gradient-to-r from-green-500 to-green-400 shadow-[0_0_8px_rgba(34,197,94,0.4)]' 
+                                  : 'bg-gradient-to-r from-electric-blue to-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.3)]'
                               }`}
                               style={{ width: `${Math.min(progressPercent, 100)}%` }}
                             />
                           </div>
+                          {isComplete && (
+                            <div className="mt-1.5 text-xs text-green-400 flex items-center">
+                              <span className="mr-1">✓</span>
+                              Complete
+                            </div>
+                          )}
                         </div>
                       );
                     }).filter(Boolean)
                   ) : (
-                    <div className="text-white text-sm text-gray-400">
-                      {selectedPartnership ? (
-                        'No requirements defined'
-                      ) : (
-                        'Select a partnership to see progress'
-                      )}
+                    <div className="text-center py-8 text-gray-400 bg-gray-800/30 rounded-lg border border-gray-700/50">
+                      <div className="text-sm mb-1">
+                        {selectedPartnership ? (
+                          'No requirements defined'
+                        ) : (
+                          'Select a partnership to see progress'
+                        )}
+                      </div>
                     </div>
                   )}
                   
                   {/* Summary stats */}
                   {activePartnershipCriteria && activePartnershipCriteria.length > 0 && (
-                    <>
-                      <div className="border-t border-gray-600 pt-3 mt-3">
-                        <div className="text-white">
-                          <div className="text-xs text-gray-400 mb-1">Total Completed</div>
-                          <div className="text-lg font-bold text-green-400">
+                    <div className="mt-4 pt-4 border-t border-electric-blue/20">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                          <div className="text-xs text-gray-400 mb-1">Completed</div>
+                          <div className="text-2xl font-bold text-green-400">
                             {filteredOpenSourceColumns.done.length}
                           </div>
                         </div>
-                        <div className="text-white mt-2">
+                        <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
                           <div className="text-xs text-gray-400 mb-1">In Progress</div>
-                          <div className="text-lg font-bold text-purple-400">
+                          <div className="text-2xl font-bold text-purple-400">
                             {filteredOpenSourceColumns.inProgress.length + filteredOpenSourceColumns.babyStep.length}
                           </div>
                         </div>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
