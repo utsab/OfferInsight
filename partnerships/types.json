@@ -60,7 +60,7 @@
             "metric": "1 concise (< 750 words) technical blog post", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "Draft a short outline of the main points you want to cover in your blog post.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
@@ -78,7 +78,7 @@
             "metric": "1 PR with a detailed breakdown of edge cases considered.", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "List the critical edge cases you plan to test and why each one matters.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
@@ -94,7 +94,7 @@
             "metric": "1 example of a high-quality question asked on the Github thread", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "Write a draft of the high-quality question you want to ask on the issue or PR.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
@@ -110,7 +110,7 @@
             "metric": "1 example of a proposal where you seek feedback on how you plan to solve the issue", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "Write a brief implementation plan (steps, tradeoffs) you can share with the maintainer for feedback.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
@@ -126,7 +126,7 @@
             "metric": "Solution goes beyond the acceptance criteria for the issue.", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "Brainstorm at least one concrete way you could go beyond the stated acceptance criteria.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
@@ -142,7 +142,7 @@
             "metric": "Leave a comment on a PR/issue that is not your own.", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "Identify a PR or issue from someone else and note one specific thing you could give feedback on.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
@@ -158,7 +158,7 @@
             "metric": "Find and file a new bug.", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "Describe where in the product you will explore to try to find a new bug.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
@@ -176,7 +176,7 @@
             "metric": "Solve a complex bug, explore multiple branches, get to the root cause.", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "Outline your initial hypothesis for the root cause and how you plan to investigate it.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
@@ -229,7 +229,7 @@
             "metric": "Self-host the product and use it in a meaningful way or use the product/library in a personal project.", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "Write a short description of the scenario or workflow where you plan to use the product.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
@@ -245,7 +245,7 @@
             "metric": "1 example of back-and-forth conversation where you advocate for your perspective while also demonstrating flexibility.", 
             "baby_step_column_fields": [{
                 "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                "text": "Write a short script of how you would advocate for your perspective while staying open to feedback.",
                 "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
