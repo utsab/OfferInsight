@@ -848,7 +848,6 @@ const hasSeededMockDataRef = useRef(false);
   const [activeOpenSourceId, setActiveOpenSourceId] = useState<string | null>(null);
   const [isOpenSourceModalOpen, setIsOpenSourceModalOpen] = useState(false);
   const [editingOpenSource, setEditingOpenSource] = useState<OpenSourceEntry | null>(null);
-  const [isDeletingOpenSource, setIsDeletingOpenSource] = useState<number | null>(null);
   const [isLoadingOpenSource, setIsLoadingOpenSource] = useState(true);
   const [openSourceFilter, setOpenSourceFilter] = useState<BoardTimeFilter>('allTime');
   const [selectedPartnership, setSelectedPartnership] = useState<string | null>(null);
@@ -874,8 +873,7 @@ const hasSeededMockDataRef = useRef(false);
     try {
       isFetchingOpenSourceRef.current = true;
       setIsLoadingOpenSource(true);
-      // TODO: Replace with actual API endpoint when available
-      const url = userIdParam ? `/api/open_source?userId=${userIdParam}` : '/api/open_source';
+        const url = userIdParam ? `/api/open_source?userId=${userIdParam}` : '/api/open_source';
       const response = await fetch(url);
       if (!response.ok) {
         // If endpoint doesn't exist yet, just set empty columns
@@ -2270,8 +2268,6 @@ const hasSeededMockDataRef = useRef(false);
             getOpenSourceColumnOfItem={getOpenSourceColumnOfItem}
             isModalOpen={isOpenSourceModalOpen}
             editingEntry={editingOpenSource}
-            setIsDeleting={setIsDeletingOpenSource}
-            isDeleting={isDeletingOpenSource}
             fetchOpenSourceEntries={fetchOpenSourceEntries}
             isDraggingOpenSourceRef={isDraggingOpenSourceRef}
             userIdParam={userIdParam}

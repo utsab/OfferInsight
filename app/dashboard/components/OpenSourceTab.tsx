@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { Trash2, X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip } from './shared';
+import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip } from './shared';
 import typesData from '@/partnerships/types.json';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
@@ -32,8 +32,6 @@ type OpenSourceTabProps = {
   getOpenSourceColumnOfItem: (id: string) => OpenSourceColumnId | null;
   isModalOpen: boolean;
   editingEntry: OpenSourceEntry | null;
-  setIsDeleting: (id: number | null) => void;
-  isDeleting: number | null;
   fetchOpenSourceEntries: () => Promise<void>;
   userIdParam: string | null;
   selectedPartnership: string | null;
@@ -55,7 +53,6 @@ function SortableOpenSourceCard(props: {
   activeOpenSourceId: string | null;
   setEditingEntry: (entry: OpenSourceEntry) => void;
   setIsModalOpen: (open: boolean) => void;
-  setIsDeleting: (id: number) => void;
   isDraggingOpenSourceRef: React.MutableRefObject<boolean>;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
@@ -83,11 +80,6 @@ function SortableOpenSourceCard(props: {
     }, 50);
   };
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    props.setIsDeleting(props.card.id);
-  };
-
   return (
     <div 
       ref={setNodeRef} 
@@ -108,15 +100,6 @@ function SortableOpenSourceCard(props: {
             </div>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={handleDelete}
-            className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
-            title="Delete"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -127,7 +110,6 @@ function OpenSourceModal({
   entry, 
   onClose, 
   onSave,
-  onDelete,
   selectedPartnership,
   activePartnershipCriteria,
   availablePartnerships,
@@ -136,7 +118,6 @@ function OpenSourceModal({
   entry: OpenSourceEntry | null; 
   onClose: () => void; 
   onSave: (data: Partial<OpenSourceEntry>) => void;
-  onDelete?: () => void;
   selectedPartnership: string | null;
   activePartnershipCriteria: any[];
   availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number; criteria?: any[] }>;
@@ -332,19 +313,7 @@ function OpenSourceModal({
             placeholder="https://..."
           />
         )}
-        {requirement.type === 'Checkbox' && (
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={!!value}
-              onChange={(e) => handleProofResponseChange(requirement.text, e.target.checked, forcedStatus)}
-              disabled={disabled}
-              className={`w-5 h-5 rounded border-light-steel-blue bg-gray-700 text-electric-blue focus:ring-electric-blue ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
-            />
-            <span className="text-gray-300">Done</span>
-          </div>
-        )}
-        {requirement.type === 'checkbox' && ( // Handle lowercase checkbox as well
+        {(requirement.type === 'Checkbox' || requirement.type === 'checkbox') && (
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -559,20 +528,8 @@ function OpenSourceModal({
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row justify-between sm:justify-end gap-3 pt-4">
-            {entry && onDelete && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onDelete();
-                }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors md:hidden order-3 sm:order-1"
-              >
-                <Trash2 className="inline mr-2 w-4 h-4" />Delete
-              </button>
-            )}
-            <div className="flex gap-3 order-1 sm:order-2">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={onClose}
@@ -621,8 +578,6 @@ export default function OpenSourceTab({
   getOpenSourceColumnOfItem,
   isModalOpen,
   editingEntry,
-  setIsDeleting,
-  isDeleting,
   fetchOpenSourceEntries,
   isDraggingOpenSourceRef,
   userIdParam,
@@ -889,7 +844,6 @@ export default function OpenSourceTab({
                         activeOpenSourceId={activeOpenSourceId}
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
-                        setIsDeleting={setIsDeleting}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
                       />
                     ))}
@@ -917,7 +871,6 @@ export default function OpenSourceTab({
                         activeOpenSourceId={activeOpenSourceId}
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
-                        setIsDeleting={setIsDeleting}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
                       />
                     ))}
@@ -942,7 +895,6 @@ export default function OpenSourceTab({
                         activeOpenSourceId={activeOpenSourceId}
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
-                        setIsDeleting={setIsDeleting}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
                       />
                     ))}
@@ -967,7 +919,6 @@ export default function OpenSourceTab({
                         activeOpenSourceId={activeOpenSourceId}
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
-                        setIsDeleting={setIsDeleting}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
                       />
                     ))}
@@ -1006,18 +957,6 @@ export default function OpenSourceTab({
                           return true;
                         }
                         // Check if this card has this criteria type as an extra
-                        const extras = entry.selectedExtras as string[] | null;
-                        if (extras && Array.isArray(extras) && extras.includes(criteria.type)) {
-                          return true;
-                        }
-                        return false;
-                      }).length;
-                      
-                      // Count total entries for this criteria type (including extras)
-                      const totalCount = allEntries.filter(entry => {
-                        if (entry.criteriaType === criteria.type) {
-                          return true;
-                        }
                         const extras = entry.selectedExtras as string[] | null;
                         if (extras && Array.isArray(extras) && extras.includes(criteria.type)) {
                           return true;
@@ -1126,15 +1065,8 @@ export default function OpenSourceTab({
             setIsModalOpen(false);
             setEditingEntry(null);
           }}
-          onDelete={() => {
-            if (editingEntry) {
-              setIsModalOpen(false);
-              setIsDeleting(editingEntry.id);
-            }
-          }}
           onSave={async (data: Partial<OpenSourceEntry>) => {
             try {
-              // TODO: Replace with actual API endpoint when available
               const url = userIdParam ? `/api/open_source?userId=${userIdParam}` : '/api/open_source';
               let updatedEntry: OpenSourceEntry;
               if (editingEntry) {
@@ -1228,28 +1160,6 @@ export default function OpenSourceTab({
         />
       )}
 
-      {/* Delete Confirmation Modal */}
-      {isDeleting !== null && (
-        <DeleteModal
-          onConfirm={async () => {
-            try {
-              // TODO: Replace with actual API endpoint when available
-              const url = userIdParam ? `/api/open_source?id=${isDeleting}&userId=${userIdParam}` : `/api/open_source?id=${isDeleting}`;
-              const response = await fetch(url, {
-                method: 'DELETE',
-              });
-              if (!response.ok) throw new Error('Failed to delete open source criteria');
-              await fetchOpenSourceEntries();
-              setIsDeleting(null);
-            } catch (error) {
-              console.error('Error deleting open source criteria:', error);
-              alert('Failed to delete open source criteria. Please try again.');
-              setIsDeleting(null);
-            }
-          }}
-          onCancel={() => setIsDeleting(null)}
-        />
-      )}
     </section>
   );
 }
