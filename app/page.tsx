@@ -1,24 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { FileText, MessageCircle, Users, Code } from 'lucide-react';
 import { handleSignIn } from '@/components/auth-actions';
 
 export default function Page() {
-  const [currentStep, setCurrentStep] = useState<'homepage' | 'onboarding-step1' | 'onboarding-step2' | 'onboarding-step3' | 'dashboard'>('homepage');
-  const [selectedTimeline, setSelectedTimeline] = useState<string>('');
   const [onboardingProgress, setOnboardingProgress] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-
-  const showStep = (stepId: 'homepage' | 'onboarding-step1' | 'onboarding-step2' | 'onboarding-step3' | 'dashboard') => {
-    setCurrentStep(stepId as any);
-  };
-
-  const handleTimelineSelect = (months: string) => {
-    setSelectedTimeline(months);
-  };
 
   // Fetch user's onboarding progress on component mount
   useEffect(() => {
@@ -73,31 +62,9 @@ export default function Page() {
   };
 
 
-  const handleOnboarding1Submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Redirect to the actual page1
-    window.location.href = '/onboarding/page1';
-  };
-
-  const handleOnboarding2Submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedTimeline !== '') {
-      showStep('onboarding-step3');
-    }
-  };
-
-  const handleOnboarding3Submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Redirect to the actual dashboard page
-    window.location.href = '/dashboard';
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900">
-      {/* Homepage */}
-      {currentStep === 'homepage' && (
-        <>
-          <section className="min-h-[400px] sm:h-[600px] flex items-center justify-center py-12 sm:py-0">
+      <section className="min-h-[400px] sm:h-[600px] flex items-center justify-center py-12 sm:py-0">
             <div className="max-w-4xl mx-auto text-center px-4 sm:px-8">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-white leading-tight">
                 Track Your Job Search.<br />
@@ -143,172 +110,6 @@ export default function Page() {
               </div>
             </div>
           </section>
-        </>
-      )}
-
-
-      {/* Onboarding Step 1 */}
-      {currentStep === 'onboarding-step1' && (
-        <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
-          <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[500px]">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-white mb-2">Welcome to OpenSourceResumeBook</h2>
-              <p className="text-gray-300">Let's get to know you better</p>
-            </div>
-            <form onSubmit={handleOnboarding1Submit}>
-              <div className="mb-6">
-                <label className="block text-white font-semibold mb-2">Full Name</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white placeholder-gray-400" 
-                  placeholder="Enter your full name"
-                />
-              </div>
-              <div className="mb-6">
-                <label className="block text-white font-semibold mb-2">School</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white placeholder-gray-400" 
-                  placeholder="Enter your school name"
-                />
-              </div>
-              <div className="mb-6">
-                <label className="block text-white font-semibold mb-2">Major</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white placeholder-gray-400" 
-                  placeholder="Enter your major"
-                />
-              </div>
-              <div className="mb-8">
-                <label className="block text-white font-semibold mb-2">Year of Graduation</label>
-                <select className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white">
-                  <option>2024</option>
-                  <option>2025</option>
-                  <option>2026</option>
-                  <option>2027</option>
-                </select>
-      </div>
-              <button 
-                type="submit" 
-                className="w-full bg-electric-blue hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors"
-              >
-                Continue
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Onboarding Step 2 */}
-      {currentStep === 'onboarding-step2' && (
-        <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
-          <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[500px]">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-white mb-2">Timeline Planning</h2>
-              <p className="text-gray-300">This helps us create your personalized roadmap</p>
-            </div>
-            <form onSubmit={handleOnboarding2Submit}>
-              <div className="mb-8">
-                <label className="block text-white font-semibold mb-4">How many months do you have to secure an internship or job?</label>
-                <div className="grid grid-cols-3 gap-4">
-                  {['3', '6', '9', '12', '18', '0'].map((months) => (
-                    <button 
-                      key={months}
-                      type="button" 
-                      onClick={() => handleTimelineSelect(months)}
-                      className={`timeline-btn border border-light-steel-blue rounded-lg py-4 text-white font-semibold transition-colors ${
-                        selectedTimeline === months 
-                          ? 'bg-electric-blue' 
-                          : 'bg-gray-700 hover:bg-electric-blue'
-                      }`}
-                    >
-                      {months === '0' ? 'Not Sure' : `${months} Months`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <button 
-                type="submit" 
-                className="w-full bg-electric-blue hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors"
-              >
-                Continue
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Onboarding Step 3 */}
-      {currentStep === 'onboarding-step3' && (
-        <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
-          <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[600px]">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-white mb-2">Fine-tune Your Plan</h2>
-              <p className="text-gray-300">Customize your weekly goals for each habit</p>
-            </div>
-            <form onSubmit={handleOnboarding3Submit}>
-              <div className="grid grid-cols-2 gap-6 mb-8">
-                <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
-                  <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <FileText className="text-electric-blue mr-2" />
-                    Applications per Week
-                  </h4>
-                  <input 
-                    type="number" 
-                    className="w-full bg-gray-600 border border-light-steel-blue rounded px-3 py-2 text-white" 
-                    defaultValue="5" 
-                    min="1"
-                  />
-                </div>
-                <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
-                  <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <MessageCircle className="text-electric-blue mr-2" />
-                    Interviews per Week
-                  </h4>
-                  <input 
-                    type="number" 
-                    className="w-full bg-gray-600 border border-light-steel-blue rounded px-3 py-2 text-white" 
-                    defaultValue="2" 
-                    min="0"
-                  />
-                </div>
-                <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
-                  <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <Users className="text-electric-blue mr-2" />
-                    Events per Month
-                  </h4>
-                  <input 
-                    type="number" 
-                    className="w-full bg-gray-600 border border-light-steel-blue rounded px-3 py-2 text-white" 
-                    defaultValue="3" 
-                    min="0"
-                  />
-                </div>
-                <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-4">
-                  <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <Code className="text-electric-blue mr-2" />
-                    LeetCode per Week
-                  </h4>
-                  <input 
-                    type="number" 
-                    className="w-full bg-gray-600 border border-light-steel-blue rounded px-3 py-2 text-white" 
-                    defaultValue="10" 
-                    min="0"
-                  />
-                </div>
-              </div>
-              <button 
-                type="submit" 
-                className="w-full bg-electric-blue hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors"
-              >
-                Start Tracking
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      </div>
+    </div>
   );
 }

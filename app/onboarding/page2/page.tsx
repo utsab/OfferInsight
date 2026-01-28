@@ -83,95 +83,183 @@ export default function Page2() {
               <button
                 type="button"
                 onClick={() => handleOptionClick('3')}
-                className={`border-2 rounded-lg py-4 px-8 text-white font-semibold transition-all ${
+                className={`border-2 rounded-lg py-4 px-8 text-white font-semibold transition-all cursor-pointer hover:scale-105 hover:shadow-lg ${
                   selectedTimeline === '3'
-                    ? 'bg-electric-blue border-electric-blue'
-                    : 'bg-gray-700 border-light-steel-blue hover:border-electric-blue'
+                    ? 'bg-electric-blue border-electric-blue shadow-[0_0_15px_rgba(59,130,246,0.5)]'
+                    : 'bg-gray-700 border-light-steel-blue hover:border-electric-blue hover:bg-gray-650'
                 }`}
               >
+                {selectedTimeline === '3' && '✓ '}
                 1-3 Months
               </button>
               <button
                 type="button"
                 onClick={() => handleOptionClick('6')}
-                className={`border-2 rounded-lg py-4 px-8 text-white font-semibold transition-all ${
+                className={`border-2 rounded-lg py-4 px-8 text-white font-semibold transition-all cursor-pointer hover:scale-105 hover:shadow-lg ${
                   selectedTimeline === '6'
-                    ? 'bg-electric-blue border-electric-blue'
-                    : 'bg-gray-700 border-light-steel-blue hover:border-electric-blue'
+                    ? 'bg-electric-blue border-electric-blue shadow-[0_0_15px_rgba(59,130,246,0.5)]'
+                    : 'bg-gray-700 border-light-steel-blue hover:border-electric-blue hover:bg-gray-650'
                 }`}
               >
+                {selectedTimeline === '6' && '✓ '}
                 4-6 Months
               </button>
               <button
                 type="button"
                 onClick={() => handleOptionClick('9')}
-                className={`border-2 rounded-lg py-4 px-8 text-white font-semibold transition-all ${
+                className={`border-2 rounded-lg py-4 px-8 text-white font-semibold transition-all cursor-pointer hover:scale-105 hover:shadow-lg ${
                   selectedTimeline === '9'
-                    ? 'bg-electric-blue border-electric-blue'
-                    : 'bg-gray-700 border-light-steel-blue hover:border-electric-blue'
+                    ? 'bg-electric-blue border-electric-blue shadow-[0_0_15px_rgba(59,130,246,0.5)]'
+                    : 'bg-gray-700 border-light-steel-blue hover:border-electric-blue hover:bg-gray-650'
                 }`}
               >
+                {selectedTimeline === '9' && '✓ '}
                 7-9 Months
               </button>
               <button
                 type="button"
                 onClick={() => handleOptionClick('12')}
-                className={`border-2 rounded-lg py-4 px-8 text-white font-semibold transition-all ${
+                className={`border-2 rounded-lg py-4 px-8 text-white font-semibold transition-all cursor-pointer hover:scale-105 hover:shadow-lg ${
                   selectedTimeline === '12'
-                    ? 'bg-electric-blue border-electric-blue'
-                    : 'bg-gray-700 border-light-steel-blue hover:border-electric-blue'
+                    ? 'bg-electric-blue border-electric-blue shadow-[0_0_15px_rgba(59,130,246,0.5)]'
+                    : 'bg-gray-700 border-light-steel-blue hover:border-electric-blue hover:bg-gray-650'
                 }`}
               >
+                {selectedTimeline === '12' && '✓ '}
                 10-12 Months
               </button>
             </div>
           </div>
 
           {/* Success Calculator Preview */}
-          <div className="bg-gray-700/30 border border-light-steel-blue rounded-lg p-6 mb-8">
-            <h3 className="text-white font-bold text-lg mb-6 flex items-center justify-center">
-              <Target className="text-electric-blue mr-3" />
+          <div className={`border rounded-lg p-6 mb-8 transition-all ${
+            selectedTimeline 
+              ? 'bg-gray-700/30 border-light-steel-blue' 
+              : 'bg-gray-800/20 border-gray-700/50 opacity-60'
+          }`}>
+            <h3 className={`font-semibold text-lg mb-6 flex items-center justify-center transition-colors ${
+              selectedTimeline 
+                ? 'text-white' 
+                : 'text-gray-400'
+            }`}>
+              <Target className={`mr-3 h-4 w-4 transition-colors ${
+                selectedTimeline 
+                  ? 'text-electric-blue' 
+                  : 'text-gray-500'
+              }`} />
               Your Action Plan Preview
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <div className="text-sm text-gray-300 mb-1">Timeline</div>
-                <div className="text-xl font-bold text-electric-blue">{calculator?.range || '-'}</div>
+              <div className={`rounded-lg p-4 transition-colors ${
+                selectedTimeline 
+                  ? 'bg-gray-800/50' 
+                  : 'bg-gray-800/30'
+              }`}>
+                <div className={`text-sm mb-1 transition-colors ${
+                  selectedTimeline 
+                    ? 'text-gray-300' 
+                    : 'text-gray-500'
+                }`}>Timeline</div>
+                <div className={`text-xl font-bold transition-colors ${
+                  selectedTimeline 
+                    ? 'text-electric-blue' 
+                    : 'text-gray-500'
+                }`}>{calculator?.range || '-'}</div>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <div className="text-sm text-gray-300 mb-1 flex items-center">
+              <div className={`rounded-lg p-4 transition-colors ${
+                selectedTimeline 
+                  ? 'bg-gray-800/50' 
+                  : 'bg-gray-800/30'
+              }`}>
+                <div className={`text-sm mb-1 flex items-center transition-colors ${
+                  selectedTimeline 
+                    ? 'text-gray-300' 
+                    : 'text-gray-500'
+                }`}>
                   <Clock className="mr-2 h-4 w-4" />
                   Weekly Commitment
                 </div>
-                <div className="text-xl font-bold text-electric-blue">{calculator?.commitment || '-'}</div>
+                <div className={`text-xl font-bold transition-colors ${
+                  selectedTimeline 
+                    ? 'text-electric-blue' 
+                    : 'text-gray-500'
+                }`}>{calculator?.commitment || '-'}</div>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <div className="text-sm text-gray-300 mb-1 flex items-center">
+              <div className={`rounded-lg p-4 transition-colors ${
+                selectedTimeline 
+                  ? 'bg-gray-800/50' 
+                  : 'bg-gray-800/30'
+              }`}>
+                <div className={`text-sm mb-1 flex items-center transition-colors ${
+                  selectedTimeline 
+                    ? 'text-gray-300' 
+                    : 'text-gray-500'
+                }`}>
                   <FileText className="mr-2 h-4 w-4" />
                   Applications
                 </div>
-                <div className="text-xl font-bold text-electric-blue">{calculator?.apps || '-'}</div>
+                <div className={`text-xl font-bold transition-colors ${
+                  selectedTimeline 
+                    ? 'text-electric-blue' 
+                    : 'text-gray-500'
+                }`}>{calculator?.apps || '-'}</div>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <div className="text-sm text-gray-300 mb-1 flex items-center">
+              <div className={`rounded-lg p-4 transition-colors ${
+                selectedTimeline 
+                  ? 'bg-gray-800/50' 
+                  : 'bg-gray-800/30'
+              }`}>
+                <div className={`text-sm mb-1 flex items-center transition-colors ${
+                  selectedTimeline 
+                    ? 'text-gray-300' 
+                    : 'text-gray-500'
+                }`}>
                   <Coffee className="mr-2 h-4 w-4" />
                   Coffee Chats
                 </div>
-                <div className="text-xl font-bold text-electric-blue">{calculator?.interviewsOutreach || '-'}</div>
+                <div className={`text-xl font-bold transition-colors ${
+                  selectedTimeline 
+                    ? 'text-electric-blue' 
+                    : 'text-gray-500'
+                }`}>{calculator?.interviewsOutreach || '-'}</div>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <div className="text-sm text-gray-300 mb-1 flex items-center">
+              <div className={`rounded-lg p-4 transition-colors ${
+                selectedTimeline 
+                  ? 'bg-gray-800/50' 
+                  : 'bg-gray-800/30'
+              }`}>
+                <div className={`text-sm mb-1 flex items-center transition-colors ${
+                  selectedTimeline 
+                    ? 'text-gray-300' 
+                    : 'text-gray-500'
+                }`}>
                   <Users className="mr-2 h-4 w-4" />
                   In-Person Events
                 </div>
-                <div className="text-xl font-bold text-electric-blue">{calculator?.events || '-'}</div>
+                <div className={`text-xl font-bold transition-colors ${
+                  selectedTimeline 
+                    ? 'text-electric-blue' 
+                    : 'text-gray-500'
+                }`}>{calculator?.events || '-'}</div>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <div className="text-sm text-gray-300 mb-1 flex items-center">
+              <div className={`rounded-lg p-4 transition-colors ${
+                selectedTimeline 
+                  ? 'bg-gray-800/50' 
+                  : 'bg-gray-800/30'
+              }`}>
+                <div className={`text-sm mb-1 flex items-center transition-colors ${
+                  selectedTimeline 
+                    ? 'text-gray-300' 
+                    : 'text-gray-500'
+                }`}>
                   <Building2 className="mr-2 h-4 w-4" />
                   Career Fairs
                 </div>
-                <div className="text-xl font-bold text-electric-blue">{calculator?.fairs || '-'}</div>
+                <div className={`text-xl font-bold transition-colors ${
+                  selectedTimeline 
+                    ? 'text-electric-blue' 
+                    : 'text-gray-500'
+                }`}>{calculator?.fairs || '-'}</div>
               </div>
             </div>
           </div>

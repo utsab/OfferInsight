@@ -14,7 +14,7 @@ import EventsTab from './components/EventsTab';
 import LeetCodeTab from './components/LeetCodeTab';
 import OpenSourceTab from './components/OpenSourceTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { formatDateWithFullMonth, getLocalDateParts, Toast } from './components/shared';
+import { formatDateWithFullMonth, getLocalDateParts } from './components/shared';
 import type {
   Application,
   ApplicationStatus,
@@ -861,8 +861,6 @@ const hasSeededMockDataRef = useRef(false);
   const isFetchingPartnershipRef = useRef(false);
   const isFetchingAvailablePartnershipsRef = useRef(false);
   const isDraggingOpenSourceRef = useRef(false);
-  const [toastMessage, setToastMessage] = useState<string>('');
-  const [showToast, setShowToast] = useState(false);
 
   const fetchOpenSourceEntries = useCallback(async () => {
     // --- MOCK DATA BYPASS FOR OPENSOURCE FETCH START ---
@@ -1039,10 +1037,6 @@ const hasSeededMockDataRef = useRef(false);
       return;
     }
 
-    // Guard: prevent moving from Baby Step to the right unless baby step fields are filled
-    const isMovingRightFromBabyStep =
-      fromCol === 'babyStep' && (toCol === 'inProgress' || toCol === 'done');
-
     if (fromCol === toCol) {
       const items = openSourceColumns[fromCol];
       const oldIndex = items.findIndex(i => String(i.id) === activeId);
@@ -1064,32 +1058,6 @@ const hasSeededMockDataRef = useRef(false);
         return;
       }
       const movingItem = fromItems[movingIndex];
-
-       // If moving out of Baby Step, ensure all baby step fields are filled
-       if (isMovingRightFromBabyStep) {
-         const fields = (movingItem.babyStepFields as any[] | null) || [];
-         const responses = (movingItem.babyStepResponses as Record<string, any> | null) || {};
-
-         // If there are defined baby step fields, require each to have a non-empty response
-         if (
-           fields.length > 0 &&
-           !fields.every(field => {
-             const key = field?.text;
-             if (!key) return false;
-             const value = responses[key];
-             if (typeof value === 'string') {
-               return value.trim().length > 0;
-             }
-             return value !== undefined && value !== null && value !== '';
-           })
-         ) {
-           setToastMessage('Baby steps must be fulfilled first.');
-           setShowToast(true);
-           setActiveOpenSourceId(null);
-           isDraggingOpenSourceRef.current = false;
-           return;
-         }
-       }
 
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
@@ -2245,13 +2213,7 @@ const hasSeededMockDataRef = useRef(false);
 
         {/* Open Source Content */}
         {activeTab === 'opensource' && (
-          <>
-            <Toast 
-              message={toastMessage} 
-              isVisible={showToast} 
-              onClose={() => setShowToast(false)} 
-            />
-            <OpenSourceTab
+          <OpenSourceTab
             filteredOpenSourceColumns={filteredOpenSourceColumns}
             openSourceColumns={openSourceColumns}
             setOpenSourceColumns={setOpenSourceColumns}
@@ -2283,8 +2245,8 @@ const hasSeededMockDataRef = useRef(false);
             fullPartnerships={fullPartnerships}
             isLoadingPartnerships={isLoadingPartnerships}
             fetchAvailablePartnerships={fetchAvailablePartnerships}
+            isInstructor={isInstructor}
           />
-          </>
         )}
     </main>
     </div>

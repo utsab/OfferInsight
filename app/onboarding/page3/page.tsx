@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Coffee, Users, Building2, ArrowLeft, Rocket, Target, CalendarCheck, Loader2 } from 'lucide-react';
 import { formatDateWithFullMonth } from '@/app/dashboard/components/shared';
 
@@ -99,6 +99,8 @@ function calculateWeeklyHours(appsPerWeek: number, interviewsPerWeek: number, ev
 
 export default function Page3() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromDashboard = searchParams.get('from') === 'dashboard';
   const today = useMemo(() => new Date(), []);
 
   // Goals (sliders)
@@ -457,26 +459,30 @@ export default function Page3() {
         </div>
 
           {/* Buttons */}
-          <div className="flex space-x-4">
-            <button type="button" onClick={handleBack} className="flex-1 bg-gray-700 hover:bg-gray-600 border border-light-steel-blue text-white py-4 rounded-lg font-semibold transition-colors flex items-center justify-center">
-              <ArrowLeft className="mr-2" />
-              Back
-            </button>
-            <button type="submit" className="flex-2 bg-electric-blue hover:bg-blue-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors flex items-center justify-center">
+          <div className={`flex space-x-4 ${fromDashboard ? 'justify-center' : ''}`}>
+            {!fromDashboard && (
+              <button type="button" onClick={handleBack} className="flex-1 bg-gray-700 hover:bg-gray-600 border border-light-steel-blue text-white py-4 rounded-lg font-semibold transition-colors flex items-center justify-center">
+                <ArrowLeft className="mr-2" />
+                Back
+              </button>
+            )}
+            <button type="submit" className={`${fromDashboard ? 'w-full' : 'flex-2'} bg-electric-blue hover:bg-blue-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors flex items-center justify-center`}>
               <Rocket className="mr-2" />
               Start Tracking My Progress
             </button>
           </div>
           
           {/* Step Indicator */}
-          <div className="flex items-center justify-center mt-6">
-            <div className="flex space-x-2">
-              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
-              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
-              <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+          {!fromDashboard && (
+            <div className="flex items-center justify-center mt-6">
+              <div className="flex space-x-2">
+                <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+                <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+                <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
+              </div>
+              <span className="text-gray-400 ml-3 text-sm">Step 3 of 3</span>
             </div>
-            <span className="text-gray-400 ml-3 text-sm">Step 3 of 3</span>
-          </div>
+          )}
           </form>
         )}
       </div>

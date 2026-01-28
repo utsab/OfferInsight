@@ -41,7 +41,6 @@
                 { "type": "receive_feedback", "count": 2 },
                 { "type": "find_bug", "count": 2 },
                 { "type": "complex_bug", "count": 1 },
-                { "type": "find_bug", "count": 2 },
                 { "type": "initiative", "count": 2 },
                 { "type": "use_product", "count": 1 }
             ]

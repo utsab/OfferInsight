@@ -19,14 +19,6 @@ const prisma = new PrismaClient({ adapter }) as any;
 const partnershipsData = require('../partnerships/partnerships.json');
 
 async function main() {
-  // Check if partnerships already exist - skip if so
-  const existingCount = await prisma.partnership.count();
-  
-  if (existingCount > 0) {
-    console.log(`Skipping seed - ${existingCount} partnerships already exist`);
-    return;
-  }
-
   console.log('Seeding partnerships...');
 
   for (const partnership of partnershipsData.partnerships) {

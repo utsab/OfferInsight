@@ -83,7 +83,7 @@ export default function OverviewTab({
           </div>
         </div>
         <div className="mt-2 text-left">
-          <Link href="/onboarding/page3" className="text-sm text-gray-300 hover:text-white underline underline-offset-2">
+          <Link href="/onboarding/page3?from=dashboard" className="text-sm text-gray-300 hover:text-white underline underline-offset-2">
             Fine-tune your plan
           </Link>
         </div>
