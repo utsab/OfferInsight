@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db";
 import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+import { getInstructorSession } from "@/app/lib/instructor-auth";
 import partnershipsData from "@/partnerships/partnerships.json";
 import typesData from "@/partnerships/types.json";
 
@@ -122,7 +123,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if partnership exists and has available spots
+    // Check if this is an instructor request (userIdParam in URL means instructor)
+    const url = new URL(request.url);
+    const userIdParam = url.searchParams.get("userId");
+    const isInstructor = userIdParam !== null && (await getInstructorSession()) !== null;
+
+    // Check if user already has an active partnership
+    const existingActive = await prisma.userPartnership.findFirst({
+      where: {
+        userId,
+        status: "active",
+      },
+      include: {
+        partnership: true,
+      },
+    });
+
+    if (existingActive && !isInstructor) {
+      return NextResponse.json(
+        { error: "You already have an active partnership. Complete or abandon it first." },
+        { status: 400 }
+      );
+    }
+
+    // Check if partnership exists
     const partnership = await prisma.partnership.findUnique({
       where: { id: partnershipId },
     });
@@ -141,26 +165,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (partnership.activeUserCount >= partnership.maxUsers) {
+    // Check availability - if switching to a different partnership, we can allow it
+    // even if the new partnership is at max capacity because we're freeing up a spot
+    // in the old partnership. However, if not switching, check normal availability.
+    const isSwitchingToDifferent = existingActive && isInstructor && existingActive.partnershipId !== partnershipId;
+    
+    if (!isSwitchingToDifferent && partnership.activeUserCount >= partnership.maxUsers) {
       return NextResponse.json(
         { error: "This partnership is full. Please select a different one." },
         { status: 400 }
       );
     }
 
-    // Check if user already has an active partnership
-    const existingActive = await prisma.userPartnership.findFirst({
-      where: {
-        userId,
-        status: "active",
-      },
-    });
+    // If instructor is switching partnerships, abandon the old one and delete all cards
+    // This happens BEFORE creating the new one to ensure proper count tracking
+    if (existingActive && isInstructor) {
+      // Delete all open source entries for this user
+      await prisma.openSourceEntry.deleteMany({
+        where: { userId },
+      });
 
-    if (existingActive) {
-      return NextResponse.json(
-        { error: "You already have an active partnership. Complete or abandon it first." },
-        { status: 400 }
-      );
+      // Abandon the old partnership (only if switching to a different one)
+      if (existingActive.partnershipId !== partnershipId) {
+        await prisma.$transaction(async (tx) => {
+          await tx.userPartnership.update({
+            where: { id: existingActive.id },
+            data: {
+              status: "abandoned",
+            },
+          });
+
+          // Decrement active user count for old partnership
+          await tx.partnership.update({
+            where: { id: existingActive.partnershipId },
+            data: {
+              activeUserCount: {
+                decrement: 1,
+              },
+            },
+          });
+        });
+      }
     }
 
     // Check if user has already completed this specific partnership
@@ -325,7 +370,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
-    const { id, status } = await request.json();
+    const { id, status, deleteCards } = await request.json();
 
     if (!id || !status) {
       return NextResponse.json(
@@ -361,6 +406,13 @@ export async function PUT(request: NextRequest) {
 
     // Use transaction to update status and decrement count atomically
     const result = await prisma.$transaction(async (tx) => {
+      // Delete all open source entries if requested (for abandon/complete with reset)
+      if (deleteCards === true) {
+        await tx.openSourceEntry.deleteMany({
+          where: { userId },
+        });
+      }
+
       // Update the user partnership
       const updatedPartnership = await tx.userPartnership.update({
         where: { id },
@@ -396,6 +448,78 @@ export async function PUT(request: NextRequest) {
     console.error("Error updating partnership:", error);
     return NextResponse.json(
       { error: "Failed to update partnership" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE: Abandon partnership and delete all cards (for instructors)
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if this is an instructor request
+    const url = new URL(request.url);
+    const userIdParam = url.searchParams.get("userId");
+    const isInstructor = userIdParam !== null && (await getInstructorSession()) !== null;
+
+    if (!isInstructor) {
+      return NextResponse.json(
+        { error: "Only instructors can abandon partnerships for other users" },
+        { status: 403 }
+      );
+    }
+
+    // Find active partnership
+    const activePartnership = await prisma.userPartnership.findFirst({
+      where: {
+        userId,
+        status: "active",
+      },
+    });
+
+    if (!activePartnership) {
+      return NextResponse.json(
+        { error: "No active partnership found" },
+        { status: 404 }
+      );
+    }
+
+    // Delete all cards and abandon partnership
+    await prisma.$transaction(async (tx) => {
+      // Delete all open source entries
+      await tx.openSourceEntry.deleteMany({
+        where: { userId },
+      });
+
+      // Abandon the partnership
+      await tx.userPartnership.update({
+        where: { id: activePartnership.id },
+        data: {
+          status: "abandoned",
+        },
+      });
+
+      // Decrement active user count
+      await tx.partnership.update({
+        where: { id: activePartnership.partnershipId },
+        data: {
+          activeUserCount: {
+            decrement: 1,
+          },
+        },
+      });
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error abandoning partnership:", error);
+    return NextResponse.json(
+      { error: "Failed to abandon partnership" },
       { status: 500 }
     );
   }

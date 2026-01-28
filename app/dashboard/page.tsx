@@ -2245,6 +2245,7 @@ const hasSeededMockDataRef = useRef(false);
             fullPartnerships={fullPartnerships}
             isLoadingPartnerships={isLoadingPartnerships}
             fetchAvailablePartnerships={fetchAvailablePartnerships}
+            isInstructor={isInstructor}
           />
         )}
     </main>

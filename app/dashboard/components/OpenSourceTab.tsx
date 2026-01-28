@@ -46,6 +46,7 @@ type OpenSourceTabProps = {
   fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
   isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
+  isInstructor?: boolean;
 };
 
 function SortableOpenSourceCard(props: { 
@@ -752,12 +753,16 @@ export default function OpenSourceTab({
   fullPartnerships,
   isLoadingPartnerships,
   fetchAvailablePartnerships,
+  isInstructor = false,
 }: OpenSourceTabProps & { isDraggingOpenSourceRef: React.MutableRefObject<boolean> }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasSavedSelection, setHasSavedSelection] = useState(selectedPartnership !== null);
   const [tempSelection, setTempSelection] = useState<string | null>(selectedPartnership);
   const [multipleChoiceSelections, setMultipleChoiceSelections] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [showSwitchConfirmation, setShowSwitchConfirmation] = useState(false);
+  const [showAbandonConfirmation, setShowAbandonConfirmation] = useState(false);
+  const [isAbandoning, setIsAbandoning] = useState(false);
 
   // Reset saved state when selectedPartnership changes externally to null
   useEffect(() => {
@@ -771,6 +776,21 @@ export default function OpenSourceTab({
   }, [selectedPartnership]);
 
   const handleSaveSelection = async () => {
+    if (tempSelection === null || isSaving) return;
+
+    const selectedPartnershipData = availablePartnerships.find(p => p.name === tempSelection);
+    if (!selectedPartnershipData) return;
+
+    // If instructor is switching partnerships, show confirmation
+    if (isInstructor && userIdParam && selectedPartnership && tempSelection !== selectedPartnership) {
+      setShowSwitchConfirmation(true);
+      return;
+    }
+
+    await performSaveSelection();
+  };
+
+  const performSaveSelection = async () => {
     if (tempSelection === null || isSaving) return;
 
     const selectedPartnershipData = availablePartnerships.find(p => p.name === tempSelection);
@@ -801,6 +821,7 @@ export default function OpenSourceTab({
       setActivePartnershipCriteria(data.criteria || []);
       setHasSavedSelection(true);
       setIsDropdownOpen(false);
+      setShowSwitchConfirmation(false);
       // Refresh available partnerships to update spots remaining
       fetchAvailablePartnerships();
       // Refresh open source entries to show the auto-generated cards
@@ -810,6 +831,43 @@ export default function OpenSourceTab({
       alert('Failed to save partnership. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAbandonPartnership = async () => {
+    if (!isInstructor || !userIdParam || !activePartnershipDbId) return;
+
+    setIsAbandoning(true);
+    try {
+      const url = `/api/users/partnership?userId=${userIdParam}`;
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to abandon partnership');
+        return;
+      }
+
+      // Reset all partnership-related state
+      setSelectedPartnership(null);
+      setSelectedPartnershipId(null);
+      setActivePartnershipDbId(null);
+      setActivePartnershipCriteria([]);
+      setHasSavedSelection(false);
+      setTempSelection(null);
+      setShowAbandonConfirmation(false);
+      
+      // Refresh available partnerships and entries
+      fetchAvailablePartnerships();
+      fetchOpenSourceEntries();
+    } catch (error) {
+      console.error('Error abandoning partnership:', error);
+      alert('Failed to abandon partnership. Please try again.');
+    } finally {
+      setIsAbandoning(false);
     }
   };
 
@@ -971,6 +1029,214 @@ export default function OpenSourceTab({
         </div>
       ) : (
         <>
+          {/* Instructor Partnership Selector - Show at top when instructor is viewing */}
+          {isInstructor && userIdParam && (
+            <div className="mb-6 p-4 bg-gray-700/50 rounded-lg border border-light-steel-blue/30">
+              <label className="block text-white font-semibold mb-3 text-sm">Select Partnership for Student</label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full max-w-md bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white flex items-center justify-between hover:border-electric-blue transition-colors"
+                >
+                  <span>{tempSelection || selectedPartnership || '<none selected>'}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setIsDropdownOpen(false)}
+                    />
+                    <div className="absolute z-20 mt-1 w-full max-w-md bg-gray-700 border border-light-steel-blue rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      <button
+                        onClick={() => {
+                          setTempSelection(null);
+                          setMultipleChoiceSelections({});
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 hover:bg-gray-600 transition-colors ${
+                          (tempSelection || selectedPartnership) === null ? 'bg-gray-600 text-electric-blue' : 'text-white'
+                        }`}
+                      >
+                        &lt;none selected&gt;
+                      </button>
+                      {availablePartnerships.map(partnership => (
+                        <button
+                          key={partnership.id}
+                          onClick={() => {
+                            setTempSelection(partnership.name);
+                            setMultipleChoiceSelections({});
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 hover:bg-gray-600 transition-colors ${
+                            (tempSelection || selectedPartnership) === partnership.name ? 'bg-gray-600 text-electric-blue' : 'text-white'
+                          }`}
+                        >
+                          <span>{partnership.name}</span>
+                          <span className="text-gray-400 text-sm ml-2">({partnership.spotsRemaining} spot{partnership.spotsRemaining !== 1 ? 's' : ''} left)</span>
+                        </button>
+                      ))}
+                      {fullPartnerships.map(partnership => (
+                        <div
+                          key={partnership.id}
+                          className="w-full text-left px-4 py-2 text-gray-500 cursor-not-allowed"
+                        >
+                          <span>{partnership.name}</span>
+                          <span className="text-gray-600 text-sm ml-2">(Not available)</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              {/* Multiple Choice Selection for Instructor */}
+              {(tempSelection || selectedPartnership) && (() => {
+                const selectedP = availablePartnerships.find(p => p.name === (tempSelection || selectedPartnership));
+                if (!selectedP) return null;
+                const mcBlocks = selectedP.criteria?.filter(c => c.type === 'multiple_choice') || [];
+                if (mcBlocks.length === 0) return null;
+
+                return (
+                  <div className="space-y-4 mt-4 p-4 bg-gray-700/50 rounded-lg border border-light-steel-blue/30">
+                    <p className="text-white font-semibold text-sm mb-2 italic">This partnership requires some additional choices:</p>
+                    {mcBlocks.map((block, idx) => (
+                      <div key={idx} className="space-y-2">
+                        <label className="block text-electric-blue text-xs uppercase tracking-wider font-bold">
+                          {block.quality}
+                        </label>
+                        <div className="grid grid-cols-1 gap-2">
+                          {block.choices.map((choice: any) => (
+                            <button
+                              key={choice.type}
+                              onClick={() => setMultipleChoiceSelections(prev => ({
+                                ...prev,
+                                [idx]: choice.type
+                              }))}
+                              className={`text-left px-3 py-2 rounded border transition-colors text-sm ${
+                                multipleChoiceSelections[idx] === choice.type
+                                  ? 'bg-electric-blue border-electric-blue text-white'
+                                  : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-light-steel-blue'
+                              }`}
+                            >
+                              <div className="font-medium">{choice.label}</div>
+                              {choice.quality && <div className={`text-[10px] ${multipleChoiceSelections[idx] === choice.type ? 'text-blue-100' : 'text-gray-400'}`}>{choice.quality}</div>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Save Button for Instructor */}
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={handleSaveSelection}
+                  disabled={
+                    isSaving ||
+                    tempSelection === null ||
+                    tempSelection === selectedPartnership ||
+                    (() => {
+                      const selectedP = availablePartnerships.find(p => p.name === tempSelection);
+                      if (!selectedP) return false;
+                      const mcBlocks = selectedP.criteria?.filter(c => c.type === 'multiple_choice') || [];
+                      return mcBlocks.some((_, idx) => !multipleChoiceSelections[idx]);
+                    })()
+                  }
+                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                    isSaving ||
+                    tempSelection === null ||
+                    tempSelection === selectedPartnership ||
+                    (() => {
+                      const selectedP = availablePartnerships.find(p => p.name === tempSelection);
+                      if (!selectedP) return false;
+                      const mcBlocks = selectedP.criteria?.filter(c => c.type === 'multiple_choice') || [];
+                      return mcBlocks.some((_, idx) => !multipleChoiceSelections[idx]);
+                    })()
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      : 'bg-electric-blue hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {isSaving ? 'Saving...' : tempSelection !== selectedPartnership ? 'Switch Partnership' : 'Save Partnership Selection'}
+                </button>
+                
+                {/* Abandon Partnership Button */}
+                {selectedPartnership && (
+                  <button
+                    onClick={() => setShowAbandonConfirmation(true)}
+                    disabled={isAbandoning || isSaving}
+                    className="px-4 py-2 rounded-lg font-semibold transition-colors bg-red-600 hover:bg-red-700 text-white disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isAbandoning ? 'Abandoning...' : 'Abandon Partnership'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Switch Partnership Confirmation Modal */}
+          {showSwitchConfirmation && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowSwitchConfirmation(false)}>
+              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-white mb-4">Switch Partnership</h3>
+                <p className="text-gray-300 mb-2">
+                  Are you sure you want to switch from <span className="font-semibold text-white">{selectedPartnership}</span> to <span className="font-semibold text-white">{tempSelection}</span>?
+                </p>
+                <p className="text-red-400 text-sm mb-6 font-semibold">
+                  ⚠️ This will delete ALL existing cards and reset all progress for this student. This action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowSwitchConfirmation(false)}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={performSaveSelection}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isSaving ? 'Switching...' : 'Yes, Switch Partnership'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Abandon Partnership Confirmation Modal */}
+          {showAbandonConfirmation && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAbandonConfirmation(false)}>
+              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-white mb-4">Abandon Partnership</h3>
+                <p className="text-gray-300 mb-2">
+                  Are you sure you want to abandon <span className="font-semibold text-white">{selectedPartnership}</span> for this student?
+                </p>
+                <p className="text-red-400 text-sm mb-6 font-semibold">
+                  ⚠️ This will delete ALL existing cards and reset all progress. The student will have no active partnership. This action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowAbandonConfirmation(false)}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAbandonPartnership}
+                    disabled={isAbandoning}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isAbandoning ? 'Abandoning...' : 'Yes, Abandon Partnership'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
         <div className="text-center py-8 text-gray-400">Loading open source entries...</div>
       ) : (
