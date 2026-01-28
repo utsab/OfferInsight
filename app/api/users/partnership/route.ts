@@ -370,7 +370,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
-    const { id, status, deleteCards } = await request.json();
+    const { id, status } = await request.json();
 
     if (!id || !status) {
       return NextResponse.json(
@@ -406,13 +406,6 @@ export async function PUT(request: NextRequest) {
 
     // Use transaction to update status and decrement count atomically
     const result = await prisma.$transaction(async (tx) => {
-      // Delete all open source entries if requested (for abandon/complete with reset)
-      if (deleteCards === true) {
-        await tx.openSourceEntry.deleteMany({
-          where: { userId },
-        });
-      }
-
       // Update the user partnership
       const updatedPartnership = await tx.userPartnership.update({
         where: { id },
