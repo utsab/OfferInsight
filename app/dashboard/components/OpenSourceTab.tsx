@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -275,7 +275,38 @@ function OpenSourceModal({
   };
 
   const { babySteps: effectiveBabySteps, proofOfWork: effectiveProofOfWork, plan: effectivePlan } = getEffectiveFields();
-  const babyStepGroups = getBabyStepGroups();
+  const babyStepGroups = useMemo(() => getBabyStepGroups(), [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, activePartnershipCriteria]);
+
+  // Initialize collapsed sections state
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+
+  // Reset collapsed sections when entry, status, extras, or baby step groups change
+  // Collapse sections that are not relevant to current column
+  // Use a single computed dependency to ensure stable array size
+  const collapseDeps = useMemo(() => {
+    return `${entry?.id ?? 'new'}-${formData.status}-${formData.selectedExtras.length}-${formData.criteriaType ?? ''}-${babyStepGroups.length}`;
+  }, [entry?.id, formData.status, formData.selectedExtras.length, formData.criteriaType, babyStepGroups.length]);
+  
+  useEffect(() => {
+    const newState: Record<string, boolean> = {
+      plan: formData.status !== 'plan', // Collapsed if not in plan column
+      proofOfWork: formData.status === 'babyStep', // Collapsed if in babyStep column
+      extras: formData.status !== 'plan', // Collapsed if not in plan column
+    };
+    // Initialize for each baby step group - collapse if not in babyStep or plan column
+    babyStepGroups.forEach((_, idx) => {
+      newState[`babyStep-${idx}`] = formData.status !== 'babyStep' && formData.status !== 'plan';
+    });
+    setCollapsedSections(newState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collapseDeps]);
+
+  const toggleSection = (section: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   const renderProofField = (requirement: any, index: number, forcedStatus?: OpenSourceStatus, disabled?: boolean) => {
     const status = forcedStatus || formData.status;
@@ -348,9 +379,69 @@ function OpenSourceModal({
       alert('Metric is required');
       return;
     }
+    
+    // Recalculate fields based on current selectedExtras before saving
+    // This ensures fields array includes all extra fields when extras are changed
+    let effectiveBabySteps = [...formData.babyStepFields];
+    let effectiveProofOfWork = [...formData.proofOfCompletion];
+    let effectivePlan = [...formData.planFields];
+
+    if (formData.criteriaType === 'issue') {
+      formData.selectedExtras.forEach(extraType => {
+        const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
+        if (extraCriteria) {
+          if (extraCriteria.baby_step_column_fields) {
+            effectiveBabySteps = [...effectiveBabySteps, ...extraCriteria.baby_step_column_fields];
+          }
+          if (extraCriteria.proof_of_completion) {
+            effectiveProofOfWork = [...effectiveProofOfWork, ...extraCriteria.proof_of_completion];
+          }
+          if (extraCriteria.plan_column_fields) {
+            effectivePlan = [...effectivePlan, ...extraCriteria.plan_column_fields];
+          }
+        }
+      });
+    }
+    
+    // Collect all valid field text keys to clean up orphaned responses
+    const validPlanKeys = new Set(effectivePlan.map(f => f.text).filter(Boolean));
+    const validBabyStepKeys = new Set(effectiveBabySteps.map(f => f.text).filter(Boolean));
+    const validProofKeys = new Set(effectiveProofOfWork.map(f => f.text).filter(Boolean));
+    
+    // Clean up responses to only include keys for fields that still exist
+    const cleanedPlanResponses: Record<string, any> = {};
+    const cleanedBabyStepResponses: Record<string, any> = {};
+    const cleanedProofResponses: Record<string, any> = {};
+    
+    Object.keys(formData.planResponses).forEach(key => {
+      if (validPlanKeys.has(key)) {
+        cleanedPlanResponses[key] = formData.planResponses[key];
+      }
+    });
+    
+    Object.keys(formData.babyStepResponses).forEach(key => {
+      if (validBabyStepKeys.has(key)) {
+        cleanedBabyStepResponses[key] = formData.babyStepResponses[key];
+      }
+    });
+    
+    Object.keys(formData.proofResponses).forEach(key => {
+      if (validProofKeys.has(key)) {
+        cleanedProofResponses[key] = formData.proofResponses[key];
+      }
+    });
+    
     const { dateCreated, dateModified, ...restFormData } = formData;
     const submitData: Partial<OpenSourceEntry> = { 
       ...restFormData,
+      // Update fields to reflect current selectedExtras
+      planFields: effectivePlan,
+      babyStepFields: effectiveBabySteps,
+      proofOfCompletion: effectiveProofOfWork,
+      // Clean up responses to remove orphaned data from removed extras
+      planResponses: cleanedPlanResponses,
+      babyStepResponses: cleanedBabyStepResponses,
+      proofResponses: cleanedProofResponses,
     };
     if (ENABLE_DATE_FIELD_EDITING) {
       if (dateCreated) {
@@ -417,80 +508,148 @@ function OpenSourceModal({
             </div>
           </div>
 
-          {/* Extras selection - only in Plan column and only for 'issue' type cards */}
-          {formData.status === 'plan' && formData.criteriaType === 'issue' && activePartnershipCriteria.some(c => !c.is_primary && c.type !== 'multiple_choice') && (
-                <div className="space-y-3 p-4 bg-gray-700/50 rounded-lg border border-light-steel-blue/30 my-6">
+          {/* Extras selection - Visible in all columns, collapsible, only for 'issue' type cards */}
+          {formData.criteriaType === 'issue' && activePartnershipCriteria.some(c => !c.is_primary && c.type !== 'multiple_choice') && (
+            <div className="bg-gray-700/50 rounded-lg border border-light-steel-blue/30 my-6">
+              <button
+                type="button"
+                onClick={() => toggleSection('extras')}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-600/50 transition-colors rounded-t-lg"
+              >
+                <div className="flex flex-col items-start">
                   <label className="block text-white font-semibold text-sm">Knock two birds with one stone</label>
                   <p className="text-xs text-gray-400 italic">Select additional requirements you plan to complete while working on the issue.</p>
+                </div>
+                {collapsedSections.extras ? (
+                  <ChevronDown className="w-4 h-4 text-electric-blue flex-shrink-0 ml-4" />
+                ) : (
+                  <ChevronUp className="w-4 h-4 text-electric-blue flex-shrink-0 ml-4" />
+                )}
+              </button>
+              {!collapsedSections.extras && (
+                <div className="space-y-3 p-4 pt-0">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                     {activePartnershipCriteria.filter(c => !c.is_primary && c.type !== 'multiple_choice').map(extra => (
                       <label key={extra.type} className="flex items-center gap-3 p-2 hover:bg-gray-600 rounded cursor-pointer transition-colors border border-transparent hover:border-light-steel-blue/20">
-                    <input
-                      type="checkbox"
-                      checked={formData.selectedExtras.includes(extra.type)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFormData(prev => ({
-                            ...prev,
-                            selectedExtras: [...prev.selectedExtras, extra.type]
-                          }));
-                        } else {
-                          setFormData(prev => ({
-                            ...prev,
-                            selectedExtras: prev.selectedExtras.filter(t => t !== extra.type)
-                          }));
-                        }
-                      }}
-                      className="w-4 h-4 rounded border-light-steel-blue bg-gray-700 text-electric-blue focus:ring-electric-blue"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-sm text-gray-200">
-                        {extra.metric || extra.type}
-                      </span>
-                      <span className="text-[10px] text-gray-400 italic">
-                        {extra.quality || 'Extra Goal'}
-                      </span>
-                    </div>
-                  </label>
-                ))}
-              </div>
+                        <input
+                          type="checkbox"
+                          checked={formData.selectedExtras.includes(extra.type)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                selectedExtras: [...prev.selectedExtras, extra.type]
+                              }));
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                selectedExtras: prev.selectedExtras.filter(t => t !== extra.type)
+                              }));
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-light-steel-blue bg-gray-700 text-electric-blue focus:ring-electric-blue"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-200">
+                            {extra.metric || extra.type}
+                          </span>
+                          <span className="text-[10px] text-gray-400 italic">
+                            {extra.quality || 'Extra Goal'}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Baby Step Requirements (Always visible, blurred in Plan) */}
+          {/* Baby Step Requirements - Visible in all columns, blurred in plan, always editable */}
           {babyStepGroups.length > 0 && (
             <div className="relative group space-y-4">
-              {babyStepGroups.map((group, gIdx) => (
-                <div key={gIdx} className={`${formData.status === 'plan' ? 'blur-sm pointer-events-none' : ''} space-y-6 bg-gray-700/30 rounded-lg p-4 border border-gray-600`}>
-                  <h4 className="text-electric-blue font-bold uppercase tracking-wider text-xs">
-                    Baby Step for {group.name}
-                  </h4>
-                  {group.fields.map((req, index) => renderProofField(req, index, 'babyStep', formData.status === 'plan'))}
-                </div>
-              ))}
+              {babyStepGroups.map((group, gIdx) => {
+                const sectionKey = `babyStep-${gIdx}`;
+                const isCollapsed = collapsedSections[sectionKey] || false;
+                const isBlurred = formData.status === 'plan';
+                return (
+                  <div key={gIdx} className={`${isBlurred ? 'blur-sm' : ''} bg-gray-700/30 rounded-lg border border-gray-600`}>
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(sectionKey)}
+                      className="w-full flex items-center justify-between p-4 transition-colors rounded-t-lg hover:bg-gray-600/50"
+                    >
+                      <h4 className="text-electric-blue font-bold uppercase tracking-wider text-xs">
+                        Baby Step for {group.name}
+                      </h4>
+                      {isCollapsed ? (
+                        <ChevronDown className="w-4 h-4 text-electric-blue" />
+                      ) : (
+                        <ChevronUp className="w-4 h-4 text-electric-blue" />
+                      )}
+                    </button>
+                    {!isCollapsed && (
+                      <div className="space-y-6 px-4 pb-4">
+                        {group.fields.map((req, index) => renderProofField(req, index, 'babyStep', false))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               {formData.status === 'plan' && <LockTooltip />}
             </div>
           )}
 
-          {/* Plan Column Fields (Always visible) */}
+          {/* Plan Column Fields - Visible in all columns, blurred when not in plan, always editable */}
           {effectivePlan.length > 0 && (
-            <div className="space-y-6 border-y border-gray-700 py-6 my-6">
-              <h4 className="text-electric-blue font-bold flex items-center gap-2 text-xs uppercase tracking-wider">
-                Plan
-              </h4>
-              {effectivePlan.map((req, index) => renderProofField(req, index))}
+            <div className="border-y border-gray-700 py-6 my-6">
+              <button
+                type="button"
+                onClick={() => toggleSection('plan')}
+                className="w-full flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg p-2 -m-2"
+              >
+                <h4 className={`text-electric-blue font-bold flex items-center gap-2 text-xs uppercase tracking-wider ${formData.status !== 'plan' ? 'blur-sm' : ''}`}>
+                  Plan
+                </h4>
+                {collapsedSections.plan ? (
+                  <ChevronDown className="w-4 h-4 text-electric-blue" />
+                ) : (
+                  <ChevronUp className="w-4 h-4 text-electric-blue" />
+                )}
+              </button>
+              {!collapsedSections.plan && (
+                <div className={`space-y-6 mt-4 ${formData.status !== 'plan' ? 'blur-sm' : ''}`}>
+                  {effectivePlan.map((req, index) => renderProofField(req, index, 'plan', false))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Proof of Work Fields (Visible starting from babyStep, blurred in babyStep) */}
-          {(formData.status === 'babyStep' || formData.status === 'inProgress' || formData.status === 'done') && effectiveProofOfWork.length > 0 && (
-            <div className="relative group">
-              <div className={`${formData.status === 'babyStep' ? 'blur-sm pointer-events-none' : ''} space-y-6 border-y border-gray-700 py-6 my-6`}>
-                <h4 className="text-electric-blue font-bold flex items-center gap-2 text-xs uppercase tracking-wider">
+          {/* Proof of Work Fields - Visible in babyStep/inProgress/done, blurred/disabled in babyStep, editable in inProgress/done */}
+          {effectiveProofOfWork.length > 0 && formData.status !== 'plan' && (
+            <div className="relative group border-y border-gray-700 py-6 my-6">
+              <button
+                type="button"
+                onClick={() => formData.status !== 'babyStep' && toggleSection('proofOfWork')}
+                disabled={formData.status === 'babyStep'}
+                className={`w-full flex items-center justify-between transition-colors rounded-lg p-2 -m-2 ${formData.status === 'babyStep' ? 'pointer-events-none cursor-not-allowed' : 'hover:bg-gray-700/50'}`}
+              >
+                <h4 className={`text-electric-blue font-bold flex items-center gap-2 text-xs uppercase tracking-wider ${formData.status === 'babyStep' ? 'blur-sm' : ''}`}>
                   Proof of Work
                 </h4>
-                {effectiveProofOfWork.map((req, index) => renderProofField(req, index, undefined, formData.status === 'babyStep'))}
-              </div>
+                {formData.status !== 'babyStep' && (
+                  collapsedSections.proofOfWork ? (
+                    <ChevronDown className="w-4 h-4 text-electric-blue" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4 text-electric-blue" />
+                  )
+                )}
+              </button>
+              {!collapsedSections.proofOfWork && (
+                <div className={`${formData.status === 'babyStep' ? 'blur-sm pointer-events-none' : ''} space-y-6 mt-4`}>
+                  {effectiveProofOfWork.map((req, index) => renderProofField(req, index, undefined, formData.status === 'babyStep'))}
+                </div>
+              )}
               {formData.status === 'babyStep' && <LockTooltip />}
             </div>
           )}
