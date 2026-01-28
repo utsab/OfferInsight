@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, ChangeEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Coffee, Users, Building2, ArrowLeft, Rocket, Target, CalendarCheck, Loader2 } from 'lucide-react';
 import { formatDateWithFullMonth } from '@/app/dashboard/components/shared';
@@ -97,7 +97,7 @@ function calculateWeeklyHours(appsPerWeek: number, interviewsPerWeek: number, ev
   return Math.round(appsPerWeek * hoursPerAppWithOutreach + interviewsPerWeek * hoursPerLinkedinOutreachAttempt + eventsPerMonth * hoursPerInPersonEvent + fairsPerYear * hoursPerCareerFair);
 }
 
-export default function Page3() {
+function Page3Content() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromDashboard = searchParams.get('from') === 'dashboard';
@@ -487,6 +487,23 @@ export default function Page3() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Page3() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+        <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
+          <div className="flex flex-col items-center justify-center py-32 text-gray-300">
+            <Loader2 className="h-12 w-12 animate-spin text-electric-blue" />
+            <p className="mt-4 text-sm">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <Page3Content />
+    </Suspense>
   );
 }
 
