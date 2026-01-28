@@ -822,12 +822,13 @@ export default function OpenSourceTab({
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleOpenSourceDragStart} onDragOver={handleOpenSourceDragOver} onDragEnd={handleOpenSourceDragEnd}>
           <div className="overflow-x-auto -mx-4 px-4">
-            <div className="grid grid-cols-5 gap-3 min-w-[800px]">
-              <div className="bg-gray-700 rounded-lg p-2">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
+            <div className="grid grid-cols-5 gap-3 min-w-[800px] items-stretch">
+              <div className="bg-gray-700 rounded-lg p-2 flex flex-col">
+                <h5 className="text-white font-semibold mb-4 flex items-center flex-shrink-0">
                   <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
                   Plan ({filteredOpenSourceColumns.plan.length})
                 </h5>
+                <div className="flex-1 min-h-0">
                 <SortableContext items={filteredOpenSourceColumns.plan.map(c => c.id)} strategy={rectSortingStrategy}>
                   <DroppableColumn 
                     id="plan"
@@ -849,13 +850,15 @@ export default function OpenSourceTab({
                     ))}
                   </DroppableColumn>
                 </SortableContext>
+                </div>
               </div>
 
-              <div className="bg-gray-700 rounded-lg p-2">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
+              <div className="bg-gray-700 rounded-lg p-2 flex flex-col">
+                <h5 className="text-white font-semibold mb-4 flex items-center flex-shrink-0">
                   <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
                   Baby Step ({filteredOpenSourceColumns.babyStep.length})
                 </h5>
+                <div className="flex-1 min-h-0">
                 <SortableContext items={filteredOpenSourceColumns.babyStep.map(c => c.id)} strategy={rectSortingStrategy}>
                   <DroppableColumn 
                     id="babyStep"
@@ -876,13 +879,15 @@ export default function OpenSourceTab({
                     ))}
                   </DroppableColumn>
                 </SortableContext>
+                </div>
               </div>
 
-              <div className="bg-gray-700 rounded-lg p-2">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
+              <div className="bg-gray-700 rounded-lg p-2 flex flex-col">
+                <h5 className="text-white font-semibold mb-4 flex items-center flex-shrink-0">
                   <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
                   In Progress ({filteredOpenSourceColumns.inProgress.length})
                 </h5>
+                <div className="flex-1 min-h-0">
                 <SortableContext items={filteredOpenSourceColumns.inProgress.map(c => c.id)} strategy={rectSortingStrategy}>
                   <DroppableColumn 
                     id="inProgress"
@@ -900,13 +905,15 @@ export default function OpenSourceTab({
                     ))}
                   </DroppableColumn>
                 </SortableContext>
+                </div>
               </div>
 
-              <div className="bg-gray-700 rounded-lg p-2">
-                <h5 className="text-white font-semibold mb-4 flex items-center">
+              <div className="bg-gray-700 rounded-lg p-2 flex flex-col">
+                <h5 className="text-white font-semibold mb-4 flex items-center flex-shrink-0">
                   <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
                   Done ({filteredOpenSourceColumns.done.length})
                 </h5>
+                <div className="flex-1 min-h-0">
                 <SortableContext items={filteredOpenSourceColumns.done.map(c => c.id)} strategy={rectSortingStrategy}>
                   <DroppableColumn 
                     id="done"
@@ -924,18 +931,19 @@ export default function OpenSourceTab({
                     ))}
                   </DroppableColumn>
                 </SortableContext>
+                </div>
               </div>
 
               {/* Progress Column - Partnership Requirements */}
-              <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg p-4 border-2 border-electric-blue/30 shadow-lg">
-                <div className="mb-4 pb-3 border-b border-electric-blue/20">
+              <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg p-4 border-2 border-electric-blue/30 shadow-lg flex flex-col h-full">
+                <div className="mb-4 pb-3 border-b border-electric-blue/20 flex-shrink-0">
                   <h5 className="text-white font-bold text-lg flex items-center mb-1">
                     <div className="w-4 h-4 bg-electric-blue rounded-full mr-2 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
                     Partnership Progress
                   </h5>
                   <p className="text-xs text-gray-400 mt-1">Track your requirements</p>
                 </div>
-                <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+                <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
                   {activePartnershipCriteria && activePartnershipCriteria.length > 0 ? (
                     activePartnershipCriteria.map((criteria: any, index: number) => {
                       // Skip multiple_choice criteria as they're handled separately
