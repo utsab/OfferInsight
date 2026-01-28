@@ -812,11 +812,6 @@ export default function OpenSourceTab({
         </div>
       ) : (
         <>
-          <div className="mb-4 text-center">
-            <span className="text-white text-sm">
-              Chosen Partnership Agreement: <span className="font-semibold text-electric-blue">{selectedPartnership}</span>
-            </span>
-          </div>
           {isLoading ? (
         <div className="text-center py-8 text-gray-400">Loading open source entries...</div>
       ) : (
@@ -941,7 +936,7 @@ export default function OpenSourceTab({
                     <div className="w-4 h-4 bg-electric-blue rounded-full mr-2 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
                     Partnership Progress
                   </h5>
-                  <p className="text-xs text-gray-400 mt-1">Track your requirements</p>
+                  <p className="text-xs text-gray-400 mt-1">{selectedPartnership ? `${selectedPartnership}'s Criteria` : 'Track your requirements'}</p>
                 </div>
                 <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
                   {activePartnershipCriteria && activePartnershipCriteria.length > 0 ? (
