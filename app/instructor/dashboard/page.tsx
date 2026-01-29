@@ -116,7 +116,7 @@ export default function InstructorDashboard() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<'name-asc' | 'name-desc' | 'issues-high' | 'issues-low'>('name-asc');
 
   useEffect(() => {
     // ============================================================================
@@ -154,8 +154,16 @@ export default function InstructorDashboard() {
       user.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
-      const comparison = a.name.localeCompare(b.name);
-      return sortOrder === 'asc' ? comparison : -comparison;
+      if (sortOrder === 'name-asc') {
+        return a.name.localeCompare(b.name);
+      } else if (sortOrder === 'name-desc') {
+        return b.name.localeCompare(a.name);
+      } else if (sortOrder === 'issues-high') {
+        return b.openSource.issuesCompleted - a.openSource.issuesCompleted;
+      } else if (sortOrder === 'issues-low') {
+        return a.openSource.issuesCompleted - b.openSource.issuesCompleted;
+      }
+      return 0;
     });
 
   if (loading) {
@@ -191,11 +199,13 @@ export default function InstructorDashboard() {
           <div className="sm:w-48">
             <select
               value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+              onChange={(e) => setSortOrder(e.target.value as 'name-asc' | 'name-desc' | 'issues-high' | 'issues-low')}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-electric-blue focus:ring-1 focus:ring-electric-blue"
             >
-              <option value="asc">Sort: A-Z</option>
-              <option value="desc">Sort: Z-A</option>
+              <option value="name-asc">Sort: A-Z</option>
+              <option value="name-desc">Sort: Z-A</option>
+              <option value="issues-high">Issues: High-Low</option>
+              <option value="issues-low">Issues: Low-High</option>
             </select>
           </div>
         </div>
