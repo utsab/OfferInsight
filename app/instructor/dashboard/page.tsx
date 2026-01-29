@@ -10,6 +10,11 @@ interface UserData {
   activeStatus: number; // 0 = red, 1 = yellow, 2 = green
   progressStatus: number; // 0 = red, 1 = yellow, 2 = green
   referralCount: number; // Number of referrals received
+  openSource: {
+    issuesCompleted: number;
+    completedCount: number;
+    totalCount: number;
+  };
   applications: {
     lastMonth: number;
     allTime: number;
@@ -71,6 +76,9 @@ function generateDebugUsers(): UserData[] {
       : hasGoodProgress && index % 7 === 0
       ? Math.floor(Math.random() * 2) + 1  // 1-2 referrals for others
       : 0; // Most users have 0 referrals
+    
+    const issuesCompleted = Math.floor(Math.random() * 5);
+    const totalCriteria = Math.max(issuesCompleted + Math.floor(Math.random() * 5), 1);
 
     return {
       id: `debug-${index}`,
@@ -79,6 +87,11 @@ function generateDebugUsers(): UserData[] {
       activeStatus,
       progressStatus,
       referralCount,
+      openSource: {
+        issuesCompleted,
+        completedCount: issuesCompleted,
+        totalCount: totalCriteria,
+      },
       applications: {
         lastMonth: applicationsLastMonth,
         allTime: applicationsLastMonth * 5 + Math.floor(Math.random() * 20)
@@ -103,7 +116,7 @@ export default function InstructorDashboard() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<'name-asc' | 'name-desc' | 'issues-high' | 'issues-low'>('name-asc');
 
   useEffect(() => {
     // ============================================================================
@@ -141,8 +154,16 @@ export default function InstructorDashboard() {
       user.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
-      const comparison = a.name.localeCompare(b.name);
-      return sortOrder === 'asc' ? comparison : -comparison;
+      if (sortOrder === 'name-asc') {
+        return a.name.localeCompare(b.name);
+      } else if (sortOrder === 'name-desc') {
+        return b.name.localeCompare(a.name);
+      } else if (sortOrder === 'issues-high') {
+        return b.openSource.issuesCompleted - a.openSource.issuesCompleted;
+      } else if (sortOrder === 'issues-low') {
+        return a.openSource.issuesCompleted - b.openSource.issuesCompleted;
+      }
+      return 0;
     });
 
   if (loading) {
@@ -178,11 +199,13 @@ export default function InstructorDashboard() {
           <div className="sm:w-48">
             <select
               value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+              onChange={(e) => setSortOrder(e.target.value as 'name-asc' | 'name-desc' | 'issues-high' | 'issues-low')}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-electric-blue focus:ring-1 focus:ring-electric-blue"
             >
-              <option value="asc">Sort: A-Z</option>
-              <option value="desc">Sort: Z-A</option>
+              <option value="name-asc">Sort: A-Z</option>
+              <option value="name-desc">Sort: Z-A</option>
+              <option value="issues-high">Issues: High-Low</option>
+              <option value="issues-low">Issues: Low-High</option>
             </select>
           </div>
         </div>
@@ -201,97 +224,126 @@ export default function InstructorDashboard() {
               key={user.id}
               className="bg-gray-600 border border-light-steel-blue rounded-lg px-6 py-4 hover:border-electric-blue transition-colors w-full"
             >
-              <div className="flex items-center justify-between gap-6">
-                {/* Left side: Name, Status, and Referrals */}
-                <div className="flex items-center gap-6 min-w-0 flex-shrink-0">
-                  {/* Name */}
-                  <div className="min-w-[200px]">
-                    <h2 className="text-white font-medium text-lg whitespace-nowrap">{user.name}</h2>
-                  </div>
-
-                  {/* Referrals - Prominent green display when user has referrals */}
-                  {user.referralCount > 0 && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-900/30 border border-green-500 rounded-lg">
-                      <span className="text-green-400 font-bold text-base whitespace-nowrap">
-                        🎉 {user.referralCount} Referral{user.referralCount !== 1 ? 's' : ''}
-                      </span>
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                {/* Left side: Name (clickable), Status, and Referrals */}
+                <div className="flex flex-col gap-2 min-w-0">
+                  {/* Top row: Name + Active/Progress lights inline */}
+                  <div className="flex flex-wrap items-center gap-4 min-w-0">
+                    {/* Name - Clickable Link */}
+                    <div className="min-w-0">
+                      <Link
+                        href={`/dashboard?userId=${user.id}`}
+                        className="text-white font-medium text-lg hover:text-electric-blue transition-colors whitespace-nowrap"
+                      >
+                        {user.name}
+                      </Link>
                     </div>
-                  )}
 
-                  {/* Active and Progress status indicators */}
-                  <div className="flex items-center gap-4">
-                    {/* Active indicator */}
-                    <div className="flex items-center gap-1.5">
-                      <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
-                        user.activeStatus === 2 ? 'bg-green-500' : 
-                        user.activeStatus === 1 ? 'bg-yellow-500' : 
-                        'bg-red-500'
-                      }`}></div>
-                      <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Active</span>
-                    </div>
-                    {/* Progress indicator */}
-                    <div className="flex items-center gap-1.5">
-                      <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
-                        user.progressStatus === 2 ? 'bg-green-500' : 
-                        user.progressStatus === 1 ? 'bg-yellow-500' : 
-                        'bg-red-500'
-                      }`}></div>
-                      <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Progress</span>
+                    {/* Active and Progress status indicators */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-4">
+                        {/* Active indicator */}
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                            user.activeStatus === 2 ? 'bg-green-500' : 
+                            user.activeStatus === 1 ? 'bg-yellow-500' : 
+                            'bg-red-500'
+                          }`}></div>
+                          <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Active</span>
+                        </div>
+                        {/* Progress indicator */}
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                            user.progressStatus === 2 ? 'bg-green-500' : 
+                            user.progressStatus === 1 ? 'bg-yellow-500' : 
+                            'bg-red-500'
+                          }`}></div>
+                          <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Progress</span>
+                        </div>
+                      </div>
+
+                      {/* Referrals - Prominent green display when user has referrals, below Active/Progress lights */}
+                      {user.referralCount > 0 && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-900/30 border border-green-500 rounded-lg w-fit">
+                          <span className="text-green-400 font-bold text-base whitespace-nowrap">
+                            🎉 {user.referralCount} Referral{user.referralCount !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Middle: Stats in horizontal layout */}
-                <div className="flex items-center gap-8 flex-1 min-w-0">
+                {/* Stats - Responsive grid that wraps on smaller screens */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 flex-1 min-w-0">
+                  {/* Open Source */}
+                  <div className="min-w-0">
+                    <div className="text-gray-300 text-sm font-medium mb-1">Open Source</div>
+                    <div className="text-gray-400 text-sm flex flex-col gap-2">
+                      <span>
+                        Issues Completed:{' '}
+                        <span className="text-white font-medium">{user.openSource.issuesCompleted}</span>
+                      </span>
+                      <div className="relative h-5 w-full bg-gray-700 rounded-full overflow-hidden">
+                        {/* Filled portion */}
+                        <div
+                          className="h-full bg-electric-blue rounded-full"
+                          style={{
+                            width: `${
+                              user.openSource.totalCount > 0
+                                ? Math.min(100, (user.openSource.completedCount / user.openSource.totalCount) * 100)
+                                : 0
+                            }%`,
+                          }}
+                        />
+                        {/* Text overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="text-[11px] text-gray-100 font-medium">
+                            Criteria:{' '}
+                            <span className="text-white font-semibold">
+                              {user.openSource.completedCount}/{user.openSource.totalCount}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Applications */}
-                  <div className="min-w-[180px]">
+                  <div className="min-w-0">
                     <div className="text-gray-300 text-sm font-medium mb-1">Applications</div>
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-sm flex flex-col">
                       <span>Last Month: <span className="text-white font-medium">{user.applications.lastMonth}</span></span>
-                      <span className="mx-2">|</span>
                       <span>All Time: <span className="text-white font-medium">{user.applications.allTime}</span></span>
                     </div>
                   </div>
 
                   {/* In Person Events */}
-                  <div className="min-w-[180px]">
+                  <div className="min-w-0">
                     <div className="text-gray-300 text-sm font-medium mb-1">Events</div>
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-sm flex flex-col">
                       <span>Last Month: <span className="text-white font-medium">{user.events.lastMonth}</span></span>
-                      <span className="mx-2">|</span>
                       <span>All Time: <span className="text-white font-medium">{user.events.allTime}</span></span>
                     </div>
                   </div>
 
                   {/* Coffee Chats */}
-                  <div className="min-w-[180px]">
+                  <div className="min-w-0">
                     <div className="text-gray-300 text-sm font-medium mb-1">Coffee Chats</div>
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-sm flex flex-col">
                       <span>Last Month: <span className="text-white font-medium">{user.coffeeChats.lastMonth}</span></span>
-                      <span className="mx-2">|</span>
                       <span>All Time: <span className="text-white font-medium">{user.coffeeChats.allTime}</span></span>
                     </div>
                   </div>
 
                   {/* LeetCode Problems */}
-                  <div className="min-w-[180px]">
+                  <div className="min-w-0">
                     <div className="text-gray-300 text-sm font-medium mb-1">LeetCode</div>
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-sm flex flex-col">
                       <span>Last Month: <span className="text-white font-medium">{user.leetCode.lastMonth}</span></span>
-                      <span className="mx-2">|</span>
                       <span>All Time: <span className="text-white font-medium">{user.leetCode.allTime}</span></span>
                     </div>
                   </div>
-                </div>
-
-                {/* Right side: View Dashboard Button */}
-                <div className="flex-shrink-0">
-                  <Link
-                    href={`/dashboard?userId=${user.id}`}
-                    className="block px-6 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-                  >
-                    View Dashboard
-                  </Link>
                 </div>
               </div>
             </div>

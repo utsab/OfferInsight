@@ -276,7 +276,10 @@ function OpenSourceModal({
   };
 
   const { babySteps: effectiveBabySteps, proofOfWork: effectiveProofOfWork, plan: effectivePlan } = getEffectiveFields();
-  const babyStepGroups = useMemo(() => getBabyStepGroups(), [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, activePartnershipCriteria]);
+  const babyStepGroups = useMemo(
+    () => getBabyStepGroups(),
+    [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, activePartnershipCriteria]
+  );
 
   // Initialize collapsed sections state
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -763,6 +766,39 @@ export default function OpenSourceTab({
   const [showSwitchConfirmation, setShowSwitchConfirmation] = useState(false);
   const [showAbandonConfirmation, setShowAbandonConfirmation] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
+
+  // Overall criteria progress for the Progress column (total completed vs total required across all criteria)
+  const totalCriteriaProgress = useMemo(() => {
+    if (!activePartnershipCriteria || activePartnershipCriteria.length === 0) {
+      return { completed: 0, total: 0 };
+    }
+
+    const doneEntries = filteredOpenSourceColumns.done;
+    let total = 0;
+    let completed = 0;
+
+    activePartnershipCriteria.forEach((criteria: any) => {
+      // Ignore multiple_choice blocks; they are handled via selected extras
+      if (criteria.type === 'multiple_choice') return;
+
+      const requiredCount = criteria.count || 1;
+      total += requiredCount;
+
+      const completedCount = doneEntries.filter((entry) => {
+        // Direct card for this criteria type
+        if (entry.criteriaType === criteria.type) {
+          return true;
+        }
+        // Or this criteria is attached as an extra on the card
+        const extras = entry.selectedExtras as string[] | null;
+        return extras && Array.isArray(extras) && extras.includes(criteria.type);
+      }).length;
+
+      completed += Math.min(completedCount, requiredCount);
+    });
+
+    return { completed, total };
+  }, [activePartnershipCriteria, filteredOpenSourceColumns.done]);
 
   // Reset saved state when selectedPartnership changes externally to null
   useEffect(() => {
@@ -1443,20 +1479,27 @@ export default function OpenSourceTab({
                     </div>
                   )}
                   
-                  {/* Summary stats */}
-                  {activePartnershipCriteria && activePartnershipCriteria.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-electric-blue/20">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
-                          <div className="text-xs text-gray-400 mb-1">Completed</div>
-                          <div className="text-2xl font-bold text-green-400">
-                            {filteredOpenSourceColumns.done.length}
-                          </div>
+                  {/* Overall criteria progress (same visual style as individual criteria cards) */}
+                  {activePartnershipCriteria && activePartnershipCriteria.length > 0 && totalCriteriaProgress.total > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-700/50">
+                      <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-300 uppercase tracking-wider">
+                            Overall Criteria Progress
+                          </span>
+                          <span className="text-sm font-semibold text-electric-blue">
+                            {totalCriteriaProgress.completed}/{totalCriteriaProgress.total}
+                          </span>
                         </div>
-                        <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
-                          <div className="text-xs text-gray-400 mb-1">In Progress</div>
-                          <div className="text-2xl font-bold text-purple-400">
-                            {filteredOpenSourceColumns.inProgress.length + filteredOpenSourceColumns.babyStep.length}
+                        <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden relative">
+                          <div
+                            className="h-4 rounded-full transition-all bg-gradient-to-r from-electric-blue to-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.3)]"
+                            style={{ width: `${Math.min(100, (totalCriteriaProgress.completed / totalCriteriaProgress.total) * 100)}%` }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-xs font-semibold text-white">
+                              {Math.round((totalCriteriaProgress.completed / totalCriteriaProgress.total) * 100)}%
+                            </span>
                           </div>
                         </div>
                       </div>

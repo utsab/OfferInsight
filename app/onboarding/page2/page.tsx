@@ -60,7 +60,6 @@ export default function Page2() {
     });
 
     if (response.ok) {
-      console.log('User information updated successfully');
       router.push('/onboarding/page3');
     } else {
       console.error('Failed to update user information');
