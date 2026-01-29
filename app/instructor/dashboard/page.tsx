@@ -10,6 +10,11 @@ interface UserData {
   activeStatus: number; // 0 = red, 1 = yellow, 2 = green
   progressStatus: number; // 0 = red, 1 = yellow, 2 = green
   referralCount: number; // Number of referrals received
+  openSource: {
+    issuesCompleted: number;
+    completedCount: number;
+    totalCount: number;
+  };
   applications: {
     lastMonth: number;
     allTime: number;
@@ -71,6 +76,9 @@ function generateDebugUsers(): UserData[] {
       : hasGoodProgress && index % 7 === 0
       ? Math.floor(Math.random() * 2) + 1  // 1-2 referrals for others
       : 0; // Most users have 0 referrals
+    
+    const issuesCompleted = Math.floor(Math.random() * 5);
+    const totalCriteria = Math.max(issuesCompleted + Math.floor(Math.random() * 5), 1);
 
     return {
       id: `debug-${index}`,
@@ -79,6 +87,11 @@ function generateDebugUsers(): UserData[] {
       activeStatus,
       progressStatus,
       referralCount,
+      openSource: {
+        issuesCompleted,
+        completedCount: issuesCompleted,
+        totalCount: totalCriteria,
+      },
       applications: {
         lastMonth: applicationsLastMonth,
         allTime: applicationsLastMonth * 5 + Math.floor(Math.random() * 20)
@@ -252,7 +265,40 @@ export default function InstructorDashboard() {
                 </div>
 
                 {/* Stats - Responsive grid that wraps on smaller screens */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 flex-1 min-w-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 flex-1 min-w-0">
+                  {/* Open Source */}
+                  <div className="min-w-0">
+                    <div className="text-gray-300 text-sm font-medium mb-1">Open Source</div>
+                    <div className="text-gray-400 text-sm flex flex-col gap-2">
+                      <span>
+                        Issues Completed:{' '}
+                        <span className="text-white font-medium">{user.openSource.issuesCompleted}</span>
+                      </span>
+                      <div className="relative h-5 w-full bg-gray-700 rounded-full overflow-hidden">
+                        {/* Filled portion */}
+                        <div
+                          className="h-full bg-electric-blue rounded-full"
+                          style={{
+                            width: `${
+                              user.openSource.totalCount > 0
+                                ? Math.min(100, (user.openSource.completedCount / user.openSource.totalCount) * 100)
+                                : 0
+                            }%`,
+                          }}
+                        />
+                        {/* Text overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="text-[11px] text-gray-100 font-medium">
+                            Criteria:{' '}
+                            <span className="text-white font-semibold">
+                              {user.openSource.completedCount}/{user.openSource.totalCount}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Applications */}
                   <div className="min-w-0">
                     <div className="text-gray-300 text-sm font-medium mb-1">Applications</div>

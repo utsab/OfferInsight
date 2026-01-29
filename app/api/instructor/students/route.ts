@@ -54,7 +54,14 @@ export async function GET() {
     const studentsData = await Promise.all(
       users.map(async (user) => {
         // Find the most recent dateModified across all card types for activeStatus
-        const [mostRecentApp, mostRecentLinkedIn, mostRecentEvent, mostRecentLeetCode] = await Promise.all([
+        const [
+          mostRecentApp,
+          mostRecentLinkedIn,
+          mostRecentEvent,
+          mostRecentLeetCode,
+          mostRecentOpenSource,
+          openSourceEntries,
+        ] = await Promise.all([
           prisma.applications_With_Outreach.findFirst({
             where: { userId: user.id, dateModified: { not: null } },
             select: { dateModified: true },
@@ -75,7 +82,47 @@ export async function GET() {
             select: { dateModified: true },
             orderBy: { dateModified: 'desc' },
           }),
+          prisma.openSourceEntry.findFirst({
+            where: { userId: user.id, dateModified: { not: null } },
+            select: { dateModified: true },
+            orderBy: { dateModified: 'desc' },
+          }),
+          // Open Source: all entries for this user (to derive issues + criteria counts, including extras)
+          prisma.openSourceEntry.findMany({
+            where: {
+              userId: user.id,
+            },
+            select: {
+              status: true,
+              criteriaType: true,
+              selectedExtras: true,
+            },
+          }),
         ]);
+
+        // Derive Open Source stats:
+        // - issuesCompleted: number of 'issue' cards with status 'done'
+        // - total criteria count: number of cards + number of selected extras across all cards
+        // - completed criteria count: number of done cards + their selected extras
+        const issuesCompletedCount = openSourceEntries.filter(
+          (entry) => entry.criteriaType === 'issue' && entry.status === 'done'
+        ).length;
+
+        let totalCriteriaCount = 0;
+        let completedCriteriaCount = 0;
+
+        for (const entry of openSourceEntries) {
+          const extras = Array.isArray(entry.selectedExtras)
+            ? (entry.selectedExtras as unknown[]).length
+            : 0;
+
+          // Each card itself is one criterion, plus any extras selected
+          totalCriteriaCount += 1 + extras;
+
+          if (entry.status === 'done') {
+            completedCriteriaCount += 1 + extras;
+          }
+        }
 
         // Find the most recent dateModified across all card types
         const allDates = [
@@ -83,6 +130,7 @@ export async function GET() {
           mostRecentLinkedIn?.dateModified,
           mostRecentEvent?.dateModified,
           mostRecentLeetCode?.dateModified,
+          mostRecentOpenSource?.dateModified,
         ].filter((date): date is Date => date !== null && date !== undefined);
 
         const mostRecentDate = allDates.length > 0 
@@ -213,6 +261,11 @@ export async function GET() {
           activeStatus,
           progressStatus,
           referralCount,
+          openSource: {
+            issuesCompleted: issuesCompletedCount,
+            completedCount: completedCriteriaCount,
+            totalCount: totalCriteriaCount,
+          },
           applications: {
             lastMonth: applicationsLastMonth,
             allTime: applicationsAllTime,
