@@ -201,97 +201,93 @@ export default function InstructorDashboard() {
               key={user.id}
               className="bg-gray-600 border border-light-steel-blue rounded-lg px-6 py-4 hover:border-electric-blue transition-colors w-full"
             >
-              <div className="flex items-center justify-between gap-6">
-                {/* Left side: Name, Status, and Referrals */}
-                <div className="flex items-center gap-6 min-w-0 flex-shrink-0">
-                  {/* Name */}
-                  <div className="min-w-[200px]">
-                    <h2 className="text-white font-medium text-lg whitespace-nowrap">{user.name}</h2>
-                  </div>
-
-                  {/* Referrals - Prominent green display when user has referrals */}
-                  {user.referralCount > 0 && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-900/30 border border-green-500 rounded-lg">
-                      <span className="text-green-400 font-bold text-base whitespace-nowrap">
-                        🎉 {user.referralCount} Referral{user.referralCount !== 1 ? 's' : ''}
-                      </span>
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                {/* Left side: Name (clickable), Status, and Referrals */}
+                <div className="flex flex-col gap-2 min-w-0">
+                  {/* Top row: Name + Active/Progress lights inline */}
+                  <div className="flex flex-wrap items-center gap-4 min-w-0">
+                    {/* Name - Clickable Link */}
+                    <div className="min-w-0">
+                      <Link
+                        href={`/dashboard?userId=${user.id}`}
+                        className="text-white font-medium text-lg hover:text-electric-blue transition-colors whitespace-nowrap"
+                      >
+                        {user.name}
+                      </Link>
                     </div>
-                  )}
 
-                  {/* Active and Progress status indicators */}
-                  <div className="flex items-center gap-4">
-                    {/* Active indicator */}
-                    <div className="flex items-center gap-1.5">
-                      <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
-                        user.activeStatus === 2 ? 'bg-green-500' : 
-                        user.activeStatus === 1 ? 'bg-yellow-500' : 
-                        'bg-red-500'
-                      }`}></div>
-                      <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Active</span>
-                    </div>
-                    {/* Progress indicator */}
-                    <div className="flex items-center gap-1.5">
-                      <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
-                        user.progressStatus === 2 ? 'bg-green-500' : 
-                        user.progressStatus === 1 ? 'bg-yellow-500' : 
-                        'bg-red-500'
-                      }`}></div>
-                      <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Progress</span>
+                    {/* Active and Progress status indicators */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-4">
+                        {/* Active indicator */}
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                            user.activeStatus === 2 ? 'bg-green-500' : 
+                            user.activeStatus === 1 ? 'bg-yellow-500' : 
+                            'bg-red-500'
+                          }`}></div>
+                          <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Active</span>
+                        </div>
+                        {/* Progress indicator */}
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                            user.progressStatus === 2 ? 'bg-green-500' : 
+                            user.progressStatus === 1 ? 'bg-yellow-500' : 
+                            'bg-red-500'
+                          }`}></div>
+                          <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Progress</span>
+                        </div>
+                      </div>
+
+                      {/* Referrals - Prominent green display when user has referrals, below Active/Progress lights */}
+                      {user.referralCount > 0 && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-900/30 border border-green-500 rounded-lg w-fit">
+                          <span className="text-green-400 font-bold text-base whitespace-nowrap">
+                            🎉 {user.referralCount} Referral{user.referralCount !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Middle: Stats in horizontal layout */}
-                <div className="flex items-center gap-8 flex-1 min-w-0">
+                {/* Stats - Responsive grid that wraps on smaller screens */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 flex-1 min-w-0">
                   {/* Applications */}
-                  <div className="min-w-[180px]">
+                  <div className="min-w-0">
                     <div className="text-gray-300 text-sm font-medium mb-1">Applications</div>
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-sm flex flex-col">
                       <span>Last Month: <span className="text-white font-medium">{user.applications.lastMonth}</span></span>
-                      <span className="mx-2">|</span>
                       <span>All Time: <span className="text-white font-medium">{user.applications.allTime}</span></span>
                     </div>
                   </div>
 
                   {/* In Person Events */}
-                  <div className="min-w-[180px]">
+                  <div className="min-w-0">
                     <div className="text-gray-300 text-sm font-medium mb-1">Events</div>
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-sm flex flex-col">
                       <span>Last Month: <span className="text-white font-medium">{user.events.lastMonth}</span></span>
-                      <span className="mx-2">|</span>
                       <span>All Time: <span className="text-white font-medium">{user.events.allTime}</span></span>
                     </div>
                   </div>
 
                   {/* Coffee Chats */}
-                  <div className="min-w-[180px]">
+                  <div className="min-w-0">
                     <div className="text-gray-300 text-sm font-medium mb-1">Coffee Chats</div>
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-sm flex flex-col">
                       <span>Last Month: <span className="text-white font-medium">{user.coffeeChats.lastMonth}</span></span>
-                      <span className="mx-2">|</span>
                       <span>All Time: <span className="text-white font-medium">{user.coffeeChats.allTime}</span></span>
                     </div>
                   </div>
 
                   {/* LeetCode Problems */}
-                  <div className="min-w-[180px]">
+                  <div className="min-w-0">
                     <div className="text-gray-300 text-sm font-medium mb-1">LeetCode</div>
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-sm flex flex-col">
                       <span>Last Month: <span className="text-white font-medium">{user.leetCode.lastMonth}</span></span>
-                      <span className="mx-2">|</span>
                       <span>All Time: <span className="text-white font-medium">{user.leetCode.allTime}</span></span>
                     </div>
                   </div>
-                </div>
-
-                {/* Right side: View Dashboard Button */}
-                <div className="flex-shrink-0">
-                  <Link
-                    href={`/dashboard?userId=${user.id}`}
-                    className="block px-6 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-                  >
-                    View Dashboard
-                  </Link>
                 </div>
               </div>
             </div>
