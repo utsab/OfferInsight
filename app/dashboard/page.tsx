@@ -1001,7 +1001,6 @@ const hasSeededMockDataRef = useRef(false);
   const debouncedUpdateOpenSourceStatus = useDebouncedCallback(
     async (id: number, status: OpenSourceStatus) => {
       try {
-        // TODO: Replace with actual API endpoint when available
         const url = userIdParam ? `/api/open_source?id=${id}&userId=${userIdParam}` : `/api/open_source?id=${id}`;
         const response = await fetch(url, {
           method: 'PATCH',

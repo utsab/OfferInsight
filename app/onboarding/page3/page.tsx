@@ -242,7 +242,6 @@ function Page3Content() {
     });
 
     if (response.ok) {
-      console.log('User plan updated successfully');
       router.push('/dashboard');
     } else {
       console.error('Failed to update user plan');
