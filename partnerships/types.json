@@ -242,7 +242,7 @@
             "metric": "Feedback was proactively sought either from maintainers or users", 
             "baby_step_column_fields": [{
                 "type": "checkbox",
-                "text": "The helper video demonstrate an example of how to proactivelyseek feedback on a PR.",
+                "text": "The helper video demonstrates an example of how to proactivelyseek feedback on a PR.",
                 "helper_video": "https://youtu.be/U87ZQIo9tu0"
             }],
             "proof_of_completion": [{
