@@ -1019,7 +1019,7 @@ export default function OpenSourceTab({
 
               return (
                 <div className="space-y-4 mt-6 p-4 bg-gray-700/50 rounded-lg border border-light-steel-blue/30">
-                  <p className="text-white font-semibold text-sm mb-2 italic">This partnership requires so:</p>
+                  <p className="text-white font-semibold text-sm mb-2 italic">This partnership has a multiple-choice option.  Please select <b>one</b> of the following options:</p>
                   {mcBlocks.map((block, idx) => (
                     <div key={idx} className="space-y-2">
                       <label className="block text-electric-blue text-xs uppercase tracking-wider font-bold">
@@ -1145,7 +1145,7 @@ export default function OpenSourceTab({
 
                 return (
                   <div className="space-y-4 mt-4 p-4 bg-gray-700/50 rounded-lg border border-light-steel-blue/30">
-                    <p className="text-white font-semibold text-sm mb-2 italic">This partnership has a multiple-choice option.  Please select <b>one</b> of the following:</p>
+                    <p className="text-white font-semibold text-sm mb-2 italic">This partnership has a multiple-choice option.  Please select <b>one</b> of the following options:</p>
                     {mcBlocks.map((block, idx) => (
                       <div key={idx} className="space-y-2">
                         <label className="block text-electric-blue text-xs uppercase tracking-wider font-bold">
