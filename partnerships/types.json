@@ -9,7 +9,7 @@
             "baby_step_column_fields": [{
                 "type": "URL",
                 "text": "Find an issue to work on.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
+                "helper_video": "https://youtu.be/TPqPsoahzOQ" 
             }],
             "proof_of_completion_column_fields": [{
                 "type": "URL",
@@ -24,8 +24,8 @@
             "plan_column_fields": [],
             "baby_step_column_fields": [{
                 "type": "checkbox",
-                "text": "Write out your plan as a comment on the issue thread asap. Ask for feedback.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "text": "The helper video will explain how you can maximize your chances of receiving feedback on your PR.",
+                "helper_video": "https://youtu.be/U87ZQIo9tu0"
             }],
             "proof_of_completion": [
                 {
@@ -44,12 +44,12 @@
             "quality": "Closer", 
             "metric": "Solve the issue within 3 months", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Find out what resources are available to you within the project's ecosystem (join their Discord, find the project's wiki page, etc.). Be prepared to ask a high-quality question on the Github thread within 1-2 weeks to confirm whether you are on the right track.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
             }],
             "proof_of_completion": [{
-                "type": "Checkbox",
+                "type": "checkbox",
                 "text": "Did you solve the issue within 3 months?"
             }]
         },
@@ -59,11 +59,10 @@
             "quality": "Understanding the impact of the work", 
             "metric": "1 concise (< 750 words) technical blog post", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [
                 {
                     "type": "URL",
@@ -77,11 +76,10 @@
             "quality": "Critical thinking skills", 
             "metric": "1 PR with a detailed breakdown of edge cases considered.", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "The helper video will demonstrate an example of how to document edge cases in a PR.",
+                "helper_video": "https://youtu.be/K7Qa0HR8cEs"
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "Checkbox",
                 "text": "Did you write a detailed breakdown of edges cases in the pull request description?"
@@ -93,9 +91,9 @@
             "quality": "Critical thinking skills", 
             "metric": "1 example of a high-quality question asked on the Github thread", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "The helper video will demonstrate an example of a high-quality question.",
+                "helper_video": "https://youtu.be/nKd93mQ89_0"
             }],
             "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
@@ -109,11 +107,10 @@
             "quality": "Critical thinking skills", 
             "metric": "1 example of a proposal where you seek feedback on how you plan to solve the issue", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "The helper video will provide some tips on how to develop a plan including how to leverage AI.",
+                "helper_video": "https://youtu.be/HlkXgE4UFQs"
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "URL",
                 "text": "Link to the github comment where you proposed your implementation plan: "
@@ -125,11 +122,10 @@
             "quality": "Ownership / Initiative", 
             "metric": "Solution goes beyond the acceptance criteria for the issue.", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "The helper video provides a few examples of what it means to go 'above and beyond' on an issue.",
+                "helper_video": "https://youtu.be/CQx96vM_DtU"
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "text",
                 "text": "Write a 1 sentence explanation of how your solution went beyond the acceptance criteria for the issue."
@@ -141,11 +137,10 @@
             "quality": "Collaboration/Teamwork", 
             "metric": "Leave a comment on a PR/issue that is not your own.", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "The helper video shows an example of how you might leave a helpful comment on someone else's issue.",
+                "helper_video": "https://youtu.be/dnceN_s9yXw"
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "URL",
                 "text": "Link to the github issue or PR where you left a comment: "
@@ -157,11 +152,10 @@
             "quality": "Curiosity", 
             "metric": "Find and file a new bug.", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [
                 {
                     "type": "URL",
@@ -175,11 +169,10 @@
             "quality": "Curiosity", 
             "metric": "Solve a complex bug, explore multiple branches, get to the root cause.", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [
                 {
                     "type": "URL",
@@ -196,23 +189,13 @@
             "baby_step_column_fields": [
                 {
                     "type": "checkbox",
-                    "text": "Use the product to do something useful for yourself or for a hypothetical user",
-                    "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
-                }, 
-                {
-                    "type": "checkbox",
-                    "text": "Solve at least 2 issues first and pay attention to the maintainers' comments",
-                    "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
+                    "text": "This helper video demonstrates how you can initiate a proposal that serves the project's users.",
+                    "helper_video": "https://youtu.be/EUhHJzn476k" 
                 },
                 {
                     "type": "checkbox",
-                    "text": "Reach out to a user to understand their needs",
-                    "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
-                },
-                {
-                    "type": "checkbox",
-                    "text": "Set up a coffee chat with the maintainer",
-                    "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
+                    "text": "This helper video demonstrates how you can initiate a proposal that serves developers on the project. ",
+                    "helper_video": "https://youtu.be/EMdS1HFEabE" 
                 }
             ],
              "proof_of_completion": [
@@ -228,11 +211,10 @@
             "quality": "Product sense", 
             "metric": "Self-host the product and use it in a meaningful way or use the product/library in a personal project.", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "URL",
                 "text": "Link to a video walkthrough demonstrating how you used the product: "
@@ -244,11 +226,10 @@
             "quality": "Collaboration/Conflict resolution", 
             "metric": "1 example of back-and-forth conversation where you advocate for your perspective while also demonstrating flexibility.", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "text",
                 "text": "Write a 1 sentence summary of the conversation you had and the outcome."
@@ -260,11 +241,10 @@
             "quality": "Teamworok/Collaboration", 
             "metric": "Feedback was proactively sought either from maintainers or users", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "The helper video demonstrate an example of how to proactivelyseek feedback on a PR.",
+                "helper_video": "https://youtu.be/U87ZQIo9tu0"
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "URL",
                 "text": "Link to the github comment where you sought feedback: "
@@ -281,11 +261,10 @@
             "quality": "Teamwork/Collaboration", 
             "metric": "1 example of a PR with thorough documentation explaining the contribution.", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "checkbox",
                 "text": "Did you include a thorough explanation of the contribution in the pull request description?"
@@ -298,11 +277,10 @@
             "quality": "Apply AI to solve every day problems", 
             "metric": "1 example of using AI APIs to simplify or automate personal or business workflows", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "URL",
                 "text": "Link to a personal project or blog post describing how you used AI to simplify or automate a workflow: "
@@ -318,11 +296,10 @@
             "quality": "Curiosity", 
             "metric": "Blog post exploring a specfic aspect of the project", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
             }],
-            "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", 
             "proof_of_completion": [{
                 "type": "URL",
                 "text": "Link to the blog post: "
@@ -334,9 +311,9 @@
             "quality": "Self-learner", 
             "metric": "1 example of a large/complex issue where you pick a task outside of your comfort zone.", 
             "baby_step_column_fields": [{
-                "type": "text",
-                "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                "helper_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                "type": "checkbox",
+                "text": "The helper video shows an example of what it means to document progress on a long-running PR.",
+                "helper_video": "https://youtu.be/9kxzdcTi5oU"
             }],
             "proof_of_completion": [
                 {
