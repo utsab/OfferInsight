@@ -313,7 +313,7 @@
             "baby_step_column_fields": [{
                 "type": "checkbox",
                 "text": "The helper video shows an example of what it means to document progress on a long-running PR.",
-                "helper_video": "https://youtu.be/9kxzdcTi5oU"
+                "helper_video": "https://youtu.be/C6BsjFN0nhM"
             }],
             "proof_of_completion": [
                 {
@@ -329,6 +329,153 @@
                     "text": "Link to a short (<750 words) blog post where you describe the solution:"
                 }
             ]
+        },
+        "live_coding": {
+            "is_primary": true,
+            "short_name": "live_coding",
+            "quality": "Live coding for an audience", 
+            "metric": "Host a live coding session where you solve an issue from start to finish OR team-based Code Jam.", 
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [
+                {
+                    "type": "URL",
+                    "text": "Link to a recording of the live coding session or a link to a short blog post describing the Code Jam"
+                }
+            ]
+        },
+        "passion_project": {
+            "is_primary": true,
+            "short_name": "passion_project",
+            "quality": "Self-Learner", 
+            "metric": "1 example of a personal project that was useful for others or to explore your curiosity.", 
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the personal project: "
+            },
+            {
+                "type": "text",
+                "text": "Write a 1 sentence summary of the project and how it was useful for others or how it helped you to explore your curiosity."
+            }]
+        },
+        "puzzle_hobby": {
+            "is_primary": true,
+            "short_name": "puzzle_hobby",
+            "quality": "Love of puzzles / Tenacity", 
+            "metric": "1 example of a puzzle or hobby that you are passionate about.",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "Write a 1 sentence summary of the hobby."
+            },
+            {
+                "type": "URL",
+                "text": "Link to a short blog post where you describe the hobby.  There should be some evidence of a long-term dedication to the hobby."
+            }]
+        },
+        "integration_focused_PR": {
+            "is_primary": false,
+            "short_name": "integration_focused_PR",
+            "quality": "Love of puzzles / Tenacity", 
+            "metric": "1 example of a PR that bridges two disconnected systems or abstractions.",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [
+            {
+                "type": "text",
+                "text": "Write a 1 sentence summary of the PR and how it bridges two disconnected systems or abstractions."
+            }]
+        },
+        "SWE_pipeline_blog_post": {
+            "is_primary": true,
+            "short_name": "SWE_pipeline_blog_post",
+            "quality": "Knowledge of SWE development cycle", 
+            "metric": "1 concise (< 750 words) technical blog post about the SWE pipeline of an open source project.",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the blog post: "
+            }]
+        },
+        "SWE_pipeline_personal_project": {
+            "is_primary": true,
+            "short_name": "SWE_pipeline_personal_project",
+            "quality": "Knowledge of SWE development cycle", 
+            "metric": "1 example of setting up the SWE workflow (linter, CI/CD, etc.) for a personal project.",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link a detailed README.md for the personal project documenting the SWE workflow"
+            }]
+        },
+        "product_opinion": {
+            "is_primary": true,
+            "short_name": "product_opinion",
+            "quality": "Product sense", 
+            "metric": "Short blog post stating your opinion on what new features should be added to the product.",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the blog post: "
+            }]
+        },
+        "understand_purpose": {
+            "is_primary": true,
+            "short_name": "understand_purpose",
+            "quality": "Product sense", 
+            "metric": "Short blog post describing the purpose of the product, how it is used, and comparison to alternatives.",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the blog post: "
+            }]
+        },
+        "multiple_approaches": {
+            "is_primary": false,
+            "short_name": "multiple_approaches",
+            "quality": "Problem-solving skills", 
+            "metric": "1 example of considering multiple approaches to solve an issue.",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "Write a 2-3 sentence summary of the multiple approaches you considered and why you chose the one you did."
+            }]
         }
-    }
+    }   
 }
+

@@ -94,6 +94,71 @@
                 ]}, 
                 { "type": "outside_comfort_zone", "count": 1 }
             ]
+        },
+        {
+            "id": 7, 
+            "name": "Kevin Mershon",
+            "linkedIn": "https://theorg.com/org/ride-health/org-chart/kevin-mershon",
+            "company": "Ride Health",
+            "role": "Senior Software Engineer",
+            "criteria": [
+                { "type": "issue", "count": 3 },
+                { "type": "outside_comfort_zone", "count": 1 },
+                { "type": "live_coding", "count": 1 },
+                { "type": "passion_project", "count": 1 },
+                { "type": "multiple_choice", "choices": [
+                    { "type": "puzzle_hobby", "count": 1 },
+                    { "type": "case_study", "count": 1 },
+                    { "type": "outside_comfort_zone", "count": 1 },
+                    { "type": "integration_focused_PR", "count": 1 }
+                ]} 
+            ]
+        },
+        {
+            "id": 8, 
+            "name": "Jim Anderson",
+            "linkedIn": "https://www.linkedin.com/in/jim-anderson-056993/",
+            "company": "Mastercard",
+            "role": "Senior Software Engineer",
+            "criteria": [
+                { "type": "issue", "count": 3 },
+                { "type": "give_feedback", "count": 2 },
+                { "type": "receive_feedback", "count": 2 },
+                { "type": "high_quality_question", "count": 1 },
+                { "type": "above_and_beyond", "count": 1 },
+                { "type": "multiple_choice", "choices": [
+                    { "type": "SWE_pipeline_blog_post", "count": 1 },
+                    { "type": "SWE_pipeline_personal_project", "count": 1 }
+                ]} 
+            ]
+        },
+        {
+            "id": 9, 
+            "name": "Ajay Gupta",
+            "linkedIn": "https://www.linkedin.com/in/a7aygupta/",
+            "company": "Quizlet",
+            "role": "Senior Director of Engineering",
+            "criteria": [
+                { "type": "issue", "count": 6 },
+                { "type": "outside_comfort_zone", "count": 1 },
+                { "type": "complex_bug", "count": 1 },
+                { "type": "product_opinion", "count": 1 },
+                { "type": "understand_purpose", "count": 1 } 
+            ]
+        },
+        {
+            "id": 10, 
+            "name": "Brendan Clement",
+            "linkedIn": "https://www.linkedin.com/in/brendanclement/",
+            "company": "Amazon",
+            "role": "Lead Software Developer",
+            "criteria": [
+                { "type": "issue", "count": 6 },
+                { "type": "multiple_approaches", "count": 2 },
+                { "type": "seek_feedback", "count": 2 },
+                { "type": "above_and_beyond", "count": 2 } 
+            ]
         }
+
     ]
-}
+}   
