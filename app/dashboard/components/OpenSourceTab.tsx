@@ -141,17 +141,20 @@ function OpenSourceModal({
     dateModified: string;
   };
 
+  // Resolve clean primary criteria fields once at start to handle initialization
+  const initialPrimaryCriteria = entry ? activePartnershipCriteria.find(c => c.type === entry.criteriaType) : null;
+
   const [formData, setFormData] = useState<OpenSourceFormData>({
     partnershipName: entry?.partnershipName || selectedPartnership || '',
     metric: entry?.metric || '',
     status: entry?.status || 'plan',
     criteriaType: entry?.criteriaType || '',
     selectedExtras: (entry?.selectedExtras as string[]) || [],
-    planFields: entry?.planFields || [],
+    planFields: initialPrimaryCriteria?.plan_column_fields || entry?.planFields || [],
     planResponses: entry?.planResponses || {},
-    babyStepFields: entry?.babyStepFields || [],
+    babyStepFields: initialPrimaryCriteria?.baby_step_column_fields || entry?.babyStepFields || [],
     babyStepResponses: entry?.babyStepResponses || {},
-    proofOfCompletion: entry?.proofOfCompletion || [],
+    proofOfCompletion: initialPrimaryCriteria?.proof_of_completion_column_fields || initialPrimaryCriteria?.proof_of_completion || entry?.proofOfCompletion || [],
     proofResponses: entry?.proofResponses || {},
     dateCreated: entry?.dateCreated ? toLocalDateString(entry.dateCreated) : '',
     dateModified: entry?.dateModified ? toLocalDateString(entry.dateModified) : '',
@@ -159,17 +162,20 @@ function OpenSourceModal({
 
   useEffect(() => {
     if (entry) {
+      // Find clean primary criteria fields from metadata to fix any corrupted/flattened database records
+      const primaryCriteria = activePartnershipCriteria.find(c => c.type === entry.criteriaType);
+      
       setFormData({
         partnershipName: entry.partnershipName || '',
         metric: entry.metric || '',
         status: entry.status ?? 'plan',
         criteriaType: entry.criteriaType || '',
         selectedExtras: (entry.selectedExtras as string[]) || [],
-        planFields: entry.planFields || [],
+        planFields: primaryCriteria?.plan_column_fields || entry.planFields || [],
         planResponses: entry.planResponses || {},
-        babyStepFields: entry.babyStepFields || [],
+        babyStepFields: primaryCriteria?.baby_step_column_fields || entry.babyStepFields || [],
         babyStepResponses: entry.babyStepResponses || {},
-        proofOfCompletion: entry.proofOfCompletion || [],
+        proofOfCompletion: primaryCriteria?.proof_of_completion_column_fields || primaryCriteria?.proof_of_completion || entry.proofOfCompletion || [],
         proofResponses: entry.proofResponses || {},
         dateCreated: entry.dateCreated ? toLocalDateString(entry.dateCreated) : '',
         dateModified: entry.dateModified ? toLocalDateString(entry.dateModified) : '',
@@ -435,13 +441,16 @@ function OpenSourceModal({
       }
     });
     
+    const primaryCriteria = activePartnershipCriteria.find(c => c.type === formData.criteriaType);
+    
     const { dateCreated, dateModified, ...restFormData } = formData;
     const submitData: Partial<OpenSourceEntry> = { 
       ...restFormData,
-      // Update fields to reflect current selectedExtras
-      planFields: effectivePlan,
-      babyStepFields: effectiveBabySteps,
-      proofOfCompletion: effectiveProofOfWork,
+      // Ensure we only save the primary fields to these columns, NOT the merged effective fields
+      // This prevents permanent "flattening" of extra requirements into the primary card fields
+      planFields: primaryCriteria?.plan_column_fields || formData.planFields || [],
+      babyStepFields: primaryCriteria?.baby_step_column_fields || formData.babyStepFields || [],
+      proofOfCompletion: primaryCriteria?.proof_of_completion_column_fields || primaryCriteria?.proof_of_completion || formData.proofOfCompletion || [],
       // Clean up responses to remove orphaned data from removed extras
       planResponses: cleanedPlanResponses,
       babyStepResponses: cleanedBabyStepResponses,
