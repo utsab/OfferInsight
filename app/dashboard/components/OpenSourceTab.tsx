@@ -47,6 +47,8 @@ type OpenSourceTabProps = {
   isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
   isInstructor?: boolean;
+  showProofOfWorkWarning?: boolean;
+  setShowProofOfWorkWarning?: (show: boolean) => void;
 };
 
 function SortableOpenSourceCard(props: { 
@@ -766,6 +768,8 @@ export default function OpenSourceTab({
   isLoadingPartnerships,
   fetchAvailablePartnerships,
   isInstructor = false,
+  showProofOfWorkWarning = false,
+  setShowProofOfWorkWarning,
 }: OpenSourceTabProps & { isDraggingOpenSourceRef: React.MutableRefObject<boolean> }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasSavedSelection, setHasSavedSelection] = useState(selectedPartnership !== null);
@@ -1276,6 +1280,26 @@ export default function OpenSourceTab({
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
                     {isAbandoning ? 'Abandoning...' : 'Yes, Abandon Partnership'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Proof of Work Warning Modal */}
+          {showProofOfWorkWarning && setShowProofOfWorkWarning && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowProofOfWorkWarning(false)}>
+              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-white mb-4">Proof of Work Required</h3>
+                <p className="text-amber-400 text-sm mb-6 font-semibold">
+                  Please complete the proof of work fields first!
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setShowProofOfWorkWarning(false)}
+                    className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    OK
                   </button>
                 </div>
               </div>

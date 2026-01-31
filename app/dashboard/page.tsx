@@ -861,6 +861,7 @@ const hasSeededMockDataRef = useRef(false);
   const isFetchingPartnershipRef = useRef(false);
   const isFetchingAvailablePartnershipsRef = useRef(false);
   const isDraggingOpenSourceRef = useRef(false);
+  const [showProofOfWorkWarning, setShowProofOfWorkWarning] = useState(false);
 
   const fetchOpenSourceEntries = useCallback(async () => {
     // --- MOCK DATA BYPASS FOR OPENSOURCE FETCH START ---
@@ -1016,6 +1017,24 @@ const hasSeededMockDataRef = useRef(false);
     300
   );
 
+  const isProofOfWorkComplete = (entry: OpenSourceEntry): boolean => {
+    const proofFields = entry.proofOfCompletion ?? [];
+    if (proofFields.length === 0) return true;
+    const responses = entry.proofResponses ?? {};
+    for (const field of proofFields) {
+      const key = field?.text;
+      if (!key) continue;
+      const val = responses[key];
+      const fieldType = (field?.type ?? '').toLowerCase();
+      if (fieldType === 'checkbox') {
+        if (!val) return false;
+      } else {
+        if (val == null || String(val).trim() === '') return false;
+      }
+    }
+    return true;
+  };
+
   const handleOpenSourceDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) {
@@ -1057,6 +1076,13 @@ const hasSeededMockDataRef = useRef(false);
         return;
       }
       const movingItem = fromItems[movingIndex];
+
+      if (toCol === 'done' && !isProofOfWorkComplete(movingItem)) {
+        setShowProofOfWorkWarning(true);
+        setActiveOpenSourceId(null);
+        isDraggingOpenSourceRef.current = false;
+        return;
+      }
 
       const overIndex = toItems.findIndex(i => String(i.id) === overId);
       const insertIndex = overIndex === -1 ? toItems.length : overIndex;
@@ -2245,6 +2271,8 @@ const hasSeededMockDataRef = useRef(false);
             isLoadingPartnerships={isLoadingPartnerships}
             fetchAvailablePartnerships={fetchAvailablePartnerships}
             isInstructor={isInstructor}
+            showProofOfWorkWarning={showProofOfWorkWarning}
+            setShowProofOfWorkWarning={setShowProofOfWorkWarning}
           />
         )}
     </main>
