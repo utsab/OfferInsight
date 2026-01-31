@@ -47,6 +47,8 @@ type OpenSourceTabProps = {
   isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
   isInstructor?: boolean;
+  showProofOfWorkWarning?: boolean;
+  setShowProofOfWorkWarning?: (show: boolean) => void;
 };
 
 function SortableOpenSourceCard(props: { 
@@ -199,6 +201,13 @@ function OpenSourceModal({
     }
   }, [entry, selectedPartnership]);
 
+  const normalizeUrl = (raw: string): string => {
+    const s = String(raw).trim();
+    if (!s) return s;
+    if (/^https?:\/\//i.test(s)) return s;
+    return `https://${s}`;
+  };
+
   const handleProofResponseChange = (text: string, value: any, targetStatus?: OpenSourceStatus) => {
     const status = targetStatus || formData.status;
     setFormData(prev => {
@@ -346,12 +355,20 @@ function OpenSourceModal({
         </div>
         {requirement.type === 'URL' && (
           <input
-            type="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
             value={value}
             onChange={(e) => handleProofResponseChange(requirement.text, e.target.value, forcedStatus)}
+            onBlur={(e) => {
+              const normalized = normalizeUrl(e.target.value);
+              if (normalized !== e.target.value) {
+                handleProofResponseChange(requirement.text, normalized, forcedStatus);
+              }
+            }}
             disabled={disabled}
             className={`w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
-            placeholder="https://..."
+            placeholder="Paste link — https:// added automatically"
           />
         )}
         {(requirement.type === 'Checkbox' || requirement.type === 'checkbox') && (
@@ -766,6 +783,8 @@ export default function OpenSourceTab({
   isLoadingPartnerships,
   fetchAvailablePartnerships,
   isInstructor = false,
+  showProofOfWorkWarning = false,
+  setShowProofOfWorkWarning,
 }: OpenSourceTabProps & { isDraggingOpenSourceRef: React.MutableRefObject<boolean> }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasSavedSelection, setHasSavedSelection] = useState(selectedPartnership !== null);
@@ -776,7 +795,7 @@ export default function OpenSourceTab({
   const [showAbandonConfirmation, setShowAbandonConfirmation] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
 
-  // Overall criteria progress for the Progress column (total completed vs total required across all criteria)
+  // Overall criteria progress: total = sum of ALL criteria counts (primaries + extras) from partnership definition
   const totalCriteriaProgress = useMemo(() => {
     if (!activePartnershipCriteria || activePartnershipCriteria.length === 0) {
       return { completed: 0, total: 0 };
@@ -951,7 +970,17 @@ export default function OpenSourceTab({
       {!hasSavedSelection ? (
         <div className="flex flex-col items-center justify-center py-16 min-h-[400px]">
           <div className="w-full max-w-md">
-            <label className="block text-white font-semibold mb-4 text-center text-2xl">Choose Partnership Agreement</label>
+            <div className="flex flex-col items-center justify-center gap-1 mb-4 text-center">
+              <label className="text-white font-semibold text-2xl">Choose Partnership Agreement</label>
+              <a
+                href="https://docs.google.com/spreadsheets/d/1i2ccX17l1IhZ2LGs3N-hSHds9QJjxvUGzMW72toLf2s/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-electric-blue hover:text-blue-400 text-sm"
+              >
+                Link to Partnership Contract Document
+              </a>
+            </div>
             <div className="relative mb-6">
               <button
                 type="button"
@@ -1276,6 +1305,26 @@ export default function OpenSourceTab({
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
                     {isAbandoning ? 'Abandoning...' : 'Yes, Abandon Partnership'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Proof of Work Warning Modal */}
+          {showProofOfWorkWarning && setShowProofOfWorkWarning && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowProofOfWorkWarning(false)}>
+              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-white mb-4">Proof of Work Required</h3>
+                <p className="text-amber-400 text-sm mb-6 font-semibold">
+                  Please complete the proof of work fields first!
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setShowProofOfWorkWarning(false)}
+                    className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    OK
                   </button>
                 </div>
               </div>

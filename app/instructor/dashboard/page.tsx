@@ -14,6 +14,7 @@ interface UserData {
     issuesCompleted: number;
     completedCount: number;
     totalCount: number;
+    partnershipName?: string | null;
   };
   applications: {
     lastMonth: number;
@@ -91,6 +92,7 @@ function generateDebugUsers(): UserData[] {
         issuesCompleted,
         completedCount: issuesCompleted,
         totalCount: totalCriteria,
+        partnershipName: index % 3 === 0 ? 'Mark Flores' : index % 3 === 1 ? 'Krishna Pitchikala' : null,
       },
       applications: {
         lastMonth: applicationsLastMonth,
@@ -278,7 +280,7 @@ export default function InstructorDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 flex-1 min-w-0">
                   {/* Open Source */}
                   <div className="min-w-0">
-                    <div className="text-gray-300 text-sm font-medium mb-1">Open Source</div>
+                    <div className="text-gray-300 text-sm font-medium mb-1">Open Source: {user.openSource.partnershipName ?? '<none>'}</div>
                     <div className="text-gray-400 text-sm flex flex-col gap-2">
                       <span>
                         Issues Completed:{' '}
