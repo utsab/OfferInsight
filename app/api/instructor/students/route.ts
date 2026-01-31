@@ -313,6 +313,7 @@ export async function GET() {
             issuesCompleted: issuesCompletedCount,
             completedCount: completedCriteriaCount,
             totalCount: totalCriteriaCount,
+            partnershipName: activePartnership?.partnership?.name ?? null,
           },
           applications: {
             lastMonth: applicationsLastMonth,
