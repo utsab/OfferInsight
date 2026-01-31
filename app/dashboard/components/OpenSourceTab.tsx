@@ -201,6 +201,13 @@ function OpenSourceModal({
     }
   }, [entry, selectedPartnership]);
 
+  const normalizeUrl = (raw: string): string => {
+    const s = String(raw).trim();
+    if (!s) return s;
+    if (/^https?:\/\//i.test(s)) return s;
+    return `https://${s}`;
+  };
+
   const handleProofResponseChange = (text: string, value: any, targetStatus?: OpenSourceStatus) => {
     const status = targetStatus || formData.status;
     setFormData(prev => {
@@ -348,12 +355,20 @@ function OpenSourceModal({
         </div>
         {requirement.type === 'URL' && (
           <input
-            type="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
             value={value}
             onChange={(e) => handleProofResponseChange(requirement.text, e.target.value, forcedStatus)}
+            onBlur={(e) => {
+              const normalized = normalizeUrl(e.target.value);
+              if (normalized !== e.target.value) {
+                handleProofResponseChange(requirement.text, normalized, forcedStatus);
+              }
+            }}
             disabled={disabled}
             className={`w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
-            placeholder="https://..."
+            placeholder="Paste link — https:// added automatically"
           />
         )}
         {(requirement.type === 'Checkbox' || requirement.type === 'checkbox') && (
