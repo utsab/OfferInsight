@@ -776,7 +776,7 @@ export default function OpenSourceTab({
   const [showAbandonConfirmation, setShowAbandonConfirmation] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
 
-  // Overall criteria progress for the Progress column (total completed vs total required across all criteria)
+  // Overall criteria progress: total = sum of ALL criteria counts (primaries + extras) from partnership definition
   const totalCriteriaProgress = useMemo(() => {
     if (!activePartnershipCriteria || activePartnershipCriteria.length === 0) {
       return { completed: 0, total: 0 };

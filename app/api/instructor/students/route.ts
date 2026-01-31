@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getInstructorSession } from "@/app/lib/instructor-auth";
 import { prisma } from "@/db";
 import { getCurrentMonthDateRange } from "@/app/lib/date-utils";
+import partnershipsData from "@/partnerships/partnerships.json";
 
 // Completed status values based on dashboard completion column logic
 // Mapping completion column IDs to status values (same as dashboard)
@@ -61,6 +62,7 @@ export async function GET() {
           mostRecentLeetCode,
           mostRecentOpenSource,
           openSourceEntries,
+          activePartnership,
         ] = await Promise.all([
           prisma.applications_With_Outreach.findFirst({
             where: { userId: user.id, dateModified: { not: null } },
@@ -96,14 +98,20 @@ export async function GET() {
               status: true,
               criteriaType: true,
               selectedExtras: true,
+              partnershipName: true,
             },
+          }),
+          // Active partnership to get correct total criteria from partnership definition
+          prisma.userPartnership.findFirst({
+            where: { userId: user.id, status: 'active' },
+            include: { partnership: true },
           }),
         ]);
 
         // Derive Open Source stats:
         // - issuesCompleted: number of 'issue' cards with status 'done'
-        // - total criteria count: number of cards + number of selected extras across all cards
-        // - completed criteria count: number of done cards + their selected extras
+        // - total criteria count: from partnership definition (sum of all criteria counts), matching OpenSourceTab
+        // - completed criteria count: done entries fulfilling each criteria (direct or as extra)
         const issuesCompletedCount = openSourceEntries.filter(
           (entry) => entry.criteriaType === 'issue' && entry.status === 'done'
         ).length;
@@ -111,16 +119,56 @@ export async function GET() {
         let totalCriteriaCount = 0;
         let completedCriteriaCount = 0;
 
-        for (const entry of openSourceEntries) {
-          const extras = Array.isArray(entry.selectedExtras)
-            ? (entry.selectedExtras as unknown[]).length
-            : 0;
+        if (activePartnership) {
+          // Total = sum of ALL criteria counts (primaries + extras) from partnership definition.
+          // Same logic as OpenSourceTab totalCriteriaProgress. multiple_choice → user's selected choice.
+          const selections = (activePartnership.selections as Record<string, string>) || {};
+          let mcIndex = 0;
+          const criteria = (partnershipsData.partnerships.find(
+            (p: { id: number }) => p.id === activePartnership.partnershipId
+          )?.criteria || []).flatMap((c: { type: string; count?: number; choices?: { type: string; count?: number }[] }) => {
+            if (c.type === 'multiple_choice' && c.choices) {
+              const selectedType = selections[String(mcIndex)];
+              mcIndex++;
+              if (!selectedType) return [];
+              const selectedChoice = c.choices.find((choice: { type: string }) => choice.type === selectedType);
+              if (!selectedChoice) return [];
+              return [{ type: selectedChoice.type, count: selectedChoice.count || 1 }];
+            }
+            return [{ type: c.type, count: c.count || 1 }];
+          });
 
-          // Each card itself is one criterion, plus any extras selected
-          totalCriteriaCount += 1 + extras;
+          const partnershipName = activePartnership.partnership.name;
+          const doneEntries = openSourceEntries.filter(
+            (e) => e.status === 'done' && e.partnershipName === partnershipName
+          );
 
-          if (entry.status === 'done') {
-            completedCriteriaCount += 1 + extras;
+          for (const criteriaItem of criteria) {
+            if (criteriaItem.type === 'multiple_choice') continue;
+
+            const requiredCount = criteriaItem.count || 1;
+            totalCriteriaCount += requiredCount;
+
+            const completedForCriteria = doneEntries.filter((entry) => {
+              if (entry.criteriaType === criteriaItem.type) return true;
+              const extras = entry.selectedExtras as string[] | null;
+              return extras && Array.isArray(extras) && extras.includes(criteriaItem.type);
+            }).length;
+
+            completedCriteriaCount += Math.min(completedForCriteria, requiredCount);
+          }
+        } else {
+          // No active partnership: fall back to card-based count (legacy / no partnership selected)
+          for (const entry of openSourceEntries) {
+            const extras = Array.isArray(entry.selectedExtras)
+              ? (entry.selectedExtras as unknown[]).length
+              : 0;
+
+            totalCriteriaCount += 1 + extras;
+
+            if (entry.status === 'done') {
+              completedCriteriaCount += 1 + extras;
+            }
           }
         }
 
