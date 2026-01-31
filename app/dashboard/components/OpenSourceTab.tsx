@@ -970,7 +970,17 @@ export default function OpenSourceTab({
       {!hasSavedSelection ? (
         <div className="flex flex-col items-center justify-center py-16 min-h-[400px]">
           <div className="w-full max-w-md">
-            <label className="block text-white font-semibold mb-4 text-center text-2xl">Choose Partnership Agreement</label>
+            <div className="flex flex-col items-center justify-center gap-1 mb-4 text-center">
+              <label className="text-white font-semibold text-2xl">Choose Partnership Agreement</label>
+              <a
+                href="https://docs.google.com/spreadsheets/d/1i2ccX17l1IhZ2LGs3N-hSHds9QJjxvUGzMW72toLf2s/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-electric-blue hover:text-blue-400 text-sm"
+              >
+                Link to Partnership Contract Document
+              </a>
+            </div>
             <div className="relative mb-6">
               <button
                 type="button"
