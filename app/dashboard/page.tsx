@@ -854,6 +854,8 @@ const hasSeededMockDataRef = useRef(false);
   const [selectedPartnershipId, setSelectedPartnershipId] = useState<number | null>(null);
   const [activePartnershipDbId, setActivePartnershipDbId] = useState<number | null>(null);
   const [activePartnershipCriteria, setActivePartnershipCriteria] = useState<any[]>([]);
+  const [completedPartnerships, setCompletedPartnerships] = useState<Array<{ id: number; partnershipName: string }>>([]);
+  const [viewingCompletedPartnershipName, setViewingCompletedPartnershipName] = useState<string | null>(null);
   const [availablePartnerships, setAvailablePartnerships] = useState<Array<{ id: number; name: string; spotsRemaining: number }>>([]);
   const [fullPartnerships, setFullPartnerships] = useState<Array<{ id: number; name: string }>>([]);
   const [isLoadingPartnerships, setIsLoadingPartnerships] = useState(true);
@@ -938,14 +940,20 @@ const hasSeededMockDataRef = useRef(false);
         setSelectedPartnership(null);
         setSelectedPartnershipId(null);
         setActivePartnershipDbId(null);
+        setCompletedPartnerships([]);
         return;
       }
       const data = await response.json();
+      setCompletedPartnerships((data.completed || []).map((p: { id: number; partnershipName: string }) => ({ id: p.id, partnershipName: p.partnershipName })));
       if (data.active) {
         setSelectedPartnership(data.active.partnershipName);
         setSelectedPartnershipId(data.active.partnershipId);
         setActivePartnershipDbId(data.active.id);
         setActivePartnershipCriteria(data.active.criteria || []);
+      } else {
+        setSelectedPartnership(null);
+        setSelectedPartnershipId(null);
+        setActivePartnershipDbId(null);
       }
     } catch (error) {
       console.error('Error fetching active partnership:', error);
@@ -1993,17 +2001,18 @@ const hasSeededMockDataRef = useRef(false);
       });
     }
 
-    // Then apply partnership filter if selected
-    if (selectedPartnership) {
+    // Then apply partnership filter - use viewing completed partnership if set, else current
+    const partnershipFilter = viewingCompletedPartnershipName ?? selectedPartnership;
+    if (partnershipFilter) {
       (Object.keys(filtered) as OpenSourceColumnId[]).forEach(columnId => {
         filtered[columnId] = filtered[columnId].filter(entry =>
-          entry.partnershipName === selectedPartnership
+          entry.partnershipName === partnershipFilter
         );
       });
     }
 
     return filtered;
-  }, [openSourceColumns, openSourceFilter, selectedPartnership, isWithinCurrentMonth]);
+  }, [openSourceColumns, openSourceFilter, selectedPartnership, viewingCompletedPartnershipName, isWithinCurrentMonth]);
 
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);
@@ -2270,6 +2279,10 @@ const hasSeededMockDataRef = useRef(false);
             fullPartnerships={fullPartnerships}
             isLoadingPartnerships={isLoadingPartnerships}
             fetchAvailablePartnerships={fetchAvailablePartnerships}
+            fetchActivePartnership={fetchActivePartnership}
+            completedPartnerships={completedPartnerships}
+            viewingCompletedPartnershipName={viewingCompletedPartnershipName}
+            setViewingCompletedPartnershipName={setViewingCompletedPartnershipName}
             isInstructor={isInstructor}
             showProofOfWorkWarning={showProofOfWorkWarning}
             setShowProofOfWorkWarning={setShowProofOfWorkWarning}

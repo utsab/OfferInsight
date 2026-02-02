@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, PartyPopper, Medal, ArrowLeft } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -46,6 +46,10 @@ type OpenSourceTabProps = {
   fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
   isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
+  fetchActivePartnership?: () => Promise<void>;
+  completedPartnerships?: Array<{ id: number; partnershipName: string }>;
+  viewingCompletedPartnershipName?: string | null;
+  setViewingCompletedPartnershipName?: (name: string | null) => void;
   isInstructor?: boolean;
   showProofOfWorkWarning?: boolean;
   setShowProofOfWorkWarning?: (show: boolean) => void;
@@ -782,6 +786,10 @@ export default function OpenSourceTab({
   fullPartnerships,
   isLoadingPartnerships,
   fetchAvailablePartnerships,
+  fetchActivePartnership,
+  completedPartnerships = [],
+  viewingCompletedPartnershipName = null,
+  setViewingCompletedPartnershipName,
   isInstructor = false,
   showProofOfWorkWarning = false,
   setShowProofOfWorkWarning,
@@ -794,6 +802,9 @@ export default function OpenSourceTab({
   const [showSwitchConfirmation, setShowSwitchConfirmation] = useState(false);
   const [showAbandonConfirmation, setShowAbandonConfirmation] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
+  const [showCongratsModal, setShowCongratsModal] = useState(false);
+  const [isCompletingPartnership, setIsCompletingPartnership] = useState(false);
+  const prevCriteriaCompleteRef = useRef<boolean | null>(null);
 
   // Overall criteria progress: total = sum of ALL criteria counts (primaries + extras) from partnership definition
   const totalCriteriaProgress = useMemo(() => {
@@ -827,6 +838,15 @@ export default function OpenSourceTab({
 
     return { completed, total };
   }, [activePartnershipCriteria, filteredOpenSourceColumns.done]);
+
+  // Show congratulatory modal when user transitions from incomplete to all criteria complete (non-instructor only)
+  useEffect(() => {
+    const isComplete = totalCriteriaProgress.total > 0 && totalCriteriaProgress.completed >= totalCriteriaProgress.total;
+    if (isComplete && prevCriteriaCompleteRef.current === false && !isInstructor) {
+      setShowCongratsModal(true);
+    }
+    prevCriteriaCompleteRef.current = isComplete;
+  }, [totalCriteriaProgress.completed, totalCriteriaProgress.total, isInstructor]);
 
   // Reset saved state when selectedPartnership changes externally to null
   useEffect(() => {
@@ -935,11 +955,75 @@ export default function OpenSourceTab({
     }
   };
 
+  const handleCompleteAndSelectNewPartnership = async () => {
+    if (!activePartnershipDbId || isCompletingPartnership) return;
+
+    setIsCompletingPartnership(true);
+    try {
+      const url = userIdParam ? `/api/users/partnership?userId=${userIdParam}` : '/api/users/partnership';
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: activePartnershipDbId, status: 'completed' }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to complete partnership');
+        return;
+      }
+
+      // Reset partnership state to show selection screen
+      setSelectedPartnership(null);
+      setSelectedPartnershipId(null);
+      setActivePartnershipDbId(null);
+      setActivePartnershipCriteria([]);
+      setHasSavedSelection(false);
+      setTempSelection(null);
+      setShowCongratsModal(false);
+
+      fetchActivePartnership?.();
+      fetchAvailablePartnerships();
+      fetchOpenSourceEntries();
+    } catch (error) {
+      console.error('Error completing partnership:', error);
+      alert('Failed to complete partnership. Please try again.');
+    } finally {
+      setIsCompletingPartnership(false);
+    }
+  };
+
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6">
       {hasSavedSelection && (
         <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 mb-6">
-          <h4 className="text-xl font-bold text-white">Open Source Contributions</h4>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h4 className="text-xl font-bold text-white">Open Source Contributions</h4>
+            {viewingCompletedPartnershipName && selectedPartnership && setViewingCompletedPartnershipName && (
+              <button
+                onClick={() => setViewingCompletedPartnershipName(null)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-electric-blue hover:bg-blue-600 text-white text-sm font-semibold transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to {selectedPartnership}
+              </button>
+            )}
+            {/* Show congratulatory modal again when partnership is complete - only for current view, non-instructor */}
+            {!isInstructor && !viewingCompletedPartnershipName && totalCriteriaProgress.total > 0 && totalCriteriaProgress.completed >= totalCriteriaProgress.total && (
+              <button
+                type="button"
+                onClick={() => setShowCongratsModal(true)}
+                className="relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/60 via-yellow-900/40 to-amber-950/60 shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:from-amber-800/70 hover:via-yellow-800/50 hover:to-amber-900/70 hover:border-amber-400/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all overflow-hidden"
+              >
+                <span className="absolute inset-0 bg-gradient-to-br from-amber-400/10 via-transparent to-amber-500/10 pointer-events-none" />
+                <div className="relative flex items-center gap-2">
+                  <PartyPopper className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
+                  <span className="text-amber-100 font-bold text-sm uppercase tracking-wider">Partnership complete! - Click here to choose a new partnership!</span>
+                  <Medal className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
+                </div>
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2 text-sm text-gray-300">
             <span>Show:</span>
             <button
@@ -1331,6 +1415,39 @@ export default function OpenSourceTab({
             </div>
           )}
 
+          {/* Congratulations Modal - All Partnership Criteria Completed */}
+          {showCongratsModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCongratsModal(false)}>
+              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-col items-center text-center mb-6">
+                  <PartyPopper className="w-16 h-16 text-green-400 mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Congratulations!</h3>
+                  <p className="text-gray-300">
+                    You&apos;ve completed all criteria for your current partnership. Great work!
+                  </p>
+                </div>
+                <p className="text-gray-400 text-sm mb-6 text-center">
+                  Would you like to work on another partnership?
+                </p>
+                <div className="flex justify-center gap-3">
+                  <button
+                    onClick={() => setShowCongratsModal(false)}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    No
+                  </button>
+                  <button
+                    onClick={handleCompleteAndSelectNewPartnership}
+                    disabled={isCompletingPartnership}
+                    className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isCompletingPartnership ? 'Loading...' : 'Yes'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
         <div className="text-center py-8 text-gray-400">Loading open source entries...</div>
       ) : (
@@ -1458,7 +1575,57 @@ export default function OpenSourceTab({
                   <p className="text-xs text-gray-400 mt-1">{selectedPartnership ? `${selectedPartnership}'s Criteria` : 'Track your requirements'}</p>
                 </div>
                 <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
-                  {activePartnershipCriteria && activePartnershipCriteria.length > 0 ? (
+                  {/* Completed Partnerships - fancy flourished section with medal (at top for visibility) */}
+                  {completedPartnerships.length > 0 && (
+                    <div className="pb-4 border-b-2 border-amber-500/30">
+                      <div className="relative bg-gradient-to-br from-amber-900/40 via-yellow-900/30 to-amber-950/50 rounded-xl p-4 border-2 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.15)] overflow-hidden">
+                        {/* Decorative flourish corners */}
+                        <div className="absolute top-0 left-0 w-12 h-12 border-l-2 border-t-2 border-amber-400/50 rounded-tl-lg" />
+                        <div className="absolute top-0 right-0 w-12 h-12 border-r-2 border-t-2 border-amber-400/50 rounded-tr-lg" />
+                        <div className="absolute bottom-0 left-0 w-12 h-12 border-l-2 border-b-2 border-amber-400/50 rounded-bl-lg" />
+                        <div className="absolute bottom-0 right-0 w-12 h-12 border-r-2 border-b-2 border-amber-400/50 rounded-br-lg" />
+                        {/* Subtle shimmer overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 via-transparent to-amber-500/5 pointer-events-none" />
+                        <div className="relative flex flex-col items-center">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="p-1.5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-[0_0_12px_rgba(245,158,11,0.5)]">
+                              <Medal className="w-6 h-6 text-amber-100" strokeWidth={2.5} />
+                            </div>
+                            <h6 className="text-sm font-bold text-amber-200 uppercase tracking-[0.2em]">
+                              Completed Partnerships
+                            </h6>
+                            <div className="p-1.5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-[0_0_12px_rgba(245,158,11,0.5)]">
+                              <Medal className="w-6 h-6 text-amber-100" strokeWidth={2.5} />
+                            </div>
+                          </div>
+                          <ul className="w-full space-y-2">
+                            {completedPartnerships.map((p) => (
+                              <li key={p.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => setViewingCompletedPartnershipName?.(p.partnershipName)}
+                                  className={`w-full flex items-center gap-2 py-2 px-3 rounded-lg border text-left font-medium text-sm transition-colors ${
+                                    viewingCompletedPartnershipName === p.partnershipName
+                                      ? 'bg-amber-500/30 border-amber-400 text-amber-100 ring-2 ring-amber-400/50'
+                                      : 'bg-amber-950/30 border-amber-500/20 text-amber-100 hover:bg-amber-900/40 hover:border-amber-400/40'
+                                  }`}
+                                >
+                                  <span className="text-amber-400">✦</span>
+                                  <span className="flex-1 truncate">{p.partnershipName}</span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="mt-2 text-xs text-amber-400/80 italic">
+                            Congratulations on your achievements!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Current partnership criteria - hidden when viewing a completed partnership */}
+                  {!viewingCompletedPartnershipName && activePartnershipCriteria && activePartnershipCriteria.length > 0 ? (
                     activePartnershipCriteria.map((criteria: any, index: number) => {
                       // Skip multiple_choice criteria as they're handled separately
                       if (criteria.type === 'multiple_choice') return null;
@@ -1525,7 +1692,7 @@ export default function OpenSourceTab({
                         </div>
                       );
                     }).filter(Boolean)
-                  ) : (
+                  ) : !viewingCompletedPartnershipName ? (
                     <div className="text-center py-8 text-gray-400 bg-gray-800/30 rounded-lg border border-gray-700/50">
                       <div className="text-sm mb-1">
                         {selectedPartnership ? (
@@ -1535,10 +1702,10 @@ export default function OpenSourceTab({
                         )}
                       </div>
                     </div>
-                  )}
+                  ) : null}
                   
-                  {/* Overall criteria progress (same visual style as individual criteria cards) */}
-                  {activePartnershipCriteria && activePartnershipCriteria.length > 0 && totalCriteriaProgress.total > 0 && (
+                  {/* Overall criteria progress - hidden when viewing completed */}
+                  {!viewingCompletedPartnershipName && activePartnershipCriteria && activePartnershipCriteria.length > 0 && totalCriteriaProgress.total > 0 && (
                     <div className="mt-4 pt-4 border-t border-gray-700/50">
                       <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
                         <div className="flex items-center justify-between mb-2">

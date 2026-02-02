@@ -12,17 +12,19 @@ const nextConfig = {
             // Example: 'https://your-custom-domain.com',
           ]
         : [
+            'https://offer-insight-swart.vercel.app',
             'localhost:3000', // localhost
-            '192.168.1.45:3000', // Phone access via WiFi
+            '192.168.1.50:3000', // Phone access via WiFi
             'https://scaling-memory-pj7rj746pv929rqg-3000.app.github.dev/', // Codespaces
           ],
     },
   },
   // Suppresses cross-origin warnings for local development (e.g., phone access via WiFi)
   allowedDevOrigins: [
+    'https://offer-insight-swart.vercel.app',
     'localhost:3000',
-    '192.168.1.45',
-    '192.168.1.45:3000',
+    '192.168.1.50',
+    '192.168.1.50:3000',
   ],
 };
 
