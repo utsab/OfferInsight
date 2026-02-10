@@ -402,7 +402,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const wasActive = userPartnership.status === "active";
-    const becomingInactive = status === "completed" || status === "abandoned";
 
     // Use transaction to update status and decrement count atomically
     const result = await prisma.$transaction(async (tx) => {
@@ -418,8 +417,8 @@ export async function PUT(request: NextRequest) {
         },
       });
 
-      // Decrement active user count if moving from active to completed/abandoned
-      if (wasActive && becomingInactive) {
+      // Decrement active user count only when abandoning (not when completing)
+      if (wasActive && status === "abandoned") {
         await tx.partnership.update({
           where: { id: userPartnership.partnershipId },
           data: {
