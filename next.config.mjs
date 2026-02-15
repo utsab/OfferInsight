@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 
+// LOCAL_IP from .env.local for phone/WiFi access - not set in production
+const localIp = process.env.LOCAL_IP || '';
+
 const nextConfig = {
   experimental: {
     serverActions: {
       // Only needed for cross-origin Server Action calls
       // Same-origin calls (e.g., from your Vercel domain) work without being listed here
-      allowedOrigins: process.env.NODE_ENV === 'production' 
+      allowedOrigins: process.env.NODE_ENV === 'production'
         ? [
             // Add your production domain(s) here if you need cross-origin Server Actions
             // Example: 'https://your-app.vercel.app',
@@ -14,8 +17,7 @@ const nextConfig = {
         : [
             'https://offer-insight-swart.vercel.app',
             'localhost:3000', // localhost
-            '192.168.1.50:3000', // Phone access via WiFi
-            'https://scaling-memory-pj7rj746pv929rqg-3000.app.github.dev/', // Codespaces
+            ...(localIp ? [`${localIp}:3000`] : []), // Phone access via WiFi (from .env.local)
           ],
     },
   },
@@ -23,8 +25,7 @@ const nextConfig = {
   allowedDevOrigins: [
     'https://offer-insight-swart.vercel.app',
     'localhost:3000',
-    '192.168.1.50',
-    '192.168.1.50:3000',
+    ...(localIp ? [localIp, `${localIp}:3000`] : []),
   ],
 };
 
