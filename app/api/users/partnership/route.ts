@@ -177,6 +177,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user has already completed this specific partnership - MUST be before
+    // any destructive operations (delete cards, abandon) so we don't delete cards
+    // and then reject the request
+    const alreadyCompleted = await prisma.userPartnership.findFirst({
+      where: {
+        userId,
+        partnershipId,
+        status: "completed",
+      },
+    });
+
+    if (alreadyCompleted) {
+      return NextResponse.json(
+        { error: "You have already completed this partnership." },
+        { status: 400 }
+      );
+    }
+
     // If instructor is switching partnerships, abandon the old one and delete all cards
     // This happens BEFORE creating the new one to ensure proper count tracking
     if (existingActive && isInstructor) {
@@ -206,22 +224,6 @@ export async function POST(request: NextRequest) {
           });
         });
       }
-    }
-
-    // Check if user has already completed this specific partnership
-    const alreadyCompleted = await prisma.userPartnership.findFirst({
-      where: {
-        userId,
-        partnershipId,
-        status: "completed",
-      },
-    });
-
-    if (alreadyCompleted) {
-      return NextResponse.json(
-        { error: "You have already completed this partnership." },
-        { status: 400 }
-      );
     }
 
     // Find the partnership definition from the JSON to get criteria

@@ -804,7 +804,14 @@ export default function OpenSourceTab({
   const [isAbandoning, setIsAbandoning] = useState(false);
   const [showCongratsModal, setShowCongratsModal] = useState(false);
   const [isCompletingPartnership, setIsCompletingPartnership] = useState(false);
+  const [partnershipError, setPartnershipError] = useState<string | null>(null);
   const prevCriteriaCompleteRef = useRef<boolean | null>(null);
+
+  // Exclude completed partnerships from selection dropdown so users can't accidentally pick one
+  const availableToSelect = useMemo(
+    () => availablePartnerships.filter(p => !completedPartnerships.some(c => c.partnershipName === p.name)),
+    [availablePartnerships, completedPartnerships]
+  );
 
   // Overall criteria progress: total = sum of ALL criteria counts (primaries + extras) from partnership definition
   const totalCriteriaProgress = useMemo(() => {
@@ -865,6 +872,12 @@ export default function OpenSourceTab({
     const selectedPartnershipData = availablePartnerships.find(p => p.name === tempSelection);
     if (!selectedPartnershipData) return;
 
+    // Block selecting a partnership the user has already completed (show error immediately)
+    if (completedPartnerships.some(c => c.partnershipName === tempSelection)) {
+      setPartnershipError('You have already completed this partnership.');
+      return;
+    }
+
     // If instructor is switching partnerships, show confirmation
     if (isInstructor && userIdParam && selectedPartnership && tempSelection !== selectedPartnership) {
       setShowSwitchConfirmation(true);
@@ -880,6 +893,13 @@ export default function OpenSourceTab({
     const selectedPartnershipData = availablePartnerships.find(p => p.name === tempSelection);
     if (!selectedPartnershipData) return;
 
+    // Safety: block selecting completed partnership (e.g. from switch confirmation)
+    if (completedPartnerships.some(c => c.partnershipName === tempSelection)) {
+      setShowSwitchConfirmation(false);
+      setPartnershipError('You have already completed this partnership.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const url = userIdParam ? `/api/users/partnership?userId=${userIdParam}` : '/api/users/partnership';
@@ -894,7 +914,8 @@ export default function OpenSourceTab({
 
       if (!response.ok) {
         const errorData = await response.json();
-        alert(errorData.error || 'Failed to save partnership');
+        setShowSwitchConfirmation(false);
+        setPartnershipError(errorData.error || 'Failed to save partnership');
         return;
       }
 
@@ -912,7 +933,7 @@ export default function OpenSourceTab({
       fetchOpenSourceEntries();
     } catch (error) {
       console.error('Error saving partnership:', error);
-      alert('Failed to save partnership. Please try again.');
+      setPartnershipError('Failed to save partnership. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -931,7 +952,8 @@ export default function OpenSourceTab({
 
       if (!response.ok) {
         const errorData = await response.json();
-        alert(errorData.error || 'Failed to abandon partnership');
+        setShowAbandonConfirmation(false);
+        setPartnershipError(errorData.error || 'Failed to abandon partnership');
         return;
       }
 
@@ -949,7 +971,7 @@ export default function OpenSourceTab({
       fetchOpenSourceEntries();
     } catch (error) {
       console.error('Error abandoning partnership:', error);
-      alert('Failed to abandon partnership. Please try again.');
+      setPartnershipError('Failed to abandon partnership. Please try again.');
     } finally {
       setIsAbandoning(false);
     }
@@ -969,7 +991,7 @@ export default function OpenSourceTab({
 
       if (!response.ok) {
         const errorData = await response.json();
-        alert(errorData.error || 'Failed to complete partnership');
+        setPartnershipError(errorData.error || 'Failed to complete partnership');
         return;
       }
 
@@ -987,7 +1009,7 @@ export default function OpenSourceTab({
       fetchOpenSourceEntries();
     } catch (error) {
       console.error('Error completing partnership:', error);
-      alert('Failed to complete partnership. Please try again.');
+      setPartnershipError('Failed to complete partnership. Please try again.');
     } finally {
       setIsCompletingPartnership(false);
     }
@@ -1093,7 +1115,7 @@ export default function OpenSourceTab({
                     >
                       &lt;none selected&gt;
                     </button>
-                    {availablePartnerships.map(partnership => (
+                    {availableToSelect.map(partnership => (
                       <button
                         key={partnership.id}
                         onClick={() => {
@@ -1219,7 +1241,7 @@ export default function OpenSourceTab({
                       >
                         &lt;none selected&gt;
                       </button>
-                      {availablePartnerships.map(partnership => (
+                      {availableToSelect.map(partnership => (
                         <button
                           key={partnership.id}
                           onClick={() => {
@@ -1389,6 +1411,26 @@ export default function OpenSourceTab({
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
                     {isAbandoning ? 'Abandoning...' : 'Yes, Abandon Partnership'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Partnership Error Modal */}
+          {partnershipError && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPartnershipError(null)}>
+              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-white mb-4">Partnership Error</h3>
+                <p className="text-amber-400 text-sm mb-6 font-medium">
+                  {partnershipError}
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setPartnershipError(null)}
+                    className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    OK
                   </button>
                 </div>
               </div>
