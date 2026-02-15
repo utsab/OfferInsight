@@ -211,7 +211,7 @@ export default function InstructorDashboard() {
         </div>
         
         {/* Result Count */}
-        {!loading && users.length > 0 && (
+        {users.length > 0 && (
           <div className="text-gray-400 text-sm mb-4">
             Showing {filteredAndSortedUsers.length} of {users.length} user{users.length !== 1 ? 's' : ''}
             {searchQuery && ` matching "${searchQuery}"`}
@@ -224,125 +224,112 @@ export default function InstructorDashboard() {
               key={user.id}
               className="bg-gray-600 border border-light-steel-blue rounded-lg px-6 py-4 hover:border-electric-blue transition-colors w-full"
             >
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                {/* Left side: Name (clickable), Status, and Referrals */}
-                <div className="flex flex-col gap-2 min-w-0">
-                  {/* Top row: Name + Active/Progress lights inline */}
-                  <div className="flex flex-wrap items-center gap-4 min-w-0">
-                    {/* Name - Clickable Link */}
-                    <div className="min-w-0">
-                      <Link
-                        href={`/dashboard?userId=${user.id}`}
-                        className="text-white font-medium text-lg hover:text-electric-blue transition-colors whitespace-nowrap"
-                      >
-                        {user.name}
-                      </Link>
-                    </div>
+              {/* Flex: one item wraps at a time (word-wrap style); fixed width keeps columns aligned */}
+              <div className="flex flex-wrap gap-4 xl:gap-6 items-start">
+                {/* 1. Name */}
+                <div className="w-[165px] min-w-[165px] shrink-0">
+                  <Link
+                    href={`/dashboard?userId=${user.id}`}
+                    title={user.name}
+                    className="text-white font-medium text-lg hover:text-electric-blue transition-colors block truncate"
+                  >
+                    {user.name}
+                  </Link>
+                </div>
 
-                    {/* Active and Progress status indicators */}
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-4">
-                        {/* Active indicator */}
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
-                            user.activeStatus === 2 ? 'bg-green-500' : 
-                            user.activeStatus === 1 ? 'bg-yellow-500' : 
-                            'bg-red-500'
-                          }`}></div>
-                          <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Active</span>
-                        </div>
-                        {/* Progress indicator */}
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
-                            user.progressStatus === 2 ? 'bg-green-500' : 
-                            user.progressStatus === 1 ? 'bg-yellow-500' : 
-                            'bg-red-500'
-                          }`}></div>
-                          <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Progress</span>
-                        </div>
-                      </div>
+                {/* 2. Status */}
+                <div className="flex flex-col gap-2 w-[165px] min-w-[165px] shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                      user.activeStatus === 2 ? 'bg-green-500' :
+                      user.activeStatus === 1 ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`} />
+                    <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Active</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                      user.progressStatus === 2 ? 'bg-green-500' :
+                      user.progressStatus === 1 ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`} />
+                    <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Progress</span>
+                  </div>
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit border min-w-[120px] ${
+                    user.referralCount > 0
+                      ? 'bg-green-900/30 border-green-500'
+                      : 'bg-gray-800/50 border-gray-600'
+                  }`}>
+                    <span className={`font-bold text-sm whitespace-nowrap ${
+                      user.referralCount > 0 ? 'text-green-400' : 'text-gray-500'
+                    }`}>
+                      🎉 {user.referralCount} Referral{user.referralCount !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
 
-                      {/* Referrals - Prominent green display when user has referrals, below Active/Progress lights */}
-                      {user.referralCount > 0 && (
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-900/30 border border-green-500 rounded-lg w-fit">
-                          <span className="text-green-400 font-bold text-base whitespace-nowrap">
-                            🎉 {user.referralCount} Referral{user.referralCount !== 1 ? 's' : ''}
+                {/* 3. Open Source */}
+                <div className="w-[165px] min-w-[165px] shrink-0">
+                  <div className="text-gray-300 text-sm font-medium mb-1">Open Source</div>
+                  <div className="text-gray-400 text-sm flex flex-col gap-2">
+                    <span>
+                      Issues Completed:{' '}
+                      <span className="text-white font-medium">{user.openSource.issuesCompleted}</span>
+                    </span>
+                    <div className="relative h-8 w-full bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-electric-blue rounded-full"
+                        style={{
+                          width: `${user.openSource.totalCount > 0
+                            ? Math.min(100, (user.openSource.completedCount / user.openSource.totalCount) * 100)
+                            : 0}%`,
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="text-sm text-gray-100 font-medium">
+                          Criteria:{' '}
+                          <span className="text-white font-semibold">
+                            {user.openSource.completedCount}/{user.openSource.totalCount}
                           </span>
-                        </div>
-                      )}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Stats - Responsive grid that wraps on smaller screens */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 flex-1 min-w-0">
-                  {/* Open Source */}
-                  <div className="min-w-0">
-                    <div className="text-gray-300 text-sm font-medium mb-1">Open Source</div>
-                    <div className="text-gray-400 text-sm flex flex-col gap-2">
-                      <span>
-                        Issues Completed:{' '}
-                        <span className="text-white font-medium">{user.openSource.issuesCompleted}</span>
-                      </span>
-                      <div className="relative h-5 w-full bg-gray-700 rounded-full overflow-hidden">
-                        {/* Filled portion */}
-                        <div
-                          className="h-full bg-electric-blue rounded-full"
-                          style={{
-                            width: `${
-                              user.openSource.totalCount > 0
-                                ? Math.min(100, (user.openSource.completedCount / user.openSource.totalCount) * 100)
-                                : 0
-                            }%`,
-                          }}
-                        />
-                        {/* Text overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <span className="text-[11px] text-gray-100 font-medium">
-                            Criteria:{' '}
-                            <span className="text-white font-semibold">
-                              {user.openSource.completedCount}/{user.openSource.totalCount}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                {/* 4. Applications */}
+                <div className="w-[165px] min-w-[165px] shrink-0">
+                  <div className="text-gray-300 text-sm font-medium mb-1">Applications</div>
+                  <div className="text-gray-400 text-sm flex flex-col">
+                    <span>Last Month: <span className="text-white font-medium">{user.applications.lastMonth}</span></span>
+                    <span>All Time: <span className="text-white font-medium">{user.applications.allTime}</span></span>
                   </div>
+                </div>
 
-                  {/* Applications */}
-                  <div className="min-w-0">
-                    <div className="text-gray-300 text-sm font-medium mb-1">Applications</div>
-                    <div className="text-gray-400 text-sm flex flex-col">
-                      <span>Last Month: <span className="text-white font-medium">{user.applications.lastMonth}</span></span>
-                      <span>All Time: <span className="text-white font-medium">{user.applications.allTime}</span></span>
-                    </div>
+                {/* 5. Events */}
+                <div className="w-[165px] min-w-[165px] shrink-0">
+                  <div className="text-gray-300 text-sm font-medium mb-1">Events</div>
+                  <div className="text-gray-400 text-sm flex flex-col">
+                    <span>Last Month: <span className="text-white font-medium">{user.events.lastMonth}</span></span>
+                    <span>All Time: <span className="text-white font-medium">{user.events.allTime}</span></span>
                   </div>
+                </div>
 
-                  {/* In Person Events */}
-                  <div className="min-w-0">
-                    <div className="text-gray-300 text-sm font-medium mb-1">Events</div>
-                    <div className="text-gray-400 text-sm flex flex-col">
-                      <span>Last Month: <span className="text-white font-medium">{user.events.lastMonth}</span></span>
-                      <span>All Time: <span className="text-white font-medium">{user.events.allTime}</span></span>
-                    </div>
+                {/* 6. Coffee Chats */}
+                <div className="w-[165px] min-w-[165px] shrink-0">
+                  <div className="text-gray-300 text-sm font-medium mb-1">Coffee Chats</div>
+                  <div className="text-gray-400 text-sm flex flex-col">
+                    <span>Last Month: <span className="text-white font-medium">{user.coffeeChats.lastMonth}</span></span>
+                    <span>All Time: <span className="text-white font-medium">{user.coffeeChats.allTime}</span></span>
                   </div>
+                </div>
 
-                  {/* Coffee Chats */}
-                  <div className="min-w-0">
-                    <div className="text-gray-300 text-sm font-medium mb-1">Coffee Chats</div>
-                    <div className="text-gray-400 text-sm flex flex-col">
-                      <span>Last Month: <span className="text-white font-medium">{user.coffeeChats.lastMonth}</span></span>
-                      <span>All Time: <span className="text-white font-medium">{user.coffeeChats.allTime}</span></span>
-                    </div>
-                  </div>
-
-                  {/* LeetCode Problems */}
-                  <div className="min-w-0">
-                    <div className="text-gray-300 text-sm font-medium mb-1">LeetCode</div>
-                    <div className="text-gray-400 text-sm flex flex-col">
-                      <span>Last Month: <span className="text-white font-medium">{user.leetCode.lastMonth}</span></span>
-                      <span>All Time: <span className="text-white font-medium">{user.leetCode.allTime}</span></span>
-                    </div>
+                {/* 7. LeetCode */}
+                <div className="w-[165px] min-w-[165px] shrink-0">
+                  <div className="text-gray-300 text-sm font-medium mb-1">LeetCode</div>
+                  <div className="text-gray-400 text-sm flex flex-col">
+                    <span>Last Month: <span className="text-white font-medium">{user.leetCode.lastMonth}</span></span>
+                    <span>All Time: <span className="text-white font-medium">{user.leetCode.allTime}</span></span>
                   </div>
                 </div>
               </div>
@@ -350,7 +337,7 @@ export default function InstructorDashboard() {
           ))}
         </div>
 
-        {filteredAndSortedUsers.length === 0 && !loading && (
+        {filteredAndSortedUsers.length === 0 && (
           <div className="text-gray-400 text-center py-8">
             {searchQuery ? 'No users found matching your search.' : 'No users found.'}
           </div>
