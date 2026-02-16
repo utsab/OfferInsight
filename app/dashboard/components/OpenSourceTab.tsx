@@ -306,26 +306,33 @@ function OpenSourceModal({
   // Initialize collapsed sections state
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
-  // Reset collapsed sections when entry, status, extras, or baby step groups change
-  // Collapse sections that are not relevant to current column
-  // Use a single computed dependency to ensure stable array size
-  const collapseDeps = useMemo(() => {
-    return `${entry?.id ?? 'new'}-${formData.status}-${formData.selectedExtras.length}-${formData.criteriaType ?? ''}-${babyStepGroups.length}`;
-  }, [entry?.id, formData.status, formData.selectedExtras.length, formData.criteriaType, babyStepGroups.length]);
-  
+  // Extras section: only reset when entry or status changes (not when selecting extras)
+  // This prevents auto-collapse when user adds multiple extras in one go
+  const collapseDepsForExtras = useMemo(
+    () => `${entry?.id ?? 'new'}-${formData.status}`,
+    [entry?.id, formData.status]
+  );
+
+  // Plan, proofOfWork, babyStep groups: reset when entry, status, criteria, or baby step groups change
+  const collapseDepsForRest = useMemo(
+    () => `${entry?.id ?? 'new'}-${formData.status}-${formData.criteriaType ?? ''}-${babyStepGroups.length}`,
+    [entry?.id, formData.status, formData.criteriaType, babyStepGroups.length]
+  );
+
+  useEffect(() => {
+    setCollapsedSections(prev => ({ ...prev, extras: formData.status !== 'plan' }));
+  }, [collapseDepsForExtras]);
+
   useEffect(() => {
     const newState: Record<string, boolean> = {
-      plan: formData.status !== 'plan', // Collapsed if not in plan column
-      proofOfWork: formData.status === 'babyStep', // Collapsed if in babyStep column
-      extras: formData.status !== 'plan', // Collapsed if not in plan column
+      plan: formData.status !== 'plan',
+      proofOfWork: formData.status === 'babyStep',
     };
-    // Initialize for each baby step group - collapse if not in babyStep or plan column
     babyStepGroups.forEach((_, idx) => {
       newState[`babyStep-${idx}`] = formData.status !== 'babyStep' && formData.status !== 'plan';
     });
-    setCollapsedSections(newState);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collapseDeps]);
+    setCollapsedSections(prev => ({ ...prev, ...newState }));
+  }, [collapseDepsForRest]);
 
   const toggleSection = (section: string) => {
     setCollapsedSections(prev => ({
