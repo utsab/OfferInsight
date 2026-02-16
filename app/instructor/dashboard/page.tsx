@@ -232,6 +232,21 @@ export default function InstructorDashboard() {
               <option value="issues-low">Issues: Low-High</option>
             </select>
           </div>
+
+          {/* Export CSV - uses current search and min-issues filter */}
+          <button
+            type="button"
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (searchQuery.trim()) params.set('search', searchQuery.trim());
+              if (minIssuesValid && minIssues !== null) params.set('minIssues', String(minIssues));
+              const url = `/api/instructor/students/export${params.toString() ? `?${params.toString()}` : ''}`;
+              window.open(url, '_blank', 'noopener,noreferrer');
+            }}
+            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white font-semibold hover:bg-gray-600 hover:border-electric-blue focus:outline-none focus:ring-1 focus:ring-electric-blue transition-colors whitespace-nowrap"
+          >
+            Export CSV
+          </button>
         </div>
         
         {/* Result Count */}
