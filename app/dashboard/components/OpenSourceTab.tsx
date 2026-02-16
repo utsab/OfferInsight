@@ -236,12 +236,14 @@ function OpenSourceModal({
 
 
   // Helper to get effective fields including extras
+  // When in Plan column, exclude extra fields to keep the modal compact (user can still select extras via checkboxes)
   const getEffectiveFields = () => {
     let effectiveBabySteps = [...formData.babyStepFields];
     let effectiveProofOfWork = [...formData.proofOfCompletion];
     let effectivePlan = [...formData.planFields];
 
-    if (formData.criteriaType === 'issue') {
+    const includeExtraFields = formData.status !== 'plan';
+    if (formData.criteriaType === 'issue' && includeExtraFields) {
       formData.selectedExtras.forEach(extraType => {
         const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
         if (extraCriteria) {
@@ -266,6 +268,7 @@ function OpenSourceModal({
   };
 
   // Helper to get grouped baby steps
+  // When in Plan column, exclude extra baby step groups to keep the modal compact
   const getBabyStepGroups = () => {
     const groups: Array<{ name: string; fields: any[] }> = [];
     
@@ -278,8 +281,8 @@ function OpenSourceModal({
       });
     }
 
-    // Add extra baby steps
-    if (formData.criteriaType === 'issue') {
+    const includeExtraFields = formData.status !== 'plan';
+    if (formData.criteriaType === 'issue' && includeExtraFields) {
       formData.selectedExtras.forEach(extraType => {
         const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
         if (extraCriteria && extraCriteria.baby_step_column_fields && extraCriteria.baby_step_column_fields.length > 0) {
@@ -297,7 +300,7 @@ function OpenSourceModal({
   const { babySteps: effectiveBabySteps, proofOfWork: effectiveProofOfWork, plan: effectivePlan } = getEffectiveFields();
   const babyStepGroups = useMemo(
     () => getBabyStepGroups(),
-    [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, activePartnershipCriteria]
+    [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
   );
 
   // Initialize collapsed sections state
