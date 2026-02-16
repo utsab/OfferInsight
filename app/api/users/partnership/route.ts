@@ -485,7 +485,7 @@ export async function DELETE(request: NextRequest) {
 
     // Delete all cards and abandon partnership
     await prisma.$transaction(async (tx) => {
-      // Delete all open source entries
+      // Delete all open source entries for this user
       await tx.openSourceEntry.deleteMany({
         where: { userId },
       });

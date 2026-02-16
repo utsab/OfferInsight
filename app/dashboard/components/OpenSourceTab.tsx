@@ -934,7 +934,6 @@ export default function OpenSourceTab({
       setSelectedPartnershipId(selectedPartnershipData.id);
       setActivePartnershipDbId(data.id);
       setActivePartnershipCriteria(data.criteria || []);
-      setHasSavedSelection(true);
       setIsDropdownOpen(false);
       setShowSwitchConfirmation(false);
       // Refresh available partnerships to update spots remaining
@@ -950,7 +949,7 @@ export default function OpenSourceTab({
   };
 
   const handleAbandonPartnership = async () => {
-    if (!isInstructor || !userIdParam || !activePartnershipDbId) return;
+    if (!isInstructor || !userIdParam) return;
 
     setIsAbandoning(true);
     try {
@@ -962,8 +961,7 @@ export default function OpenSourceTab({
 
       if (!response.ok) {
         const errorData = await response.json();
-        setShowAbandonConfirmation(false);
-        setPartnershipError(errorData.error || 'Failed to abandon partnership');
+        alert(errorData.error || 'Failed to abandon partnership');
         return;
       }
 
@@ -972,22 +970,20 @@ export default function OpenSourceTab({
       setSelectedPartnershipId(null);
       setActivePartnershipDbId(null);
       setActivePartnershipCriteria([]);
-      setHasSavedSelection(false);
-      setTempSelection(null);
-      setShowAbandonConfirmation(false);
       
       // Refresh available partnerships and entries
       fetchAvailablePartnerships();
       fetchOpenSourceEntries();
     } catch (error) {
       console.error('Error abandoning partnership:', error);
-      setPartnershipError('Failed to abandon partnership. Please try again.');
+      alert('Failed to abandon partnership. Please try again.');
     } finally {
+      setShowAbandonConfirmation(false);
       setIsAbandoning(false);
     }
   };
 
-  const handleCompleteAndSelectNewPartnership = async () => {
+  const handleCompletePartnership = async (resetToSelection: boolean = false) => {
     if (!activePartnershipDbId || isCompletingPartnership) return;
 
     setIsCompletingPartnership(true);
@@ -1005,18 +1001,22 @@ export default function OpenSourceTab({
         return;
       }
 
-      // Reset partnership state to show selection screen
-      setSelectedPartnership(null);
-      setSelectedPartnershipId(null);
-      setActivePartnershipDbId(null);
-      setActivePartnershipCriteria([]);
-      setHasSavedSelection(false);
-      setTempSelection(null);
       setShowCongratsModal(false);
 
-      fetchActivePartnership?.();
+      if (resetToSelection) {
+        // Reset partnership state to show selection screen
+        setSelectedPartnership(null);
+        setSelectedPartnershipId(null);
+        setActivePartnershipDbId(null);
+        setActivePartnershipCriteria([]);
+        fetchActivePartnership?.();
+      } else {
+        // Keep current view - just refresh entries and partnerships list
+        // Don't call fetchActivePartnership as it would reset state when no active partnership exists
+        fetchOpenSourceEntries();
+      }
+      
       fetchAvailablePartnerships();
-      fetchOpenSourceEntries();
     } catch (error) {
       console.error('Error completing partnership:', error);
       setPartnershipError('Failed to complete partnership. Please try again.');
@@ -1025,35 +1025,54 @@ export default function OpenSourceTab({
     }
   };
 
+  const handleCompleteAndSelectNewPartnership = async () => {
+    await handleCompletePartnership(true);
+  };
+
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6">
       {hasSavedSelection && (
         <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3 flex-wrap">
             <h4 className="text-xl font-bold text-white">Open Source Contributions</h4>
-            {viewingCompletedPartnershipName && selectedPartnership && setViewingCompletedPartnershipName && (
+            {/* Back button only shows when viewing a completed partnership AND there's an active partnership to go back to */}
+            {viewingCompletedPartnershipName && activePartnershipDbId && selectedPartnership && setViewingCompletedPartnershipName ? (
               <button
-                onClick={() => setViewingCompletedPartnershipName(null)}
+                onClick={() => setViewingCompletedPartnershipName?.(null)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-electric-blue hover:bg-blue-600 text-white text-sm font-semibold transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to {selectedPartnership}
               </button>
-            )}
-            {/* Show congratulatory modal again when partnership is complete - only for current view, non-instructor */}
-            {!isInstructor && !viewingCompletedPartnershipName && totalCriteriaProgress.total > 0 && totalCriteriaProgress.completed >= totalCriteriaProgress.total && (
-              <button
-                type="button"
-                onClick={() => setShowCongratsModal(true)}
-                className="relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/60 via-yellow-900/40 to-amber-950/60 shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:from-amber-800/70 hover:via-yellow-800/50 hover:to-amber-900/70 hover:border-amber-400/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all overflow-hidden"
-              >
-                <span className="absolute inset-0 bg-gradient-to-br from-amber-400/10 via-transparent to-amber-500/10 pointer-events-none" />
-                <div className="relative flex items-center gap-2">
-                  <PartyPopper className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
-                  <span className="text-amber-100 font-bold text-sm uppercase tracking-wider">Partnership complete! - Click here to choose a new partnership!</span>
-                  <Medal className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
-                </div>
-              </button>
+            ) : null}
+            {/* Show button to choose new partnership when viewing completed partnership or when current is complete - non-instructor only */}
+            {!isInstructor && (
+              (viewingCompletedPartnershipName || (!viewingCompletedPartnershipName && totalCriteriaProgress.total > 0 && totalCriteriaProgress.completed >= totalCriteriaProgress.total)) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (viewingCompletedPartnershipName) {
+                      // When viewing completed, go directly to selection screen
+                      setSelectedPartnership(null);
+                      setSelectedPartnershipId(null);
+                      setActivePartnershipDbId(null);
+                      setActivePartnershipCriteria([]);
+                      setViewingCompletedPartnershipName?.(null);
+                    } else {
+                      // When current partnership is complete, show modal
+                      setShowCongratsModal(true);
+                    }
+                  }}
+                  className="relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/60 via-yellow-900/40 to-amber-950/60 shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:from-amber-800/70 hover:via-yellow-800/50 hover:to-amber-900/70 hover:border-amber-400/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all overflow-hidden"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-br from-amber-400/10 via-transparent to-amber-500/10 pointer-events-none" />
+                  <div className="relative flex items-center gap-2">
+                    <PartyPopper className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
+                    <span className="text-amber-100 font-bold text-sm uppercase tracking-wider">Partnership complete! - Click here to choose a new partnership!</span>
+                    <Medal className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
+                  </div>
+                </button>
+              )
             )}
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-300">
@@ -1354,7 +1373,7 @@ export default function OpenSourceTab({
                 </button>
                 
                 {/* Abandon Partnership Button */}
-                {selectedPartnership && (
+                {selectedPartnership && activePartnershipDbId && (
                   <button
                     onClick={() => setShowAbandonConfirmation(true)}
                     disabled={isAbandoning || isSaving}
@@ -1469,7 +1488,7 @@ export default function OpenSourceTab({
 
           {/* Congratulations Modal - All Partnership Criteria Completed */}
           {showCongratsModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCongratsModal(false)}>
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => handleCompletePartnership(false)}>
               <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                 <div className="flex flex-col items-center text-center mb-6">
                   <PartyPopper className="w-16 h-16 text-green-400 mb-4" />
@@ -1483,10 +1502,11 @@ export default function OpenSourceTab({
                 </p>
                 <div className="flex justify-center gap-3">
                   <button
-                    onClick={() => setShowCongratsModal(false)}
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                    onClick={() => handleCompletePartnership(false)}
+                    disabled={isCompletingPartnership}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
-                    No
+                    {isCompletingPartnership ? 'Loading...' : 'No'}
                   </button>
                   <button
                     onClick={handleCompleteAndSelectNewPartnership}
