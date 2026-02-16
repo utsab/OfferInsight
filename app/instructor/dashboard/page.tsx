@@ -116,6 +116,7 @@ export default function InstructorDashboard() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [minIssuesFilter, setMinIssuesFilter] = useState('');
   const [sortOrder, setSortOrder] = useState<'name-asc' | 'name-desc' | 'issues-high' | 'issues-low'>('name-asc');
 
   useEffect(() => {
@@ -148,11 +149,21 @@ export default function InstructorDashboard() {
     fetchUsers();
   }, []);
 
+  // Parse min issues filter: only apply when a valid non-negative number is entered
+  const minIssues = minIssuesFilter.trim() === '' ? null : Math.max(0, parseInt(minIssuesFilter, 10));
+  const minIssuesValid = minIssues === null || !Number.isNaN(minIssues);
+
   // Filter and sort users
   const filteredAndSortedUsers = users
     .filter((user) =>
       user.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
+    .filter((user) => {
+      if (minIssuesValid && minIssues !== null) {
+        return user.openSource.issuesCompleted >= minIssues;
+      }
+      return true;
+    })
     .sort((a, b) => {
       if (sortOrder === 'name-asc') {
         return a.name.localeCompare(b.name);
@@ -183,15 +194,28 @@ export default function InstructorDashboard() {
         <h1 className="text-3xl font-bold mb-6">Instructor Dashboard</h1>
         
         {/* Search and Sort Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-6 flex-wrap">
           {/* Search Input */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-[200px]">
             <input
               type="text"
               placeholder="Search by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-electric-blue focus:ring-1 focus:ring-electric-blue"
+            />
+          </div>
+
+          {/* Min issues filter */}
+          <div className="sm:w-36">
+            <input
+              type="number"
+              min={0}
+              placeholder="Min issues"
+              value={minIssuesFilter}
+              onChange={(e) => setMinIssuesFilter(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-electric-blue focus:ring-1 focus:ring-electric-blue [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              aria-label="Minimum issues completed"
             />
           </div>
           
@@ -215,6 +239,7 @@ export default function InstructorDashboard() {
           <div className="text-gray-400 text-sm mb-4">
             Showing {filteredAndSortedUsers.length} of {users.length} user{users.length !== 1 ? 's' : ''}
             {searchQuery && ` matching "${searchQuery}"`}
+            {minIssuesValid && minIssues !== null && ` with ≥ ${minIssues} issue${minIssues !== 1 ? 's' : ''}`}
           </div>
         )}
         
