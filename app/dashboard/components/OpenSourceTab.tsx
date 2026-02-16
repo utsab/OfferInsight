@@ -961,8 +961,7 @@ export default function OpenSourceTab({
 
       if (!response.ok) {
         const errorData = await response.json();
-        setShowAbandonConfirmation(false);
-        setPartnershipError(errorData.error || 'Failed to abandon partnership');
+        alert(errorData.error || 'Failed to abandon partnership');
         return;
       }
 
@@ -977,7 +976,7 @@ export default function OpenSourceTab({
       fetchOpenSourceEntries();
     } catch (error) {
       console.error('Error abandoning partnership:', error);
-      setPartnershipError('Failed to abandon partnership. Please try again.');
+      alert('Failed to abandon partnership. Please try again.');
     } finally {
       setShowAbandonConfirmation(false);
       setIsAbandoning(false);
