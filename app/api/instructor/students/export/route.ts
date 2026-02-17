@@ -1,0 +1,166 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getInstructorSession } from "@/app/lib/instructor-auth";
+import { prisma } from "@/db";
+
+/** Escape a CSV cell: wrap in quotes and escape internal quotes */
+function csvEscape(value: string): string {
+  const s = String(value ?? "").trim();
+  if (s.includes('"') || s.includes(",") || s.includes("\n") || s.includes("\r")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+/**
+ * Extract GitHub repo/project name from a URL.
+ * e.g. https://github.com/owner/Jobs4Us/pull/888 -> "Jobs4Us"
+ * Only matches /pull/ or /issues/ paths; returns null for non-GitHub or other paths.
+ */
+function projectNameFromGitHubUrl(url: string): string | null {
+  const s = String(url ?? "").trim();
+  if (!s || (!s.startsWith("http://") && !s.startsWith("https://"))) return null;
+  try {
+    const u = new URL(s);
+    const host = u.hostname.toLowerCase();
+    if (host !== "github.com") return null;
+    const path = u.pathname.replace(/^\/+/, "").split("/");
+    // path: [owner, repo, "pull"|"issues", number]
+    if (path.length >= 4 && (path[2] === "pull" || path[2] === "issues")) {
+      return path[1] ?? null; // repo name as-is
+    }
+  } catch {
+    // ignore invalid URLs
+  }
+  return null;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const instructor = await getInstructorSession();
+    if (!instructor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const search = (searchParams.get("search") ?? "").trim().toLowerCase();
+    const minIssuesParam = searchParams.get("minIssues") ?? "";
+    const minIssues = minIssuesParam === "" ? null : Math.max(0, parseInt(minIssuesParam, 10));
+    const minIssuesValid = minIssues === null || !Number.isNaN(minIssues);
+
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true, email: true },
+      orderBy: { name: "asc" },
+    });
+
+    const userIds = users.map((u) => u.id);
+    if (userIds.length === 0) {
+      const csv = "Name,Email,Issues Solved,PR Links,Blog Posts,Projects,Criteria & Proof\n";
+      return new NextResponse(csv, {
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": 'attachment; filename="students-export.csv"',
+        },
+      });
+    }
+
+    const entries = await prisma.openSourceEntry.findMany({
+      where: { userId: { in: userIds } },
+      orderBy: [{ userId: "asc" }, { dateCreated: "desc" }],
+    });
+
+    const entriesByUser = new Map<string, typeof entries>();
+    for (const e of entries) {
+      const list = entriesByUser.get(e.userId) ?? [];
+      list.push(e);
+      entriesByUser.set(e.userId, list);
+    }
+
+    const filteredUsers = users.filter((user) => {
+      if (search && !(user.name ?? "").toLowerCase().includes(search)) return false;
+      const userEntries = entriesByUser.get(user.id) ?? [];
+      const issuesCompleted = userEntries.filter(
+        (e) => e.criteriaType === "issue" && e.status === "done"
+      ).length;
+      if (minIssuesValid && minIssues !== null && issuesCompleted < minIssues) return false;
+      return true;
+    });
+
+    const header =
+      "Name,Email,Issues Solved,PR Links,Blog Posts,Projects,Criteria & Proof\n";
+
+    const rows: string[] = [];
+
+    for (const user of filteredUsers) {
+      const userEntries = entriesByUser.get(user.id) ?? [];
+      const doneEntries = userEntries.filter((e) => e.status === "done");
+
+      const issuesCompleted = userEntries.filter(
+        (e) => e.criteriaType === "issue" && e.status === "done"
+      ).length;
+
+      const prLinks: string[] = [];
+      const blogPosts: string[] = [];
+      const projectsSet = new Set<string>();
+      const criteriaProofParts: string[] = [];
+
+      for (const entry of doneEntries) {
+        const proofResponses = (entry.proofResponses as Record<string, unknown>) ?? {};
+        const proofPairs = Object.entries(proofResponses)
+          .filter(([, v]) => v != null && String(v).trim() !== "")
+          .map(([k, v]) => `${k.trim()}: ${String(v).trim()}`);
+
+        if (entry.criteriaType === "issue") {
+          for (const v of Object.values(proofResponses)) {
+            const s = String(v ?? "").trim();
+            if (s && (s.startsWith("http://") || s.startsWith("https://"))) {
+              prLinks.push(s);
+              const project = projectNameFromGitHubUrl(s);
+              if (project) projectsSet.add(project);
+            }
+          }
+        }
+        if (entry.criteriaType === "blog_post") {
+          for (const v of Object.values(proofResponses)) {
+            const s = String(v ?? "").trim();
+            if (s && (s.startsWith("http://") || s.startsWith("https://"))) {
+              blogPosts.push(s);
+            }
+          }
+        }
+
+        const metricLabel = (entry.metric ?? entry.criteriaType ?? "entry").slice(0, 60);
+        if (proofPairs.length > 0) {
+          criteriaProofParts.push(`${entry.criteriaType ?? "?"} (${metricLabel}): ${proofPairs.join("; ")}`);
+        } else {
+          criteriaProofParts.push(`${entry.criteriaType ?? "?"} (${metricLabel})`);
+        }
+      }
+
+      const name = csvEscape(user.name ?? "");
+      const email = csvEscape(user.email ?? "");
+      const prLinksCell = csvEscape(prLinks.join("; "));
+      const blogPostsCell = csvEscape(blogPosts.join("; "));
+      const projectsCell = csvEscape(Array.from(projectsSet).join("; "));
+      const criteriaProofCell = csvEscape(criteriaProofParts.join(" | "));
+
+      rows.push(
+        `${name},${email},${issuesCompleted},${prLinksCell},${blogPostsCell},${projectsCell},${criteriaProofCell}`
+      );
+    }
+
+    const csv = header + rows.join("\n");
+
+    return new NextResponse(csv, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": 'attachment; filename="students-export.csv"',
+      },
+    });
+  } catch (error) {
+    console.error("Error exporting students CSV:", error);
+    return NextResponse.json(
+      { error: "Failed to export CSV" },
+      { status: 500 }
+    );
+  }
+}

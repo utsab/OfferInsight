@@ -944,16 +944,28 @@ const hasSeededMockDataRef = useRef(false);
         return;
       }
       const data = await response.json();
-      setCompletedPartnerships((data.completed || []).map((p: { id: number; partnershipName: string }) => ({ id: p.id, partnershipName: p.partnershipName })));
+      const completed = (data.completed || []).map((p: { id: number; partnershipName: string }) => ({ id: p.id, partnershipName: p.partnershipName }));
+      setCompletedPartnerships(completed);
       if (data.active) {
         setSelectedPartnership(data.active.partnershipName);
         setSelectedPartnershipId(data.active.partnershipId);
         setActivePartnershipDbId(data.active.id);
         setActivePartnershipCriteria(data.active.criteria || []);
+        setViewingCompletedPartnershipName(null); // Clear completed view when active exists
+      } else if (completed.length > 0) {
+        // No active partnership, but there are completed ones - show the most recent completed
+        const mostRecent = completed[0]; // Already sorted by completedAt desc from API
+        setSelectedPartnership(mostRecent.partnershipName);
+        setSelectedPartnershipId(null); // No active partnership ID
+        setActivePartnershipDbId(null);
+        setActivePartnershipCriteria([]); // Will be loaded when viewing completed partnership
+        setViewingCompletedPartnershipName(mostRecent.partnershipName); // Show completed cards
       } else {
+        // No active and no completed - show selection screen
         setSelectedPartnership(null);
         setSelectedPartnershipId(null);
         setActivePartnershipDbId(null);
+        setViewingCompletedPartnershipName(null);
       }
     } catch (error) {
       console.error('Error fetching active partnership:', error);

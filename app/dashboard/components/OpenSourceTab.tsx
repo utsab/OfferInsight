@@ -236,12 +236,14 @@ function OpenSourceModal({
 
 
   // Helper to get effective fields including extras
+  // When in Plan column, exclude extra fields to keep the modal compact (user can still select extras via checkboxes)
   const getEffectiveFields = () => {
     let effectiveBabySteps = [...formData.babyStepFields];
     let effectiveProofOfWork = [...formData.proofOfCompletion];
     let effectivePlan = [...formData.planFields];
 
-    if (formData.criteriaType === 'issue') {
+    const includeExtraFields = formData.status !== 'plan';
+    if (formData.criteriaType === 'issue' && includeExtraFields) {
       formData.selectedExtras.forEach(extraType => {
         const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
         if (extraCriteria) {
@@ -266,6 +268,7 @@ function OpenSourceModal({
   };
 
   // Helper to get grouped baby steps
+  // When in Plan column, exclude extra baby step groups to keep the modal compact
   const getBabyStepGroups = () => {
     const groups: Array<{ name: string; fields: any[] }> = [];
     
@@ -278,8 +281,8 @@ function OpenSourceModal({
       });
     }
 
-    // Add extra baby steps
-    if (formData.criteriaType === 'issue') {
+    const includeExtraFields = formData.status !== 'plan';
+    if (formData.criteriaType === 'issue' && includeExtraFields) {
       formData.selectedExtras.forEach(extraType => {
         const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
         if (extraCriteria && extraCriteria.baby_step_column_fields && extraCriteria.baby_step_column_fields.length > 0) {
@@ -297,32 +300,39 @@ function OpenSourceModal({
   const { babySteps: effectiveBabySteps, proofOfWork: effectiveProofOfWork, plan: effectivePlan } = getEffectiveFields();
   const babyStepGroups = useMemo(
     () => getBabyStepGroups(),
-    [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, activePartnershipCriteria]
+    [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
   );
 
   // Initialize collapsed sections state
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
-  // Reset collapsed sections when entry, status, extras, or baby step groups change
-  // Collapse sections that are not relevant to current column
-  // Use a single computed dependency to ensure stable array size
-  const collapseDeps = useMemo(() => {
-    return `${entry?.id ?? 'new'}-${formData.status}-${formData.selectedExtras.length}-${formData.criteriaType ?? ''}-${babyStepGroups.length}`;
-  }, [entry?.id, formData.status, formData.selectedExtras.length, formData.criteriaType, babyStepGroups.length]);
-  
+  // Extras section: only reset when entry or status changes (not when selecting extras)
+  // This prevents auto-collapse when user adds multiple extras in one go
+  const collapseDepsForExtras = useMemo(
+    () => `${entry?.id ?? 'new'}-${formData.status}`,
+    [entry?.id, formData.status]
+  );
+
+  // Plan, proofOfWork, babyStep groups: reset when entry, status, criteria, or baby step groups change
+  const collapseDepsForRest = useMemo(
+    () => `${entry?.id ?? 'new'}-${formData.status}-${formData.criteriaType ?? ''}-${babyStepGroups.length}`,
+    [entry?.id, formData.status, formData.criteriaType, babyStepGroups.length]
+  );
+
+  useEffect(() => {
+    setCollapsedSections(prev => ({ ...prev, extras: formData.status !== 'plan' }));
+  }, [collapseDepsForExtras]);
+
   useEffect(() => {
     const newState: Record<string, boolean> = {
-      plan: formData.status !== 'plan', // Collapsed if not in plan column
-      proofOfWork: formData.status === 'babyStep', // Collapsed if in babyStep column
-      extras: formData.status !== 'plan', // Collapsed if not in plan column
+      plan: formData.status !== 'plan',
+      proofOfWork: formData.status === 'babyStep',
     };
-    // Initialize for each baby step group - collapse if not in babyStep or plan column
     babyStepGroups.forEach((_, idx) => {
       newState[`babyStep-${idx}`] = formData.status !== 'babyStep' && formData.status !== 'plan';
     });
-    setCollapsedSections(newState);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collapseDeps]);
+    setCollapsedSections(prev => ({ ...prev, ...newState }));
+  }, [collapseDepsForRest]);
 
   const toggleSection = (section: string) => {
     setCollapsedSections(prev => ({
@@ -804,7 +814,14 @@ export default function OpenSourceTab({
   const [isAbandoning, setIsAbandoning] = useState(false);
   const [showCongratsModal, setShowCongratsModal] = useState(false);
   const [isCompletingPartnership, setIsCompletingPartnership] = useState(false);
+  const [partnershipError, setPartnershipError] = useState<string | null>(null);
   const prevCriteriaCompleteRef = useRef<boolean | null>(null);
+
+  // Exclude completed partnerships from selection dropdown so users can't accidentally pick one
+  const availableToSelect = useMemo(
+    () => availablePartnerships.filter(p => !completedPartnerships.some(c => c.partnershipName === p.name)),
+    [availablePartnerships, completedPartnerships]
+  );
 
   // Overall criteria progress: total = sum of ALL criteria counts (primaries + extras) from partnership definition
   const totalCriteriaProgress = useMemo(() => {
@@ -865,6 +882,12 @@ export default function OpenSourceTab({
     const selectedPartnershipData = availablePartnerships.find(p => p.name === tempSelection);
     if (!selectedPartnershipData) return;
 
+    // Block selecting a partnership the user has already completed (show error immediately)
+    if (completedPartnerships.some(c => c.partnershipName === tempSelection)) {
+      setPartnershipError('You have already completed this partnership.');
+      return;
+    }
+
     // If instructor is switching partnerships, show confirmation
     if (isInstructor && userIdParam && selectedPartnership && tempSelection !== selectedPartnership) {
       setShowSwitchConfirmation(true);
@@ -880,6 +903,13 @@ export default function OpenSourceTab({
     const selectedPartnershipData = availablePartnerships.find(p => p.name === tempSelection);
     if (!selectedPartnershipData) return;
 
+    // Safety: block selecting completed partnership (e.g. from switch confirmation)
+    if (completedPartnerships.some(c => c.partnershipName === tempSelection)) {
+      setShowSwitchConfirmation(false);
+      setPartnershipError('You have already completed this partnership.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const url = userIdParam ? `/api/users/partnership?userId=${userIdParam}` : '/api/users/partnership';
@@ -894,7 +924,8 @@ export default function OpenSourceTab({
 
       if (!response.ok) {
         const errorData = await response.json();
-        alert(errorData.error || 'Failed to save partnership');
+        setShowSwitchConfirmation(false);
+        setPartnershipError(errorData.error || 'Failed to save partnership');
         return;
       }
 
@@ -903,7 +934,6 @@ export default function OpenSourceTab({
       setSelectedPartnershipId(selectedPartnershipData.id);
       setActivePartnershipDbId(data.id);
       setActivePartnershipCriteria(data.criteria || []);
-      setHasSavedSelection(true);
       setIsDropdownOpen(false);
       setShowSwitchConfirmation(false);
       // Refresh available partnerships to update spots remaining
@@ -912,14 +942,14 @@ export default function OpenSourceTab({
       fetchOpenSourceEntries();
     } catch (error) {
       console.error('Error saving partnership:', error);
-      alert('Failed to save partnership. Please try again.');
+      setPartnershipError('Failed to save partnership. Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleAbandonPartnership = async () => {
-    if (!isInstructor || !userIdParam || !activePartnershipDbId) return;
+    if (!isInstructor || !userIdParam) return;
 
     setIsAbandoning(true);
     try {
@@ -940,9 +970,6 @@ export default function OpenSourceTab({
       setSelectedPartnershipId(null);
       setActivePartnershipDbId(null);
       setActivePartnershipCriteria([]);
-      setHasSavedSelection(false);
-      setTempSelection(null);
-      setShowAbandonConfirmation(false);
       
       // Refresh available partnerships and entries
       fetchAvailablePartnerships();
@@ -951,11 +978,12 @@ export default function OpenSourceTab({
       console.error('Error abandoning partnership:', error);
       alert('Failed to abandon partnership. Please try again.');
     } finally {
+      setShowAbandonConfirmation(false);
       setIsAbandoning(false);
     }
   };
 
-  const handleCompleteAndSelectNewPartnership = async () => {
+  const handleCompletePartnership = async (resetToSelection: boolean = false) => {
     if (!activePartnershipDbId || isCompletingPartnership) return;
 
     setIsCompletingPartnership(true);
@@ -969,28 +997,36 @@ export default function OpenSourceTab({
 
       if (!response.ok) {
         const errorData = await response.json();
-        alert(errorData.error || 'Failed to complete partnership');
+        setPartnershipError(errorData.error || 'Failed to complete partnership');
         return;
       }
 
-      // Reset partnership state to show selection screen
-      setSelectedPartnership(null);
-      setSelectedPartnershipId(null);
-      setActivePartnershipDbId(null);
-      setActivePartnershipCriteria([]);
-      setHasSavedSelection(false);
-      setTempSelection(null);
       setShowCongratsModal(false);
 
-      fetchActivePartnership?.();
+      if (resetToSelection) {
+        // Reset partnership state to show selection screen
+        setSelectedPartnership(null);
+        setSelectedPartnershipId(null);
+        setActivePartnershipDbId(null);
+        setActivePartnershipCriteria([]);
+        fetchActivePartnership?.();
+      } else {
+        // Keep current view - just refresh entries and partnerships list
+        // Don't call fetchActivePartnership as it would reset state when no active partnership exists
+        fetchOpenSourceEntries();
+      }
+      
       fetchAvailablePartnerships();
-      fetchOpenSourceEntries();
     } catch (error) {
       console.error('Error completing partnership:', error);
-      alert('Failed to complete partnership. Please try again.');
+      setPartnershipError('Failed to complete partnership. Please try again.');
     } finally {
       setIsCompletingPartnership(false);
     }
+  };
+
+  const handleCompleteAndSelectNewPartnership = async () => {
+    await handleCompletePartnership(true);
   };
 
   return (
@@ -999,29 +1035,44 @@ export default function OpenSourceTab({
         <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3 flex-wrap">
             <h4 className="text-xl font-bold text-white">Open Source Contributions</h4>
-            {viewingCompletedPartnershipName && selectedPartnership && setViewingCompletedPartnershipName && (
+            {/* Back button only shows when viewing a completed partnership AND there's an active partnership to go back to */}
+            {viewingCompletedPartnershipName && activePartnershipDbId && selectedPartnership && setViewingCompletedPartnershipName ? (
               <button
-                onClick={() => setViewingCompletedPartnershipName(null)}
+                onClick={() => setViewingCompletedPartnershipName?.(null)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-electric-blue hover:bg-blue-600 text-white text-sm font-semibold transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to {selectedPartnership}
               </button>
-            )}
-            {/* Show congratulatory modal again when partnership is complete - only for current view, non-instructor */}
-            {!isInstructor && !viewingCompletedPartnershipName && totalCriteriaProgress.total > 0 && totalCriteriaProgress.completed >= totalCriteriaProgress.total && (
-              <button
-                type="button"
-                onClick={() => setShowCongratsModal(true)}
-                className="relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/60 via-yellow-900/40 to-amber-950/60 shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:from-amber-800/70 hover:via-yellow-800/50 hover:to-amber-900/70 hover:border-amber-400/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all overflow-hidden"
-              >
-                <span className="absolute inset-0 bg-gradient-to-br from-amber-400/10 via-transparent to-amber-500/10 pointer-events-none" />
-                <div className="relative flex items-center gap-2">
-                  <PartyPopper className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
-                  <span className="text-amber-100 font-bold text-sm uppercase tracking-wider">Partnership complete! - Click here to choose a new partnership!</span>
-                  <Medal className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
-                </div>
-              </button>
+            ) : null}
+            {/* Show button to choose new partnership when viewing completed partnership or when current is complete - non-instructor only */}
+            {!isInstructor && (
+              (viewingCompletedPartnershipName || (!viewingCompletedPartnershipName && totalCriteriaProgress.total > 0 && totalCriteriaProgress.completed >= totalCriteriaProgress.total)) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (viewingCompletedPartnershipName) {
+                      // When viewing completed, go directly to selection screen
+                      setSelectedPartnership(null);
+                      setSelectedPartnershipId(null);
+                      setActivePartnershipDbId(null);
+                      setActivePartnershipCriteria([]);
+                      setViewingCompletedPartnershipName?.(null);
+                    } else {
+                      // When current partnership is complete, show modal
+                      setShowCongratsModal(true);
+                    }
+                  }}
+                  className="relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/60 via-yellow-900/40 to-amber-950/60 shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:from-amber-800/70 hover:via-yellow-800/50 hover:to-amber-900/70 hover:border-amber-400/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all overflow-hidden"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-br from-amber-400/10 via-transparent to-amber-500/10 pointer-events-none" />
+                  <div className="relative flex items-center gap-2">
+                    <PartyPopper className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
+                    <span className="text-amber-100 font-bold text-sm uppercase tracking-wider">Partnership complete! - Click here to choose a new partnership!</span>
+                    <Medal className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
+                  </div>
+                </button>
+              )
             )}
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-300">
@@ -1093,7 +1144,7 @@ export default function OpenSourceTab({
                     >
                       &lt;none selected&gt;
                     </button>
-                    {availablePartnerships.map(partnership => (
+                    {availableToSelect.map(partnership => (
                       <button
                         key={partnership.id}
                         onClick={() => {
@@ -1219,7 +1270,7 @@ export default function OpenSourceTab({
                       >
                         &lt;none selected&gt;
                       </button>
-                      {availablePartnerships.map(partnership => (
+                      {availableToSelect.map(partnership => (
                         <button
                           key={partnership.id}
                           onClick={() => {
@@ -1322,7 +1373,7 @@ export default function OpenSourceTab({
                 </button>
                 
                 {/* Abandon Partnership Button */}
-                {selectedPartnership && (
+                {selectedPartnership && activePartnershipDbId && (
                   <button
                     onClick={() => setShowAbandonConfirmation(true)}
                     disabled={isAbandoning || isSaving}
@@ -1395,6 +1446,26 @@ export default function OpenSourceTab({
             </div>
           )}
 
+          {/* Partnership Error Modal */}
+          {partnershipError && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPartnershipError(null)}>
+              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-xl font-bold text-white mb-4">Partnership Error</h3>
+                <p className="text-amber-400 text-sm mb-6 font-medium">
+                  {partnershipError}
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setPartnershipError(null)}
+                    className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    OK
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Proof of Work Warning Modal */}
           {showProofOfWorkWarning && setShowProofOfWorkWarning && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowProofOfWorkWarning(false)}>
@@ -1417,7 +1488,7 @@ export default function OpenSourceTab({
 
           {/* Congratulations Modal - All Partnership Criteria Completed */}
           {showCongratsModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCongratsModal(false)}>
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => handleCompletePartnership(false)}>
               <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                 <div className="flex flex-col items-center text-center mb-6">
                   <PartyPopper className="w-16 h-16 text-green-400 mb-4" />
@@ -1431,10 +1502,11 @@ export default function OpenSourceTab({
                 </p>
                 <div className="flex justify-center gap-3">
                   <button
-                    onClick={() => setShowCongratsModal(false)}
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                    onClick={() => handleCompletePartnership(false)}
+                    disabled={isCompletingPartnership}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
-                    No
+                    {isCompletingPartnership ? 'Loading...' : 'No'}
                   </button>
                   <button
                     onClick={handleCompleteAndSelectNewPartnership}

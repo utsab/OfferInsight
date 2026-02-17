@@ -8,32 +8,47 @@ export default function Page() {
   const [onboardingProgress, setOnboardingProgress] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isInstructor, setIsInstructor] = useState<boolean>(false);
 
-  // Fetch user's onboarding progress on component mount
+  // Fetch user's onboarding progress and instructor status on component mount
   useEffect(() => {
-    const fetchOnboardingProgress = async () => {
+    const fetchStatus = async () => {
       try {
-        const response = await fetch('/api/users/onboarding2');
-        if (response.ok) {
-          const user = await response.json();
+        const [userRes, instructorRes] = await Promise.all([
+          fetch('/api/users/onboarding2'),
+          fetch('/api/instructor'),
+        ]);
+
+        if (instructorRes.ok) {
+          setIsInstructor(true);
+        }
+
+        if (userRes.ok) {
+          const user = await userRes.json();
           setOnboardingProgress(user.onboardingProgress);
           setIsAuthenticated(true);
         } else {
           setIsAuthenticated(false);
         }
       } catch (error) {
-        console.error('Failed to fetch onboarding progress:', error);
+        console.error('Failed to fetch status:', error);
         setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOnboardingProgress();
+    fetchStatus();
   }, []);
 
   const handleGoToDashboard = async () => {
     if (loading) return;
+
+    // If instructor is signed in, go to instructor dashboard
+    if (isInstructor) {
+      window.location.href = '/instructor/dashboard';
+      return;
+    }
     
     // If user is not authenticated, trigger sign-in flow
     if (!isAuthenticated) {
