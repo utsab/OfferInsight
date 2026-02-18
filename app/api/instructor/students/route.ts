@@ -4,33 +4,19 @@ import { prisma } from "@/db";
 import { getCurrentMonthDateRange } from "@/app/lib/date-utils";
 import partnershipsData from "@/partnerships/partnerships.json";
 
-// Completed status values based on dashboard completion column logic
-// Mapping completion column IDs to status values (same as dashboard)
-// Applications: completion columns map 1:1 to status values
+// Status values that count as "completed" for display counts (matches dashboard completion columns)
 const APPLICATION_COMPLETION_STATUSES = ['messageHiringManager', 'messageRecruiter', 'followUp', 'interview'];
-
-// LinkedIn: map completion column IDs to status values
-// Columns: ['prospects', 'sendFirstMessage', 'requestAccepted', 'followUp', 'coffeeChat', 'askForReferral']
-// Map to statuses: prospects, sendFirstMessage, requestAccepted, followUp, coffeeChat, askForReferral
 const LINKEDIN_COMPLETION_STATUSES = ['prospects', 'sendFirstMessage', 'requestAccepted', 'followUp', 'coffeeChat', 'askForReferral'];
-
-// Events: map completion column IDs to status values  
-// Columns: ['attended', 'linkedinRequestsSent', 'followups']
-// Map to statuses: attended, linkedinRequestsSent, followUp
 const EVENT_COMPLETION_STATUSES = ['attended', 'sendLinkedInRequest', 'followUp'];
-
-// LeetCode: completion column 'reflect' maps to status 'reflect'
 const LEET_COMPLETION_STATUSES = ['reflect'];
 
 export async function GET() {
   try {
-    // Check instructor authentication
     const instructor = await getInstructorSession();
     if (!instructor) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get current month date range
     const { firstDayOfMonth, lastDayOfMonth } = getCurrentMonthDateRange();
     const now = new Date();
 
@@ -40,25 +26,20 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
-        createdAt: true,
       },
       orderBy: {
         name: 'asc',
       },
     });
 
-    // For each user, get their stats
     const studentsData = await Promise.all(
       users.map(async (user) => {
         const [
           openSourceEntries,
           activePartnership,
         ] = await Promise.all([
-          // Open Source: all entries for this user (to derive issues + criteria counts, including extras)
           prisma.openSourceEntry.findMany({
-            where: {
-              userId: user.id,
-            },
+            where: { userId: user.id },
             select: {
               status: true,
               criteriaType: true,
@@ -67,17 +48,13 @@ export async function GET() {
               dateModified: true,
             },
           }),
-          // Active partnership to get correct total criteria from partnership definition
           prisma.userPartnership.findFirst({
             where: { userId: user.id, status: 'active' },
             include: { partnership: true },
           }),
         ]);
 
-        // Derive Open Source stats:
-        // - issuesCompleted: number of 'issue' cards with status 'done'
-        // - total criteria count: from partnership definition (sum of all criteria counts), matching OpenSourceTab
-        // - completed criteria count: done entries fulfilling each criteria (direct or as extra)
+        // Open Source: issue count and criteria progress (for display and Progress status)
         const issuesCompletedCount = openSourceEntries.filter(
           (entry) => entry.criteriaType === 'issue' && entry.status === 'done'
         ).length;
@@ -86,8 +63,6 @@ export async function GET() {
         let completedCriteriaCount = 0;
 
         if (activePartnership) {
-          // Total = sum of ALL criteria counts (primaries + extras) from partnership definition.
-          // Same logic as OpenSourceTab totalCriteriaProgress. multiple_choice → user's selected choice.
           const selections = (activePartnership.selections as Record<string, string>) || {};
           let mcIndex = 0;
           const criteria = (partnershipsData.partnerships.find(
@@ -124,7 +99,6 @@ export async function GET() {
             completedCriteriaCount += Math.min(completedForCriteria, requiredCount);
           }
         } else {
-          // No active partnership: fall back to card-based count (legacy / no partnership selected)
           for (const entry of openSourceEntries) {
             const extras = Array.isArray(entry.selectedExtras)
               ? (entry.selectedExtras as unknown[]).length
@@ -138,7 +112,7 @@ export async function GET() {
           }
         }
 
-        // Count completed applications (last month and all time)
+        // Display stats (last month + all time) for dashboard cards
         const [applicationsLastMonth, applicationsAllTime] = await Promise.all([
           prisma.applications_With_Outreach.count({
             where: {
@@ -158,7 +132,6 @@ export async function GET() {
           }),
         ]);
 
-        // Count completed LinkedIn outreach / Coffee Chats (last month and all time)
         const [coffeeChatsLastMonth, coffeeChatsAllTime] = await Promise.all([
           prisma.linkedin_Outreach.count({
             where: {
@@ -178,8 +151,6 @@ export async function GET() {
           }),
         ]);
 
-        // Count completed events (last month and all time)
-        // For events, use the `date` field, not dateCreated (matching dashboard logic)
         const [eventsLastMonth, eventsAllTime] = await Promise.all([
           prisma.in_Person_Events.count({
             where: {
@@ -199,7 +170,6 @@ export async function GET() {
           }),
         ]);
 
-        // Count completed LeetCode problems (last month and all time)
         const [leetCodeLastMonth, leetCodeAllTime] = await Promise.all([
           prisma.leetcode_Practice.count({
             where: {
@@ -219,7 +189,6 @@ export async function GET() {
           }),
         ]);
 
-        // Count referrals received (all time - referrals are exciting achievements!)
         const referralCount = await prisma.linkedin_Outreach.count({
           where: {
             userId: user.id,
@@ -227,17 +196,29 @@ export async function GET() {
           },
         });
 
-        // Calculate activeStatus based on Open Source only (rolling windows from current day):
-        // Green (2): At least 2 distinct criteria types completed in last 30 days (any criteria, not just issues)
-        // Yellow (1): At least 1 issue completed in last 90 days
-        // Red (0): No active partnership, or neither condition met
-        // Green has priority over Yellow when both could apply
+        const sevenDaysAgo = new Date(now);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const thirtyDaysAgo = new Date(now);
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const ninetyDaysAgo = new Date(now);
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-        let activeStatus = 0; // Red by default
+        // Active: any open source card (any partnership) last modified. Green = last 7 days, Yellow = last 30 days.
+        let activeStatus = 0;
+        const anyCardModifiedInLastWeek = openSourceEntries.some(
+          (e) => e.dateModified && new Date(e.dateModified) >= sevenDaysAgo
+        );
+        const anyCardModifiedInLastMonth = openSourceEntries.some(
+          (e) => e.dateModified && new Date(e.dateModified) >= thirtyDaysAgo
+        );
+        if (anyCardModifiedInLastWeek) {
+          activeStatus = 2; // Green
+        } else if (anyCardModifiedInLastMonth) {
+          activeStatus = 1; // Yellow
+        }
+
+        // Progress: open source completion. Green = 2+ criteria types done in 30 days, Yellow = 1 issue in 90 days (active partnership only).
+        let progressStatus = 0;
 
         if (activePartnership) {
           const partnershipName = activePartnership.partnership.name;
@@ -258,7 +239,7 @@ export async function GET() {
             }
           }
           if (criteriaTypesInLast30Days.size >= 2) {
-            activeStatus = 2; // Green
+            progressStatus = 2; // Green
           } else {
             // Yellow: at least 1 issue completed in last 90 days
             const issueDoneInLast90Days = doneEntriesForPartnership.some(
@@ -268,20 +249,10 @@ export async function GET() {
                 new Date(e.dateModified) >= ninetyDaysAgo
             );
             if (issueDoneInLast90Days) {
-              activeStatus = 1; // Yellow
+              progressStatus = 1; // Yellow
             }
           }
         }
-
-        // Calculate progressStatus based on non-Open Source tabs (Applications, Events/Coffee Chats, LeetCode):
-        // Green (2): All 3 categories met
-        // Yellow (1): 2 categories met
-        // Red (0): 1 or 0 categories met
-        const hasApplications = applicationsLastMonth >= 1;
-        const hasEventsOrCoffeeChats = eventsLastMonth >= 1 || coffeeChatsLastMonth >= 4;
-        const hasLeetCode = leetCodeLastMonth >= 4;
-        const categoriesMet = [hasApplications, hasEventsOrCoffeeChats, hasLeetCode].filter(Boolean).length;
-        const progressStatus = categoriesMet === 3 ? 2 : categoriesMet === 2 ? 1 : 0;
 
         return {
           id: user.id,
