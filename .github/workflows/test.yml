@@ -24,6 +24,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/testdb
 
       - name: Run tests
         run: pnpm test
