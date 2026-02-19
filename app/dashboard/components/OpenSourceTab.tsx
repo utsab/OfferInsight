@@ -1058,9 +1058,9 @@ export default function OpenSourceTab({
                 Back to {selectedPartnership}
               </button>
             ) : null}
-            {/* Show button to choose new partnership when viewing completed partnership or when current is complete - non-instructor only */}
+            {/* Show "Partnership Complete!" only when: (1) viewing a completed partnership and no active one, or (2) current partnership criteria are all complete. Hide when viewing old cards while having an active partnership (only Back shows). */}
             {!isInstructor && (
-              (viewingCompletedPartnershipName || (!viewingCompletedPartnershipName && totalCriteriaProgress.total > 0 && totalCriteriaProgress.completed >= totalCriteriaProgress.total)) && (
+              ((viewingCompletedPartnershipName && !activePartnershipDbId) || (!viewingCompletedPartnershipName && totalCriteriaProgress.total > 0 && totalCriteriaProgress.completed >= totalCriteriaProgress.total)) && (
                 <button
                   type="button"
                   onClick={() => {
