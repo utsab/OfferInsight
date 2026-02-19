@@ -45,6 +45,20 @@ async function main() {
     console.log(`Upserted partnership: ${partnership.name}`);
   }
 
+  console.log('Seeding instructor...');
+
+  await prisma.instructor.upsert({
+    where: { username: 'instructor00' },
+    update: {
+      // Don't update if instructor already exists
+    },
+    create: {
+      username: 'instructor00',
+      password: '$2b$10$YLzaAHx27cnUWdtIikojoup/pGBOJhhUPWwKluIxnMeLsoIoyugny',
+    },
+  });
+
+  console.log('Seeded instructor: instructor00');
   console.log('Seeding complete!');
 }
 
