@@ -984,7 +984,19 @@ export default function OpenSourceTab({
   };
 
   const handleCompletePartnership = async (resetToSelection: boolean = false) => {
-    if (!activePartnershipDbId || isCompletingPartnership) return;
+    // No active partnership (e.g. already viewing completed): just close modal; optionally go to selection
+    if (!activePartnershipDbId) {
+      setShowCongratsModal(false);
+      if (resetToSelection) {
+        setSelectedPartnership(null);
+        setSelectedPartnershipId(null);
+        setActivePartnershipDbId(null);
+        setActivePartnershipCriteria([]);
+        setViewingCompletedPartnershipName?.(null);
+      }
+      return;
+    }
+    if (isCompletingPartnership) return;
 
     setIsCompletingPartnership(true);
     try {
@@ -1004,12 +1016,13 @@ export default function OpenSourceTab({
       setShowCongratsModal(false);
 
       if (resetToSelection) {
-        // Reset partnership state to show selection screen
+        // Reset partnership state to show selection screen (do not call fetchActivePartnership
+        // or it can overwrite with "viewing completed" and prevent selection screen from showing)
         setSelectedPartnership(null);
         setSelectedPartnershipId(null);
         setActivePartnershipDbId(null);
         setActivePartnershipCriteria([]);
-        fetchActivePartnership?.();
+        setViewingCompletedPartnershipName?.(null);
       } else {
         // Keep current view - just refresh entries and partnerships list
         // Don't call fetchActivePartnership as it would reset state when no active partnership exists
@@ -1051,17 +1064,8 @@ export default function OpenSourceTab({
                 <button
                   type="button"
                   onClick={() => {
-                    if (viewingCompletedPartnershipName) {
-                      // When viewing completed, go directly to selection screen
-                      setSelectedPartnership(null);
-                      setSelectedPartnershipId(null);
-                      setActivePartnershipDbId(null);
-                      setActivePartnershipCriteria([]);
-                      setViewingCompletedPartnershipName?.(null);
-                    } else {
-                      // When current partnership is complete, show modal
-                      setShowCongratsModal(true);
-                    }
+                    // Always show congratulatory modal; Yes in the modal will take user to selection screen
+                    setShowCongratsModal(true);
                   }}
                   className="relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/60 via-yellow-900/40 to-amber-950/60 shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:from-amber-800/70 hover:via-yellow-800/50 hover:to-amber-900/70 hover:border-amber-400/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all overflow-hidden"
                 >
@@ -1688,9 +1692,6 @@ export default function OpenSourceTab({
                               </li>
                             ))}
                           </ul>
-                          <p className="mt-2 text-xs text-amber-400/80 italic">
-                            Congratulations on your achievements!
-                          </p>
                         </div>
                       </div>
                     </div>
