@@ -267,9 +267,7 @@ export default function InstructorDashboard() {
               key={user.id}
               className="bg-gray-600 border border-light-steel-blue rounded-lg px-6 py-4 hover:border-electric-blue transition-colors w-full"
             >
-              {/* Name column is sacred (no wrap); metrics wrap under Active/Progress */}
               <div className="flex gap-4 xl:gap-6 items-start">
-                {/* 1. Name - sacred column, never wraps */}
                 <div className="w-[140px] min-w-[140px] shrink-0">
                   <Link
                     href={`/dashboard?userId=${user.id}`}
@@ -280,9 +278,7 @@ export default function InstructorDashboard() {
                   </Link>
                 </div>
 
-                {/* 2. Metrics - flex-wrap; when they wrap, they wrap under Active/Progress */}
                 <div className="flex flex-wrap gap-4 xl:gap-6 items-start flex-1 min-w-0">
-                {/* 2a. Status */}
                 <div className="flex flex-col gap-2 w-[110px] min-w-[110px] shrink-0">
                   <div className="flex items-center gap-1.5">
                     <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
@@ -302,7 +298,6 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
 
-                {/* 3. Open Source */}
                 <div className="w-[220px] min-w-[220px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">Open Source</div>
                   <div className="text-gray-400 text-sm flex flex-col gap-2">
@@ -335,7 +330,6 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
 
-                {/* 4. Applications */}
                 <div className="w-[165px] min-w-[165px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">Applications</div>
                   <div className="text-gray-400 text-sm flex flex-col gap-2">
@@ -344,7 +338,6 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
 
-                {/* 5. Events */}
                 <div className="w-[165px] min-w-[165px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">Events</div>
                   <div className="text-gray-400 text-sm flex flex-col gap-2">
@@ -353,7 +346,6 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
 
-                {/* 6. Coffee Chats */}
                 <div className="w-[165px] min-w-[165px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">Coffee Chats</div>
                   <div className="text-gray-400 text-sm flex flex-col gap-2">
@@ -373,7 +365,6 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
 
-                {/* 7. LeetCode */}
                 <div className="w-[165px] min-w-[165px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">LeetCode</div>
                   <div className="text-gray-400 text-sm flex flex-col gap-2">
