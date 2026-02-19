@@ -48,13 +48,13 @@ export async function GET(request: NextRequest) {
     const minIssuesValid = minIssues === null || !Number.isNaN(minIssues);
 
     const users = await prisma.user.findMany({
-      select: { id: true, name: true, email: true },
+      select: { id: true, name: true, email: true, expectedGraduationDate: true },
       orderBy: { name: "asc" },
     });
 
     const userIds = users.map((u) => u.id);
     if (userIds.length === 0) {
-      const csv = "Name,Email,Issues Solved,PR Links,Blog Posts,Projects,Criteria & Proof\n";
+      const csv = "Name,Email,Graduation Date,Issues Solved,PR Links,Blog Posts,Projects,Criteria & Proof\n";
       return new NextResponse(csv, {
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     });
 
     const header =
-      "Name,Email,Issues Solved,PR Links,Blog Posts,Projects,Criteria & Proof\n";
+      "Name,Email,Graduation Date,Issues Solved,PR Links,Blog Posts,Projects,Criteria & Proof\n";
 
     const rows: string[] = [];
 
@@ -138,13 +138,16 @@ export async function GET(request: NextRequest) {
 
       const name = csvEscape(user.name ?? "");
       const email = csvEscape(user.email ?? "");
+      const graduationDate = user.expectedGraduationDate
+        ? csvEscape(user.expectedGraduationDate.toISOString().split('T')[0]) // Format as YYYY-MM-DD
+        : csvEscape("");
       const prLinksCell = csvEscape(prLinks.join("; "));
       const blogPostsCell = csvEscape(blogPosts.join("; "));
       const projectsCell = csvEscape(Array.from(projectsSet).join("; "));
       const criteriaProofCell = csvEscape(criteriaProofParts.join(" | "));
 
       rows.push(
-        `${name},${email},${issuesCompleted},${prLinksCell},${blogPostsCell},${projectsCell},${criteriaProofCell}`
+        `${name},${email},${graduationDate},${issuesCompleted},${prLinksCell},${blogPostsCell},${projectsCell},${criteriaProofCell}`
       );
     }
 
