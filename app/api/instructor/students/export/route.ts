@@ -46,7 +46,7 @@ function projectNameFromGitHubUrl(url: string): string | null {
       const owner = path[0];
       const repo = path[1];
       // Skip if it looks like a special path (e.g., "settings", "issues", etc.)
-      const skipPaths = ["settings", "security", "insights", "pulse", "graphs", "network", "settings"];
+      const skipPaths = ["settings", "security", "insights", "pulse", "graphs", "network"];
       if (owner && repo && !skipPaths.includes(repo.toLowerCase())) {
         return `${owner}/${repo}`;
       }
@@ -159,14 +159,6 @@ export async function GET(request: NextRequest) {
           criteriaProofParts.push(`${entry.criteriaType ?? "?"} (${metricLabel}): ${proofPairs.join("; ")}`);
         } else {
           criteriaProofParts.push(`${entry.criteriaType ?? "?"} (${metricLabel})`);
-        }
-      }
-
-      // Also extract projects from collected PR links (in case they weren't caught above)
-      for (const prLink of prLinks) {
-        const project = projectNameFromGitHubUrl(prLink);
-        if (project) {
-          projectsSet.add(project);
         }
       }
 
