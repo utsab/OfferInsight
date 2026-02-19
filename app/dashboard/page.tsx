@@ -974,8 +974,7 @@ const hasSeededMockDataRef = useRef(false);
     }
   }, [userIdParam]);
 
-  // Refresh only the completed partnerships list (e.g. after user completes one and goes to selection).
-  // Does not change selection state so the selection screen stays visible.
+  // Refresh completed partnerships list without changing selection state (used after completing and going to selection).
   const refreshCompletedPartnerships = useCallback(async () => {
     try {
       const url = userIdParam ? `/api/users/partnership?userId=${userIdParam}` : '/api/users/partnership';
