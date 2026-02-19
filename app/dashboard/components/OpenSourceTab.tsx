@@ -47,6 +47,7 @@ type OpenSourceTabProps = {
   isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
   fetchActivePartnership?: () => Promise<void>;
+  refreshCompletedPartnerships?: () => Promise<void>;
   completedPartnerships?: Array<{ id: number; partnershipName: string }>;
   viewingCompletedPartnershipName?: string | null;
   setViewingCompletedPartnershipName?: (name: string | null) => void;
@@ -797,6 +798,7 @@ export default function OpenSourceTab({
   isLoadingPartnerships,
   fetchAvailablePartnerships,
   fetchActivePartnership,
+  refreshCompletedPartnerships,
   completedPartnerships = [],
   viewingCompletedPartnershipName = null,
   setViewingCompletedPartnershipName,
@@ -993,6 +995,7 @@ export default function OpenSourceTab({
         setActivePartnershipDbId(null);
         setActivePartnershipCriteria([]);
         setViewingCompletedPartnershipName?.(null);
+        refreshCompletedPartnerships?.();
       }
       return;
     }
@@ -1023,6 +1026,7 @@ export default function OpenSourceTab({
         setActivePartnershipDbId(null);
         setActivePartnershipCriteria([]);
         setViewingCompletedPartnershipName?.(null);
+        refreshCompletedPartnerships?.();
       } else {
         // Keep current view - just refresh entries and partnerships list
         // Don't call fetchActivePartnership as it would reset state when no active partnership exists
