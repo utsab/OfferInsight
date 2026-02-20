@@ -8,12 +8,13 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
-import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip } from './shared';
+import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl } from './shared';
 import typesData from '@/partnerships/types.json';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 const ENABLE_DATE_FIELD_EDITING = false;
 // ===== DATE FIELD EDITING TOGGLE END =====
+
 
 type OpenSourceTabProps = {
   filteredOpenSourceColumns: Record<OpenSourceColumnId, OpenSourceEntry[]>;
@@ -47,6 +48,7 @@ type OpenSourceTabProps = {
   isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
   fetchActivePartnership?: () => Promise<void>;
+  refreshCompletedPartnerships?: () => Promise<void>;
   completedPartnerships?: Array<{ id: number; partnershipName: string }>;
   viewingCompletedPartnershipName?: string | null;
   setViewingCompletedPartnershipName?: (name: string | null) => void;
@@ -205,13 +207,6 @@ function OpenSourceModal({
     }
   }, [entry, selectedPartnership]);
 
-  const normalizeUrl = (raw: string): string => {
-    const s = String(raw).trim();
-    if (!s) return s;
-    if (/^https?:\/\//i.test(s)) return s;
-    return `https://${s}`;
-  };
-
   const handleProofResponseChange = (text: string, value: any, targetStatus?: OpenSourceStatus) => {
     const status = targetStatus || formData.status;
     setFormData(prev => {
@@ -315,8 +310,8 @@ function OpenSourceModal({
 
   // Plan, proofOfWork, babyStep groups: reset when entry, status, criteria, or baby step groups change
   const collapseDepsForRest = useMemo(
-    () => `${entry?.id ?? 'new'}-${formData.status}-${formData.criteriaType ?? ''}-${babyStepGroups.length}`,
-    [entry?.id, formData.status, formData.criteriaType, babyStepGroups.length]
+    () => `${entry?.id ?? 'new'}-${formData.status}-${formData.criteriaType ?? ''}-${babyStepGroups.length}-${effectiveProofOfWork.length}`,
+    [entry?.id, formData.status, formData.criteriaType, babyStepGroups.length, effectiveProofOfWork.length]
   );
 
   useEffect(() => {
@@ -326,10 +321,12 @@ function OpenSourceModal({
   useEffect(() => {
     const newState: Record<string, boolean> = {
       plan: formData.status !== 'plan',
-      proofOfWork: formData.status === 'babyStep',
     };
     babyStepGroups.forEach((_, idx) => {
       newState[`babyStep-${idx}`] = formData.status !== 'babyStep' && formData.status !== 'plan';
+    });
+    effectiveProofOfWork.forEach((_, idx) => {
+      newState[`proofOfWork-${idx}`] = formData.status === 'babyStep';
     });
     setCollapsedSections(prev => ({ ...prev, ...newState }));
   }, [collapseDepsForRest]);
@@ -375,7 +372,7 @@ function OpenSourceModal({
             value={value}
             onChange={(e) => handleProofResponseChange(requirement.text, e.target.value, forcedStatus)}
             onBlur={(e) => {
-              const normalized = normalizeUrl(e.target.value);
+              const normalized = normalizeUrl(e.target.value) || '';
               if (normalized !== e.target.value) {
                 handleProofResponseChange(requirement.text, normalized, forcedStatus);
               }
@@ -474,9 +471,8 @@ function OpenSourceModal({
     
     const primaryCriteria = activePartnershipCriteria.find(c => c.type === formData.criteriaType);
     
-    const { dateCreated, dateModified, ...restFormData } = formData;
     const submitData: Partial<OpenSourceEntry> = { 
-      ...restFormData,
+      ...formData,
       // Ensure we only save the primary fields to these columns, NOT the merged effective fields
       // This prevents permanent "flattening" of extra requirements into the primary card fields
       planFields: primaryCriteria?.plan_column_fields || formData.planFields || [],
@@ -487,7 +483,10 @@ function OpenSourceModal({
       babyStepResponses: cleanedBabyStepResponses,
       proofResponses: cleanedProofResponses,
     };
+    
     if (ENABLE_DATE_FIELD_EDITING) {
+      const { dateCreated, dateModified } = formData;
+      // Parse and include date fields if provided
       if (dateCreated) {
         try {
           const date = new Date(dateCreated);
@@ -513,6 +512,7 @@ function OpenSourceModal({
         }
       }
     }
+    
     onSave(submitData);
   };
 
@@ -669,35 +669,103 @@ function OpenSourceModal({
             </div>
           )}
 
-          {/* Proof of Work Fields - Visible in babyStep/inProgress/done, blurred/disabled in babyStep, editable in inProgress/done */}
+          {/* Proof of Work Fields - Visible in babyStep/inProgress/done, blurred/disabled in babyStep, editable in inProgress/done. Title like Metric; each field collapsible like baby steps. */}
           {effectiveProofOfWork.length > 0 && formData.status !== 'plan' && (
-            <div className="relative group border-y border-gray-700 py-6 my-6">
-              <button
-                type="button"
-                onClick={() => formData.status !== 'babyStep' && toggleSection('proofOfWork')}
-                disabled={formData.status === 'babyStep'}
-                className={`w-full flex items-center justify-between transition-colors rounded-lg p-2 -m-2 ${formData.status === 'babyStep' ? 'pointer-events-none cursor-not-allowed' : 'hover:bg-gray-700/50'}`}
-              >
-                <h4 className={`text-electric-blue font-bold flex items-center gap-2 text-xs uppercase tracking-wider ${formData.status === 'babyStep' ? 'blur-sm' : ''}`}>
-                  Proof of Work
-                </h4>
-                {formData.status !== 'babyStep' && (
-                  collapsedSections.proofOfWork ? (
-                    <ChevronDown className="w-4 h-4 text-electric-blue" />
-                  ) : (
-                    <ChevronUp className="w-4 h-4 text-electric-blue" />
-                  )
-                )}
-              </button>
-              {!collapsedSections.proofOfWork && (
-                <div className={`${formData.status === 'babyStep' ? 'blur-sm pointer-events-none' : ''} space-y-6 mt-4`}>
-                  {effectiveProofOfWork.map((req, index) => renderProofField(req, index, undefined, formData.status === 'babyStep'))}
-                </div>
-              )}
+            <div className={`relative group border-y border-gray-700 py-6 my-6 ${formData.status === 'babyStep' ? 'blur-sm' : ''}`}>
+              <label className="block text-white font-semibold mb-2">Proof of Work</label>
+              <div className="space-y-4">
+                {effectiveProofOfWork.map((req, index) => {
+                  const sectionKey = `proofOfWork-${index}`;
+                  const isCollapsed = collapsedSections[sectionKey] ?? false;
+                  const isDisabled = formData.status === 'babyStep';
+                  return (
+                    <div key={index} className="bg-gray-700/30 rounded-lg border border-gray-600">
+                      <button
+                        type="button"
+                        onClick={() => !isDisabled && toggleSection(sectionKey)}
+                        disabled={isDisabled}
+                        className={`w-full flex items-center justify-between p-4 transition-colors rounded-t-lg ${isDisabled ? 'pointer-events-none cursor-not-allowed' : 'hover:bg-gray-600/50'}`}
+                      >
+                        <h4 className="text-electric-blue font-bold uppercase tracking-wider text-xs">
+                          {req.text}
+                        </h4>
+                        {!isDisabled && (
+                          isCollapsed ? (
+                            <ChevronDown className="w-4 h-4 text-electric-blue" />
+                          ) : (
+                            <ChevronUp className="w-4 h-4 text-electric-blue" />
+                          )
+                        )}
+                      </button>
+                      {!isCollapsed && (
+                        <div className={`space-y-2 px-4 pb-4 ${isDisabled ? 'pointer-events-none' : ''}`}>
+                          {(() => {
+                            const value = formData.proofResponses[req.text] || '';
+                            return (
+                              <>
+                                {req.helper_video && (
+                                  <div className="flex justify-end mb-2">
+                                    <a 
+                                      href={req.helper_video} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-electric-blue hover:underline text-xs whitespace-nowrap"
+                                    >
+                                      Watch Helper Video
+                                    </a>
+                                  </div>
+                                )}
+                                {req.type === 'URL' && (
+                                  <input
+                                    type="text"
+                                    inputMode="url"
+                                    autoComplete="url"
+                                    value={value}
+                                    onChange={(e) => handleProofResponseChange(req.text, e.target.value, undefined)}
+                                    onBlur={(e) => {
+                                      const normalized = normalizeUrl(e.target.value) || '';
+                                      if (normalized !== e.target.value) {
+                                        handleProofResponseChange(req.text, normalized, undefined);
+                                      }
+                                    }}
+                                    disabled={isDisabled}
+                                    className={`w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                                    placeholder="Paste link — https:// added automatically"
+                                  />
+                                )}
+                                {(req.type === 'Checkbox' || req.type === 'checkbox') && (
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={!!value}
+                                      onChange={(e) => handleProofResponseChange(req.text, e.target.checked, undefined)}
+                                      disabled={isDisabled}
+                                      className={`w-5 h-5 rounded border-light-steel-blue bg-gray-700 text-electric-blue focus:ring-electric-blue ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                                    />
+                                    <span className="text-gray-300">Done</span>
+                                  </div>
+                                )}
+                                {req.type === 'text' && (
+                                  <textarea
+                                    value={value}
+                                    onChange={(e) => handleProofResponseChange(req.text, e.target.value, undefined)}
+                                    disabled={isDisabled}
+                                    className={`w-full bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-2 text-white placeholder-gray-400 min-h-[80px] ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                                    placeholder="Write your response here..."
+                                  />
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
               {formData.status === 'babyStep' && <LockTooltip />}
             </div>
           )}
-
 
           {ENABLE_DATE_FIELD_EDITING && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -797,6 +865,7 @@ export default function OpenSourceTab({
   isLoadingPartnerships,
   fetchAvailablePartnerships,
   fetchActivePartnership,
+  refreshCompletedPartnerships,
   completedPartnerships = [],
   viewingCompletedPartnershipName = null,
   setViewingCompletedPartnershipName,
@@ -817,7 +886,7 @@ export default function OpenSourceTab({
   const [partnershipError, setPartnershipError] = useState<string | null>(null);
   const prevCriteriaCompleteRef = useRef<boolean | null>(null);
 
-  // Exclude completed partnerships from selection dropdown so users can't accidentally pick one
+  // Exclude completed partnerships from selection dropdown
   const availableToSelect = useMemo(
     () => availablePartnerships.filter(p => !completedPartnerships.some(c => c.partnershipName === p.name)),
     [availablePartnerships, completedPartnerships]
@@ -855,6 +924,13 @@ export default function OpenSourceTab({
 
     return { completed, total };
   }, [activePartnershipCriteria, filteredOpenSourceColumns.done]);
+
+  const showPartnershipCompleteButton =
+    !isInstructor &&
+    ((viewingCompletedPartnershipName && !activePartnershipDbId) ||
+      (!viewingCompletedPartnershipName &&
+        totalCriteriaProgress.total > 0 &&
+        totalCriteriaProgress.completed >= totalCriteriaProgress.total));
 
   // Show congratulatory modal when user transitions from incomplete to all criteria complete (non-instructor only)
   useEffect(() => {
@@ -983,8 +1059,22 @@ export default function OpenSourceTab({
     }
   };
 
+  const resetToSelectionScreen = () => {
+    setSelectedPartnership(null);
+    setSelectedPartnershipId(null);
+    setActivePartnershipDbId(null);
+    setActivePartnershipCriteria([]);
+    setViewingCompletedPartnershipName?.(null);
+    refreshCompletedPartnerships?.();
+  };
+
   const handleCompletePartnership = async (resetToSelection: boolean = false) => {
-    if (!activePartnershipDbId || isCompletingPartnership) return;
+    if (!activePartnershipDbId) {
+      setShowCongratsModal(false);
+      if (resetToSelection) resetToSelectionScreen();
+      return;
+    }
+    if (isCompletingPartnership) return;
 
     setIsCompletingPartnership(true);
     try {
@@ -1002,20 +1092,11 @@ export default function OpenSourceTab({
       }
 
       setShowCongratsModal(false);
-
       if (resetToSelection) {
-        // Reset partnership state to show selection screen
-        setSelectedPartnership(null);
-        setSelectedPartnershipId(null);
-        setActivePartnershipDbId(null);
-        setActivePartnershipCriteria([]);
-        fetchActivePartnership?.();
+        resetToSelectionScreen();
       } else {
-        // Keep current view - just refresh entries and partnerships list
-        // Don't call fetchActivePartnership as it would reset state when no active partnership exists
         fetchOpenSourceEntries();
       }
-      
       fetchAvailablePartnerships();
     } catch (error) {
       console.error('Error completing partnership:', error);
@@ -1025,9 +1106,7 @@ export default function OpenSourceTab({
     }
   };
 
-  const handleCompleteAndSelectNewPartnership = async () => {
-    await handleCompletePartnership(true);
-  };
+  const handleCompleteAndSelectNewPartnership = () => handleCompletePartnership(true);
 
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6">
@@ -1035,7 +1114,6 @@ export default function OpenSourceTab({
         <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3 flex-wrap">
             <h4 className="text-xl font-bold text-white">Open Source Contributions</h4>
-            {/* Back button only shows when viewing a completed partnership AND there's an active partnership to go back to */}
             {viewingCompletedPartnershipName && activePartnershipDbId && selectedPartnership && setViewingCompletedPartnershipName ? (
               <button
                 onClick={() => setViewingCompletedPartnershipName?.(null)}
@@ -1045,34 +1123,19 @@ export default function OpenSourceTab({
                 Back to {selectedPartnership}
               </button>
             ) : null}
-            {/* Show button to choose new partnership when viewing completed partnership or when current is complete - non-instructor only */}
-            {!isInstructor && (
-              (viewingCompletedPartnershipName || (!viewingCompletedPartnershipName && totalCriteriaProgress.total > 0 && totalCriteriaProgress.completed >= totalCriteriaProgress.total)) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (viewingCompletedPartnershipName) {
-                      // When viewing completed, go directly to selection screen
-                      setSelectedPartnership(null);
-                      setSelectedPartnershipId(null);
-                      setActivePartnershipDbId(null);
-                      setActivePartnershipCriteria([]);
-                      setViewingCompletedPartnershipName?.(null);
-                    } else {
-                      // When current partnership is complete, show modal
-                      setShowCongratsModal(true);
-                    }
-                  }}
-                  className="relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/60 via-yellow-900/40 to-amber-950/60 shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:from-amber-800/70 hover:via-yellow-800/50 hover:to-amber-900/70 hover:border-amber-400/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all overflow-hidden"
-                >
-                  <span className="absolute inset-0 bg-gradient-to-br from-amber-400/10 via-transparent to-amber-500/10 pointer-events-none" />
-                  <div className="relative flex items-center gap-2">
-                    <PartyPopper className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
-                    <span className="text-amber-100 font-bold text-sm uppercase tracking-wider">Partnership complete! - Click here to choose a new partnership!</span>
-                    <Medal className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
-                  </div>
-                </button>
-              )
+            {showPartnershipCompleteButton && (
+              <button
+                type="button"
+                onClick={() => setShowCongratsModal(true)}
+                className="relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-900/60 via-yellow-900/40 to-amber-950/60 shadow-[0_0_16px_rgba(245,158,11,0.2)] hover:from-amber-800/70 hover:via-yellow-800/50 hover:to-amber-900/70 hover:border-amber-400/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all overflow-hidden"
+              >
+                <span className="absolute inset-0 bg-gradient-to-br from-amber-400/10 via-transparent to-amber-500/10 pointer-events-none" />
+                <div className="relative flex items-center gap-2">
+                  <PartyPopper className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
+                  <span className="text-amber-100 font-bold text-sm uppercase tracking-wider">Partnership complete! - Click here to choose a new partnership!</span>
+                  <Medal className="w-5 h-5 text-amber-300" strokeWidth={2.5} />
+                </div>
+              </button>
             )}
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-300">
@@ -1688,9 +1751,6 @@ export default function OpenSourceTab({
                               </li>
                             ))}
                           </ul>
-                          <p className="mt-2 text-xs text-amber-400/80 italic">
-                            Congratulations on your achievements!
-                          </p>
                         </div>
                       </div>
                     </div>

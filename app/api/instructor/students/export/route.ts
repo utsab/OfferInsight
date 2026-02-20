@@ -13,23 +13,47 @@ function csvEscape(value: string): string {
 
 /**
  * Extract GitHub repo/project name from a URL.
- * e.g. https://github.com/owner/Jobs4Us/pull/888 -> "Jobs4Us"
- * Only matches /pull/ or /issues/ paths; returns null for non-GitHub or other paths.
+ * e.g. https://github.com/owner/Jobs4Us/pull/888 -> "owner/Jobs4Us"
+ * Also handles www.github.com and other variations.
+ * Matches /pull/ or /issues/ paths, or just owner/repo URLs.
  */
 function projectNameFromGitHubUrl(url: string): string | null {
   const s = String(url ?? "").trim();
   if (!s || (!s.startsWith("http://") && !s.startsWith("https://"))) return null;
   try {
     const u = new URL(s);
-    const host = u.hostname.toLowerCase();
-    if (host !== "github.com") return null;
-    const path = u.pathname.replace(/^\/+/, "").split("/");
-    // path: [owner, repo, "pull"|"issues", number]
-    if (path.length >= 4 && (path[2] === "pull" || path[2] === "issues")) {
-      return path[1] ?? null; // repo name as-is
+    let host = u.hostname.toLowerCase();
+    // Handle www.github.com and github.com
+    if (host.startsWith("www.")) {
+      host = host.substring(4);
     }
-  } catch {
-    // ignore invalid URLs
+    if (host !== "github.com") return null;
+    
+    const path = u.pathname.replace(/^\/+/, "").split("/").filter(p => p.length > 0);
+    
+    // Case 1: URL has /pull/ or /issues/ (e.g., owner/repo/pull/123)
+    if (path.length >= 4 && (path[2] === "pull" || path[2] === "issues")) {
+      const owner = path[0];
+      const repo = path[1];
+      if (owner && repo) {
+        return `${owner}/${repo}`;
+      }
+      return null;
+    }
+    
+    // Case 2: URL is just owner/repo (e.g., owner/repo)
+    if (path.length >= 2) {
+      const owner = path[0];
+      const repo = path[1];
+      // Skip if it looks like a special path (e.g., "settings", "issues", etc.)
+      const skipPaths = ["settings", "security", "insights", "pulse", "graphs", "network"];
+      if (owner && repo && !skipPaths.includes(repo.toLowerCase())) {
+        return `${owner}/${repo}`;
+      }
+    }
+  } catch (error) {
+    // Log error for debugging but don't throw
+    console.error("Error parsing GitHub URL:", url, error);
   }
   return null;
 }
@@ -48,13 +72,13 @@ export async function GET(request: NextRequest) {
     const minIssuesValid = minIssues === null || !Number.isNaN(minIssues);
 
     const users = await prisma.user.findMany({
-      select: { id: true, name: true, email: true },
+      select: { id: true, name: true, email: true, expectedGraduationDate: true },
       orderBy: { name: "asc" },
     });
 
     const userIds = users.map((u) => u.id);
     if (userIds.length === 0) {
-      const csv = "Name,Email,Issues Solved,PR Links,Blog Posts,Projects,Criteria & Proof\n";
+      const csv = "Name,Email,Graduation Date,Issues Solved,Projects,PR Links,Blog Posts,Criteria & Proof\n";
       return new NextResponse(csv, {
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
@@ -86,7 +110,7 @@ export async function GET(request: NextRequest) {
     });
 
     const header =
-      "Name,Email,Issues Solved,PR Links,Blog Posts,Projects,Criteria & Proof\n";
+      "Name,Email,Graduation Date,Issues Solved,Projects,PR Links,Blog Posts,Criteria & Proof\n";
 
     const rows: string[] = [];
 
@@ -115,7 +139,9 @@ export async function GET(request: NextRequest) {
             if (s && (s.startsWith("http://") || s.startsWith("https://"))) {
               prLinks.push(s);
               const project = projectNameFromGitHubUrl(s);
-              if (project) projectsSet.add(project);
+              if (project) {
+                projectsSet.add(project);
+              }
             }
           }
         }
@@ -138,13 +164,16 @@ export async function GET(request: NextRequest) {
 
       const name = csvEscape(user.name ?? "");
       const email = csvEscape(user.email ?? "");
+      const graduationDate = user.expectedGraduationDate
+        ? csvEscape(user.expectedGraduationDate.toISOString().split('T')[0]) // Format as YYYY-MM-DD
+        : csvEscape("");
       const prLinksCell = csvEscape(prLinks.join("; "));
       const blogPostsCell = csvEscape(blogPosts.join("; "));
       const projectsCell = csvEscape(Array.from(projectsSet).join("; "));
       const criteriaProofCell = csvEscape(criteriaProofParts.join(" | "));
 
       rows.push(
-        `${name},${email},${issuesCompleted},${prLinksCell},${blogPostsCell},${projectsCell},${criteriaProofCell}`
+        `${name},${email},${graduationDate},${issuesCompleted},${projectsCell},${prLinksCell},${blogPostsCell},${criteriaProofCell}`
       );
     }
 
