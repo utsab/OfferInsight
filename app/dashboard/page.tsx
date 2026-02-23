@@ -974,6 +974,20 @@ const hasSeededMockDataRef = useRef(false);
     }
   }, [userIdParam]);
 
+  // Refresh completed partnerships list without changing selection state (used after completing and going to selection).
+  const refreshCompletedPartnerships = useCallback(async () => {
+    try {
+      const url = userIdParam ? `/api/users/partnership?userId=${userIdParam}` : '/api/users/partnership';
+      const response = await fetch(url);
+      if (!response.ok) return;
+      const data = await response.json();
+      const completed = (data.completed || []).map((p: { id: number; partnershipName: string }) => ({ id: p.id, partnershipName: p.partnershipName }));
+      setCompletedPartnerships(completed);
+    } catch (error) {
+      console.error('Error refreshing completed partnerships:', error);
+    }
+  }, [userIdParam]);
+
   useEffect(() => {
     if (ENABLE_DASHBOARD_MOCKS) return;
     if ((activeTab === 'opensource' || activeTab === 'overview') && !isFetchingPartnershipRef.current) {
@@ -2292,6 +2306,7 @@ const hasSeededMockDataRef = useRef(false);
             isLoadingPartnerships={isLoadingPartnerships}
             fetchAvailablePartnerships={fetchAvailablePartnerships}
             fetchActivePartnership={fetchActivePartnership}
+            refreshCompletedPartnerships={refreshCompletedPartnerships}
             completedPartnerships={completedPartnerships}
             viewingCompletedPartnershipName={viewingCompletedPartnershipName}
             setViewingCompletedPartnershipName={setViewingCompletedPartnershipName}
