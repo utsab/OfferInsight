@@ -37,6 +37,7 @@ export async function GET() {
         const [
           openSourceEntries,
           activePartnership,
+          completedPartnershipsCount,
         ] = await Promise.all([
           prisma.openSourceEntry.findMany({
             where: { userId: user.id },
@@ -51,6 +52,9 @@ export async function GET() {
           prisma.userPartnership.findFirst({
             where: { userId: user.id, status: 'active' },
             include: { partnership: true },
+          }),
+          prisma.userPartnership.count({
+            where: { userId: user.id, status: 'completed' },
           }),
         ]);
 
@@ -263,6 +267,7 @@ export async function GET() {
           referralCount,
           openSource: {
             issuesCompleted: issuesCompletedCount,
+            partnershipsCompleted: completedPartnershipsCount,
             completedCount: completedCriteriaCount,
             totalCount: totalCriteriaCount,
           },
