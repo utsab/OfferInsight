@@ -262,40 +262,49 @@ function OpenSourceModal({
     };
   };
 
-  // Helper to get grouped baby steps
-  // When in Plan column, exclude extra baby step groups to keep the modal compact
-  const getBabyStepGroups = () => {
+  // Generic helper: builds named groups from primary fields + matching extra fields.
+  // Excludes extra fields when in Plan column to keep the modal compact.
+  const getFieldGroups = (primaryFields: any[], getExtraFields: (c: any) => any[] | undefined) => {
     const groups: Array<{ name: string; fields: any[] }> = [];
-    
-    // Add primary baby steps if any
-    if (formData.babyStepFields && formData.babyStepFields.length > 0) {
+
+    if (primaryFields && primaryFields.length > 0) {
       const primaryType = activePartnershipCriteria.find(c => c.type === formData.criteriaType);
       groups.push({
         name: primaryType?.short_name || formData.criteriaType || 'issue',
-        fields: formData.babyStepFields
+        fields: primaryFields,
       });
     }
 
-    const includeExtraFields = formData.status !== 'plan';
-    if (formData.criteriaType === 'issue' && includeExtraFields) {
+    if (formData.criteriaType === 'issue' && formData.status !== 'plan') {
       formData.selectedExtras.forEach(extraType => {
         const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
-        if (extraCriteria && extraCriteria.baby_step_column_fields && extraCriteria.baby_step_column_fields.length > 0) {
-          groups.push({
-            name: extraCriteria.short_name || extraType,
-            fields: extraCriteria.baby_step_column_fields
-          });
+        if (extraCriteria) {
+          const fields = getExtraFields(extraCriteria);
+          if (fields && fields.length > 0) {
+            groups.push({ name: extraCriteria.short_name || extraType, fields });
+          }
         }
       });
     }
-    
+
     return groups;
   };
 
-  const { babySteps: effectiveBabySteps, proofOfWork: effectiveProofOfWork, plan: effectivePlan } = getEffectiveFields();
+  const getBabyStepGroups = () => getFieldGroups(formData.babyStepFields, c => c.baby_step_column_fields);
+  const getProofOfWorkGroups = () => getFieldGroups(formData.proofOfCompletion, c => c.proof_of_completion);
+
+  const { proofOfWork: effectiveProofOfWork, plan: effectivePlan } = getEffectiveFields();
   const babyStepGroups = useMemo(
     () => getBabyStepGroups(),
     [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
+  );
+  const proofOfWorkGroups = useMemo(
+    () => getProofOfWorkGroups(),
+    [formData.proofOfCompletion, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
+  );
+  const proofOfWorkFlat = useMemo(
+    () => proofOfWorkGroups.flatMap(g => g.fields.map(req => ({ ...req, groupName: g.name }))),
+    [proofOfWorkGroups]
   );
 
   // Initialize collapsed sections state
@@ -674,7 +683,7 @@ function OpenSourceModal({
             <div className={`relative group border-y border-gray-700 py-6 my-6 ${formData.status === 'babyStep' ? 'blur-sm' : ''}`}>
               <label className="block text-white font-semibold mb-2">Proof of Work</label>
               <div className="space-y-4">
-                {effectiveProofOfWork.map((req, index) => {
+                {proofOfWorkFlat.map((req, index) => {
                   const sectionKey = `proofOfWork-${index}`;
                   const isCollapsed = collapsedSections[sectionKey] ?? false;
                   const isDisabled = formData.status === 'babyStep';
@@ -687,7 +696,7 @@ function OpenSourceModal({
                         className={`w-full flex items-center justify-between p-4 transition-colors rounded-t-lg text-left ${isDisabled ? 'pointer-events-none cursor-not-allowed' : 'hover:bg-gray-600/50'}`}
                       >
                         <h4 className="text-electric-blue font-bold uppercase tracking-wider text-xs">
-                          {req.text}
+                          {formatDisplayName(req.groupName)}: {req.text}
                         </h4>
                         {!isDisabled && (
                           isCollapsed ? (
@@ -1763,13 +1772,7 @@ export default function OpenSourceTab({
                       if (criteria.type === 'multiple_choice') return null;
                       
                       const requiredCount = criteria.count || 1;
-                      const allEntries = [
-                        ...filteredOpenSourceColumns.plan,
-                        ...filteredOpenSourceColumns.babyStep,
-                        ...filteredOpenSourceColumns.inProgress,
-                        ...filteredOpenSourceColumns.done,
-                      ];
-                      
+
                       // Count completed entries for this criteria type
                       // This includes both standalone cards and extras attached to other cards
                       const completedCount = filteredOpenSourceColumns.done.filter(entry => {
