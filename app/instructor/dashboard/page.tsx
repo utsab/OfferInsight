@@ -264,9 +264,9 @@ export default function InstructorDashboard() {
               key={user.id}
               className="bg-gray-600 border border-light-steel-blue rounded-lg px-6 py-4 hover:border-electric-blue transition-colors w-full"
             >
-              {/* Flex: one item wraps at a time (word-wrap style); fixed width keeps columns aligned */}
-              <div className="flex flex-wrap gap-4 xl:gap-6 items-start">
-                {/* 1. Name */}
+              {/* Name column is sacred (no wrap); metrics wrap under Active/Progress */}
+              <div className="flex gap-4 xl:gap-6 items-start">
+                {/* 1. Name - sacred column, never wraps */}
                 <div className="w-[165px] min-w-[165px] shrink-0">
                   <Link
                     href={`/dashboard?userId=${user.id}`}
@@ -277,7 +277,9 @@ export default function InstructorDashboard() {
                   </Link>
                 </div>
 
-                {/* 2. Status */}
+                {/* 2. Metrics - flex-wrap; when they wrap, they wrap under Active/Progress */}
+                <div className="flex flex-wrap gap-4 xl:gap-6 items-start flex-1 min-w-0">
+                {/* 2a. Status */}
                 <div className="flex flex-col gap-2 w-[165px] min-w-[165px] shrink-0">
                   <div className="flex items-center gap-1.5">
                     <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
@@ -371,6 +373,7 @@ export default function InstructorDashboard() {
                     <span>Last Month: <span className="text-white font-medium">{user.leetCode.lastMonth}</span></span>
                     <span>All Time: <span className="text-white font-medium">{user.leetCode.allTime}</span></span>
                   </div>
+                </div>
                 </div>
               </div>
             </div>
