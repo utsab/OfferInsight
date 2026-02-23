@@ -49,7 +49,7 @@ type OpenSourceTabProps = {
   fetchAvailablePartnerships: () => Promise<void>;
   fetchActivePartnership?: () => Promise<void>;
   refreshCompletedPartnerships?: () => Promise<void>;
-  completedPartnerships?: Array<{ id: number; partnershipName: string }>;
+  completedPartnerships?: Array<{ id: number; partnershipName: string; criteria: any[] }>;
   viewingCompletedPartnershipName?: string | null;
   setViewingCompletedPartnershipName?: (name: string | null) => void;
   isInstructor?: boolean;
@@ -1985,7 +1985,12 @@ export default function OpenSourceTab({
             }
           }}
           selectedPartnership={selectedPartnership}
-          activePartnershipCriteria={activePartnershipCriteria}
+          activePartnershipCriteria={
+            // When editing a completed partnership's card, use that partnership's saved criteria
+            // so extras (selectedExtras) resolve correctly from their original definitions.
+            completedPartnerships.find(p => p.partnershipName === editingEntry?.partnershipName)?.criteria
+            ?? activePartnershipCriteria
+          }
           availablePartnerships={availablePartnerships}
           fullPartnerships={fullPartnerships}
         />

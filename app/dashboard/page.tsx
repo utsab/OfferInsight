@@ -854,7 +854,7 @@ const hasSeededMockDataRef = useRef(false);
   const [selectedPartnershipId, setSelectedPartnershipId] = useState<number | null>(null);
   const [activePartnershipDbId, setActivePartnershipDbId] = useState<number | null>(null);
   const [activePartnershipCriteria, setActivePartnershipCriteria] = useState<any[]>([]);
-  const [completedPartnerships, setCompletedPartnerships] = useState<Array<{ id: number; partnershipName: string }>>([]);
+  const [completedPartnerships, setCompletedPartnerships] = useState<Array<{ id: number; partnershipName: string; criteria: any[] }>>([]);
   const [viewingCompletedPartnershipName, setViewingCompletedPartnershipName] = useState<string | null>(null);
   const [availablePartnerships, setAvailablePartnerships] = useState<Array<{ id: number; name: string; spotsRemaining: number }>>([]);
   const [fullPartnerships, setFullPartnerships] = useState<Array<{ id: number; name: string }>>([]);
@@ -944,7 +944,7 @@ const hasSeededMockDataRef = useRef(false);
         return;
       }
       const data = await response.json();
-      const completed = (data.completed || []).map((p: { id: number; partnershipName: string }) => ({ id: p.id, partnershipName: p.partnershipName }));
+      const completed = (data.completed || []).map((p: { id: number; partnershipName: string; criteria: any[] }) => ({ id: p.id, partnershipName: p.partnershipName, criteria: p.criteria || [] }));
       setCompletedPartnerships(completed);
       if (data.active) {
         setSelectedPartnership(data.active.partnershipName);
@@ -981,7 +981,7 @@ const hasSeededMockDataRef = useRef(false);
       const response = await fetch(url);
       if (!response.ok) return;
       const data = await response.json();
-      const completed = (data.completed || []).map((p: { id: number; partnershipName: string }) => ({ id: p.id, partnershipName: p.partnershipName }));
+      const completed = (data.completed || []).map((p: { id: number; partnershipName: string; criteria: any[] }) => ({ id: p.id, partnershipName: p.partnershipName, criteria: p.criteria || [] }));
       setCompletedPartnerships(completed);
     } catch (error) {
       console.error('Error refreshing completed partnerships:', error);

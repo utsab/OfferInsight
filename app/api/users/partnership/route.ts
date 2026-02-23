@@ -5,6 +5,23 @@ import { getInstructorSession } from "@/app/lib/instructor-auth";
 import partnershipsData from "@/partnerships/partnerships.json";
 import typesData from "@/partnerships/types.json";
 
+// Builds the full criteria array for a given partnership + user multiple-choice selections.
+function buildCriteria(partnershipId: number, selections: Record<string, string>) {
+  let mcIndex = 0;
+  return (partnershipsData.partnerships.find(p => p.id === partnershipId)?.criteria || []).flatMap((c: any) => {
+    if (c.type === 'multiple_choice' && c.choices) {
+      const selectedType = selections[String(mcIndex)];
+      mcIndex++;
+      if (!selectedType) return [];
+      const selectedChoice = c.choices.find((choice: any) => choice.type === selectedType);
+      if (!selectedChoice) return [];
+      const typeDef = (typesData.types as any)[selectedChoice.type];
+      return [{ ...selectedChoice, ...typeDef, isFromChoice: true }];
+    }
+    return [{ ...c, ...((typesData.types as any)[c.type] || {}) }];
+  });
+}
+
 // GET: Fetch user's active partnership and history
 export async function GET(request: NextRequest) {
   try {
@@ -50,46 +67,17 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Transform to include partnershipName and full criteria for extras
-    // We filter multiple_choice options based on user selections so only their choice is available as an extra
-    const selections = activePartnership.selections as Record<string, string> || {};
-    let mcIndex = 0;
-    const criteria = (partnershipsData.partnerships.find(p => p.id === activePartnership.partnershipId)?.criteria || []).flatMap((c) => {
-      if (c.type === 'multiple_choice' && c.choices) {
-        // Only include the choice the user actually made
-        // Use the index within the set of multiple_choice blocks to match frontend
-        const selectedType = selections[String(mcIndex)];
-        mcIndex++;
-        
-        if (!selectedType) return [];
-        
-        const selectedChoice = c.choices.find((choice: any) => choice.type === selectedType);
-        if (!selectedChoice) return [];
-
-        const typeDef = (typesData.types as any)[selectedChoice.type];
-        return [{
-          ...selectedChoice,
-          ...typeDef,
-          isFromChoice: true
-        }];
-      }
-      
-      return [{
-        ...c,
-        ...((typesData.types as any)[c.type] || {})
-      }];
-    });
-    
-
-    const activeResponse = activePartnership ? {
+    const activeSelections = activePartnership.selections as Record<string, string> || {};
+    const activeResponse = {
       ...activePartnership,
       partnershipName: activePartnership.partnership.name,
-      criteria
-    } : null;
+      criteria: buildCriteria(activePartnership.partnershipId, activeSelections),
+    };
 
     const completedResponse = completedPartnerships.map(p => ({
       ...p,
       partnershipName: p.partnership.name,
+      criteria: buildCriteria(p.partnershipId, (p.selections as Record<string, string>) || {}),
     }));
 
     return NextResponse.json({
@@ -322,35 +310,10 @@ export async function POST(request: NextRequest) {
       return newPartnership;
     });
 
-    const selections = multipleChoiceSelections || {};
-    let mcCount = 0;
-    const criteria = (partnershipsData.partnerships.find(p => p.id === partnershipId)?.criteria || []).flatMap((c) => {
-      if (c.type === 'multiple_choice' && c.choices) {
-        const selectedType = selections[String(mcCount)];
-        mcCount++;
-        
-        if (!selectedType) return [];
-        
-        const selectedChoice = c.choices.find((choice: any) => choice.type === selectedType);
-        if (!selectedChoice) return [];
-
-        const typeDef = (typesData.types as any)[selectedChoice.type];
-        return [{
-          ...selectedChoice,
-          ...typeDef,
-          isFromChoice: true
-        }];
-      }
-      return [{
-        ...c,
-        ...((typesData.types as any)[c.type] || {})
-      }];
-    });
-
     const responseData = {
       ...result,
       partnershipName: result.partnership.name,
-      criteria
+      criteria: buildCriteria(partnershipId, multipleChoiceSelections || {}),
     };
 
     return NextResponse.json(responseData);
