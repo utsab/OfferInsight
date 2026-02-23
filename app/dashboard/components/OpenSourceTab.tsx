@@ -621,7 +621,7 @@ function OpenSourceModal({
                     <button
                       type="button"
                       onClick={() => toggleSection(sectionKey)}
-                      className="w-full flex items-center justify-between p-4 transition-colors rounded-t-lg hover:bg-gray-600/50"
+                      className="w-full flex items-center justify-between p-4 transition-colors rounded-t-lg hover:bg-gray-600/50 text-left"
                     >
                       <h4 className="text-electric-blue font-bold uppercase tracking-wider text-xs">
                         Baby Step for {group.name}
@@ -650,7 +650,7 @@ function OpenSourceModal({
               <button
                 type="button"
                 onClick={() => toggleSection('plan')}
-                className="w-full flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg p-2 -m-2"
+                className="w-full flex items-center justify-between hover:bg-gray-700/50 transition-colors rounded-lg p-2 -m-2 text-left"
               >
                 <h4 className={`text-electric-blue font-bold flex items-center gap-2 text-xs uppercase tracking-wider ${formData.status !== 'plan' ? 'blur-sm' : ''}`}>
                   Plan
@@ -684,7 +684,7 @@ function OpenSourceModal({
                         type="button"
                         onClick={() => !isDisabled && toggleSection(sectionKey)}
                         disabled={isDisabled}
-                        className={`w-full flex items-center justify-between p-4 transition-colors rounded-t-lg ${isDisabled ? 'pointer-events-none cursor-not-allowed' : 'hover:bg-gray-600/50'}`}
+                        className={`w-full flex items-center justify-between p-4 transition-colors rounded-t-lg text-left ${isDisabled ? 'pointer-events-none cursor-not-allowed' : 'hover:bg-gray-600/50'}`}
                       >
                         <h4 className="text-electric-blue font-bold uppercase tracking-wider text-xs">
                           {req.text}
