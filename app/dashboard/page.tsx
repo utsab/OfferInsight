@@ -2305,7 +2305,6 @@ const hasSeededMockDataRef = useRef(false);
             fullPartnerships={fullPartnerships}
             isLoadingPartnerships={isLoadingPartnerships}
             fetchAvailablePartnerships={fetchAvailablePartnerships}
-            fetchActivePartnership={fetchActivePartnership}
             refreshCompletedPartnerships={refreshCompletedPartnerships}
             completedPartnerships={completedPartnerships}
             viewingCompletedPartnershipName={viewingCompletedPartnershipName}

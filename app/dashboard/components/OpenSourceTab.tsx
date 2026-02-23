@@ -47,7 +47,6 @@ type OpenSourceTabProps = {
   fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
   isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
-  fetchActivePartnership?: () => Promise<void>;
   refreshCompletedPartnerships?: () => Promise<void>;
   completedPartnerships?: Array<{ id: number; partnershipName: string; criteria: any[] }>;
   viewingCompletedPartnershipName?: string | null;
@@ -873,7 +872,6 @@ export default function OpenSourceTab({
   fullPartnerships,
   isLoadingPartnerships,
   fetchAvailablePartnerships,
-  fetchActivePartnership,
   refreshCompletedPartnerships,
   completedPartnerships = [],
   viewingCompletedPartnershipName = null,
