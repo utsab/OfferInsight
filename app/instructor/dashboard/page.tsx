@@ -12,6 +12,7 @@ interface UserData {
   referralCount: number; // Number of referrals received
   openSource: {
     issuesCompleted: number;
+    partnershipsCompleted?: number;
     completedCount: number;
     totalCount: number;
   };
@@ -78,6 +79,7 @@ function generateDebugUsers(): UserData[] {
       : 0; // Most users have 0 referrals
     
     const issuesCompleted = Math.floor(Math.random() * 5);
+    const partnershipsCompleted = Math.floor(Math.random() * 4);
     const totalCriteria = Math.max(issuesCompleted + Math.floor(Math.random() * 5), 1);
 
     return {
@@ -89,6 +91,7 @@ function generateDebugUsers(): UserData[] {
       referralCount,
       openSource: {
         issuesCompleted,
+        partnershipsCompleted,
         completedCount: issuesCompleted,
         totalCount: totalCriteria,
       },
@@ -267,7 +270,7 @@ export default function InstructorDashboard() {
               {/* Name column is sacred (no wrap); metrics wrap under Active/Progress */}
               <div className="flex gap-4 xl:gap-6 items-start">
                 {/* 1. Name - sacred column, never wraps */}
-                <div className="w-[165px] min-w-[165px] shrink-0">
+                <div className="w-[140px] min-w-[140px] shrink-0">
                   <Link
                     href={`/dashboard?userId=${user.id}`}
                     title={user.name}
@@ -280,7 +283,7 @@ export default function InstructorDashboard() {
                 {/* 2. Metrics - flex-wrap; when they wrap, they wrap under Active/Progress */}
                 <div className="flex flex-wrap gap-4 xl:gap-6 items-start flex-1 min-w-0">
                 {/* 2a. Status */}
-                <div className="flex flex-col gap-2 w-[165px] min-w-[165px] shrink-0">
+                <div className="flex flex-col gap-2 w-[110px] min-w-[110px] shrink-0">
                   <div className="flex items-center gap-1.5">
                     <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
                       user.activeStatus === 2 ? 'bg-green-500' :
@@ -297,26 +300,19 @@ export default function InstructorDashboard() {
                     }`} />
                     <span className="text-gray-300 text-sm font-medium whitespace-nowrap">Progress</span>
                   </div>
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit border min-w-[120px] ${
-                    user.referralCount > 0
-                      ? 'bg-green-900/30 border-green-500'
-                      : 'bg-gray-800/50 border-gray-600'
-                  }`}>
-                    <span className={`font-bold text-sm whitespace-nowrap ${
-                      user.referralCount > 0 ? 'text-green-400' : 'text-gray-500'
-                    }`}>
-                      🎉 {user.referralCount} Referral{user.referralCount !== 1 ? 's' : ''}
-                    </span>
-                  </div>
                 </div>
 
                 {/* 3. Open Source */}
-                <div className="w-[165px] min-w-[165px] shrink-0">
+                <div className="w-[220px] min-w-[220px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">Open Source</div>
                   <div className="text-gray-400 text-sm flex flex-col gap-2">
                     <span>
                       Issues Completed:{' '}
                       <span className="text-white font-medium">{user.openSource.issuesCompleted}</span>
+                    </span>
+                    <span>
+                      Partnerships Completed:{' '}
+                      <span className="text-white font-medium">{user.openSource.partnershipsCompleted ?? 0}</span>
                     </span>
                     <div className="relative h-8 w-full bg-gray-700 rounded-full overflow-hidden">
                       <div
@@ -342,7 +338,7 @@ export default function InstructorDashboard() {
                 {/* 4. Applications */}
                 <div className="w-[165px] min-w-[165px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">Applications</div>
-                  <div className="text-gray-400 text-sm flex flex-col">
+                  <div className="text-gray-400 text-sm flex flex-col gap-2">
                     <span>Last Month: <span className="text-white font-medium">{user.applications.lastMonth}</span></span>
                     <span>All Time: <span className="text-white font-medium">{user.applications.allTime}</span></span>
                   </div>
@@ -351,7 +347,7 @@ export default function InstructorDashboard() {
                 {/* 5. Events */}
                 <div className="w-[165px] min-w-[165px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">Events</div>
-                  <div className="text-gray-400 text-sm flex flex-col">
+                  <div className="text-gray-400 text-sm flex flex-col gap-2">
                     <span>Last Month: <span className="text-white font-medium">{user.events.lastMonth}</span></span>
                     <span>All Time: <span className="text-white font-medium">{user.events.allTime}</span></span>
                   </div>
@@ -360,16 +356,27 @@ export default function InstructorDashboard() {
                 {/* 6. Coffee Chats */}
                 <div className="w-[165px] min-w-[165px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">Coffee Chats</div>
-                  <div className="text-gray-400 text-sm flex flex-col">
+                  <div className="text-gray-400 text-sm flex flex-col gap-2">
                     <span>Last Month: <span className="text-white font-medium">{user.coffeeChats.lastMonth}</span></span>
                     <span>All Time: <span className="text-white font-medium">{user.coffeeChats.allTime}</span></span>
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit border min-w-[120px] ${
+                      user.referralCount > 0
+                        ? 'bg-green-900/30 border-green-500'
+                        : 'bg-gray-800/50 border-gray-600'
+                    }`}>
+                      <span className={`font-bold text-sm whitespace-nowrap ${
+                        user.referralCount > 0 ? 'text-green-400' : 'text-gray-500'
+                      }`}>
+                        🎉 {user.referralCount} Referral{user.referralCount !== 1 ? 's' : ''}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* 7. LeetCode */}
                 <div className="w-[165px] min-w-[165px] shrink-0">
                   <div className="text-gray-300 text-sm font-medium mb-1">LeetCode</div>
-                  <div className="text-gray-400 text-sm flex flex-col">
+                  <div className="text-gray-400 text-sm flex flex-col gap-2">
                     <span>Last Month: <span className="text-white font-medium">{user.leetCode.lastMonth}</span></span>
                     <span>All Time: <span className="text-white font-medium">{user.leetCode.allTime}</span></span>
                   </div>
