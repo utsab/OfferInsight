@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
         completed: completedPartnerships.map(p => ({
           ...p,
           partnershipName: p.partnership.name,
+          criteria: buildCriteria(p.partnershipId, (p.selections as Record<string, string>) || {}),
         })),
       });
     }
