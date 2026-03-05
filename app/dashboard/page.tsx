@@ -858,7 +858,6 @@ const hasSeededMockDataRef = useRef(false);
   const [viewingCompletedPartnershipName, setViewingCompletedPartnershipName] = useState<string | null>(null);
   const [availablePartnerships, setAvailablePartnerships] = useState<Array<{ id: number; name: string; spotsRemaining: number }>>([]);
   const [fullPartnerships, setFullPartnerships] = useState<Array<{ id: number; name: string }>>([]);
-  const [isLoadingPartnerships, setIsLoadingPartnerships] = useState(true);
   const isFetchingOpenSourceRef = useRef(false);
   const isFetchingPartnershipRef = useRef(false);
   const isFetchingAvailablePartnershipsRef = useRef(false);
@@ -1001,7 +1000,6 @@ const hasSeededMockDataRef = useRef(false);
 
     try {
       isFetchingAvailablePartnershipsRef.current = true;
-      setIsLoadingPartnerships(true);
       const response = await fetch('/api/partnerships/available');
       if (!response.ok) {
         console.error('Failed to fetch available partnerships');
@@ -1013,7 +1011,6 @@ const hasSeededMockDataRef = useRef(false);
     } catch (error) {
       console.error('Error fetching available partnerships:', error);
     } finally {
-      setIsLoadingPartnerships(false);
       isFetchingAvailablePartnershipsRef.current = false;
     }
   }, []);
@@ -2303,7 +2300,6 @@ const hasSeededMockDataRef = useRef(false);
             setActivePartnershipCriteria={setActivePartnershipCriteria}
             availablePartnerships={availablePartnerships}
             fullPartnerships={fullPartnerships}
-            isLoadingPartnerships={isLoadingPartnerships}
             fetchAvailablePartnerships={fetchAvailablePartnerships}
             refreshCompletedPartnerships={refreshCompletedPartnerships}
             completedPartnerships={completedPartnerships}

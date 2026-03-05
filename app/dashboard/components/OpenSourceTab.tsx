@@ -11,10 +11,8 @@ import { openSourceStatusToColumn } from './types';
 import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl } from './shared';
 import typesData from '@/partnerships/types.json';
 
-// ===== DATE FIELD EDITING TOGGLE START =====
+// Debug: set to true to show date created/modified fields in the open source modal
 const ENABLE_DATE_FIELD_EDITING = false;
-// ===== DATE FIELD EDITING TOGGLE END =====
-
 
 type OpenSourceTabProps = {
   filteredOpenSourceColumns: Record<OpenSourceColumnId, OpenSourceEntry[]>;
@@ -45,7 +43,6 @@ type OpenSourceTabProps = {
   setActivePartnershipCriteria: (criteria: any[]) => void;
   availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number; criteria?: any[] }>;
   fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
-  isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
   refreshCompletedPartnerships?: () => Promise<void>;
   completedPartnerships?: Array<{ id: number; partnershipName: string; criteria: any[] }>;
@@ -500,10 +497,9 @@ function OpenSourceModal({
       babyStepResponses: cleanedBabyStepResponses,
       proofResponses: cleanedProofResponses,
     };
-    
+
     if (ENABLE_DATE_FIELD_EDITING) {
       const { dateCreated, dateModified } = formData;
-      // Parse and include date fields if provided
       if (dateCreated) {
         try {
           const date = new Date(dateCreated);
@@ -529,7 +525,7 @@ function OpenSourceModal({
         }
       }
     }
-    
+
     onSave(submitData);
   };
 
@@ -787,7 +783,7 @@ function OpenSourceModal({
           {ENABLE_DATE_FIELD_EDITING && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+                <label className="block text-white font-semibold mb-2">Date Created (Debug)</label>
                 <input
                   type="date"
                   value={formData.dateCreated}
@@ -796,7 +792,7 @@ function OpenSourceModal({
                 />
               </div>
               <div>
-                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
+                <label className="block text-white font-semibold mb-2">Date Modified (Debug)</label>
                 <input
                   type="date"
                   value={formData.dateModified}
@@ -879,7 +875,6 @@ export default function OpenSourceTab({
   setActivePartnershipCriteria,
   availablePartnerships,
   fullPartnerships,
-  isLoadingPartnerships,
   fetchAvailablePartnerships,
   refreshCompletedPartnerships,
   completedPartnerships = [],
