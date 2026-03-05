@@ -1178,7 +1178,7 @@ export default function OpenSourceTab({
             <div className="flex flex-col items-center justify-center gap-1 mb-4 text-center">
               <label className="text-white font-semibold text-2xl">Choose Partnership Agreement</label>
               <a
-                href="https://docs.google.com/spreadsheets/d/1i2ccX17l1IhZ2LGs3N-hSHds9QJjxvUGzMW72toLf2s/"
+                href="https://docs.google.com/spreadsheets/d/1L0T7Xr7xQTlSKHR2_VB47gU5Nkyc454A_O6w7xJy8Go/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-electric-blue hover:text-blue-400 text-sm"
