@@ -54,6 +54,7 @@
             "role": "Strategy and Ops Manager",
             "criteria": [
                 { "type": "issue", "count": 3 },
+                { "type": "above_and_beyond", "count": 1}, 
                 { "type": "multiple_choice", "choices": [
                     {"type": "propose_implementation_plan", "count": 1}, 
                     {"type": "high_quality_question", "count": 1}, 

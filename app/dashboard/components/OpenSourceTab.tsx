@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { X, ChevronDown, ChevronUp, PartyPopper, Medal, ArrowLeft } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, PartyPopper, Medal, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -11,10 +11,8 @@ import { openSourceStatusToColumn } from './types';
 import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl } from './shared';
 import typesData from '@/partnerships/types.json';
 
-// ===== DATE FIELD EDITING TOGGLE START =====
+// Debug: set to true to show date created/modified fields in the open source modal
 const ENABLE_DATE_FIELD_EDITING = false;
-// ===== DATE FIELD EDITING TOGGLE END =====
-
 
 type OpenSourceTabProps = {
   filteredOpenSourceColumns: Record<OpenSourceColumnId, OpenSourceEntry[]>;
@@ -37,7 +35,6 @@ type OpenSourceTabProps = {
   userIdParam: string | null;
   selectedPartnership: string | null;
   setSelectedPartnership: (name: string | null) => void;
-  selectedPartnershipId: number | null;
   setSelectedPartnershipId: (id: number | null) => void;
   activePartnershipDbId: number | null;
   setActivePartnershipDbId: (id: number | null) => void;
@@ -45,7 +42,6 @@ type OpenSourceTabProps = {
   setActivePartnershipCriteria: (criteria: any[]) => void;
   availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number; criteria?: any[] }>;
   fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
-  isLoadingPartnerships: boolean;
   fetchAvailablePartnerships: () => Promise<void>;
   refreshCompletedPartnerships?: () => Promise<void>;
   completedPartnerships?: Array<{ id: number; partnershipName: string; criteria: any[] }>;
@@ -118,18 +114,22 @@ function OpenSourceModal({
   entry, 
   onClose, 
   onSave,
+  onDelete,
   selectedPartnership,
   activePartnershipCriteria,
   availablePartnerships,
-  fullPartnerships
+  fullPartnerships,
+  newEntryDefaultCriteriaType = null,
 }: { 
   entry: OpenSourceEntry | null; 
   onClose: () => void; 
   onSave: (data: Partial<OpenSourceEntry>) => void;
+  onDelete?: () => void;
   selectedPartnership: string | null;
   activePartnershipCriteria: any[];
   availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number; criteria?: any[] }>;
   fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
+  newEntryDefaultCriteriaType?: string | null;
 }) {
 
   type OpenSourceFormData = {
@@ -148,14 +148,16 @@ function OpenSourceModal({
     dateModified: string;
   };
 
-  // Resolve clean primary criteria fields once at start to handle initialization
-  const initialPrimaryCriteria = entry ? activePartnershipCriteria.find(c => c.type === entry.criteriaType) : null;
+  // Resolve clean primary criteria fields once at start to handle initialization (including "new issue" default)
+  const initialPrimaryCriteria = entry
+    ? activePartnershipCriteria.find(c => c.type === entry.criteriaType)
+    : (newEntryDefaultCriteriaType ? activePartnershipCriteria.find(c => c.type === newEntryDefaultCriteriaType) : null);
 
   const [formData, setFormData] = useState<OpenSourceFormData>({
     partnershipName: entry?.partnershipName || selectedPartnership || '',
     metric: entry?.metric || '',
     status: entry?.status || 'plan',
-    criteriaType: entry?.criteriaType || '',
+    criteriaType: entry?.criteriaType || newEntryDefaultCriteriaType || '',
     selectedExtras: (entry?.selectedExtras as string[]) || [],
     planFields: initialPrimaryCriteria?.plan_column_fields || entry?.planFields || [],
     planResponses: entry?.planResponses || {},
@@ -188,23 +190,28 @@ function OpenSourceModal({
         dateModified: entry.dateModified ? toLocalDateString(entry.dateModified) : '',
       });
     } else {
+      const defaultType = newEntryDefaultCriteriaType || '';
+      const primaryCriteria = defaultType ? activePartnershipCriteria.find(c => c.type === defaultType) : null;
+      const issueTypeFromJson = (typesData.types as Record<string, any>)?.issue;
+      const fallback = defaultType === 'issue' ? issueTypeFromJson : null;
+      const source = primaryCriteria || fallback;
       setFormData({
         partnershipName: selectedPartnership || '',
-        metric: '',
+        metric: primaryCriteria?.metric ?? issueTypeFromJson?.metric ?? '',
         status: 'plan',
-        criteriaType: '',
+        criteriaType: defaultType,
         selectedExtras: [],
-        planFields: [],
+        planFields: source?.plan_column_fields || [],
         planResponses: {},
-        babyStepFields: [],
+        babyStepFields: source?.baby_step_column_fields || [],
         babyStepResponses: {},
-        proofOfCompletion: [],
+        proofOfCompletion: source?.proof_of_completion_column_fields || source?.proof_of_completion || [],
         proofResponses: {},
         dateCreated: '',
         dateModified: '',
       });
     }
-  }, [entry, selectedPartnership]);
+  }, [entry, selectedPartnership, newEntryDefaultCriteriaType]);
 
   const handleProofResponseChange = (text: string, value: any, targetStatus?: OpenSourceStatus) => {
     const status = targetStatus || formData.status;
@@ -227,7 +234,6 @@ function OpenSourceModal({
       }
     });
   };
-
 
   // Helper to get effective fields including extras
   // When in Plan column, exclude extra fields to keep the modal compact (user can still select extras via checkboxes)
@@ -491,10 +497,9 @@ function OpenSourceModal({
       babyStepResponses: cleanedBabyStepResponses,
       proofResponses: cleanedProofResponses,
     };
-    
+
     if (ENABLE_DATE_FIELD_EDITING) {
       const { dateCreated, dateModified } = formData;
-      // Parse and include date fields if provided
       if (dateCreated) {
         try {
           const date = new Date(dateCreated);
@@ -520,7 +525,7 @@ function OpenSourceModal({
         }
       }
     }
-    
+
     onSave(submitData);
   };
 
@@ -778,7 +783,7 @@ function OpenSourceModal({
           {ENABLE_DATE_FIELD_EDITING && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-white font-semibold mb-2">Date Created (Testing/Debug)</label>
+                <label className="block text-white font-semibold mb-2">Date Created (Debug)</label>
                 <input
                   type="date"
                   value={formData.dateCreated}
@@ -787,7 +792,7 @@ function OpenSourceModal({
                 />
               </div>
               <div>
-                <label className="block text-white font-semibold mb-2">Date Modified (Testing/Debug)</label>
+                <label className="block text-white font-semibold mb-2">Date Modified (Debug)</label>
                 <input
                   type="date"
                   value={formData.dateModified}
@@ -807,8 +812,24 @@ function OpenSourceModal({
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
-            <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-gray-700">
+            <div className="order-2 sm:order-1">
+              {entry?.criteriaType === 'issue' && onDelete && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('Delete this card? This cannot be undone.')) {
+                      onDelete();
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg font-semibold transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              )}
+            </div>
+            <div className="flex gap-3 order-1 sm:order-2">
               <button
                 type="button"
                 onClick={onClose}
@@ -862,7 +883,6 @@ export default function OpenSourceTab({
   userIdParam,
   selectedPartnership,
   setSelectedPartnership,
-  selectedPartnershipId,
   setSelectedPartnershipId,
   activePartnershipDbId,
   setActivePartnershipDbId,
@@ -870,7 +890,6 @@ export default function OpenSourceTab({
   setActivePartnershipCriteria,
   availablePartnerships,
   fullPartnerships,
-  isLoadingPartnerships,
   fetchAvailablePartnerships,
   refreshCompletedPartnerships,
   completedPartnerships = [],
@@ -891,6 +910,7 @@ export default function OpenSourceTab({
   const [showCongratsModal, setShowCongratsModal] = useState(false);
   const [isCompletingPartnership, setIsCompletingPartnership] = useState(false);
   const [partnershipError, setPartnershipError] = useState<string | null>(null);
+  const [newEntryDefaultCriteriaType, setNewEntryDefaultCriteriaType] = useState<string | null>(null);
   const prevCriteriaCompleteRef = useRef<boolean | null>(null);
 
   // Exclude completed partnerships from selection dropdown
@@ -1178,7 +1198,7 @@ export default function OpenSourceTab({
             <div className="flex flex-col items-center justify-center gap-1 mb-4 text-center">
               <label className="text-white font-semibold text-2xl">Choose Partnership Agreement</label>
               <a
-                href="https://docs.google.com/spreadsheets/d/1i2ccX17l1IhZ2LGs3N-hSHds9QJjxvUGzMW72toLf2s/"
+                href="https://docs.google.com/spreadsheets/d/1L0T7Xr7xQTlSKHR2_VB47gU5Nkyc454A_O6w7xJy8Go/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-electric-blue hover:text-blue-400 text-sm"
@@ -1624,6 +1644,18 @@ export default function OpenSourceTab({
                   </DroppableColumn>
                 </SortableContext>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewEntryDefaultCriteriaType('issue');
+                    setEditingEntry(null);
+                    setIsModalOpen(true);
+                  }}
+                  className="mt-2 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-dashed border-gray-500 text-gray-400 hover:border-electric-blue hover:text-electric-blue transition-colors text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add new issue card
+                </button>
               </div>
 
               <div className="bg-gray-700 rounded-lg p-2 flex flex-col">
@@ -1890,7 +1922,9 @@ export default function OpenSourceTab({
       {isModalOpen && (
         <OpenSourceModal
           entry={editingEntry}
+          newEntryDefaultCriteriaType={newEntryDefaultCriteriaType}
           onClose={() => {
+            setNewEntryDefaultCriteriaType(null);
             setIsModalOpen(false);
             setEditingEntry(null);
           }}
@@ -1974,6 +2008,7 @@ export default function OpenSourceTab({
                   return newColumns;
                 });
               }
+              setNewEntryDefaultCriteriaType(null);
               setIsModalOpen(false);
               setEditingEntry(null);
             } catch (error) {
@@ -1991,6 +2026,29 @@ export default function OpenSourceTab({
           }
           availablePartnerships={availablePartnerships}
           fullPartnerships={fullPartnerships}
+          onDelete={editingEntry?.criteriaType === 'issue' ? async () => {
+            try {
+              const url = userIdParam ? `/api/open_source?userId=${userIdParam}&id=${editingEntry.id}` : `/api/open_source?id=${editingEntry.id}`;
+              const response = await fetch(url, { method: 'DELETE', headers: getApiHeaders() });
+              if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err?.error || 'Failed to delete');
+              }
+              setOpenSourceColumns(prev => ({
+                plan: prev.plan.filter(e => e.id !== editingEntry.id),
+                babyStep: prev.babyStep.filter(e => e.id !== editingEntry.id),
+                inProgress: prev.inProgress.filter(e => e.id !== editingEntry.id),
+                done: prev.done.filter(e => e.id !== editingEntry.id),
+              }));
+              setNewEntryDefaultCriteriaType(null);
+              setIsModalOpen(false);
+              setEditingEntry(null);
+            } catch (err) {
+              console.error('Error deleting open source entry:', err);
+              alert('Failed to delete. Please try again.');
+              await fetchOpenSourceEntries();
+            }
+          } : undefined}
         />
       )}
 
