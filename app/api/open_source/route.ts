@@ -105,6 +105,51 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+// DELETE: Remove a single open source entry (only issue-type cards are deletable)
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId, error } = await getUserIdForRequest(request);
+
+    if (error || !userId) {
+      return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    const existing = await prisma.openSourceEntry.findFirst({
+      where: { id: parseInt(id, 10), userId },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    }
+
+    if (existing.criteriaType !== "issue") {
+      return NextResponse.json(
+        { error: "Only issue cards can be deleted." },
+        { status: 403 }
+      );
+    }
+
+    await prisma.openSourceEntry.delete({
+      where: { id: existing.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting open source entry:", error);
+    return NextResponse.json(
+      { error: "Failed to delete open source entry" },
+      { status: 500 }
+    );
+  }
+}
+
 // PATCH: Update status only (for drag and drop)
 export async function PATCH(request: NextRequest) {
   try {

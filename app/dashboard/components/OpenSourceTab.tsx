@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { X, ChevronDown, ChevronUp, PartyPopper, Medal, ArrowLeft, Plus } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, PartyPopper, Medal, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { DndContext, closestCenter, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -35,7 +35,6 @@ type OpenSourceTabProps = {
   userIdParam: string | null;
   selectedPartnership: string | null;
   setSelectedPartnership: (name: string | null) => void;
-  selectedPartnershipId: number | null;
   setSelectedPartnershipId: (id: number | null) => void;
   activePartnershipDbId: number | null;
   setActivePartnershipDbId: (id: number | null) => void;
@@ -115,6 +114,7 @@ function OpenSourceModal({
   entry, 
   onClose, 
   onSave,
+  onDelete,
   selectedPartnership,
   activePartnershipCriteria,
   availablePartnerships,
@@ -124,6 +124,7 @@ function OpenSourceModal({
   entry: OpenSourceEntry | null; 
   onClose: () => void; 
   onSave: (data: Partial<OpenSourceEntry>) => void;
+  onDelete?: () => void;
   selectedPartnership: string | null;
   activePartnershipCriteria: any[];
   availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number; criteria?: any[] }>;
@@ -233,7 +234,6 @@ function OpenSourceModal({
       }
     });
   };
-
 
   // Helper to get effective fields including extras
   // When in Plan column, exclude extra fields to keep the modal compact (user can still select extras via checkboxes)
@@ -812,8 +812,24 @@ function OpenSourceModal({
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
-            <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-gray-700">
+            <div className="order-2 sm:order-1">
+              {entry?.criteriaType === 'issue' && onDelete && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('Delete this card? This cannot be undone.')) {
+                      onDelete();
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg font-semibold transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              )}
+            </div>
+            <div className="flex gap-3 order-1 sm:order-2">
               <button
                 type="button"
                 onClick={onClose}
@@ -867,7 +883,6 @@ export default function OpenSourceTab({
   userIdParam,
   selectedPartnership,
   setSelectedPartnership,
-  selectedPartnershipId,
   setSelectedPartnershipId,
   activePartnershipDbId,
   setActivePartnershipDbId,
@@ -2011,6 +2026,29 @@ export default function OpenSourceTab({
           }
           availablePartnerships={availablePartnerships}
           fullPartnerships={fullPartnerships}
+          onDelete={editingEntry?.criteriaType === 'issue' ? async () => {
+            try {
+              const url = userIdParam ? `/api/open_source?userId=${userIdParam}&id=${editingEntry.id}` : `/api/open_source?id=${editingEntry.id}`;
+              const response = await fetch(url, { method: 'DELETE', headers: getApiHeaders() });
+              if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err?.error || 'Failed to delete');
+              }
+              setOpenSourceColumns(prev => ({
+                plan: prev.plan.filter(e => e.id !== editingEntry.id),
+                babyStep: prev.babyStep.filter(e => e.id !== editingEntry.id),
+                inProgress: prev.inProgress.filter(e => e.id !== editingEntry.id),
+                done: prev.done.filter(e => e.id !== editingEntry.id),
+              }));
+              setNewEntryDefaultCriteriaType(null);
+              setIsModalOpen(false);
+              setEditingEntry(null);
+            } catch (err) {
+              console.error('Error deleting open source entry:', err);
+              alert('Failed to delete. Please try again.');
+              await fetchOpenSourceEntries();
+            }
+          } : undefined}
         />
       )}
 
