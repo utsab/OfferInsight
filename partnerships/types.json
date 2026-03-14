@@ -116,6 +116,36 @@
                 "text": "Link to the github comment where you proposed your implementation plan: "
             }]
         },
+        "thorough_documentation": {
+            "is_primary": false,
+            "short_name": "thorough_documentation",
+            "quality": "Technical Communication", 
+            "metric": "1 example of a pull request with thorough documentation explaining the contribution, even better if the issue has comments throughout the timeline of the Github thread.", 
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "checkbox",
+                "text": "Did you write thorough documentation on the pull request explaining your contribution?"
+            }]
+        },
+        "video_demo": {
+            "is_primary": false,
+            "short_name": "video_demo",
+            "quality": "Technical Communication", 
+            "metric": "1 example of a video demo walking through a contribution.", 
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to your video demo:"
+            }]
+        },
         "above_and_beyond": {
             "is_primary": false,
             "short_name": "above_and_beyond",
@@ -475,6 +505,26 @@
                 "type": "text",
                 "text": "Write a 2-3 sentence summary of the multiple approaches you considered and why you chose the one you did."
             }]
+        },
+        "video_streaming_experience": {
+            "is_primary": true,
+            "short_name": "video_streaming_experience",
+            "quality": "Domain Knowledge", 
+            "metric": "Experience with either building or contributing to projects that fall under the video streaming space", 
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the github repo for the project (or link to a blog post): "
+            },
+            {
+                "type": "text",
+                "text": "Write a 1 sentence description of the project and how it relates to the video streaming space: "
+            }
+            ]
         }
     }   
 }
