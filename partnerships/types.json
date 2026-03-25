@@ -129,7 +129,8 @@
             "proof_of_completion": [{
                 "type": "checkbox",
                 "text": "Did you write thorough documentation on the pull request explaining your contribution?"
-            }]
+            }],
+            "notes": "TODO: Add an optional checkbox to ask whether they left comments throughout the timeline of the PR."
         },
         "video_demo": {
             "is_primary": false,
@@ -284,22 +285,6 @@
                 "text": "Write a 1 sentence summary of the feedback you received and how you incorporated it into your work."
             }
             ]
-        }, 
-        "thorough_documentation": {
-            "is_primary": false,
-            "short_name": "thorough_documentation",
-            "quality": "Teamwork/Collaboration", 
-            "metric": "1 example of a PR with thorough documentation explaining the contribution.", 
-            "baby_step_column_fields": [{
-                "type": "checkbox",
-                "text": "Helper video is coming soon...",
-                "helper_video": ""
-            }],
-            "proof_of_completion": [{
-                "type": "checkbox",
-                "text": "Did you include a thorough explanation of the contribution in the pull request description?"
-            }],
-            "notes": "TODO: Add an optional checkbox to ask whether they left comments throughout the timeline of the PR."
         }, 
         "AI_usage": {
             "is_primary": true,
