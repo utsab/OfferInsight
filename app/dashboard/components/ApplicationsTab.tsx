@@ -530,8 +530,8 @@ function ApplicationModal({
                 Cancel
               </button>
               <button
-                type="submit"
-                disabled={readOnly}
+                type={readOnly ? 'button' : 'submit'}
+                onClick={readOnly ? onClose : undefined}
                 className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
               >
                 {readOnly ? 'Close' : (application ? 'Update' : 'Create')}

@@ -63,11 +63,11 @@ async function main() {
     where: { username: 'instructor01' },
     update: {
       role: 'READ_ONLY',
+      password: '$2b$10$0kKXIjhPz4NeH/s82vVSgeq8bIWdMplriDZXpLfykMf0hGUA14HoO',
     },
     create: {
       username: 'instructor01',
-      // Same password hash as instructor00 for now; can be changed later.
-      password: '$2b$10$YLzaAHx27cnUWdtIikojoup/pGBOJhhUPWwKluIxnMeLsoIoyugny',
+      password: '$2b$10$0kKXIjhPz4NeH/s82vVSgeq8bIWdMplriDZXpLfykMf0hGUA14HoO',
       role: 'READ_ONLY',
     },
   });
