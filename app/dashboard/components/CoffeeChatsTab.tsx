@@ -80,6 +80,7 @@ type CoffeeChatsTabProps = {
   fetchLinkedinOutreach: () => Promise<void>;
   isDraggingLinkedinOutreachRef: React.MutableRefObject<boolean>;
   userIdParam: string | null;
+  readOnly?: boolean;
 };
 
 function SortableLinkedinOutreachCard(props: { 
@@ -89,6 +90,7 @@ function SortableLinkedinOutreachCard(props: {
   setIsLinkedinOutreachModalOpen: (open: boolean) => void;
   setIsDeletingLinkedinOutreach: (id: number) => void;
   isDraggingLinkedinOutreachRef: React.MutableRefObject<boolean>;
+  readOnly?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
   
@@ -125,8 +127,8 @@ function SortableLinkedinOutreachCard(props: {
     <div 
       ref={setNodeRef} 
       style={{ ...style, touchAction: 'none' }} 
-      {...attributes} 
-      {...listeners}
+      {...(props.readOnly ? {} : attributes)} 
+      {...(props.readOnly ? {} : listeners)}
       onClick={handleClick}
       className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
     >
@@ -148,7 +150,7 @@ function SortableLinkedinOutreachCard(props: {
             </div>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
+        {!props.readOnly && <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={handleDelete}
             className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
@@ -156,7 +158,7 @@ function SortableLinkedinOutreachCard(props: {
           >
             <Trash2 size={14} />
           </button>
-        </div>
+        </div>}
       </div>
       {(props.card.firstMessage || props.card.secondMessage || props.card.notes) && (
         <div className="text-green-400 text-xs mb-2 flex flex-col">
@@ -178,13 +180,15 @@ function LinkedinOutreachModal({
   onClose, 
   onSave,
   defaultStatus,
-  onDelete
+  onDelete,
+  readOnly = false,
 }: { 
   linkedinOutreach: LinkedinOutreach | null; 
   onClose: () => void; 
   onSave: (data: Partial<LinkedinOutreach>) => void;
   defaultStatus?: LinkedinOutreachStatus;
   onDelete?: () => void;
+  readOnly?: boolean;
 }) {
 
   type LinkedinOutreachFormData = {
@@ -246,6 +250,10 @@ function LinkedinOutreachModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      onClose();
+      return;
+    }
     if (!formData.name.trim() || !formData.company.trim()) {
       alert('Name and company are required');
       return;
@@ -533,7 +541,7 @@ function LinkedinOutreachModal({
           )}
 
           <div className="flex flex-col sm:flex-row justify-between sm:justify-end gap-3 pt-4">
-            {linkedinOutreach && onDelete && (
+            {!readOnly && linkedinOutreach && onDelete && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -555,9 +563,10 @@ function LinkedinOutreachModal({
               </button>
               <button
                 type="submit"
+                disabled={readOnly}
                 className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
               >
-                {linkedinOutreach ? 'Update' : 'Create'}
+                {readOnly ? 'Close' : (linkedinOutreach ? 'Update' : 'Create')}
               </button>
             </div>
           </div>
@@ -589,6 +598,7 @@ export default function CoffeeChatsTab({
   fetchLinkedinOutreach,
   isDraggingLinkedinOutreachRef,
   userIdParam,
+  readOnly = false,
 }: CoffeeChatsTabProps) {
   const [defaultStatus, setDefaultStatus] = React.useState<LinkedinOutreachStatus | undefined>(undefined);
   
@@ -619,7 +629,7 @@ export default function CoffeeChatsTab({
             All Time
           </button>
         </div>
-        <button 
+        {!readOnly && <button 
           onClick={() => {
             setDefaultStatus(undefined);
             setEditingLinkedinOutreach(null);
@@ -628,7 +638,7 @@ export default function CoffeeChatsTab({
           className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors flex items-center text-sm sm:text-base w-full sm:w-auto"
         >
           <Plus className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />New Outreach
-        </button>
+        </button>}
       </div>
       {isLoadingLinkedinOutreach ? (
         <div className="text-center py-8 text-gray-400">Loading coffee chats...</div>
@@ -666,6 +676,7 @@ export default function CoffeeChatsTab({
                       setIsLinkedinOutreachModalOpen={setIsLinkedinOutreachModalOpen}
                       setIsDeletingLinkedinOutreach={setIsDeletingLinkedinOutreach}
                       isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -696,6 +707,7 @@ export default function CoffeeChatsTab({
                       setIsLinkedinOutreachModalOpen={setIsLinkedinOutreachModalOpen}
                       setIsDeletingLinkedinOutreach={setIsDeletingLinkedinOutreach}
                       isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -725,6 +737,7 @@ export default function CoffeeChatsTab({
                       setIsLinkedinOutreachModalOpen={setIsLinkedinOutreachModalOpen}
                       setIsDeletingLinkedinOutreach={setIsDeletingLinkedinOutreach}
                       isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -753,6 +766,7 @@ export default function CoffeeChatsTab({
                       setIsLinkedinOutreachModalOpen={setIsLinkedinOutreachModalOpen}
                       setIsDeletingLinkedinOutreach={setIsDeletingLinkedinOutreach}
                       isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -778,6 +792,7 @@ export default function CoffeeChatsTab({
                       setIsLinkedinOutreachModalOpen={setIsLinkedinOutreachModalOpen}
                       setIsDeletingLinkedinOutreach={setIsDeletingLinkedinOutreach}
                       isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -803,6 +818,7 @@ export default function CoffeeChatsTab({
                       setIsLinkedinOutreachModalOpen={setIsLinkedinOutreachModalOpen}
                       setIsDeletingLinkedinOutreach={setIsDeletingLinkedinOutreach}
                       isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -831,6 +847,7 @@ export default function CoffeeChatsTab({
       {isLinkedinOutreachModalOpen && (
         <LinkedinOutreachModal
           linkedinOutreach={editingLinkedinOutreach}
+          readOnly={readOnly}
           defaultStatus={defaultStatus}
           onClose={() => {
             setIsLinkedinOutreachModalOpen(false);
@@ -838,12 +855,18 @@ export default function CoffeeChatsTab({
             setDefaultStatus(undefined);
           }}
           onDelete={() => {
+            if (readOnly) return;
             if (editingLinkedinOutreach) {
               setIsLinkedinOutreachModalOpen(false);
               setIsDeletingLinkedinOutreach(editingLinkedinOutreach.id);
             }
           }}
           onSave={async (data: Partial<LinkedinOutreach>) => {
+            if (readOnly) {
+              setIsLinkedinOutreachModalOpen(false);
+              setEditingLinkedinOutreach(null);
+              return;
+            }
             try {
               const url = userIdParam ? `/api/linkedin_outreach?userId=${userIdParam}` : '/api/linkedin_outreach';
               let updatedOutreach: LinkedinOutreach;
@@ -934,7 +957,7 @@ export default function CoffeeChatsTab({
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeletingLinkedinOutreach !== null && (
+      {!readOnly && isDeletingLinkedinOutreach !== null && (
         <DeleteModal
           onConfirm={async () => {
             try {

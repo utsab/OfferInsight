@@ -138,6 +138,7 @@ export default function Page() {
   const userIdParam = searchParams.get('userId');
   const [viewedUserName, setViewedUserName] = useState<string | null>(null);
   const [isInstructor, setIsInstructor] = useState(false);
+  const [canEditViewedUser, setCanEditViewedUser] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [targetOfferDate, setTargetOfferDate] = useState<Date | null>(null);
 
@@ -251,6 +252,7 @@ export default function Page() {
   );
 
   const handleApplicationsDragEnd = async (event: DragEndEvent) => {
+    if (!canEditViewedUser && userIdParam) return;
     const { active, over } = event;
     if (!over) {
       isDraggingAppRef.current = false;
@@ -426,6 +428,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   );
 
   const handleLinkedinOutreachDragEnd = async (event: DragEndEvent) => {
+    if (!canEditViewedUser && userIdParam) return;
     const { active, over } = event;
     if (!over) {
       isDraggingLinkedinOutreachRef.current = false;
@@ -594,6 +597,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
   );
 
   const handleEventsDragEnd = async (event: DragEndEvent) => {
+    if (!canEditViewedUser && userIdParam) return;
     const { active, over } = event;
     if (!over) {
       isDraggingEventRef.current = false;
@@ -761,6 +765,7 @@ const hasSeededMockDataRef = useRef(false);
   );
 
   const handleLeetDragEnd = async (event: DragEndEvent) => {
+    if (!canEditViewedUser && userIdParam) return;
     const { active, over } = event;
     if (!over) {
       isDraggingLeetRef.current = false;
@@ -1067,6 +1072,7 @@ const hasSeededMockDataRef = useRef(false);
   };
 
   const handleOpenSourceDragEnd = async (event: DragEndEvent) => {
+    if (!canEditViewedUser && userIdParam) return;
     const { active, over } = event;
     if (!over) {
       isDraggingOpenSourceRef.current = false;
@@ -1437,6 +1443,7 @@ const hasSeededMockDataRef = useRef(false);
     async function checkInstructorAndFetchUserName() {
       if (!userIdParam) {
         setIsInstructor(false);
+        setCanEditViewedUser(true);
         setViewedUserName(null);
         return;
       }
@@ -1445,7 +1452,9 @@ const hasSeededMockDataRef = useRef(false);
         // Check if current user is an instructor
         const instructorRes = await fetch('/api/instructor');
         if (instructorRes.ok) {
+          const instructorData = await instructorRes.json();
           setIsInstructor(true);
+          setCanEditViewedUser(Boolean(instructorData?.canEditViewedUser));
           
           // Fetch the user's name
           const userRes = await fetch(`/api/instructor/students`);
@@ -1458,11 +1467,13 @@ const hasSeededMockDataRef = useRef(false);
           }
         } else {
           setIsInstructor(false);
+          setCanEditViewedUser(true);
           setViewedUserName(null);
         }
       } catch (error) {
         console.error('Error checking instructor status or fetching user name:', error);
         setIsInstructor(false);
+        setCanEditViewedUser(true);
         setViewedUserName(null);
       }
     }
@@ -2184,6 +2195,7 @@ const hasSeededMockDataRef = useRef(false);
             fetchApplications={fetchApplications}
             isDraggingAppRef={isDraggingAppRef}
             userIdParam={userIdParam}
+            readOnly={!canEditViewedUser && !!userIdParam}
           />
         )}
 
@@ -2211,6 +2223,7 @@ const hasSeededMockDataRef = useRef(false);
             fetchLinkedinOutreach={fetchLinkedinOutreach}
             isDraggingLinkedinOutreachRef={isDraggingLinkedinOutreachRef}
             userIdParam={userIdParam}
+            readOnly={!canEditViewedUser && !!userIdParam}
           />
         )}
 
@@ -2238,6 +2251,7 @@ const hasSeededMockDataRef = useRef(false);
             fetchEvents={fetchEvents}
             isDraggingEventRef={isDraggingEventRef}
             userIdParam={userIdParam}
+            readOnly={!canEditViewedUser && !!userIdParam}
           />
         )}
 
@@ -2265,6 +2279,7 @@ const hasSeededMockDataRef = useRef(false);
             fetchLeetEntries={fetchLeetEntries}
             isDraggingLeetRef={isDraggingLeetRef}
             userIdParam={userIdParam}
+            readOnly={!canEditViewedUser && !!userIdParam}
           />
         )}
 
@@ -2307,6 +2322,7 @@ const hasSeededMockDataRef = useRef(false);
             isInstructor={isInstructor}
             showProofOfWorkWarning={showProofOfWorkWarning}
             setShowProofOfWorkWarning={setShowProofOfWorkWarning}
+            readOnly={!canEditViewedUser && !!userIdParam}
           />
         )}
     </main>
