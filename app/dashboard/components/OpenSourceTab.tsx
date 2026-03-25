@@ -1362,7 +1362,7 @@ export default function OpenSourceTab({
                 <button
                   type="button"
                   disabled={readOnly}
-                  onClick={() => !readOnly && setIsDropdownOpen(!isDropdownOpen)}
+                  onClick={readOnly ? undefined : () => setIsDropdownOpen(!isDropdownOpen)}
                   className={`w-full max-w-md bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white flex items-center justify-between transition-colors ${
                     readOnly ? 'opacity-70 cursor-not-allowed' : 'hover:border-electric-blue'
                   }`}

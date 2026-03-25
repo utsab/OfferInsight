@@ -69,13 +69,6 @@ export async function getUserIdForRequest(request: NextRequest | Request): Promi
   return { userId: userIdParam, error: null };
 }
 
-/**
- * Helper function for GET requests that only need request URL (NextRequest)
- */
-export async function getUserIdFromRequest(request: Request): Promise<{ userId: string | null; error: string | null }> {
-  return getUserIdForRequest(request);
-}
-
 export async function canMutateUserDataForRequest(request: NextRequest | Request): Promise<{ allowed: boolean; error: string | null }> {
   const url = new URL(request.url);
   const userIdParam = url.searchParams.get("userId");

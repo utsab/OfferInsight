@@ -5,8 +5,6 @@ export const INSTRUCTOR_ROLES = {
   READ_ONLY: "READ_ONLY",
 } as const;
 
-export type InstructorRole = (typeof INSTRUCTOR_ROLES)[keyof typeof INSTRUCTOR_ROLES];
-
 export function canInstructorMutateUserData(instructor: { role?: string } | null) {
   if (!instructor) return false;
   return instructor.role !== INSTRUCTOR_ROLES.READ_ONLY;
