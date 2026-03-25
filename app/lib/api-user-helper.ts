@@ -1,7 +1,8 @@
 "use server";
 
 import { auth } from "@/auth";
-import { canInstructorMutateUserData, getInstructorSession } from "@/app/lib/instructor-auth";
+import { getInstructorSession } from "@/app/lib/instructor-auth";
+import { canInstructorMutateUserData } from "@/app/lib/instructor-permissions";
 import { prisma } from "@/db";
 import { NextRequest } from "next/server";
 

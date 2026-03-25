@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { canInstructorMutateUserData, getInstructorSession } from '@/app/lib/instructor-auth';
+import { getInstructorSession } from '@/app/lib/instructor-auth';
+import { canInstructorMutateUserData } from '@/app/lib/instructor-permissions';
 import { prisma } from '@/db';
 import bcrypt from 'bcrypt';
 
