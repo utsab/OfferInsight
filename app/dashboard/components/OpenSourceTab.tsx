@@ -8,7 +8,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
-import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl } from './shared';
+import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl, ModalFormPrimaryAction } from './shared';
 import typesData from '@/partnerships/types.json';
 
 // Debug: set to true to show date created/modified fields in the open source modal
@@ -845,13 +845,7 @@ function OpenSourceModal({
               >
                 Cancel
               </button>
-              <button
-                type={readOnly ? 'button' : 'submit'}
-                onClick={readOnly ? onClose : undefined}
-                className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                {readOnly ? 'Close' : (entry ? 'Update' : 'Create')}
-              </button>
+              <ModalFormPrimaryAction readOnly={readOnly} onClose={onClose} isEditing={!!entry} />
             </div>
           </div>
         </form>

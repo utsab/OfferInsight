@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { LeetEntry, LeetColumnId, BoardTimeFilter, LeetStatus } from './types';
 import { leetStatusToColumn, leetColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, normalizeUrl } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, normalizeUrl, ModalFormPrimaryAction } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -444,13 +444,7 @@ function LeetModal({
               >
                 Cancel
               </button>
-              <button
-                type={readOnly ? 'button' : 'submit'}
-                onClick={readOnly ? onClose : undefined}
-                className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                {readOnly ? 'Close' : (entry ? 'Update' : 'Create')}
-              </button>
+              <ModalFormPrimaryAction readOnly={readOnly} onClose={onClose} isEditing={!!entry} />
             </div>
           </div>
         </form>

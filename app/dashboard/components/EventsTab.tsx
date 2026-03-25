@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { InPersonEvent, EventColumnId, BoardTimeFilter, InPersonEventStatus } from './types';
 import { eventStatusToColumn, eventColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, getLocalTimeParts, getLocalDateParts, LockTooltip, VideoModal, normalizeUrl } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, getLocalTimeParts, getLocalDateParts, LockTooltip, VideoModal, normalizeUrl, ModalFormPrimaryAction } from './shared';
 
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
@@ -681,13 +681,7 @@ function InPersonEventModal({
               >
                 Cancel
               </button>
-              <button
-                type={readOnly ? 'button' : 'submit'}
-                onClick={readOnly ? onClose : undefined}
-                className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                {readOnly ? 'Close' : (eventItem ? 'Update' : 'Create')}
-              </button>
+              <ModalFormPrimaryAction readOnly={readOnly} onClose={onClose} isEditing={!!eventItem} />
             </div>
           </div>
         </form>

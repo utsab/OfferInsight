@@ -36,6 +36,27 @@ export function DeleteModal({
   );
 }
 
+/** Primary action in tab create/edit modals: read-only shows Close; otherwise submits as Update or Create. */
+export function ModalFormPrimaryAction({
+  readOnly,
+  onClose,
+  isEditing,
+}: {
+  readOnly: boolean;
+  onClose: () => void;
+  isEditing: boolean;
+}) {
+  return (
+    <button
+      type={readOnly ? 'button' : 'submit'}
+      onClick={readOnly ? onClose : undefined}
+      className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+    >
+      {readOnly ? 'Close' : isEditing ? 'Update' : 'Create'}
+    </button>
+  );
+}
+
 // Shared components used across multiple tabs
 
 // Helper function to format dates for display in modals
