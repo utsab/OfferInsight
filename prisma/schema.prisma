@@ -187,7 +187,13 @@ model Instructor {
   id                String   @id @default(cuid())
   username          String   @unique
   password          String
+  role              InstructorRole @default(ADMIN)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+enum InstructorRole {
+  ADMIN
+  READ_ONLY
 }
 

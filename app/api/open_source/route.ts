@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db";
-import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+import { canMutateUserDataForRequest, getUserIdForRequest } from "@/app/lib/api-user-helper";
 
 // GET: Fetch all open source entries for a user
 export async function GET(request: NextRequest) {
@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
 // POST: Create a new open source criteria
 export async function POST(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {
@@ -69,6 +74,11 @@ export async function POST(request: NextRequest) {
 // PUT: Update an existing open source criteria
 export async function PUT(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {
@@ -108,6 +118,11 @@ export async function PUT(request: NextRequest) {
 // DELETE: Remove a single open source entry (only issue-type cards are deletable)
 export async function DELETE(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {
@@ -153,6 +168,11 @@ export async function DELETE(request: NextRequest) {
 // PATCH: Update status only (for drag and drop)
 export async function PATCH(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {

@@ -2,7 +2,7 @@
 
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/db";
-import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+import { canMutateUserDataForRequest, getUserIdForRequest } from "@/app/lib/api-user-helper";
 
 // GET all applications with outreach for the logged-in user (or specified user if instructor)
 export async function GET(request: NextRequest) {
@@ -36,6 +36,11 @@ export async function GET(request: NextRequest) {
 // POST a new application with outreach
 export async function POST(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {
@@ -94,6 +99,11 @@ export async function POST(request: NextRequest) {
 // PATCH to update just the status (more efficient for drag and drop updates)
 export async function PATCH(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {
@@ -168,6 +178,11 @@ export async function PATCH(request: NextRequest) {
 // PUT to update an application
 export async function PUT(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {
@@ -292,6 +307,11 @@ export async function PUT(request: NextRequest) {
 // DELETE an application
 export async function DELETE(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {

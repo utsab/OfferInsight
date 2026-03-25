@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getInstructorSession } from '@/app/lib/instructor-auth';
+import { canInstructorMutateUserData, getInstructorSession } from '@/app/lib/instructor-auth';
 import { prisma } from '@/db';
 import bcrypt from 'bcrypt';
 
@@ -19,6 +19,8 @@ export async function GET() {
     return NextResponse.json({
       id: instructor.id,
       username: instructor.username,
+      role: instructor.role,
+      canEditViewedUser: canInstructorMutateUserData(instructor),
     });
   } catch (error) {
     console.error('Error fetching instructor session:', error);

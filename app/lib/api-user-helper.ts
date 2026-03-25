@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getInstructorSession } from "@/app/lib/instructor-auth";
+import { canInstructorMutateUserData, getInstructorSession } from "@/app/lib/instructor-auth";
 import { prisma } from "@/db";
 import { NextRequest } from "next/server";
 
@@ -73,5 +73,31 @@ export async function getUserIdForRequest(request: NextRequest | Request): Promi
  */
 export async function getUserIdFromRequest(request: Request): Promise<{ userId: string | null; error: string | null }> {
   return getUserIdForRequest(request);
+}
+
+export async function canMutateUserDataForRequest(request: NextRequest | Request): Promise<{ allowed: boolean; error: string | null }> {
+  const url = new URL(request.url);
+  const userIdParam = url.searchParams.get("userId");
+
+  // Normal user editing own data.
+  if (!userIdParam) {
+    const session = await auth();
+    if (!session?.user?.id && !session?.user?.email) {
+      return { allowed: false, error: "Unauthorized" };
+    }
+    return { allowed: true, error: null };
+  }
+
+  // Instructor editing someone else's data.
+  const instructor = await getInstructorSession();
+  if (!instructor) {
+    return { allowed: false, error: "Unauthorized: Only instructors can modify other users' data" };
+  }
+
+  if (!canInstructorMutateUserData(instructor)) {
+    return { allowed: false, error: "This instructor account is read-only for student data" };
+  }
+
+  return { allowed: true, error: null };
 }
 
