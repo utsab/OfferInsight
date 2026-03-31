@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, MessageCircle, Users, Code } from 'lucide-react';
+import { FileText, MessageCircle, Users } from 'lucide-react';
 import { handleSignIn } from '@/components/auth-actions';
 
 export default function Page() {
@@ -100,8 +100,8 @@ export default function Page() {
 
           <section className="py-12 sm:py-20 px-4 sm:px-8">
             <div className="max-w-[1600px] mx-auto">
-              <h3 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-16 text-white">Four Habits to Success</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+              <h3 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-16 text-white">Three Habits to Success</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                 <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 sm:p-8 text-center">
                   <FileText className="text-white text-3xl sm:text-4xl mb-3 sm:mb-4 mx-auto" />
                   <h4 className="text-base sm:text-lg font-bold mb-2 sm:mb-3 text-white">High Quality Applications</h4>
@@ -116,11 +116,6 @@ export default function Page() {
                   <Users className="text-white text-3xl sm:text-4xl mb-3 sm:mb-4 mx-auto" />
                   <h4 className="text-base sm:text-lg font-bold mb-2 sm:mb-3 text-white">In-Person Events</h4>
                   <p className="text-gray-300 text-sm">Attend career fairs, meetups, and networking events to expand your reach.</p>
-                </div>
-                <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 sm:p-8 text-center">
-                  <Code className="text-white text-3xl sm:text-4xl mb-3 sm:mb-4 mx-auto" />
-                  <h4 className="text-base sm:text-lg font-bold mb-2 sm:mb-3 text-white">LeetCode Practice</h4>
-                  <p className="text-gray-300 text-sm">Sharpen your technical skills with consistent coding practice.</p>
                 </div>
               </div>
             </div>

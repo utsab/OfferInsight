@@ -64,20 +64,6 @@ model In_Person_Events {
   user                  User      @relation(fields: [userId], references: [id])
 }
 
-model Leetcode_Practice {
-  id          Int      @id @default(autoincrement())
-  problem     String?
-  problemType String?
-  difficulty  String?
-  url         String?
-  reflection  String?
-  status      String  @default("plan")
-  dateCreated         DateTime  @default(now())
-  dateModified       DateTime?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-}
-
 // model Career_Fairs removed – merged into In_Person_Events
 
 model User {
@@ -91,7 +77,7 @@ model User {
   applicationsWithOutreach Applications_With_Outreach[]
   linkedinOutreach       Linkedin_Outreach[]
   inPersonEvents         In_Person_Events[]
-  leetCode               Leetcode_Practice[]
+  leetCodeUserName       String?
   openSource             OpenSourceEntry[]
   emailVerified          DateTime?
   accounts               Account[]

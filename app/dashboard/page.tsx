@@ -5,13 +5,12 @@ import { useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Gauge, FileText, MessageCircle, Users, Code, ArrowLeft, GitBranch } from 'lucide-react';
+import { Gauge, FileText, MessageCircle, Users, ArrowLeft, GitBranch } from 'lucide-react';
 import Link from 'next/link';
 import OverviewTab from './components/OverviewTab';
 import ApplicationsTab from './components/ApplicationsTab';
 import CoffeeChatsTab from './components/CoffeeChatsTab';
 import EventsTab from './components/EventsTab';
-import LeetCodeTab from './components/LeetCodeTab';
 import OpenSourceTab from './components/OpenSourceTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 import { formatDateWithFullMonth, getLocalDateParts } from './components/shared';
@@ -25,9 +24,6 @@ import type {
   InPersonEvent,
   InPersonEventStatus,
   EventColumnId,
-  LeetEntry,
-  LeetStatus,
-  LeetColumnId,
   OpenSourceEntry,
   OpenSourceStatus,
   OpenSourceColumnId,
@@ -40,14 +36,11 @@ import {
   linkedinOutreachColumnToStatus,
   eventStatusToColumn,
   eventColumnToStatus,
-  leetStatusToColumn,
-  leetColumnToStatus,
   openSourceStatusToColumn,
   openSourceColumnToStatus,
   APPLICATION_COMPLETION_COLUMNS,
   LINKEDIN_COMPLETION_COLUMNS,
   EVENT_COMPLETION_COLUMNS,
-  LEET_COMPLETION_COLUMNS,
 } from './components/types';
 
 // ===== PROJECTED OFFER DATE FORMULA START =====
@@ -676,172 +669,9 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     // onDragOver is only for visual feedback via DroppableColumn
   };
 
-  // dnd-kit: LeetCode board
-  const [leetColumns, setLeetColumns] = useState<Record<LeetColumnId, LeetEntry[]>>({
-    plan: [],
-    solved: [],
-    reflect: [],
-  });
-  const [activeLeetId, setActiveLeetId] = useState<string | null>(null);
-  const [isLeetModalOpen, setIsLeetModalOpen] = useState(false);
-  const [editingLeet, setEditingLeet] = useState<LeetEntry | null>(null);
-const [isDeletingLeet, setIsDeletingLeet] = useState<number | null>(null);
-const [isLoadingLeet, setIsLoadingLeet] = useState(true);
-  const [leetFilter, setLeetFilter] = useState<BoardTimeFilter>('allTime');
-const isFetchingLeetRef = useRef(false);
-  const isDraggingLeetRef = useRef(false);
-// ----- MOCK DATA SEED TRACKER START -----
+  // ----- MOCK DATA SEED TRACKER START -----
 const hasSeededMockDataRef = useRef(false);
 // ----- MOCK DATA SEED TRACKER END -----
-
-  const fetchLeetEntries = useCallback(async () => {
-    // --- MOCK DATA BYPASS FOR LEET FETCH START ---
-    if (ENABLE_DASHBOARD_MOCKS) return;
-    // --- MOCK DATA BYPASS FOR LEET FETCH END ---
-    if (isFetchingLeetRef.current) return;
-
-    try {
-      isFetchingLeetRef.current = true;
-      setIsLoadingLeet(true);
-      const url = userIdParam ? `/api/leetcode?userId=${userIdParam}` : '/api/leetcode';
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch LeetCode entries');
-      const data = await response.json();
-
-      const grouped: Record<LeetColumnId, LeetEntry[]> = {
-        plan: [],
-        solved: [],
-        reflect: [],
-      };
-
-      (data as LeetEntry[]).forEach(entry => {
-        const column = leetStatusToColumn[entry.status] ?? 'plan';
-        grouped[column].push(entry);
-      });
-
-      setLeetColumns(grouped);
-    } catch (error) {
-      console.error('Error fetching LeetCode entries:', error);
-    } finally {
-      setIsLoadingLeet(false);
-      isFetchingLeetRef.current = false;
-    }
-  }, [userIdParam]);
-
-  useEffect(() => {
-    // --- MOCK DATA BYPASS FOR LEET EFFECT START ---
-    if (ENABLE_DASHBOARD_MOCKS) return;
-    // --- MOCK DATA BYPASS FOR LEET EFFECT END ---
-    if ((activeTab === 'leetcode' || activeTab === 'overview') && !isFetchingLeetRef.current) {
-      fetchLeetEntries();
-    }
-  }, [activeTab, fetchLeetEntries]);
-
-  const getLeetColumnOfItem = (id: string): LeetColumnId | null => {
-    const entry = (Object.keys(leetColumns) as LeetColumnId[]).find(col =>
-      leetColumns[col].some(item => String(item.id) === id)
-    );
-    return entry ?? null;
-  };
-
-  // Debounced function to update LeetCode status (prevents rapid-fire requests when dragging)
-  // Server will automatically set dateModified to current date on PATCH
-  const debouncedUpdateLeetCodeStatus = useDebouncedCallback(
-    async (id: number, status: LeetStatus) => {
-      try {
-        const url = userIdParam ? `/api/leetcode?id=${id}&userId=${userIdParam}` : `/api/leetcode?id=${id}`;
-        const response = await fetch(url, {
-          method: 'PATCH',
-          headers: getApiHeaders(),
-          body: JSON.stringify({ status }),
-        });
-        if (!response.ok) throw new Error('Failed to update LeetCode status');
-      } catch (error) {
-        console.error('Error updating LeetCode status:', error);
-        fetchLeetEntries();
-      }
-    },
-    300 // Wait 300ms after last change before sending request
-  );
-
-  const handleLeetDragEnd = async (event: DragEndEvent) => {
-    if (!canEditViewedUser && userIdParam) return;
-    const { active, over } = event;
-    if (!over) {
-      isDraggingLeetRef.current = false;
-      return;
-    }
-
-    const activeId = String(active.id);
-    const overId = String(over.id);
-
-    const fromCol = getLeetColumnOfItem(activeId);
-    const toCol = (['plan', 'solved', 'reflect'] as LeetColumnId[]).includes(overId as LeetColumnId)
-      ? (overId as LeetColumnId)
-      : getLeetColumnOfItem(overId);
-    if (!fromCol || !toCol) {
-      setActiveLeetId(null);
-      isDraggingLeetRef.current = false;
-      return;
-    }
-
-    if (fromCol === toCol) {
-      const items = leetColumns[fromCol];
-      const oldIndex = items.findIndex(i => String(i.id) === activeId);
-      const newIndex = items.findIndex(i => String(i.id) === overId);
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-        setActiveLeetId(null);
-        isDraggingLeetRef.current = false;
-        return;
-      }
-      const newItems = arrayMove(items, oldIndex, newIndex);
-      setLeetColumns(prev => ({ ...prev, [fromCol]: newItems }));
-    } else {
-      const fromItems = leetColumns[fromCol];
-      const toItems = leetColumns[toCol];
-      const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
-      if (movingIndex === -1) {
-        setActiveLeetId(null);
-        isDraggingLeetRef.current = false;
-        return;
-      }
-      const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => String(i.id) === overId);
-      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
-      const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
-      const newStatus = leetColumnToStatus[toCol];
-      const updatedItem: LeetEntry = {
-        ...movingItem,
-        status: newStatus,
-        // Optimistically update dateModified to current date (server will confirm on PATCH)
-        dateModified: new Date().toISOString(),
-      };
-      const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
-      // Create new column arrays to ensure React detects the change
-      setLeetColumns(prev => ({
-        plan: [...prev.plan],
-        solved: [...prev.solved],
-        reflect: [...prev.reflect],
-        [fromCol]: newFrom,
-        [toCol]: newTo,
-      }));
-
-      // Update status in database (debounced to prevent rapid-fire requests)
-      // Server will automatically set dateModified to current date on PATCH
-      debouncedUpdateLeetCodeStatus(movingItem.id, newStatus);
-    }
-    setActiveLeetId(null);
-    isDraggingLeetRef.current = false;
-  };
-
-  const handleLeetDragStart = (event: DragStartEvent) => {
-    setActiveLeetId(String(event.active.id));
-    isDraggingLeetRef.current = true;
-  };
-
-  const handleLeetDragOver = (event: DragOverEvent) => {
-    // onDragOver is only for visual feedback via DroppableColumn
-  };
 
   // dnd-kit: OpenSource board
   const [openSourceColumns, setOpenSourceColumns] = useState<Record<OpenSourceColumnId, OpenSourceEntry[]>>({
@@ -1377,55 +1207,15 @@ const hasSeededMockDataRef = useRef(false);
       ],
     };
 
-    const mockLeetEntries: Record<LeetColumnId, LeetEntry[]> = {
-      plan: [
-        {
-          id: 4001,
-          problem: 'Binary Tree Zigzag Level Order Traversal',
-          problemType: 'Trees, BFS',
-          difficulty: 'Medium',
-          status: 'plan',
-          userId: 'mock-user',
-          dateCreated: isoWithDelta({ months: -1, days: -4, hour: 8 }),
-        },
-      ],
-      solved: [
-        {
-          id: 4002,
-          problem: 'Two Sum',
-          problemType: 'Hash Map',
-          difficulty: 'Easy',
-          url: 'https://leetcode.com/problems/two-sum/',
-          status: 'solved',
-          userId: 'mock-user',
-          dateCreated: isoWithDelta({ months: -4, days: -6, hour: 7 }),
-        },
-      ],
-      reflect: [
-        {
-          id: 4003,
-          problem: 'Word Ladder',
-          problemType: 'Graphs, BFS',
-          difficulty: 'Hard',
-          reflection: 'Notice the transformation count hints at BFS on word graph.',
-          status: 'reflect',
-          userId: 'mock-user',
-          dateCreated: isoWithDelta({ months: -9, days: -2, hour: 20 }),
-        },
-      ],
-    };
-
     const mockTargetOfferDate = new Date(now);
     mockTargetOfferDate.setMonth(mockTargetOfferDate.getMonth() + 3);
 
     setAppColumns(mockApplications);
     setLinkedinOutreachColumns(mockLinkedinOutreach);
     setEventColumns(mockEvents);
-    setLeetColumns(mockLeetEntries);
     setIsLoading(false);
     setIsLoadingLinkedinOutreach(false);
     setIsLoadingEvents(false);
-    setIsLoadingLeet(false);
     setActiveTab('overview');
     setTargetOfferDate(mockTargetOfferDate);
     setUserData({
@@ -1735,33 +1525,6 @@ const hasSeededMockDataRef = useRef(false);
     };
   }, [eventColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles, careerFairPlanGoal]);
 
-  const leetMetrics = useMemo(() => {
-    let count = 0;
-    leetColumns.reflect.forEach(entry => {
-      if (!entry.dateCreated) return;
-      const entryDate = new Date(entry.dateCreated);
-      if (!Number.isNaN(entryDate.getTime()) && entryDate >= metricsMonth && entryDate < metricsMonthEnd) {
-        count += 1;
-      }
-    });
-
-    const goal = 4;
-    const rawPercentage = goal > 0 ? (count / goal) * 100 : 0;
-    const clampedPercentage = Math.min(Math.max(rawPercentage, 0), 100);
-    const styles = getHabitStatusStyles(count, goal, clampedPercentage);
-    const statusText = `${Math.round(clampedPercentage)}%`;
-
-    return {
-      count,
-      goal,
-      percentage: clampedPercentage,
-      statusText,
-      statusTextColor: styles.textClass,
-      statusDotClass: styles.dotClass,
-      statusBarClass: styles.barClass,
-    };
-  }, [leetColumns, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
-
   // Calculate all-time counts for each metric
   const applicationsAllTimeCount = useMemo(() => {
     let count = 0;
@@ -1786,10 +1549,6 @@ const hasSeededMockDataRef = useRef(false);
     });
     return count;
   }, [eventColumns]);
-
-  const leetAllTimeCount = useMemo(() => {
-    return LEET_COMPLETION_COLUMNS.reduce((acc, col) => acc + leetColumns[col].length, 0);
-  }, [leetColumns]);
 
   const isWithinCurrentMonth = useCallback(
     (value?: string | null) => {
@@ -1997,23 +1756,6 @@ const hasSeededMockDataRef = useRef(false);
     return filtered;
   }, [eventColumns, eventsFilter, isWithinCurrentMonth]);
 
-  const filteredLeetColumns = useMemo(() => {
-    if (leetFilter === 'allTime') return leetColumns;
-    const filtered: Record<LeetColumnId, LeetEntry[]> = {
-      plan: [],
-      solved: [],
-      reflect: [],
-    };
-    (Object.keys(leetColumns) as LeetColumnId[]).forEach(columnId => {
-      if (leetFilter === 'modifiedThisMonth') {
-        filtered[columnId] = leetColumns[columnId].filter(entry =>
-          isWithinCurrentMonth(entry.dateModified)
-        );
-      }
-    });
-    return filtered;
-  }, [leetColumns, leetFilter, isWithinCurrentMonth]);
-
   const filteredOpenSourceColumns = useMemo(() => {
     let filtered: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
       plan: [],
@@ -2140,16 +1882,6 @@ const hasSeededMockDataRef = useRef(false);
               >
                 <Users className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />Events
               </button>
-              <button 
-                onClick={() => handleTabClick('leetcode')}
-                className={`main-tab-btn flex-1 py-3 sm:py-4 px-3 sm:px-6 text-center font-semibold transition-colors whitespace-nowrap ${
-                  activeTab === 'leetcode' 
-                    ? 'bg-electric-blue text-white' 
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                }`}
-              >
-                <Code className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />LeetCode
-              </button>
             </div>
           </div>
         </section>
@@ -2165,8 +1897,6 @@ const hasSeededMockDataRef = useRef(false);
             linkedinOutreachAllTimeCount={linkedinOutreachAllTimeCount}
             eventsMetrics={eventsMetrics}
             eventsAllTimeCount={eventsAllTimeCount}
-            leetMetrics={leetMetrics}
-            leetAllTimeCount={leetAllTimeCount}
             handleHabitCardClick={handleHabitCardClick}
           />
         )}
@@ -2250,34 +1980,6 @@ const hasSeededMockDataRef = useRef(false);
             isDeletingEvent={isDeletingEvent}
             fetchEvents={fetchEvents}
             isDraggingEventRef={isDraggingEventRef}
-            userIdParam={userIdParam}
-            readOnly={!canEditViewedUser && !!userIdParam}
-          />
-        )}
-
-        {/* LeetCode Content */}
-        {activeTab === 'leetcode' && (
-          <LeetCodeTab
-            filteredLeetColumns={filteredLeetColumns}
-            leetColumns={leetColumns}
-            setLeetColumns={setLeetColumns}
-            isLoadingLeet={isLoadingLeet}
-            leetFilter={leetFilter}
-            setLeetFilter={setLeetFilter}
-            setIsLeetModalOpen={setIsLeetModalOpen}
-            setEditingLeet={setEditingLeet}
-            sensors={sensors}
-            handleLeetDragStart={handleLeetDragStart}
-            handleLeetDragOver={handleLeetDragOver}
-            handleLeetDragEnd={handleLeetDragEnd}
-            activeLeetId={activeLeetId}
-            getLeetColumnOfItem={getLeetColumnOfItem}
-            isLeetModalOpen={isLeetModalOpen}
-            editingLeet={editingLeet}
-            setIsDeletingLeet={setIsDeletingLeet}
-            isDeletingLeet={isDeletingLeet}
-            fetchLeetEntries={fetchLeetEntries}
-            isDraggingLeetRef={isDraggingLeetRef}
             userIdParam={userIdParam}
             readOnly={!canEditViewedUser && !!userIdParam}
           />

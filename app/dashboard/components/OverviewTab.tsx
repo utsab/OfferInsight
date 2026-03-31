@@ -1,4 +1,4 @@
-import { Gauge, FileText, MessageCircle, Users, Code, CalendarCheck } from 'lucide-react';
+import { FileText, MessageCircle, Users, CalendarCheck } from 'lucide-react';
 import Link from 'next/link';
 
 type OverviewTabProps = {
@@ -35,16 +35,6 @@ type OverviewTabProps = {
     statusBarClass: string;
   };
   eventsAllTimeCount: number;
-  leetMetrics: {
-    count: number;
-    goal: number;
-    percentage: number;
-    statusText: string;
-    statusTextColor: string;
-    statusDotClass: string;
-    statusBarClass: string;
-  };
-  leetAllTimeCount: number;
   handleHabitCardClick: (cardId: string) => void;
 };
 
@@ -57,8 +47,6 @@ export default function OverviewTab({
   linkedinOutreachAllTimeCount,
   eventsMetrics,
   eventsAllTimeCount,
-  leetMetrics,
-  leetAllTimeCount,
   handleHabitCardClick,
 }: OverviewTabProps) {
   return (
@@ -92,7 +80,7 @@ export default function OverviewTab({
       {/* Habit Overview Section */}
       <section>
         <h3 className="text-2xl font-bold text-white mb-6">Habit Overview</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           <div 
             onClick={() => handleHabitCardClick('applications')}
             className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue transition-colors cursor-pointer"
@@ -198,38 +186,6 @@ export default function OverviewTab({
             </div>
           </div>
 
-          <div 
-            onClick={() => handleHabitCardClick('leetcode')}
-            className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue transition-colors cursor-pointer"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <Code className="text-electric-blue text-xl" />
-                <h4 className="text-white font-semibold">LeetCode</h4>
-              </div>
-              <div className={`w-3 h-3 ${leetMetrics.statusDotClass} rounded-full`}></div>
-            </div>
-            <div className="flex items-end justify-between mb-1">
-              <div>
-                <div className="text-3xl font-bold text-white">{leetMetrics.count}</div>
-                <div className="text-sm text-gray-400">This month</div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-gray-300">{leetAllTimeCount}</div>
-                <div className="text-xs text-gray-500">All Time</div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-sm mt-3">
-              <span className="text-gray-400">Goal: {leetMetrics.goal}</span>
-              <span className={leetMetrics.statusTextColor}>{leetMetrics.statusText}</span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-              <div 
-                className={`${leetMetrics.statusBarClass} h-2 rounded-full`} 
-                style={{width: `${leetMetrics.percentage}%`}}
-              ></div>
-            </div>
-          </div>
         </div>
       </section>
     </div>

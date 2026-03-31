@@ -52,11 +52,6 @@ describe('Site Smoke Tests - File Existence', () => {
       expect(fs.existsSync(routePath)).toBe(true);
     });
 
-    it('should have leetcode route', () => {
-      const routePath = path.join(rootDir, 'app', 'api', 'leetcode', 'route.ts');
-      expect(fs.existsSync(routePath)).toBe(true);
-    });
-
     it('should have dashboard-metrics route', () => {
       const routePath = path.join(rootDir, 'app', 'api', 'dashboard-metrics', 'route.ts');
       expect(fs.existsSync(routePath)).toBe(true);

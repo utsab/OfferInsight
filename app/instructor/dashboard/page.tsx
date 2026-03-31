@@ -28,10 +28,6 @@ interface UserData {
     lastMonth: number;
     allTime: number;
   };
-  leetCode: {
-    lastMonth: number;
-    allTime: number;
-  };
 }
 
 // ============================================================================
@@ -69,7 +65,6 @@ function generateDebugUsers(): UserData[] {
     const applicationsLastMonth = hasGoodProgress ? Math.floor(Math.random() * 5) + 2 : (hasMediumProgress ? 1 : Math.floor(Math.random() * 2));
     const eventsLastMonth = hasGoodProgress ? Math.floor(Math.random() * 3) + 1 : (hasMediumProgress ? Math.floor(Math.random() * 2) : 0);
     const coffeeChatsLastMonth = hasGoodProgress ? Math.floor(Math.random() * 6) + 4 : (hasMediumProgress ? Math.floor(Math.random() * 5) + 2 : Math.floor(Math.random() * 3));
-    const leetCodeLastMonth = hasGoodProgress ? Math.floor(Math.random() * 10) + 4 : (hasMediumProgress ? Math.floor(Math.random() * 5) + 2 : Math.floor(Math.random() * 3));
 
     // Generate referral count - some users have referrals (exciting!)
     const referralCount = hasGoodProgress && index % 5 === 0 
@@ -107,10 +102,6 @@ function generateDebugUsers(): UserData[] {
         lastMonth: eventsLastMonth,
         allTime: eventsLastMonth * 3 + Math.floor(Math.random() * 15)
       },
-      leetCode: {
-        lastMonth: leetCodeLastMonth,
-        allTime: leetCodeLastMonth * 6 + Math.floor(Math.random() * 50)
-      }
     };
   });
 }
@@ -365,13 +356,6 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
 
-                <div className="w-[165px] min-w-[165px] shrink-0">
-                  <div className="text-gray-300 text-sm font-medium mb-1">LeetCode</div>
-                  <div className="text-gray-400 text-sm flex flex-col gap-2">
-                    <span>Last Month: <span className="text-white font-medium">{user.leetCode.lastMonth}</span></span>
-                    <span>All Time: <span className="text-white font-medium">{user.leetCode.allTime}</span></span>
-                  </div>
-                </div>
                 </div>
               </div>
             </div>

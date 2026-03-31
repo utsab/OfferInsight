@@ -8,7 +8,6 @@ import partnershipsData from "@/partnerships/partnerships.json";
 const APPLICATION_COMPLETION_STATUSES = ['messageHiringManager', 'messageRecruiter', 'followUp', 'interview'];
 const LINKEDIN_COMPLETION_STATUSES = ['prospects', 'sendFirstMessage', 'requestAccepted', 'followUp', 'coffeeChat', 'askForReferral'];
 const EVENT_COMPLETION_STATUSES = ['attended', 'sendLinkedInRequest', 'followUp'];
-const LEET_COMPLETION_STATUSES = ['reflect'];
 
 export async function GET() {
   try {
@@ -174,25 +173,6 @@ export async function GET() {
           }),
         ]);
 
-        const [leetCodeLastMonth, leetCodeAllTime] = await Promise.all([
-          prisma.leetcode_Practice.count({
-            where: {
-              userId: user.id,
-              status: { in: LEET_COMPLETION_STATUSES },
-              dateCreated: {
-                gte: firstDayOfMonth,
-                lte: lastDayOfMonth,
-              },
-            },
-          }),
-          prisma.leetcode_Practice.count({
-            where: {
-              userId: user.id,
-              status: { in: LEET_COMPLETION_STATUSES },
-            },
-          }),
-        ]);
-
         const referralCount = await prisma.linkedin_Outreach.count({
           where: {
             userId: user.id,
@@ -282,10 +262,6 @@ export async function GET() {
           events: {
             lastMonth: eventsLastMonth,
             allTime: eventsAllTime,
-          },
-          leetCode: {
-            lastMonth: leetCodeLastMonth,
-            allTime: leetCodeAllTime,
           },
         };
       })
