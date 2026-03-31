@@ -96,7 +96,6 @@ export const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
 ];
 
 export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'sendLinkedInRequest', 'followUp'];
-export const OPENSOURCE_COMPLETION_COLUMNS: OpenSourceColumnId[] = ['done'];
 
 export const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
   apply: 'apply',

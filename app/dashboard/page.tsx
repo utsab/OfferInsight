@@ -13,7 +13,7 @@ import CoffeeChatsTab from './components/CoffeeChatsTab';
 import EventsTab from './components/EventsTab';
 import OpenSourceTab from './components/OpenSourceTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { formatDateWithFullMonth, getLocalDateParts } from './components/shared';
+import { formatDateWithFullMonth } from './components/shared';
 import type {
   Application,
   ApplicationStatus,
@@ -118,13 +118,6 @@ function calculateProjectedOfferDate(
 // Toggle this flag or comment out the seeding effect below to disable mock data.
 const ENABLE_DASHBOARD_MOCKS = false;
 // ===== MOCK DATA FEATURE TOGGLE END =====
-
-// ===== DATE FIELD EDITING TOGGLE START =====
-// Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
-// When enabled, date input fields will appear in all modals allowing you to set/change the dateCreated and dateModified values.
-// The dates will be properly saved to the database as DateTime when creating or updating records.
-const ENABLE_DATE_FIELD_EDITING = false;
-// ===== DATE FIELD EDITING TOGGLE END =====
 
 export default function Page() {
   const searchParams = useSearchParams();
