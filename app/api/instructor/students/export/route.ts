@@ -72,13 +72,13 @@ export async function GET(request: NextRequest) {
     const minIssuesValid = minIssues === null || !Number.isNaN(minIssues);
 
     const users = await prisma.user.findMany({
-      select: { id: true, name: true, email: true, expectedGraduationDate: true },
+      select: { id: true, name: true, email: true, createdAt: true, expectedGraduationDate: true },
       orderBy: { name: "asc" },
     });
 
     const userIds = users.map((u) => u.id);
     if (userIds.length === 0) {
-      const csv = "Name,Email,Graduation Date,Issues Solved,Projects,PR Links,Blog Posts,Criteria & Proof\n";
+      const csv = "Name,Email,Created At,Graduation Date,Issues Solved,Projects,PR Links,Blog Posts,Criteria & Proof\n";
       return new NextResponse(csv, {
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     });
 
     const header =
-      "Name,Email,Graduation Date,Issues Solved,Projects,PR Links,Blog Posts,Criteria & Proof\n";
+      "Name,Email,Created At,Graduation Date,Issues Solved,Projects,PR Links,Blog Posts,Criteria & Proof\n";
 
     const rows: string[] = [];
 
@@ -164,6 +164,7 @@ export async function GET(request: NextRequest) {
 
       const name = csvEscape(user.name ?? "");
       const email = csvEscape(user.email ?? "");
+      const createdAt = csvEscape(user.createdAt.toISOString().split("T")[0]);
       const graduationDate = user.expectedGraduationDate
         ? csvEscape(user.expectedGraduationDate.toISOString().split('T')[0]) // Format as YYYY-MM-DD
         : csvEscape("");
@@ -173,7 +174,7 @@ export async function GET(request: NextRequest) {
       const criteriaProofCell = csvEscape(criteriaProofParts.join(" | "));
 
       rows.push(
-        `${name},${email},${graduationDate},${issuesCompleted},${projectsCell},${prLinksCell},${blogPostsCell},${criteriaProofCell}`
+        `${name},${email},${createdAt},${graduationDate},${issuesCompleted},${projectsCell},${prLinksCell},${blogPostsCell},${criteriaProofCell}`
       );
     }
 
