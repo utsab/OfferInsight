@@ -1,4 +1,4 @@
-import { FileText, MessageCircle, Users, GitBranch } from 'lucide-react';
+import { FileText, MessageCircle, Users, GitBranch, Code } from 'lucide-react';
 
 type OverviewTabProps = {
   openSourceSnapshot: {
@@ -10,6 +10,15 @@ type OverviewTabProps = {
     weekDoneCount: number;
     issuesCompleted: number;
     completedPartnerships: number;
+  };
+  leetCodeStats: {
+    solved: number;
+    easy: number;
+    medium: number;
+    hard: number;
+    username: string | null;
+    hasUsername: boolean;
+    unavailable: boolean;
   };
   applicationsMetrics: {
     count: number;
@@ -47,6 +56,7 @@ type OverviewTabProps = {
 
 export default function OverviewTab({
   openSourceSnapshot,
+  leetCodeStats,
   applicationsMetrics,
   applicationsAllTimeCount,
   linkedinOutreachMetrics,
@@ -108,7 +118,7 @@ export default function OverviewTab({
       {/* Habit Overview Section */}
       <section>
         <h3 className="text-2xl font-bold text-white mb-6">Habit Overview</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <div 
             onClick={() => handleHabitCardClick('applications')}
             className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue transition-colors cursor-pointer"
@@ -212,6 +222,49 @@ export default function OverviewTab({
                 style={{width: `${eventsMetrics.percentage}%`}}
               ></div>
             </div>
+          </div>
+
+          <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <Code className="text-electric-blue text-xl" />
+                <h4 className="text-white font-semibold">LeetCode</h4>
+              </div>
+              {leetCodeStats.username && (
+                <a
+                  href={`https://leetcode.com/u/${encodeURIComponent(leetCodeStats.username)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-electric-blue hover:text-blue-300 transition-colors"
+                >
+                  Link to profile
+                </a>
+              )}
+            </div>
+            {leetCodeStats.unavailable ? (
+              <div className="text-sm text-gray-400">Stats unavailable right now.</div>
+            ) : !leetCodeStats.hasUsername ? (
+              <div className="text-sm text-gray-400">Add your LeetCode username in Account.</div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-end justify-between">
+                  <span className="text-sm text-gray-400">Solved</span>
+                  <span className="text-2xl font-bold text-white">{leetCodeStats.solved}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-cyan-300">Easy</span>
+                  <span className="text-white">{leetCodeStats.easy}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-yellow-300">Medium</span>
+                  <span className="text-white">{leetCodeStats.medium}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-red-300">Hard</span>
+                  <span className="text-white">{leetCodeStats.hard}</span>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>

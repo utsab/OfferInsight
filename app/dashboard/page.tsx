@@ -54,6 +54,23 @@ export default function Page() {
   const [isInstructor, setIsInstructor] = useState(false);
   const [canEditViewedUser, setCanEditViewedUser] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [leetCodeStats, setLeetCodeStats] = useState<{
+    solved: number;
+    easy: number;
+    medium: number;
+    hard: number;
+    username: string | null;
+    hasUsername: boolean;
+    unavailable: boolean;
+  }>({
+    solved: 0,
+    easy: 0,
+    medium: 0,
+    hard: 0,
+    username: null,
+    hasUsername: false,
+    unavailable: false,
+  });
 
   // dnd-kit: Applications board state
 
@@ -72,6 +89,7 @@ export default function Page() {
   const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('allTime');
   const isFetchingRef = useRef(false);
   const isDraggingAppRef = useRef(false);
+  const isFetchingLeetCodeStatsRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -1182,6 +1200,52 @@ const hasSeededMockDataRef = useRef(false);
     checkInstructorAndFetchUserName();
   }, [userIdParam]);
 
+  const fetchLeetCodeStats = useCallback(async () => {
+    if (ENABLE_DASHBOARD_MOCKS) {
+      setLeetCodeStats({
+        solved: 33,
+        easy: 20,
+        medium: 12,
+        hard: 1,
+        username: 'mock-user',
+        hasUsername: true,
+        unavailable: false,
+      });
+      return;
+    }
+    if (isFetchingLeetCodeStatsRef.current) return;
+    try {
+      isFetchingLeetCodeStatsRef.current = true;
+      const url = userIdParam ? `/api/leetcode/stats?userId=${userIdParam}` : '/api/leetcode/stats';
+      const response = await fetch(url);
+      if (!response.ok) {
+        setLeetCodeStats((prev) => ({ ...prev, unavailable: true }));
+        return;
+      }
+      const data = await response.json();
+      setLeetCodeStats({
+        solved: Number(data.solved) || 0,
+        easy: Number(data.easy) || 0,
+        medium: Number(data.medium) || 0,
+        hard: Number(data.hard) || 0,
+        username: typeof data.username === 'string' && data.username.trim().length > 0 ? data.username.trim() : null,
+        hasUsername: Boolean(data.hasUsername),
+        unavailable: Boolean(data.unavailable),
+      });
+    } catch (error) {
+      console.error('Error fetching LeetCode stats:', error);
+      setLeetCodeStats((prev) => ({ ...prev, unavailable: true }));
+    } finally {
+      isFetchingLeetCodeStatsRef.current = false;
+    }
+  }, [userIdParam]);
+
+  useEffect(() => {
+    if (activeTab === 'overview') {
+      fetchLeetCodeStats();
+    }
+  }, [activeTab, fetchLeetCodeStats]);
+
   useEffect(() => {
     if (ENABLE_DASHBOARD_MOCKS) return;
     let isMounted = true;
@@ -1658,6 +1722,7 @@ const hasSeededMockDataRef = useRef(false);
         {activeTab === 'overview' && (
           <OverviewTab
             openSourceSnapshot={openSourceSnapshot}
+            leetCodeStats={leetCodeStats}
             applicationsMetrics={applicationsMetrics}
             applicationsAllTimeCount={applicationsAllTimeCount}
             linkedinOutreachMetrics={linkedinOutreachMetrics}
