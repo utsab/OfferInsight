@@ -9,7 +9,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const { name, school, major, expectedGraduationDate } = await request.json();
+    const body = await request.json();
+    const { name, school, major, expectedGraduationDate } = body;
+
+    const leetPatch =
+      Object.prototype.hasOwnProperty.call(body, 'leetCodeUserName')
+        ? {
+            leetCodeUserName:
+              typeof body.leetCodeUserName === 'string' && body.leetCodeUserName.trim().length > 0
+                ? body.leetCodeUserName.trim()
+                : null,
+          }
+        : {};
 
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
@@ -19,6 +30,7 @@ export async function POST(request: Request) {
         major,
         expectedGraduationDate: new Date(expectedGraduationDate),
         onboardingProgress: 1,
+        ...leetPatch,
       },
     });
 
