@@ -13,7 +13,6 @@ import CoffeeChatsTab from './components/CoffeeChatsTab';
 import EventsTab from './components/EventsTab';
 import OpenSourceTab from './components/OpenSourceTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { formatDateWithFullMonth } from './components/shared';
 import type {
   Application,
   ApplicationStatus,
@@ -43,77 +42,6 @@ import {
   EVENT_COMPLETION_COLUMNS,
 } from './components/types';
 
-// ===== PROJECTED OFFER DATE FORMULA START =====
-// Copied from onboarding page3 so product engineers can tweak independently.
-function calculateProjectedOfferDate(
-  appsWithOutreachPerWeek: number,
-  linkedinOutreachPerWeek: number,
-  inPersonEventsPerMonth: number,
-  careerFairsPerYear: number,
-  referenceDate?: Date
-): Date | null {
-  let offersPerAppWithOutreach = 0.0025;
-  let offersPerLinkedinOutreachAttempt = 0.00075;
-  let offersPerInPersonEvent = 0.0075;
-  let offersPerCareerFair = 0.1;
-
-  let bonusPoints = 0;
-
-  if (linkedinOutreachPerWeek >= 20) {
-    bonusPoints += 20;
-  } else if (linkedinOutreachPerWeek >= 12) {
-    bonusPoints += 11;
-  } else if (linkedinOutreachPerWeek >= 6) {
-    bonusPoints += 6;
-  } else if (linkedinOutreachPerWeek >= 1) {
-    bonusPoints += 1;
-  }
-
-  if (inPersonEventsPerMonth >= 8) {
-    bonusPoints += 80;
-  } else if (inPersonEventsPerMonth >= 4) {
-    bonusPoints += 40;
-  } else if (inPersonEventsPerMonth >= 2) {
-    bonusPoints += 20;
-  } else if (inPersonEventsPerMonth >= 1) {
-    bonusPoints += 10;
-  }
-
-  if (careerFairsPerYear >= 4) {
-    bonusPoints += 80;
-  } else if (careerFairsPerYear >= 3) {
-    bonusPoints += 40;
-  } else if (careerFairsPerYear >= 2) {
-    bonusPoints += 20;
-  } else if (careerFairsPerYear >= 1) {
-    bonusPoints += 10;
-  }
-
-  const a = 2.0;
-  const b = 0.01;
-  const multiplier = 3 - a * Math.exp(-b * bonusPoints);
-
-  offersPerAppWithOutreach *= multiplier;
-  offersPerLinkedinOutreachAttempt *= multiplier;
-  offersPerInPersonEvent *= multiplier;
-  offersPerCareerFair *= multiplier;
-
-  const totalOffersPerWeek =
-    appsWithOutreachPerWeek * offersPerAppWithOutreach +
-    linkedinOutreachPerWeek * offersPerLinkedinOutreachAttempt +
-    inPersonEventsPerMonth * offersPerInPersonEvent +
-    (careerFairsPerYear / 52) * offersPerCareerFair;
-
-  if (!Number.isFinite(totalOffersPerWeek) || totalOffersPerWeek <= 0) {
-    return null;
-  }
-
-  const totalWeeks = 3 + 1 / totalOffersPerWeek;
-  const baseDate = referenceDate ?? new Date();
-  return new Date(baseDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
-}
-// ===== PROJECTED OFFER DATE FORMULA END =====
-
 // ===== MOCK DATA FEATURE TOGGLE START =====
 // Toggle this flag or comment out the seeding effect below to disable mock data.
 const ENABLE_DASHBOARD_MOCKS = false;
@@ -126,7 +54,6 @@ export default function Page() {
   const [isInstructor, setIsInstructor] = useState(false);
   const [canEditViewedUser, setCanEditViewedUser] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [targetOfferDate, setTargetOfferDate] = useState<Date | null>(null);
 
   // dnd-kit: Applications board state
 
@@ -144,7 +71,6 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(true);
   const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('allTime');
   const isFetchingRef = useRef(false);
-  const lastProjectedOfferSyncRef = useRef<string | null>(null);
   const isDraggingAppRef = useRef(false);
 
   const sensors = useSensors(
@@ -981,10 +907,7 @@ const hasSeededMockDataRef = useRef(false);
   const [userData, setUserData] = useState<{
     appsWithOutreachPerWeek?: number | null;
     linkedinOutreachPerWeek?: number | null;
-    targetOfferDate?: string | null;
-    projectedOfferDate?: string | null;
     inPersonEventsPerMonth?: number | null;
-    resetStartDate?: string | null;
     careerFairsPerYear?: number | null;
   } | null>(null);
 
@@ -1200,9 +1123,6 @@ const hasSeededMockDataRef = useRef(false);
       ],
     };
 
-    const mockTargetOfferDate = new Date(now);
-    mockTargetOfferDate.setMonth(mockTargetOfferDate.getMonth() + 3);
-
     setAppColumns(mockApplications);
     setLinkedinOutreachColumns(mockLinkedinOutreach);
     setEventColumns(mockEvents);
@@ -1210,13 +1130,11 @@ const hasSeededMockDataRef = useRef(false);
     setIsLoadingLinkedinOutreach(false);
     setIsLoadingEvents(false);
     setActiveTab('overview');
-    setTargetOfferDate(mockTargetOfferDate);
     setUserData({
       appsWithOutreachPerWeek: 6,
       linkedinOutreachPerWeek: 8,
-      targetOfferDate: mockTargetOfferDate.toISOString(),
       inPersonEventsPerMonth: 3,
-      resetStartDate: isoWithDelta({ months: -1, days: -18, hour: 8 }),
+      careerFairsPerYear: 2,
     });
   }, []);
   // <<<<< MOCK DATA SEEDING EFFECT END >>>>>
@@ -1290,17 +1208,6 @@ const hasSeededMockDataRef = useRef(false);
         const user = await res.json();
         if (isMounted) {
           setUserData(user);
-          if (user?.targetOfferDate) {
-            const d = new Date(user.targetOfferDate);
-            if (!isNaN(d.getTime())) setTargetOfferDate(d);
-          }
-          // Initialize the sync ref with the stored projectedOfferDate to prevent unnecessary syncing on initial load
-          if (user?.projectedOfferDate) {
-            const storedDate = new Date(user.projectedOfferDate);
-            if (!isNaN(storedDate.getTime())) {
-              lastProjectedOfferSyncRef.current = storedDate.toISOString();
-            }
-          }
         }
       } catch (e) {
         // If error and we haven't exceeded retries, retry after a delay
@@ -1317,11 +1224,6 @@ const hasSeededMockDataRef = useRef(false);
     return () => { isMounted = false; };
   }, [userIdParam]);
 
-  const targetOfferDateText = useMemo(() => {
-    if (!targetOfferDate) return '—';
-    return formatDateWithFullMonth(targetOfferDate);
-  }, [targetOfferDate]);
-
   // Calculate applications metrics for this month
   const metricsMonth = useMemo(() => {
     const now = new Date();
@@ -1336,19 +1238,6 @@ const hasSeededMockDataRef = useRef(false);
     end.setMonth(end.getMonth() + 1);
     return end;
   }, [metricsMonth]);
-
-  // Calculate last month's date range for projected offer date
-  const lastMonthStart = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return start;
-  }, []);
-
-  const lastMonthEnd = useMemo(() => {
-    const end = new Date(lastMonthStart);
-    end.setMonth(end.getMonth() + 1);
-    return end;
-  }, [lastMonthStart]);
 
   const getHabitStatusStyles = useCallback((
     count: number,
@@ -1452,33 +1341,7 @@ const hasSeededMockDataRef = useRef(false);
     };
   }, [linkedinOutreachColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
 
-  const careerFairsThisYear = useMemo(() => {
-    const now = new Date();
-    const yearStart = new Date(now.getFullYear(), 0, 1);
-    const yearEnd = new Date(now.getFullYear() + 1, 0, 1);
-    const eligibleStatuses: InPersonEventStatus[] = ['attended', 'sendLinkedInRequest', 'followUp'];
-    let count = 0;
-    (Object.values(eventColumns) as InPersonEvent[][]).forEach(columnEvents => {
-      columnEvents.forEach(event => {
-        if (!event.careerFair || !event.date) return;
-        if (!eligibleStatuses.includes(event.status)) return;
-        const eventDate = new Date(event.date);
-        if (Number.isNaN(eventDate.getTime())) return;
-        if (eventDate >= yearStart && eventDate < yearEnd) {
-          count += 1;
-        }
-      });
-    });
-    return count;
-  }, [eventColumns]);
-
   const careerFairPlanGoal = userData?.careerFairsPerYear ?? 0;
-
-  const careerFairProgress = useMemo(() => {
-    if (careerFairPlanGoal <= 0) return 1;
-    if (!careerFairsThisYear || careerFairsThisYear <= 0) return 0;
-    return Math.min(careerFairsThisYear / careerFairPlanGoal, 1);
-  }, [careerFairsThisYear, careerFairPlanGoal]);
 
   const eventsMetrics = useMemo(() => {
     let eventCount = 0;
@@ -1553,146 +1416,58 @@ const hasSeededMockDataRef = useRef(false);
     [metricsMonth, metricsMonthEnd]
   );
 
-  const PROJECTED_WEEKS_PER_MONTH = 4;
 
-  // Calculate last month's metrics for projected offer date (using dateModified)
-  const lastMonthApplicationsMetrics = useMemo(() => {
-    let count = 0;
-    APPLICATION_COMPLETION_COLUMNS.forEach(col => {
-      appColumns[col].forEach(app => {
-        if (!app.dateModified) return;
-        const modifiedDate = new Date(app.dateModified);
-        if (!Number.isNaN(modifiedDate.getTime()) && modifiedDate >= lastMonthStart && modifiedDate < lastMonthEnd) {
-          count++;
-        }
-      });
-    });
-    return count;
-  }, [appColumns, lastMonthStart, lastMonthEnd]);
+  const openSourceSnapshot = useMemo(() => {
+    const doneEntries = openSourceColumns.done ?? [];
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
 
-  const lastMonthLinkedinOutreachMetrics = useMemo(() => {
-    let count = 0;
-    LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
-      linkedinOutreachColumns[col].forEach(chat => {
-        if (!chat.dateModified) return;
-        const modifiedDate = new Date(chat.dateModified);
-        if (!Number.isNaN(modifiedDate.getTime()) && modifiedDate >= lastMonthStart && modifiedDate < lastMonthEnd) {
-          count++;
-        }
-      });
-    });
-    return count;
-  }, [linkedinOutreachColumns, lastMonthStart, lastMonthEnd]);
+    const monthDoneCount = doneEntries.filter((entry) =>
+      isWithinCurrentMonth(entry.dateModified ?? entry.dateCreated ?? null)
+    ).length;
+    const inProgressCount = (openSourceColumns.inProgress ?? []).length;
 
-  const lastMonthEventsMetrics = useMemo(() => {
-    let count = 0;
-    EVENT_COMPLETION_COLUMNS.forEach(col => {
-      eventColumns[col].forEach(event => {
-        if (!event.dateModified) return;
-        const modifiedDate = new Date(event.dateModified);
-        if (!Number.isNaN(modifiedDate.getTime()) && modifiedDate >= lastMonthStart && modifiedDate < lastMonthEnd) {
-          count++;
-        }
-      });
-    });
-    return count;
-  }, [eventColumns, lastMonthStart, lastMonthEnd]);
+    const weekDoneCount = doneEntries.filter((entry) => {
+      const timestamp = entry.dateModified ?? entry.dateCreated;
+      if (!timestamp) return false;
+      const date = new Date(timestamp);
+      return !Number.isNaN(date.getTime()) && date >= weekStart;
+    }).length;
 
-  const derivedPlanStartDate = useMemo(() => {
-    if (!targetOfferDate || !userData) return null;
+    const issuesCompleted = doneEntries.filter((entry) => entry.criteriaType === 'issue').length;
+    const activePartnershipName = selectedPartnership || 'None selected';
+    const totalCriteria = activePartnershipCriteria.reduce((sum, criteria) => {
+      const count = Number(criteria?.count);
+      return sum + (Number.isFinite(count) && count > 0 ? count : 1);
+    }, 0);
+    const activePartnershipDoneCount = selectedPartnership
+      ? doneEntries.filter((entry) => entry.partnershipName === selectedPartnership).reduce((sum, entry) => {
+          const extras = Array.isArray(entry.selectedExtras) ? entry.selectedExtras.length : 0;
+          return sum + 1 + extras;
+        }, 0)
+      : 0;
+    const completedCriteria = totalCriteria > 0
+      ? Math.min(activePartnershipDoneCount, totalCriteria)
+      : activePartnershipDoneCount;
 
-    const planApps = userData.appsWithOutreachPerWeek ?? 0;
-    const planLinkedin = userData.linkedinOutreachPerWeek ?? 0;
-    const planEvents = userData.inPersonEventsPerMonth ?? 0;
-    const planFairs = userData.careerFairsPerYear ?? 0;
-
-    const epoch = new Date(0);
-    const planDurationDate = calculateProjectedOfferDate(
-      planApps,
-      planLinkedin,
-      planEvents,
-      planFairs,
-      epoch
-    );
-    if (!planDurationDate) return null;
-    const planDurationMs = planDurationDate.getTime() - epoch.getTime();
-    if (!Number.isFinite(planDurationMs) || planDurationMs <= 0) return null;
-
-    return new Date(targetOfferDate.getTime() - planDurationMs);
+    return {
+      activePartnershipName,
+      completedCriteria,
+      totalCriteria,
+      monthDoneCount,
+      inProgressCount,
+      weekDoneCount,
+      issuesCompleted,
+      completedPartnerships: completedPartnerships.length,
+    };
   }, [
-    targetOfferDate,
-    userData?.appsWithOutreachPerWeek,
-    userData?.linkedinOutreachPerWeek,
-    userData?.inPersonEventsPerMonth,
-    userData?.careerFairsPerYear,
-    userData,
+    openSourceColumns,
+    selectedPartnership,
+    activePartnershipCriteria,
+    completedPartnerships,
+    isWithinCurrentMonth,
   ]);
-
-  const projectedOfferDate = useMemo(() => {
-    // Use last month's metrics instead of current month's
-    const appsPerWeekRaw = lastMonthApplicationsMetrics / PROJECTED_WEEKS_PER_MONTH;
-    const linkedinPerWeekRaw = lastMonthLinkedinOutreachMetrics / PROJECTED_WEEKS_PER_MONTH;
-    const appsPerWeek = Number.isFinite(appsPerWeekRaw) ? appsPerWeekRaw : 0;
-    const linkedinPerWeek = Number.isFinite(linkedinPerWeekRaw) ? linkedinPerWeekRaw : 0;
-    const eventsPerMonth = Number.isFinite(lastMonthEventsMetrics) ? lastMonthEventsMetrics : 0;
-    const careerFairsPerYear = careerFairPlanGoal > 0
-      ? careerFairPlanGoal * careerFairProgress
-      : careerFairsThisYear;
-
-    const referenceDate = userData?.resetStartDate
-      ? new Date(userData.resetStartDate)
-      : derivedPlanStartDate ?? undefined;
-
-    return calculateProjectedOfferDate(
-      appsPerWeek,
-      linkedinPerWeek,
-      eventsPerMonth,
-      careerFairsPerYear,
-      referenceDate
-    );
-  }, [
-    lastMonthApplicationsMetrics,
-    lastMonthLinkedinOutreachMetrics,
-    lastMonthEventsMetrics,
-    careerFairsThisYear,
-    careerFairPlanGoal,
-    careerFairProgress,
-    derivedPlanStartDate,
-    userData?.careerFairsPerYear,
-    userData?.resetStartDate,
-  ]);
-
-  const projectedOfferDateText = useMemo(() => {
-    if (!projectedOfferDate) return targetOfferDateText;
-    return formatDateWithFullMonth(projectedOfferDate);
-  }, [projectedOfferDate, targetOfferDateText]);
-
-  // Debounced function to sync projected offer date (prevents rapid-fire requests)
-  const syncProjectedOfferDate = useDebouncedCallback((date: Date) => {
-    const iso = date.toISOString();
-    if (lastProjectedOfferSyncRef.current === iso) return;
-
-    const url = userIdParam ? `/api/users/projected-offer?userId=${userIdParam}` : '/api/users/projected-offer';
-    fetch(url, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify({ projectedOfferDate: iso }),
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to update projected offer date');
-        }
-        lastProjectedOfferSyncRef.current = iso;
-      })
-      .catch(error => {
-        console.error('Error syncing projected offer date:', error);
-      });
-  }, 500); // Wait 500ms after last change before sending request
-
-  useEffect(() => {
-    if (!projectedOfferDate) return;
-    syncProjectedOfferDate(projectedOfferDate);
-  }, [projectedOfferDate, syncProjectedOfferDate]);
 
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
@@ -1882,8 +1657,7 @@ const hasSeededMockDataRef = useRef(false);
         {/* Overview Content */}
         {activeTab === 'overview' && (
           <OverviewTab
-            targetOfferDateText={targetOfferDateText}
-            projectedOfferDateText={projectedOfferDateText}
+            openSourceSnapshot={openSourceSnapshot}
             applicationsMetrics={applicationsMetrics}
             applicationsAllTimeCount={applicationsAllTimeCount}
             linkedinOutreachMetrics={linkedinOutreachMetrics}

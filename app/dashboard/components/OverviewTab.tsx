@@ -1,9 +1,16 @@
-import { FileText, MessageCircle, Users, CalendarCheck } from 'lucide-react';
-import Link from 'next/link';
+import { FileText, MessageCircle, Users, GitBranch } from 'lucide-react';
 
 type OverviewTabProps = {
-  targetOfferDateText: string;
-  projectedOfferDateText: string;
+  openSourceSnapshot: {
+    activePartnershipName: string;
+    completedCriteria: number;
+    totalCriteria: number;
+    monthDoneCount: number;
+    inProgressCount: number;
+    weekDoneCount: number;
+    issuesCompleted: number;
+    completedPartnerships: number;
+  };
   applicationsMetrics: {
     count: number;
     goal: number;
@@ -39,8 +46,7 @@ type OverviewTabProps = {
 };
 
 export default function OverviewTab({
-  targetOfferDateText,
-  projectedOfferDateText,
+  openSourceSnapshot,
   applicationsMetrics,
   applicationsAllTimeCount,
   linkedinOutreachMetrics,
@@ -51,29 +57,51 @@ export default function OverviewTab({
 }: OverviewTabProps) {
   return (
     <div>
-      {/* Target Offer Date (question-box styling) */}
+      {/* Open Source Snapshot */}
       <section className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 mb-8">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-white font-bold text-lg flex items-center">
-            <CalendarCheck className="text-electric-blue mr-3" />
-            Offer Date Forecast
+            <GitBranch className="text-electric-blue mr-3" />
+            Open Source Snapshot
           </h2>
         </div>
-        <div className="flex flex-col gap-4 md:flex-row md:gap-8">
-          <div className="flex-1 rounded-lg bg-gray-800/60 border border-electric-blue/20 p-4 text-center">
-            <div className="text-sm uppercase tracking-widest text-gray-400 mb-2">Target Offer Date</div>
-            <div className="text-4xl md:text-5xl font-bold text-electric-blue">{targetOfferDateText}</div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="space-y-3">
+            <div className="rounded-lg bg-gray-800/60 border border-electric-blue/20 p-3 min-h-[112px] flex flex-col justify-between">
+              <div className="text-xs uppercase tracking-widest text-gray-400 mb-1">Active Partnership</div>
+              <div className="text-xl md:text-2xl font-bold text-electric-blue">{openSourceSnapshot.activePartnershipName}</div>
+              <div className="text-xs text-gray-400 mt-1">
+                {openSourceSnapshot.weekDoneCount > 0 ? 'Active this week' : 'No done activity this week'}
+              </div>
+            </div>
+            <div className="rounded-lg bg-gray-800/60 border border-light-steel-blue p-3 min-h-[112px] flex flex-col justify-between">
+              <div className="text-xs uppercase tracking-widest text-gray-400 mb-1">Criteria Progress</div>
+              <div className="text-3xl font-bold text-white">
+                {openSourceSnapshot.completedCriteria}/{openSourceSnapshot.totalCriteria || 0}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">Completed required criteria units</div>
+            </div>
           </div>
-          <div className="flex-1 rounded-lg bg-gray-800/60 border border-purple-400/30 p-4 text-center">
-            <div className="text-sm uppercase tracking-widest text-gray-400 mb-2">Projected Offer Date</div>
-            <div className="text-4xl md:text-5xl font-bold text-purple-300">{projectedOfferDateText}</div>
-            <div className="text-xs text-gray-400 mt-2">Based on previous month's habits</div>
+          <div className="space-y-3">
+            <div className="rounded-lg bg-gray-800/60 border border-light-steel-blue p-3 min-h-[112px] flex flex-col justify-between">
+              <div className="text-xs text-gray-400">Done This Month</div>
+              <div className="text-2xl font-bold text-white">{openSourceSnapshot.monthDoneCount}</div>
+            </div>
+            <div className="rounded-lg bg-gray-800/60 border border-light-steel-blue p-3 min-h-[112px] flex flex-col justify-between">
+              <div className="text-xs text-gray-400">Cards In Progress</div>
+              <div className="text-2xl font-bold text-white">{openSourceSnapshot.inProgressCount}</div>
+            </div>
           </div>
-        </div>
-        <div className="mt-2 text-left">
-          <Link href="/onboarding/page3?from=dashboard" className="text-sm text-gray-300 hover:text-white underline underline-offset-2">
-            Fine-tune your plan
-          </Link>
+          <div className="space-y-3">
+            <div className="rounded-lg bg-gray-800/60 border border-light-steel-blue p-3 min-h-[112px] flex flex-col justify-between">
+              <div className="text-xs text-gray-400">Issues Completed (across all partnerships)</div>
+              <div className="text-2xl font-bold text-white">{openSourceSnapshot.issuesCompleted}</div>
+            </div>
+            <div className="rounded-lg bg-gray-800/60 border border-light-steel-blue p-3 min-h-[112px] flex flex-col justify-between">
+              <div className="text-xs text-gray-400">Partnerships Completed</div>
+              <div className="text-2xl font-bold text-white">{openSourceSnapshot.completedPartnerships}</div>
+            </div>
+          </div>
         </div>
       </section>
 
