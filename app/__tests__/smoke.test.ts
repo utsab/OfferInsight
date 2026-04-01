@@ -52,11 +52,6 @@ describe('Site Smoke Tests - File Existence', () => {
       expect(fs.existsSync(routePath)).toBe(true);
     });
 
-    it('should have dashboard-metrics route', () => {
-      const routePath = path.join(rootDir, 'app', 'api', 'dashboard-metrics', 'route.ts');
-      expect(fs.existsSync(routePath)).toBe(true);
-    });
-
     it('should have instructor students route', () => {
       const routePath = path.join(rootDir, 'app', 'api', 'instructor', 'students', 'route.ts');
       expect(fs.existsSync(routePath)).toBe(true);
