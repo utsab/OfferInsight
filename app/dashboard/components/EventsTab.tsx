@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { InPersonEvent, EventColumnId, BoardTimeFilter, InPersonEventStatus } from './types';
 import { eventStatusToColumn, eventColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, getLocalTimeParts, getLocalDateParts, LockTooltip, VideoModal, normalizeUrl } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, getLocalTimeParts, getLocalDateParts, LockTooltip, VideoModal, normalizeUrl, ModalFormPrimaryAction } from './shared';
 
 const hourOptions = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
@@ -105,6 +105,7 @@ type EventsTabProps = {
   fetchEvents: () => Promise<void>;
   isDraggingEventRef: React.MutableRefObject<boolean>;
   userIdParam: string | null;
+  readOnly?: boolean;
 };
 
 function SortableEventCard(props: { 
@@ -114,6 +115,7 @@ function SortableEventCard(props: {
   setIsEventModalOpen: (open: boolean) => void;
   setIsDeletingEvent: (id: number) => void;
   isDraggingEventRef: React.MutableRefObject<boolean>;
+  readOnly?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
   
@@ -167,8 +169,8 @@ function SortableEventCard(props: {
     <div
       ref={setNodeRef}
       style={{ ...style, touchAction: 'none' }}
-      {...attributes}
-      {...listeners}
+      {...(props.readOnly ? {} : attributes)}
+      {...(props.readOnly ? {} : listeners)}
       onClick={handleClick}
       className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
     >
@@ -193,7 +195,7 @@ function SortableEventCard(props: {
             </div>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
+        {!props.readOnly && <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={handleDelete}
             className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
@@ -201,7 +203,7 @@ function SortableEventCard(props: {
           >
             <Trash2 size={14} />
           </button>
-        </div>
+        </div>}
       </div>
       <div className="flex flex-wrap gap-2 text-[10px] text-gray-300 mb-2">
         {props.card.careerFair && (
@@ -225,13 +227,15 @@ function InPersonEventModal({
   onClose,
   onSave,
   defaultStatus,
-  onDelete
+  onDelete,
+  readOnly = false,
 }: {
   eventItem: InPersonEvent | null;
   onClose: () => void;
   onSave: (data: Partial<InPersonEvent> & { date?: string }) => void;
   defaultStatus?: InPersonEventStatus;
   onDelete?: () => void;
+  readOnly?: boolean;
 }) {
 
   type EventFormData = {
@@ -290,6 +294,10 @@ function InPersonEventModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      onClose();
+      return;
+    }
     if (!formData.event.trim()) {
       alert('Event name is required');
       return;
@@ -653,7 +661,7 @@ function InPersonEventModal({
           )}
 
           <div className="flex flex-col sm:flex-row justify-between sm:justify-end gap-3 pt-4">
-            {eventItem && onDelete && (
+            {!readOnly && eventItem && onDelete && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -673,12 +681,7 @@ function InPersonEventModal({
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                {eventItem ? 'Update' : 'Create'}
-              </button>
+              <ModalFormPrimaryAction readOnly={readOnly} onClose={onClose} isEditing={!!eventItem} />
             </div>
           </div>
         </form>
@@ -709,6 +712,7 @@ export default function EventsTab({
   fetchEvents,
   isDraggingEventRef,
   userIdParam,
+  readOnly = false,
 }: EventsTabProps) {
   const [defaultStatus, setDefaultStatus] = React.useState<InPersonEventStatus | undefined>(undefined);
   
@@ -739,7 +743,7 @@ export default function EventsTab({
             All Time
           </button>
         </div>
-        <button
+        {!readOnly && <button
           onClick={() => {
             setDefaultStatus(undefined);
             setEditingEvent(null);
@@ -748,7 +752,7 @@ export default function EventsTab({
           className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors flex items-center text-sm sm:text-base w-full sm:w-auto"
         >
           <Plus className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />Add Event
-        </button>
+        </button>}
       </div>
       {isLoadingEvents ? (
         <div className="text-center py-8 text-gray-400">Loading events...</div>
@@ -784,6 +788,7 @@ export default function EventsTab({
                       setIsEventModalOpen={setIsEventModalOpen}
                       setIsDeletingEvent={setIsDeletingEvent}
                       isDraggingEventRef={isDraggingEventRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -812,6 +817,7 @@ export default function EventsTab({
                       setIsEventModalOpen={setIsEventModalOpen}
                       setIsDeletingEvent={setIsDeletingEvent}
                       isDraggingEventRef={isDraggingEventRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -837,6 +843,7 @@ export default function EventsTab({
                       setIsEventModalOpen={setIsEventModalOpen}
                       setIsDeletingEvent={setIsDeletingEvent}
                       isDraggingEventRef={isDraggingEventRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -862,6 +869,7 @@ export default function EventsTab({
                       setIsEventModalOpen={setIsEventModalOpen}
                       setIsDeletingEvent={setIsDeletingEvent}
                       isDraggingEventRef={isDraggingEventRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -906,6 +914,7 @@ export default function EventsTab({
       {isEventModalOpen && (
         <InPersonEventModal
           eventItem={editingEvent}
+          readOnly={readOnly}
           defaultStatus={defaultStatus}
           onClose={() => {
             setIsEventModalOpen(false);
@@ -913,12 +922,18 @@ export default function EventsTab({
             setDefaultStatus(undefined);
           }}
           onDelete={() => {
+            if (readOnly) return;
             if (editingEvent) {
               setIsEventModalOpen(false);
               setIsDeletingEvent(editingEvent.id);
             }
           }}
           onSave={async (data: Partial<InPersonEvent> & { date?: string }) => {
+            if (readOnly) {
+              setIsEventModalOpen(false);
+              setEditingEvent(null);
+              return;
+            }
             try {
               const url = userIdParam ? `/api/in_person_events?userId=${userIdParam}` : '/api/in_person_events';
               let updatedEvent: InPersonEvent;
@@ -1009,7 +1024,7 @@ export default function EventsTab({
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeletingEvent !== null && (
+      {!readOnly && isDeletingEvent !== null && (
         <DeleteModal
           onConfirm={async () => {
             try {

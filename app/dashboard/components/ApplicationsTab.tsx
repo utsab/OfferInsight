@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { Application, ApplicationColumnId, BoardTimeFilter, ApplicationStatus } from './types';
 import { applicationStatusToColumn } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip, VideoModal, normalizeUrl } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, LockTooltip, VideoModal, normalizeUrl, ModalFormPrimaryAction } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -37,6 +37,7 @@ type ApplicationsTabProps = {
   isDeleting: number | null;
   fetchApplications: () => Promise<void>;
   userIdParam: string | null;
+  readOnly?: boolean;
 };
 
 function SortableAppCard(props: { 
@@ -46,6 +47,7 @@ function SortableAppCard(props: {
   setIsModalOpen: (open: boolean) => void;
   setIsDeleting: (id: number) => void;
   isDraggingAppRef: React.MutableRefObject<boolean>;
+  readOnly?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
   
@@ -82,8 +84,8 @@ function SortableAppCard(props: {
     <div 
       ref={setNodeRef} 
       style={{ ...style, touchAction: 'none' }} 
-      {...attributes} 
-      {...listeners}
+      {...(props.readOnly ? {} : attributes)} 
+      {...(props.readOnly ? {} : listeners)}
       onClick={handleClick}
       className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
     >
@@ -97,7 +99,7 @@ function SortableAppCard(props: {
             <div className="text-gray-400 text-xs mb-1">Recruiter: {props.card.recruiter}</div>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
+        {!props.readOnly && <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={handleDelete}
             className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
@@ -105,7 +107,7 @@ function SortableAppCard(props: {
           >
             <Trash2 size={14} />
           </button>
-        </div>
+        </div>}
       </div>
       {(props.card.msgToManager || props.card.msgToRecruiter) && (
         <div className="text-green-400 text-xs mb-2 flex flex-col">
@@ -162,12 +164,14 @@ function ApplicationModal({
   application, 
   onClose, 
   onSave,
-  onDelete
+  onDelete,
+  readOnly = false,
 }: { 
   application: Application | null; 
   onClose: () => void; 
   onSave: (data: Partial<Application>) => void;
   onDelete?: () => void;
+  readOnly?: boolean;
 }) {
 
   type ApplicationFormData = {
@@ -225,6 +229,10 @@ function ApplicationModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      onClose();
+      return;
+    }
     if (!formData.company.trim()) {
       alert('Company name is required');
       return;
@@ -501,7 +509,7 @@ function ApplicationModal({
           )}
 
           <div className="flex flex-col sm:flex-row justify-between sm:justify-end gap-3 pt-4">
-            {application && onDelete && (
+            {!readOnly && application && onDelete && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -521,12 +529,7 @@ function ApplicationModal({
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                {application ? 'Update' : 'Create'}
-              </button>
+              <ModalFormPrimaryAction readOnly={readOnly} onClose={onClose} isEditing={!!application} />
             </div>
           </div>
         </form>
@@ -557,6 +560,7 @@ export default function ApplicationsTab({
   fetchApplications,
   isDraggingAppRef,
   userIdParam,
+  readOnly = false,
 }: ApplicationsTabProps & { isDraggingAppRef: React.MutableRefObject<boolean> }) {
   return (
     <section className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6">
@@ -585,7 +589,7 @@ export default function ApplicationsTab({
             All Time
           </button>
         </div>
-        <button 
+        {!readOnly && <button 
           onClick={() => {
             setEditingApp(null);
             setIsModalOpen(true);
@@ -593,7 +597,7 @@ export default function ApplicationsTab({
           className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors flex items-center text-sm sm:text-base"
         >
           <Plus className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />Add Application
-        </button>
+        </button>}
       </div>
       {isLoading ? (
         <div className="text-center py-8 text-gray-400">Loading applications...</div>
@@ -629,6 +633,7 @@ export default function ApplicationsTab({
                       setIsModalOpen={setIsModalOpen}
                       setIsDeleting={setIsDeleting}
                       isDraggingAppRef={isDraggingAppRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -658,6 +663,7 @@ export default function ApplicationsTab({
                       setIsModalOpen={setIsModalOpen}
                       setIsDeleting={setIsDeleting}
                       isDraggingAppRef={isDraggingAppRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -686,6 +692,7 @@ export default function ApplicationsTab({
                       setIsModalOpen={setIsModalOpen}
                       setIsDeleting={setIsDeleting}
                       isDraggingAppRef={isDraggingAppRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -711,6 +718,7 @@ export default function ApplicationsTab({
                       setIsModalOpen={setIsModalOpen}
                       setIsDeleting={setIsDeleting}
                       isDraggingAppRef={isDraggingAppRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -736,6 +744,7 @@ export default function ApplicationsTab({
                       setIsModalOpen={setIsModalOpen}
                       setIsDeleting={setIsDeleting}
                       isDraggingAppRef={isDraggingAppRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -769,17 +778,24 @@ export default function ApplicationsTab({
       {isModalOpen && (
         <ApplicationModal
           application={editingApp}
+          readOnly={readOnly}
           onClose={() => {
             setIsModalOpen(false);
             setEditingApp(null);
           }}
           onDelete={() => {
+            if (readOnly) return;
             if (editingApp) {
               setIsModalOpen(false);
               setIsDeleting(editingApp.id);
             }
           }}
           onSave={async (data: Partial<Application>) => {
+            if (readOnly) {
+              setIsModalOpen(false);
+              setEditingApp(null);
+              return;
+            }
             try {
               const url = userIdParam ? `/api/applications_with_outreach?userId=${userIdParam}` : '/api/applications_with_outreach';
               let updatedApp: Application;
@@ -886,7 +902,7 @@ export default function ApplicationsTab({
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeleting !== null && (
+      {!readOnly && isDeleting !== null && (
         <DeleteModal
           onConfirm={async () => {
             try {

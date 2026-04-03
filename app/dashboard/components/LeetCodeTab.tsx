@@ -9,7 +9,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { LeetEntry, LeetColumnId, BoardTimeFilter, LeetStatus } from './types';
 import { leetStatusToColumn, leetColumnToStatus } from './types';
-import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, normalizeUrl } from './shared';
+import { DroppableColumn, DeleteModal, formatModalDate, toLocalDateString, normalizeUrl, ModalFormPrimaryAction } from './shared';
 
 // ===== DATE FIELD EDITING TOGGLE START =====
 // Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
@@ -52,6 +52,7 @@ type LeetCodeTabProps = {
   fetchLeetEntries: () => Promise<void>;
   isDraggingLeetRef: React.MutableRefObject<boolean>;
   userIdParam: string | null;
+  readOnly?: boolean;
 };
 
 function SortableLeetCard(props: { 
@@ -61,6 +62,7 @@ function SortableLeetCard(props: {
   setIsLeetModalOpen: (open: boolean) => void;
   setIsDeletingLeet: (id: number) => void;
   isDraggingLeetRef: React.MutableRefObject<boolean>;
+  readOnly?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
   
@@ -97,8 +99,8 @@ function SortableLeetCard(props: {
     <div
       ref={setNodeRef}
       style={{ ...style, touchAction: 'none' }}
-      {...attributes}
-      {...listeners}
+      {...(props.readOnly ? {} : attributes)}
+      {...(props.readOnly ? {} : listeners)}
       onClick={handleClick}
       className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
     >
@@ -114,7 +116,7 @@ function SortableLeetCard(props: {
             </span>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
+        {!props.readOnly && <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={handleDelete}
             className="p-1 hover:bg-red-600 rounded text-gray-300 hover:text-white"
@@ -122,7 +124,7 @@ function SortableLeetCard(props: {
           >
             <Trash2 size={14} />
           </button>
-        </div>
+        </div>}
       </div>
       {props.card.url && (
         <div className="text-xs mb-2">
@@ -149,13 +151,15 @@ function LeetModal({
   onClose,
   onSave,
   defaultStatus,
-  onDelete
+  onDelete,
+  readOnly = false,
 }: {
   entry: LeetEntry | null;
   onClose: () => void;
   onSave: (data: Partial<LeetEntry>) => void;
   defaultStatus?: LeetStatus;
   onDelete?: () => void;
+  readOnly?: boolean;
 }) {
 
   type LeetFormData = {
@@ -226,6 +230,10 @@ function LeetModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      onClose();
+      return;
+    }
     if (!formData.problem.trim()) {
       alert('Problem name is required');
       return;
@@ -416,7 +424,7 @@ function LeetModal({
           )}
 
           <div className="flex flex-col sm:flex-row justify-between sm:justify-end gap-3 pt-4">
-            {entry && onDelete && (
+            {!readOnly && entry && onDelete && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -436,12 +444,7 @@ function LeetModal({
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                {entry ? 'Update' : 'Create'}
-              </button>
+              <ModalFormPrimaryAction readOnly={readOnly} onClose={onClose} isEditing={!!entry} />
             </div>
           </div>
         </form>
@@ -472,6 +475,7 @@ export default function LeetCodeTab({
   fetchLeetEntries,
   isDraggingLeetRef,
   userIdParam,
+  readOnly = false,
 }: LeetCodeTabProps) {
   const [defaultStatus, setDefaultStatus] = React.useState<LeetStatus | undefined>(undefined);
   
@@ -502,7 +506,7 @@ export default function LeetCodeTab({
             All Time
           </button>
         </div>
-        <button
+        {!readOnly && <button
           onClick={() => {
             setDefaultStatus(undefined);
             setEditingLeet(null);
@@ -511,7 +515,7 @@ export default function LeetCodeTab({
           className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold transition-colors flex items-center text-sm sm:text-base w-full sm:w-auto"
         >
           <Plus className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />Log Practice
-        </button>
+        </button>}
       </div>
       {isLoadingLeet ? (
         <div className="text-center py-8 text-gray-400">Loading problems...</div>
@@ -543,6 +547,7 @@ export default function LeetCodeTab({
                       setIsLeetModalOpen={setIsLeetModalOpen}
                       setIsDeletingLeet={setIsDeletingLeet}
                       isDraggingLeetRef={isDraggingLeetRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -568,6 +573,7 @@ export default function LeetCodeTab({
                       setIsLeetModalOpen={setIsLeetModalOpen}
                       setIsDeletingLeet={setIsDeletingLeet}
                       isDraggingLeetRef={isDraggingLeetRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -593,6 +599,7 @@ export default function LeetCodeTab({
                       setIsLeetModalOpen={setIsLeetModalOpen}
                       setIsDeletingLeet={setIsDeletingLeet}
                       isDraggingLeetRef={isDraggingLeetRef}
+                      readOnly={readOnly}
                     />
                   ))}
                 </DroppableColumn>
@@ -626,6 +633,7 @@ export default function LeetCodeTab({
       {isLeetModalOpen && (
         <LeetModal
           entry={editingLeet}
+          readOnly={readOnly}
           defaultStatus={defaultStatus}
           onClose={() => {
             setIsLeetModalOpen(false);
@@ -633,12 +641,18 @@ export default function LeetCodeTab({
             setDefaultStatus(undefined);
           }}
           onDelete={() => {
+            if (readOnly) return;
             if (editingLeet) {
               setIsLeetModalOpen(false);
               setIsDeletingLeet(editingLeet.id);
             }
           }}
           onSave={async (data: Partial<LeetEntry>) => {
+            if (readOnly) {
+              setIsLeetModalOpen(false);
+              setEditingLeet(null);
+              return;
+            }
             try {
               const url = userIdParam ? `/api/leetcode?userId=${userIdParam}` : '/api/leetcode';
               let updatedEntry: LeetEntry;
@@ -729,7 +743,7 @@ export default function LeetCodeTab({
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeletingLeet !== null && (
+      {!readOnly && isDeletingLeet !== null && (
         <DeleteModal
           onConfirm={async () => {
             try {

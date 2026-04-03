@@ -8,7 +8,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
-import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl } from './shared';
+import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl, ModalFormPrimaryAction } from './shared';
 import typesData from '@/partnerships/types.json';
 
 // Debug: set to true to show date created/modified fields in the open source modal
@@ -50,6 +50,7 @@ type OpenSourceTabProps = {
   isInstructor?: boolean;
   showProofOfWorkWarning?: boolean;
   setShowProofOfWorkWarning?: (show: boolean) => void;
+  readOnly?: boolean;
 };
 
 function SortableOpenSourceCard(props: { 
@@ -58,6 +59,7 @@ function SortableOpenSourceCard(props: {
   setEditingEntry: (entry: OpenSourceEntry) => void;
   setIsModalOpen: (open: boolean) => void;
   isDraggingOpenSourceRef: React.MutableRefObject<boolean>;
+  readOnly?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(props.card.id) });
   
@@ -88,8 +90,8 @@ function SortableOpenSourceCard(props: {
     <div 
       ref={setNodeRef} 
       style={{ ...style, touchAction: 'none' }} 
-      {...attributes} 
-      {...listeners}
+      {...(props.readOnly ? {} : attributes)} 
+      {...(props.readOnly ? {} : listeners)}
       onClick={handleClick}
       className="bg-gray-600 border border-light-steel-blue rounded-lg p-3 cursor-pointer hover:border-electric-blue transition-colors group relative"
     >
@@ -120,6 +122,7 @@ function OpenSourceModal({
   availablePartnerships,
   fullPartnerships,
   newEntryDefaultCriteriaType = null,
+  readOnly = false,
 }: { 
   entry: OpenSourceEntry | null; 
   onClose: () => void; 
@@ -130,6 +133,7 @@ function OpenSourceModal({
   availablePartnerships: Array<{ id: number; name: string; spotsRemaining: number; criteria?: any[] }>;
   fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
   newEntryDefaultCriteriaType?: string | null;
+  readOnly?: boolean;
 }) {
 
   type OpenSourceFormData = {
@@ -423,6 +427,10 @@ function OpenSourceModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      onClose();
+      return;
+    }
     if (!formData.partnershipName.trim()) {
       alert('Partnership name is required');
       return;
@@ -814,7 +822,7 @@ function OpenSourceModal({
 
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-gray-700">
             <div className="order-2 sm:order-1">
-              {entry?.criteriaType === 'issue' && onDelete && (
+              {!readOnly && entry?.criteriaType === 'issue' && onDelete && (
                 <button
                   type="button"
                   onClick={() => {
@@ -837,12 +845,7 @@ function OpenSourceModal({
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-electric-blue hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                {entry ? 'Update' : 'Create'}
-              </button>
+              <ModalFormPrimaryAction readOnly={readOnly} onClose={onClose} isEditing={!!entry} />
             </div>
           </div>
         </form>
@@ -898,6 +901,7 @@ export default function OpenSourceTab({
   isInstructor = false,
   showProofOfWorkWarning = false,
   setShowProofOfWorkWarning,
+  readOnly = false,
 }: OpenSourceTabProps & { isDraggingOpenSourceRef: React.MutableRefObject<boolean> }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasSavedSelection, setHasSavedSelection] = useState(selectedPartnership !== null);
@@ -912,6 +916,13 @@ export default function OpenSourceTab({
   const [partnershipError, setPartnershipError] = useState<string | null>(null);
   const [newEntryDefaultCriteriaType, setNewEntryDefaultCriteriaType] = useState<string | null>(null);
   const prevCriteriaCompleteRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    if (!readOnly) return;
+    setIsDropdownOpen(false);
+    setShowAbandonConfirmation(false);
+    setShowSwitchConfirmation(false);
+  }, [readOnly]);
 
   // Exclude completed partnerships from selection dropdown
   const availableToSelect = useMemo(
@@ -980,6 +991,7 @@ export default function OpenSourceTab({
   }, [selectedPartnership]);
 
   const handleSaveSelection = async () => {
+    if (readOnly) return;
     if (tempSelection === null || isSaving) return;
 
     const selectedPartnershipData = availablePartnerships.find(p => p.name === tempSelection);
@@ -1001,6 +1013,7 @@ export default function OpenSourceTab({
   };
 
   const performSaveSelection = async () => {
+    if (readOnly) return;
     if (tempSelection === null || isSaving) return;
 
     const selectedPartnershipData = availablePartnerships.find(p => p.name === tempSelection);
@@ -1052,7 +1065,7 @@ export default function OpenSourceTab({
   };
 
   const handleAbandonPartnership = async () => {
-    if (!isInstructor || !userIdParam) return;
+    if (!isInstructor || !userIdParam || readOnly) return;
 
     setIsAbandoning(true);
     try {
@@ -1331,12 +1344,22 @@ export default function OpenSourceTab({
           {/* Instructor Partnership Selector - Show at top when instructor is viewing */}
           {isInstructor && userIdParam && (
             <div className="mb-6 p-4 bg-gray-700/50 rounded-lg border border-light-steel-blue/30">
-              <label className="block text-white font-semibold mb-3 text-sm">Select Partnership for Student</label>
+              <label className="block text-white font-semibold mb-3 text-sm">
+                {readOnly ? 'Student partnership (read-only)' : 'Select Partnership for Student'}
+              </label>
+              {readOnly && (
+                <p className="text-gray-400 text-sm mb-3">
+                  You can view this student&apos;s partnership and cards but cannot change or abandon them.
+                </p>
+              )}
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-full max-w-md bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white flex items-center justify-between hover:border-electric-blue transition-colors"
+                  disabled={readOnly}
+                  onClick={readOnly ? undefined : () => setIsDropdownOpen(!isDropdownOpen)}
+                  className={`w-full max-w-md bg-gray-700 border border-light-steel-blue rounded-lg px-4 py-3 text-white flex items-center justify-between transition-colors ${
+                    readOnly ? 'opacity-70 cursor-not-allowed' : 'hover:border-electric-blue'
+                  }`}
                 >
                   <span>{tempSelection || selectedPartnership || '<none selected>'}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -1391,7 +1414,7 @@ export default function OpenSourceTab({
               </div>
               
               {/* Multiple Choice Selection for Instructor */}
-              {(tempSelection || selectedPartnership) && (() => {
+              {!readOnly && (tempSelection || selectedPartnership) && (() => {
                 const selectedP = availablePartnerships.find(p => p.name === (tempSelection || selectedPartnership));
                 if (!selectedP) return null;
                 const mcBlocks = selectedP.criteria?.filter(c => c.type === 'multiple_choice') || [];
@@ -1430,7 +1453,8 @@ export default function OpenSourceTab({
                 );
               })()}
 
-              {/* Save Button for Instructor */}
+              {/* Save / abandon — hidden for read-only instructors */}
+              {!readOnly && (
               <div className="mt-4 flex gap-3">
                 <button
                   onClick={handleSaveSelection}
@@ -1473,11 +1497,12 @@ export default function OpenSourceTab({
                   </button>
                 )}
               </div>
+              )}
             </div>
           )}
 
           {/* Switch Partnership Confirmation Modal */}
-          {showSwitchConfirmation && (
+          {showSwitchConfirmation && !readOnly && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowSwitchConfirmation(false)}>
               <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                 <h3 className="text-xl font-bold text-white mb-4">Switch Partnership</h3>
@@ -1507,7 +1532,7 @@ export default function OpenSourceTab({
           )}
 
           {/* Abandon Partnership Confirmation Modal */}
-          {showAbandonConfirmation && (
+          {showAbandonConfirmation && !readOnly && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAbandonConfirmation(false)}>
               <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                 <h3 className="text-xl font-bold text-white mb-4">Abandon Partnership</h3>
@@ -1639,12 +1664,13 @@ export default function OpenSourceTab({
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
+                        readOnly={readOnly}
                       />
                     ))}
                   </DroppableColumn>
                 </SortableContext>
                 </div>
-                <button
+                {!readOnly && <button
                   type="button"
                   onClick={() => {
                     setNewEntryDefaultCriteriaType('issue');
@@ -1655,7 +1681,7 @@ export default function OpenSourceTab({
                 >
                   <Plus className="w-4 h-4" />
                   Add new issue card
-                </button>
+                </button>}
               </div>
 
               <div className="bg-gray-700 rounded-lg p-2 flex flex-col">
@@ -1680,6 +1706,7 @@ export default function OpenSourceTab({
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
+                        readOnly={readOnly}
                       />
                     ))}
                   </DroppableColumn>
@@ -1706,6 +1733,7 @@ export default function OpenSourceTab({
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
+                        readOnly={readOnly}
                       />
                     ))}
                   </DroppableColumn>
@@ -1732,6 +1760,7 @@ export default function OpenSourceTab({
                         setEditingEntry={setEditingEntry}
                         setIsModalOpen={setIsModalOpen}
                         isDraggingOpenSourceRef={isDraggingOpenSourceRef}
+                        readOnly={readOnly}
                       />
                     ))}
                   </DroppableColumn>
@@ -1922,6 +1951,7 @@ export default function OpenSourceTab({
       {isModalOpen && (
         <OpenSourceModal
           entry={editingEntry}
+          readOnly={readOnly}
           newEntryDefaultCriteriaType={newEntryDefaultCriteriaType}
           onClose={() => {
             setNewEntryDefaultCriteriaType(null);
@@ -1929,6 +1959,12 @@ export default function OpenSourceTab({
             setEditingEntry(null);
           }}
           onSave={async (data: Partial<OpenSourceEntry>) => {
+            if (readOnly) {
+              setNewEntryDefaultCriteriaType(null);
+              setIsModalOpen(false);
+              setEditingEntry(null);
+              return;
+            }
             try {
               const url = userIdParam ? `/api/open_source?userId=${userIdParam}` : '/api/open_source';
               let updatedEntry: OpenSourceEntry;
@@ -2027,6 +2063,7 @@ export default function OpenSourceTab({
           availablePartnerships={availablePartnerships}
           fullPartnerships={fullPartnerships}
           onDelete={editingEntry?.criteriaType === 'issue' ? async () => {
+            if (readOnly) return;
             try {
               const url = userIdParam ? `/api/open_source?userId=${userIdParam}&id=${editingEntry.id}` : `/api/open_source?id=${editingEntry.id}`;
               const response = await fetch(url, { method: 'DELETE', headers: getApiHeaders() });

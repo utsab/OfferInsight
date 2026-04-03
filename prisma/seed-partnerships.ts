@@ -50,15 +50,30 @@ async function main() {
   await prisma.instructor.upsert({
     where: { username: 'instructor00' },
     update: {
-      // Don't update if instructor already exists
+      role: 'ADMIN',
     },
     create: {
       username: 'instructor00',
       password: '$2b$10$YLzaAHx27cnUWdtIikojoup/pGBOJhhUPWwKluIxnMeLsoIoyugny',
+      role: 'ADMIN',
+    },
+  });
+
+  await prisma.instructor.upsert({
+    where: { username: 'instructor01' },
+    update: {
+      role: 'READ_ONLY',
+      password: '$2b$10$0kKXIjhPz4NeH/s82vVSgeq8bIWdMplriDZXpLfykMf0hGUA14HoO',
+    },
+    create: {
+      username: 'instructor01',
+      password: '$2b$10$0kKXIjhPz4NeH/s82vVSgeq8bIWdMplriDZXpLfykMf0hGUA14HoO',
+      role: 'READ_ONLY',
     },
   });
 
   console.log('Seeded instructor: instructor00');
+  console.log('Seeded instructor: instructor01 (read-only)');
   console.log('Seeding complete!');
 }
 

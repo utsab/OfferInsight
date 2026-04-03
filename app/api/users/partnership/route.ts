@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db";
-import { getUserIdForRequest } from "@/app/lib/api-user-helper";
+import { canMutateUserDataForRequest, getUserIdForRequest } from "@/app/lib/api-user-helper";
 import { getInstructorSession } from "@/app/lib/instructor-auth";
 import partnershipsData from "@/partnerships/partnerships.json";
 import typesData from "@/partnerships/types.json";
@@ -97,6 +97,11 @@ export async function GET(request: NextRequest) {
 // POST: Start a new partnership
 export async function POST(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {
@@ -330,6 +335,11 @@ export async function POST(request: NextRequest) {
 // PUT: Update partnership status (complete or abandon)
 export async function PUT(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {
@@ -414,6 +424,11 @@ export async function PUT(request: NextRequest) {
 // DELETE: Abandon partnership and delete all cards (for instructors)
 export async function DELETE(request: NextRequest) {
   try {
+    const mutationPermission = await canMutateUserDataForRequest(request);
+    if (!mutationPermission.allowed) {
+      return NextResponse.json({ error: mutationPermission.error || "Forbidden" }, { status: 403 });
+    }
+
     const { userId, error } = await getUserIdForRequest(request);
 
     if (error || !userId) {
