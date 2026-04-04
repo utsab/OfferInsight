@@ -17,6 +17,7 @@ Hydration mismatch occurs when the HTML rendered on the server doesn't match wha
 **Problem**: Using `new Date()` directly in client components causes different values on server vs client due to timing differences.
 
 **Files Fixed**:
+
 - `app/onboarding/page1/page.tsx` - Year calculation for graduation year dropdown
 - `app/onboarding/page3/page.tsx` - Estimated offer date calculation
 
@@ -27,27 +28,22 @@ Hydration mismatch occurs when the HTML rendered on the server doesn't match wha
 **Problem**: Server and client can have different timezone offsets, causing date range calculations to differ.
 
 **Files Fixed**:
-- `app/dashboard/page.tsx` - Week and month date range calculations
-- `app/api/dashboard-metrics/route.ts` - Month date range calculations
-- `app/actions/dashboard-metrics.ts` - Week and month date range calculations
 
-**Solution**: Created `app/lib/date-utils.ts` with consistent date handling functions that normalize timezone differences.
+- `app/dashboard/page.tsx` - Week and month date range calculations for dashboard metrics
+
+**Solution**: Use `app/lib/date-utils.ts` for consistent date handling that normalizes timezone differences. Any future server routes or actions that need the same month/week boundaries should import from there instead of reimplementing ranges ad hoc.
 
 ### 3. Client Context Loading States
 
 **Problem**: Context providers that fetch data on mount can cause loading state mismatches between server and client.
 
-**Files Fixed**:
-- `app/contexts/DashboardMetricsContext.tsx` - Added `hasMounted` state to prevent initial fetch on server
-- `app/ui/dashboard/total-progress-wrapper.tsx` - Added client-side mounting check
-
-**Solution**: Use `hasMounted` state to ensure data fetching only happens after client-side hydration.
+**Solution**: Use a `hasMounted` (or equivalent) guard so data fetching runs only after the client has hydrated. Apply this pattern whenever you add a client provider that fetches on mount.
 
 ## New Utility Functions
 
 ### `app/lib/date-utils.ts`
 
-Created centralized date utility functions:
+Centralized date utility functions:
 
 - `getConsistentDate()` - Returns a date object that works consistently on server and client
 - `getCurrentWeekDateRange()` - Gets Monday-Sunday date range with consistent handling
@@ -57,6 +53,7 @@ Created centralized date utility functions:
 ## Best Practices for Preventing Hydration Mismatches
 
 ### 1. Date Handling
+
 ```typescript
 // ❌ Bad - Can cause hydration mismatch
 const currentYear = new Date().getFullYear();
@@ -73,6 +70,7 @@ const { firstDayOfMonth, lastDayOfMonth } = getCurrentMonthDateRange();
 ```
 
 ### 2. Client Context Loading States
+
 ```typescript
 // ❌ Bad - Can cause hydration mismatch
 const [isLoading, setIsLoading] = useState(true);
@@ -96,6 +94,7 @@ useEffect(() => {
 ```
 
 ### 3. Browser-Only APIs
+
 ```typescript
 // ❌ Bad - Will cause hydration mismatch
 const userAgent = window.navigator.userAgent;
@@ -108,6 +107,7 @@ useEffect(() => {
 ```
 
 ### 4. Random Values
+
 ```typescript
 // ❌ Bad - Different values on server vs client
 const randomId = Math.random().toString(36);
@@ -147,16 +147,13 @@ To prevent future hydration mismatches:
 3. **Monitor browser console** - Watch for hydration warnings
 4. **Code review** - Check for patterns that can cause mismatches
 
-## Files Modified
+## Files Modified (original fix pass)
 
 - `app/onboarding/page1/page.tsx`
 - `app/onboarding/page3/page.tsx`
 - `app/dashboard/page.tsx`
-- `app/contexts/DashboardMetricsContext.tsx`
-- `app/ui/dashboard/total-progress-wrapper.tsx`
-- `app/api/dashboard-metrics/route.ts`
-- `app/actions/dashboard-metrics.ts`
-- `app/dashboard/page.tsx` (contains all dashboard functionality)
-- `app/lib/date-utils.ts` (new file)
+- `app/lib/date-utils.ts`
+
+**Note:** `DashboardMetricsContext` and the `/api/dashboard-metrics` route were later removed as unused. The patterns in this document still apply if similar client providers or API date ranges are added again.
 
 All changes maintain the same functionality while ensuring consistent rendering between server and client.

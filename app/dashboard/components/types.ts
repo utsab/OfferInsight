@@ -86,15 +86,6 @@ export const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
   'interview',
 ];
 
-export const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
-  'prospects',
-  'sendFirstMessage',
-  'requestAccepted',
-  'followUp',
-  'coffeeChat',
-  'askForReferral',
-];
-
 export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'sendLinkedInRequest', 'followUp'];
 
 export const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {

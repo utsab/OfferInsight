@@ -55,9 +55,11 @@ import { prisma } from '../../db';
 import { getUserIdForRequest } from '../../app/lib/api-user-helper';
 import Page from '../../app/page';
 
-const mockAuth = auth as jest.MockedFunction<typeof auth>;
-const mockPrismaUpdate = prisma.user.update as jest.MockedFunction<typeof prisma.user.update>;
-const mockGetUserId = getUserIdForRequest as jest.MockedFunction<typeof getUserIdForRequest>;
+// Use jest.Mock here: MockedFunction<typeof auth | prisma.user.update> often infers `never` for
+// mockResolvedValue / mockRejectedValue because NextAuth and Prisma client types are not plain Promises.
+const mockAuth = auth as jest.Mock;
+const mockPrismaUpdate = prisma.user.update as jest.Mock;
+const mockGetUserId = getUserIdForRequest as jest.Mock;
 
 // ─── Shared test data ─────────────────────────────────────────────────────────
 

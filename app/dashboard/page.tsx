@@ -38,7 +38,6 @@ import {
   openSourceStatusToColumn,
   openSourceColumnToStatus,
   APPLICATION_COMPLETION_COLUMNS,
-  LINKEDIN_COMPLETION_COLUMNS,
   EVENT_COMPLETION_COLUMNS,
 } from './components/types';
 
@@ -325,7 +324,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     // --- MOCK DATA BYPASS FOR OUTREACH EFFECT START ---
     if (ENABLE_DASHBOARD_MOCKS) return;
     // --- MOCK DATA BYPASS FOR OUTREACH EFFECT END ---
-    if ((activeTab === 'interviews' || activeTab === 'overview') && !isFetchingLinkedinOutreachRef.current) {
+    if (activeTab === 'interviews' && !isFetchingLinkedinOutreachRef.current) {
       fetchLinkedinOutreach();
     }
   }, [activeTab, fetchLinkedinOutreach]);
@@ -623,7 +622,7 @@ const hasSeededMockDataRef = useRef(false);
   const [isLoadingOpenSource, setIsLoadingOpenSource] = useState(true);
   const [openSourceFilter, setOpenSourceFilter] = useState<BoardTimeFilter>('allTime');
   const [selectedPartnership, setSelectedPartnership] = useState<string | null>(null);
-  const [_selectedPartnershipId, setSelectedPartnershipId] = useState<number | null>(null);
+  const [, setSelectedPartnershipId] = useState<number | null>(null);
   const [activePartnershipDbId, setActivePartnershipDbId] = useState<number | null>(null);
   const [activePartnershipCriteria, setActivePartnershipCriteria] = useState<any[]>([]);
   const [completedPartnerships, setCompletedPartnerships] = useState<Array<{ id: number; partnershipName: string; criteria: any[] }>>([]);
@@ -1341,7 +1340,6 @@ const hasSeededMockDataRef = useRef(false);
   }, []);
 
   const applicationsMetrics = useMemo(() => {
-    
     // Count applications in columns: messagedHiringManager, messagedRecruiter, followedUp, interview
     // (any column to the right of "applied")
     let count = 0;
@@ -1372,38 +1370,6 @@ const hasSeededMockDataRef = useRef(false);
       statusBarClass: styles.barClass,
     };
   }, [appColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
-
-  // Calculate linkedin outreach metrics for this month
-  const linkedinOutreachMetrics = useMemo(() => {
-    // Count all linkedin outreach entries from all 4 columns (outreach, accepted, followedUpLinkedin, linkedinOutreach)
-    let count = 0;
-    
-    LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
-      linkedinOutreachColumns[col].forEach(chat => {
-        const chatDate = new Date(chat.dateCreated);
-        if (!Number.isNaN(chatDate.getTime()) && chatDate >= metricsMonth && chatDate < metricsMonthEnd) {
-          count++;
-        }
-      });
-    });
-
-    // Goal is linkedinOutreachPerWeek (converted to monthly) from user's onboarding data
-    const goal = userData?.linkedinOutreachPerWeek ? userData.linkedinOutreachPerWeek * 4 : 0;
-    const rawPercentage = goal > 0 ? (count / goal) * 100 : 0;
-    const clampedPercentage = Math.min(Math.max(rawPercentage, 0), 100);
-    const styles = getHabitStatusStyles(count, goal, clampedPercentage);
-    const statusText = `${Math.round(clampedPercentage)}%`;
-
-    return {
-      count,
-      goal,
-      percentage: clampedPercentage,
-      statusText,
-      statusTextColor: styles.textClass,
-      statusDotClass: styles.dotClass,
-      statusBarClass: styles.barClass,
-    };
-  }, [linkedinOutreachColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
 
   const careerFairPlanGoal = userData?.careerFairsPerYear ?? 0;
 
@@ -1454,14 +1420,6 @@ const hasSeededMockDataRef = useRef(false);
     return count;
   }, [appColumns]);
 
-  const linkedinOutreachAllTimeCount = useMemo(() => {
-    let count = 0;
-    LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
-      count += linkedinOutreachColumns[col].length;
-    });
-    return count;
-  }, [linkedinOutreachColumns]);
-
   const eventsAllTimeCount = useMemo(() => {
     let count = 0;
     EVENT_COMPLETION_COLUMNS.forEach(col => {
@@ -1481,26 +1439,8 @@ const hasSeededMockDataRef = useRef(false);
   );
 
 
-  const openSourceSnapshot = useMemo(() => {
+  const openSourceCriteria = useMemo(() => {
     const doneEntries = openSourceColumns.done ?? [];
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - 7);
-
-    const monthDoneCount = doneEntries.filter((entry) =>
-      isWithinCurrentMonth(entry.dateModified ?? entry.dateCreated ?? null)
-    ).length;
-    const inProgressCount = (openSourceColumns.inProgress ?? []).length;
-
-    const weekDoneCount = doneEntries.filter((entry) => {
-      const timestamp = entry.dateModified ?? entry.dateCreated;
-      if (!timestamp) return false;
-      const date = new Date(timestamp);
-      return !Number.isNaN(date.getTime()) && date >= weekStart;
-    }).length;
-
-    const issuesCompleted = doneEntries.filter((entry) => entry.criteriaType === 'issue').length;
-    const activePartnershipName = selectedPartnership || 'None selected';
     const totalCriteria = activePartnershipCriteria.reduce((sum, criteria) => {
       const count = Number(criteria?.count);
       return sum + (Number.isFinite(count) && count > 0 ? count : 1);
@@ -1511,27 +1451,11 @@ const hasSeededMockDataRef = useRef(false);
           return sum + 1 + extras;
         }, 0)
       : 0;
-    const completedCriteria = totalCriteria > 0
-      ? Math.min(activePartnershipDoneCount, totalCriteria)
-      : activePartnershipDoneCount;
+    const completedCriteria =
+      totalCriteria > 0 ? Math.min(activePartnershipDoneCount, totalCriteria) : activePartnershipDoneCount;
 
-    return {
-      activePartnershipName,
-      completedCriteria,
-      totalCriteria,
-      monthDoneCount,
-      inProgressCount,
-      weekDoneCount,
-      issuesCompleted,
-      completedPartnerships: completedPartnerships.length,
-    };
-  }, [
-    openSourceColumns,
-    selectedPartnership,
-    activePartnershipCriteria,
-    completedPartnerships,
-    isWithinCurrentMonth,
-  ]);
+    return { completedCriteria, totalCriteria };
+  }, [openSourceColumns, selectedPartnership, activePartnershipCriteria]);
 
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
@@ -1721,12 +1645,10 @@ const hasSeededMockDataRef = useRef(false);
         {/* Overview Content */}
         {activeTab === 'overview' && (
           <OverviewTab
-            openSourceSnapshot={openSourceSnapshot}
+            openSourceCriteria={openSourceCriteria}
             leetCodeStats={leetCodeStats}
             applicationsMetrics={applicationsMetrics}
             applicationsAllTimeCount={applicationsAllTimeCount}
-            linkedinOutreachMetrics={linkedinOutreachMetrics}
-            linkedinOutreachAllTimeCount={linkedinOutreachAllTimeCount}
             eventsMetrics={eventsMetrics}
             eventsAllTimeCount={eventsAllTimeCount}
             handleHabitCardClick={handleHabitCardClick}
