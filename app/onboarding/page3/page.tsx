@@ -205,7 +205,7 @@ function Page3Content() {
     setPlanStartDate(new Date(selectedYear, selectedMonth, day));
   };
 
-  // Target Offer Date calculations (adapted from original page3, with fairs instead of LeetCode)
+  // Target Offer Date calculations (adapted from original page3, with fairs)
   const targetOfferDate = useMemo(
     () =>
       calculateEstimatedOfferDate(
@@ -372,7 +372,7 @@ function Page3Content() {
               </div>
             </div>
 
-            {/* Career Fairs (replaces LeetCode) */}
+            {/* Career Fairs */}
             <div className="bg-gray-700 border border-light-steel-blue rounded-lg p-6 hover:border-electric-blue/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-white font-bold text-lg flex items-center">

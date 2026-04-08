@@ -9,9 +9,6 @@ export type LinkedinOutreachColumnId = 'prospects' | 'sendFirstMessage' | 'reque
 export type InPersonEventStatus = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
 export type EventColumnId = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
 
-export type LeetStatus = 'plan' | 'solved' | 'reflect';
-export type LeetColumnId = 'plan' | 'solved' | 'reflect';
-
 export type OpenSourceStatus = 'plan' | 'babyStep' | 'inProgress' | 'done';
 export type OpenSourceColumnId = 'plan' | 'babyStep' | 'inProgress' | 'done';
 
@@ -64,19 +61,6 @@ export type InPersonEvent = {
   dateModified?: string | null;
 };
 
-export type LeetEntry = {
-  id: number;
-  problem?: string | null;
-  problemType?: string | null;
-  difficulty?: string | null;
-  url?: string | null;
-  reflection?: string | null;
-  status: LeetStatus;
-  userId: string;
-  dateCreated?: string;
-  dateModified?: string | null;
-};
-
 export type OpenSourceEntry = {
   id: number;
   partnershipName: string;
@@ -102,18 +86,7 @@ export const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
   'interview',
 ];
 
-export const LINKEDIN_COMPLETION_COLUMNS: LinkedinOutreachColumnId[] = [
-  'prospects',
-  'sendFirstMessage',
-  'requestAccepted',
-  'followUp',
-  'coffeeChat',
-  'askForReferral',
-];
-
 export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'sendLinkedInRequest', 'followUp'];
-export const LEET_COMPLETION_COLUMNS: LeetColumnId[] = ['reflect'];
-export const OPENSOURCE_COMPLETION_COLUMNS: OpenSourceColumnId[] = ['done'];
 
 export const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
   apply: 'apply',
@@ -161,18 +134,6 @@ export const eventColumnToStatus: Record<EventColumnId, InPersonEventStatus> = {
   attended: 'attended',
   sendLinkedInRequest: 'sendLinkedInRequest',
   followUp: 'followUp',
-};
-
-export const leetStatusToColumn: Record<LeetStatus, LeetColumnId> = {
-  plan: 'plan',
-  solved: 'solved',
-  reflect: 'reflect',
-};
-
-export const leetColumnToStatus: Record<LeetColumnId, LeetStatus> = {
-  plan: 'plan',
-  solved: 'solved',
-  reflect: 'reflect',
 };
 
 export const openSourceStatusToColumn: Record<OpenSourceStatus, OpenSourceColumnId> = {

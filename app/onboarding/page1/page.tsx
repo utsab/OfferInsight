@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkAuth } from '../../server';
-import { User, GraduationCap, Calendar, Loader2, ArrowRight } from 'lucide-react';
+import { User, GraduationCap, Calendar, Code, Loader2, ArrowRight } from 'lucide-react';
 import './page.css';
 
 export default function Page1() {
   const [name, setName] = useState('');
   const [school, setSchool] = useState('');
   const [major, setMajor] = useState('');
+  const [leetCodeUserName, setLeetCodeUserName] = useState('');
   const [graduationMonth, setGraduationMonth] = useState('');
   const [graduationYear, setGraduationYear] = useState('');
   const [loading, setLoading] = useState(true);
@@ -37,6 +38,7 @@ export default function Page1() {
         name,
         school,
         major,
+        leetCodeUserName: leetCodeUserName.trim(),
         expectedGraduationDate: `${graduationYear}-${graduationMonth.padStart(2, '0')}-01`,
       }),
     });
@@ -78,7 +80,7 @@ export default function Page1() {
   if (loading) {
     return (
       <div data-onboarding-page="page1" className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
-        <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
+        <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-7 w-[700px] max-w-4xl">
           <div className="flex flex-col items-center justify-center py-32 text-gray-300">
             <Loader2 className="h-12 w-12 animate-spin text-electric-blue" />
             <p className="mt-4 text-sm">Loading...</p>
@@ -90,17 +92,17 @@ export default function Page1() {
 
   return (
     <div data-onboarding-page="page1" className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
-      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
+      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-7 w-[700px] max-w-4xl">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-white">Welcome Aboard!</h2>
-          <p className="text-gray-300 mt-2">Let's set up your profile</p>
+        <div className="text-center mb-4">
+          <h2 className="text-2xl font-bold text-white">Welcome Aboard!</h2>
+          <p className="text-gray-300 mt-1 text-sm">Let's set up your profile</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div className="form-group">
-            <label className="block text-white font-semibold mb-3 text-lg flex items-center">
-              <User className="text-electric-blue mr-3" />
+            <label className="block text-white font-semibold mb-1.5 text-sm flex items-center">
+              <User className="text-electric-blue mr-2 h-4 w-4 shrink-0" />
               Full Name
             </label>
             <input 
@@ -108,15 +110,15 @@ export default function Page1() {
               name="fullName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all" 
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-3.5 py-2.5 text-white placeholder-gray-400 text-sm focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all" 
               placeholder="Enter your full name"
               required
             />
           </div>
 
           <div className="form-group">
-            <label className="block text-white font-semibold mb-3 text-lg flex items-center">
-              <GraduationCap className="text-electric-blue mr-3" />
+            <label className="block text-white font-semibold mb-1.5 text-sm flex items-center">
+              <GraduationCap className="text-electric-blue mr-2 h-4 w-4 shrink-0" />
               School / University
             </label>
             <input 
@@ -124,15 +126,15 @@ export default function Page1() {
               name="school"
               value={school}
               onChange={(e) => setSchool(e.target.value)}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all" 
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-3.5 py-2.5 text-white placeholder-gray-400 text-sm focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all" 
               placeholder="e.g., Stanford University, MIT, UC Berkeley"
               required
             />
           </div>
 
           <div className="form-group">
-            <label className="block text-white font-semibold mb-3 text-lg flex items-center">
-              <GraduationCap className="text-electric-blue mr-3" />
+            <label className="block text-white font-semibold mb-1.5 text-sm flex items-center">
+              <GraduationCap className="text-electric-blue mr-2 h-4 w-4 shrink-0" />
               Major / Field of Study
             </label>
             <input 
@@ -140,25 +142,42 @@ export default function Page1() {
               name="major"
               value={major}
               onChange={(e) => setMajor(e.target.value)}
-              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-5 py-4 text-white placeholder-gray-400 text-lg focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all" 
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-3.5 py-2.5 text-white placeholder-gray-400 text-sm focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all" 
               placeholder="e.g., Computer Science, Business Administration"
               required
             />
           </div>
 
           <div className="form-group">
-            <label className="block text-white font-semibold mb-3 text-lg flex items-center">
-              <Calendar className="text-electric-blue mr-3" />
+            <label className="block text-white font-semibold mb-1.5 text-sm flex items-center">
+              <Code className="text-electric-blue mr-2 h-4 w-4 shrink-0" />
+              LeetCode username
+            </label>
+            <input
+              type="text"
+              name="leetCodeUserName"
+              value={leetCodeUserName}
+              onChange={(e) => setLeetCodeUserName(e.target.value)}
+              className="w-full bg-gray-700 border border-light-steel-blue rounded-lg px-3.5 py-2.5 text-white placeholder-gray-400 text-sm focus:outline-none focus:border-electric-blue focus:ring-2 focus:ring-electric-blue/50 transition-all"
+              placeholder="e.g., your_handle (leetcode.com/u/…)"
+              autoComplete="username"
+            />
+            <p className="text-gray-500 text-xs mt-1">Optional — used to show your public profile stats later.</p>
+          </div>
+
+          <div className="form-group">
+            <label className="block text-white font-semibold mb-1.5 text-sm flex items-center">
+              <Calendar className="text-electric-blue mr-2 h-4 w-4 shrink-0" />
               Expected Graduation Date
             </label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-gray-300 text-sm mb-2">Month</label>
+                <label className="block text-gray-300 text-xs mb-1">Month</label>
                 <select 
                   name="graduationMonth"
                   value={graduationMonth}
                   onChange={(e) => setGraduationMonth(e.target.value)}
-                  className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                  className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
                   required
                 >
                   <option value="">Select month</option>
@@ -170,12 +189,12 @@ export default function Page1() {
                 </select>
               </div>
               <div>
-                <label className="block text-gray-300 text-sm mb-2">Year</label>
+                <label className="block text-gray-300 text-xs mb-1">Year</label>
                 <select 
                   name="graduationYear"
                   value={graduationYear}
                   onChange={(e) => setGraduationYear(e.target.value)}
-                  className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
+                  className="w-full bg-gray-800 border border-light-steel-blue rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-electric-blue"
                   required
                 >
                   <option value="">Select year</option>
@@ -190,28 +209,28 @@ export default function Page1() {
           </div>
 
           {/* Buttons */}
-          <div className="flex space-x-4 pt-6">
+          <div className="flex space-x-4 pt-3">
             <button 
               type="submit" 
               disabled={isSubmitting}
-              className="flex-1 bg-electric-blue hover:bg-blue-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-electric-blue hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-bold text-sm transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processing...
                 </>
               ) : (
                 <>
                   Continue to Timeline Setup
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
             </button>
           </div>
           
           {/* Step Indicator */}
-          <div className="flex items-center justify-center mt-6">
+          <div className="flex items-center justify-center mt-3">
             <div className="flex space-x-2">
               <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
               <div className="w-3 h-3 bg-gray-600 rounded-full"></div>

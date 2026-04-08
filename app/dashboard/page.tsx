@@ -5,16 +5,14 @@ import { useSearchParams } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Gauge, FileText, MessageCircle, Users, Code, ArrowLeft, GitBranch } from 'lucide-react';
+import { Gauge, FileText, MessageCircle, Users, ArrowLeft, GitBranch } from 'lucide-react';
 import Link from 'next/link';
 import OverviewTab from './components/OverviewTab';
 import ApplicationsTab from './components/ApplicationsTab';
 import CoffeeChatsTab from './components/CoffeeChatsTab';
 import EventsTab from './components/EventsTab';
-import LeetCodeTab from './components/LeetCodeTab';
 import OpenSourceTab from './components/OpenSourceTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
-import { formatDateWithFullMonth, getLocalDateParts } from './components/shared';
 import type {
   Application,
   ApplicationStatus,
@@ -25,9 +23,6 @@ import type {
   InPersonEvent,
   InPersonEventStatus,
   EventColumnId,
-  LeetEntry,
-  LeetStatus,
-  LeetColumnId,
   OpenSourceEntry,
   OpenSourceStatus,
   OpenSourceColumnId,
@@ -40,98 +35,16 @@ import {
   linkedinOutreachColumnToStatus,
   eventStatusToColumn,
   eventColumnToStatus,
-  leetStatusToColumn,
-  leetColumnToStatus,
   openSourceStatusToColumn,
   openSourceColumnToStatus,
   APPLICATION_COMPLETION_COLUMNS,
-  LINKEDIN_COMPLETION_COLUMNS,
   EVENT_COMPLETION_COLUMNS,
-  LEET_COMPLETION_COLUMNS,
 } from './components/types';
-
-// ===== PROJECTED OFFER DATE FORMULA START =====
-// Copied from onboarding page3 so product engineers can tweak independently.
-function calculateProjectedOfferDate(
-  appsWithOutreachPerWeek: number,
-  linkedinOutreachPerWeek: number,
-  inPersonEventsPerMonth: number,
-  careerFairsPerYear: number,
-  referenceDate?: Date
-): Date | null {
-  let offersPerAppWithOutreach = 0.0025;
-  let offersPerLinkedinOutreachAttempt = 0.00075;
-  let offersPerInPersonEvent = 0.0075;
-  let offersPerCareerFair = 0.1;
-
-  let bonusPoints = 0;
-
-  if (linkedinOutreachPerWeek >= 20) {
-    bonusPoints += 20;
-  } else if (linkedinOutreachPerWeek >= 12) {
-    bonusPoints += 11;
-  } else if (linkedinOutreachPerWeek >= 6) {
-    bonusPoints += 6;
-  } else if (linkedinOutreachPerWeek >= 1) {
-    bonusPoints += 1;
-  }
-
-  if (inPersonEventsPerMonth >= 8) {
-    bonusPoints += 80;
-  } else if (inPersonEventsPerMonth >= 4) {
-    bonusPoints += 40;
-  } else if (inPersonEventsPerMonth >= 2) {
-    bonusPoints += 20;
-  } else if (inPersonEventsPerMonth >= 1) {
-    bonusPoints += 10;
-  }
-
-  if (careerFairsPerYear >= 4) {
-    bonusPoints += 80;
-  } else if (careerFairsPerYear >= 3) {
-    bonusPoints += 40;
-  } else if (careerFairsPerYear >= 2) {
-    bonusPoints += 20;
-  } else if (careerFairsPerYear >= 1) {
-    bonusPoints += 10;
-  }
-
-  const a = 2.0;
-  const b = 0.01;
-  const multiplier = 3 - a * Math.exp(-b * bonusPoints);
-
-  offersPerAppWithOutreach *= multiplier;
-  offersPerLinkedinOutreachAttempt *= multiplier;
-  offersPerInPersonEvent *= multiplier;
-  offersPerCareerFair *= multiplier;
-
-  const totalOffersPerWeek =
-    appsWithOutreachPerWeek * offersPerAppWithOutreach +
-    linkedinOutreachPerWeek * offersPerLinkedinOutreachAttempt +
-    inPersonEventsPerMonth * offersPerInPersonEvent +
-    (careerFairsPerYear / 52) * offersPerCareerFair;
-
-  if (!Number.isFinite(totalOffersPerWeek) || totalOffersPerWeek <= 0) {
-    return null;
-  }
-
-  const totalWeeks = 3 + 1 / totalOffersPerWeek;
-  const baseDate = referenceDate ?? new Date();
-  return new Date(baseDate.getTime() + totalWeeks * 7 * 24 * 60 * 60 * 1000);
-}
-// ===== PROJECTED OFFER DATE FORMULA END =====
 
 // ===== MOCK DATA FEATURE TOGGLE START =====
 // Toggle this flag or comment out the seeding effect below to disable mock data.
 const ENABLE_DASHBOARD_MOCKS = false;
 // ===== MOCK DATA FEATURE TOGGLE END =====
-
-// ===== DATE FIELD EDITING TOGGLE START =====
-// Toggle this flag to enable editing dateCreated and dateModified in create/edit modals for testing and debugging.
-// When enabled, date input fields will appear in all modals allowing you to set/change the dateCreated and dateModified values.
-// The dates will be properly saved to the database as DateTime when creating or updating records.
-const ENABLE_DATE_FIELD_EDITING = false;
-// ===== DATE FIELD EDITING TOGGLE END =====
 
 export default function Page() {
   const searchParams = useSearchParams();
@@ -140,7 +53,23 @@ export default function Page() {
   const [isInstructor, setIsInstructor] = useState(false);
   const [canEditViewedUser, setCanEditViewedUser] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [targetOfferDate, setTargetOfferDate] = useState<Date | null>(null);
+  const [leetCodeStats, setLeetCodeStats] = useState<{
+    solved: number;
+    easy: number;
+    medium: number;
+    hard: number;
+    username: string | null;
+    hasUsername: boolean;
+    unavailable: boolean;
+  }>({
+    solved: 0,
+    easy: 0,
+    medium: 0,
+    hard: 0,
+    username: null,
+    hasUsername: false,
+    unavailable: false,
+  });
 
   // dnd-kit: Applications board state
 
@@ -158,8 +87,8 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(true);
   const [applicationsFilter, setApplicationsFilter] = useState<BoardTimeFilter>('allTime');
   const isFetchingRef = useRef(false);
-  const lastProjectedOfferSyncRef = useRef<string | null>(null);
   const isDraggingAppRef = useRef(false);
+  const isFetchingLeetCodeStatsRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -395,7 +324,7 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     // --- MOCK DATA BYPASS FOR OUTREACH EFFECT START ---
     if (ENABLE_DASHBOARD_MOCKS) return;
     // --- MOCK DATA BYPASS FOR OUTREACH EFFECT END ---
-    if ((activeTab === 'interviews' || activeTab === 'overview') && !isFetchingLinkedinOutreachRef.current) {
+    if (activeTab === 'interviews' && !isFetchingLinkedinOutreachRef.current) {
       fetchLinkedinOutreach();
     }
   }, [activeTab, fetchLinkedinOutreach]);
@@ -676,172 +605,9 @@ const [linkedinOutreachColumns, setLinkedinOutreachColumns] = useState<Record<Li
     // onDragOver is only for visual feedback via DroppableColumn
   };
 
-  // dnd-kit: LeetCode board
-  const [leetColumns, setLeetColumns] = useState<Record<LeetColumnId, LeetEntry[]>>({
-    plan: [],
-    solved: [],
-    reflect: [],
-  });
-  const [activeLeetId, setActiveLeetId] = useState<string | null>(null);
-  const [isLeetModalOpen, setIsLeetModalOpen] = useState(false);
-  const [editingLeet, setEditingLeet] = useState<LeetEntry | null>(null);
-const [isDeletingLeet, setIsDeletingLeet] = useState<number | null>(null);
-const [isLoadingLeet, setIsLoadingLeet] = useState(true);
-  const [leetFilter, setLeetFilter] = useState<BoardTimeFilter>('allTime');
-const isFetchingLeetRef = useRef(false);
-  const isDraggingLeetRef = useRef(false);
-// ----- MOCK DATA SEED TRACKER START -----
+  // ----- MOCK DATA SEED TRACKER START -----
 const hasSeededMockDataRef = useRef(false);
 // ----- MOCK DATA SEED TRACKER END -----
-
-  const fetchLeetEntries = useCallback(async () => {
-    // --- MOCK DATA BYPASS FOR LEET FETCH START ---
-    if (ENABLE_DASHBOARD_MOCKS) return;
-    // --- MOCK DATA BYPASS FOR LEET FETCH END ---
-    if (isFetchingLeetRef.current) return;
-
-    try {
-      isFetchingLeetRef.current = true;
-      setIsLoadingLeet(true);
-      const url = userIdParam ? `/api/leetcode?userId=${userIdParam}` : '/api/leetcode';
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch LeetCode entries');
-      const data = await response.json();
-
-      const grouped: Record<LeetColumnId, LeetEntry[]> = {
-        plan: [],
-        solved: [],
-        reflect: [],
-      };
-
-      (data as LeetEntry[]).forEach(entry => {
-        const column = leetStatusToColumn[entry.status] ?? 'plan';
-        grouped[column].push(entry);
-      });
-
-      setLeetColumns(grouped);
-    } catch (error) {
-      console.error('Error fetching LeetCode entries:', error);
-    } finally {
-      setIsLoadingLeet(false);
-      isFetchingLeetRef.current = false;
-    }
-  }, [userIdParam]);
-
-  useEffect(() => {
-    // --- MOCK DATA BYPASS FOR LEET EFFECT START ---
-    if (ENABLE_DASHBOARD_MOCKS) return;
-    // --- MOCK DATA BYPASS FOR LEET EFFECT END ---
-    if ((activeTab === 'leetcode' || activeTab === 'overview') && !isFetchingLeetRef.current) {
-      fetchLeetEntries();
-    }
-  }, [activeTab, fetchLeetEntries]);
-
-  const getLeetColumnOfItem = (id: string): LeetColumnId | null => {
-    const entry = (Object.keys(leetColumns) as LeetColumnId[]).find(col =>
-      leetColumns[col].some(item => String(item.id) === id)
-    );
-    return entry ?? null;
-  };
-
-  // Debounced function to update LeetCode status (prevents rapid-fire requests when dragging)
-  // Server will automatically set dateModified to current date on PATCH
-  const debouncedUpdateLeetCodeStatus = useDebouncedCallback(
-    async (id: number, status: LeetStatus) => {
-      try {
-        const url = userIdParam ? `/api/leetcode?id=${id}&userId=${userIdParam}` : `/api/leetcode?id=${id}`;
-        const response = await fetch(url, {
-          method: 'PATCH',
-          headers: getApiHeaders(),
-          body: JSON.stringify({ status }),
-        });
-        if (!response.ok) throw new Error('Failed to update LeetCode status');
-      } catch (error) {
-        console.error('Error updating LeetCode status:', error);
-        fetchLeetEntries();
-      }
-    },
-    300 // Wait 300ms after last change before sending request
-  );
-
-  const handleLeetDragEnd = async (event: DragEndEvent) => {
-    if (!canEditViewedUser && userIdParam) return;
-    const { active, over } = event;
-    if (!over) {
-      isDraggingLeetRef.current = false;
-      return;
-    }
-
-    const activeId = String(active.id);
-    const overId = String(over.id);
-
-    const fromCol = getLeetColumnOfItem(activeId);
-    const toCol = (['plan', 'solved', 'reflect'] as LeetColumnId[]).includes(overId as LeetColumnId)
-      ? (overId as LeetColumnId)
-      : getLeetColumnOfItem(overId);
-    if (!fromCol || !toCol) {
-      setActiveLeetId(null);
-      isDraggingLeetRef.current = false;
-      return;
-    }
-
-    if (fromCol === toCol) {
-      const items = leetColumns[fromCol];
-      const oldIndex = items.findIndex(i => String(i.id) === activeId);
-      const newIndex = items.findIndex(i => String(i.id) === overId);
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-        setActiveLeetId(null);
-        isDraggingLeetRef.current = false;
-        return;
-      }
-      const newItems = arrayMove(items, oldIndex, newIndex);
-      setLeetColumns(prev => ({ ...prev, [fromCol]: newItems }));
-    } else {
-      const fromItems = leetColumns[fromCol];
-      const toItems = leetColumns[toCol];
-      const movingIndex = fromItems.findIndex(i => String(i.id) === activeId);
-      if (movingIndex === -1) {
-        setActiveLeetId(null);
-        isDraggingLeetRef.current = false;
-        return;
-      }
-      const movingItem = fromItems[movingIndex];
-      const overIndex = toItems.findIndex(i => String(i.id) === overId);
-      const insertIndex = overIndex === -1 ? toItems.length : overIndex;
-      const newFrom = [...fromItems.slice(0, movingIndex), ...fromItems.slice(movingIndex + 1)];
-      const newStatus = leetColumnToStatus[toCol];
-      const updatedItem: LeetEntry = {
-        ...movingItem,
-        status: newStatus,
-        // Optimistically update dateModified to current date (server will confirm on PATCH)
-        dateModified: new Date().toISOString(),
-      };
-      const newTo = [...toItems.slice(0, insertIndex), updatedItem, ...toItems.slice(insertIndex)];
-      // Create new column arrays to ensure React detects the change
-      setLeetColumns(prev => ({
-        plan: [...prev.plan],
-        solved: [...prev.solved],
-        reflect: [...prev.reflect],
-        [fromCol]: newFrom,
-        [toCol]: newTo,
-      }));
-
-      // Update status in database (debounced to prevent rapid-fire requests)
-      // Server will automatically set dateModified to current date on PATCH
-      debouncedUpdateLeetCodeStatus(movingItem.id, newStatus);
-    }
-    setActiveLeetId(null);
-    isDraggingLeetRef.current = false;
-  };
-
-  const handleLeetDragStart = (event: DragStartEvent) => {
-    setActiveLeetId(String(event.active.id));
-    isDraggingLeetRef.current = true;
-  };
-
-  const handleLeetDragOver = (event: DragOverEvent) => {
-    // onDragOver is only for visual feedback via DroppableColumn
-  };
 
   // dnd-kit: OpenSource board
   const [openSourceColumns, setOpenSourceColumns] = useState<Record<OpenSourceColumnId, OpenSourceEntry[]>>({
@@ -856,7 +622,7 @@ const hasSeededMockDataRef = useRef(false);
   const [isLoadingOpenSource, setIsLoadingOpenSource] = useState(true);
   const [openSourceFilter, setOpenSourceFilter] = useState<BoardTimeFilter>('allTime');
   const [selectedPartnership, setSelectedPartnership] = useState<string | null>(null);
-  const [_selectedPartnershipId, setSelectedPartnershipId] = useState<number | null>(null);
+  const [, setSelectedPartnershipId] = useState<number | null>(null);
   const [activePartnershipDbId, setActivePartnershipDbId] = useState<number | null>(null);
   const [activePartnershipCriteria, setActivePartnershipCriteria] = useState<any[]>([]);
   const [completedPartnerships, setCompletedPartnerships] = useState<Array<{ id: number; partnershipName: string; criteria: any[] }>>([]);
@@ -1158,10 +924,7 @@ const hasSeededMockDataRef = useRef(false);
   const [userData, setUserData] = useState<{
     appsWithOutreachPerWeek?: number | null;
     linkedinOutreachPerWeek?: number | null;
-    targetOfferDate?: string | null;
-    projectedOfferDate?: string | null;
     inPersonEventsPerMonth?: number | null;
-    resetStartDate?: string | null;
     careerFairsPerYear?: number | null;
   } | null>(null);
 
@@ -1377,63 +1140,18 @@ const hasSeededMockDataRef = useRef(false);
       ],
     };
 
-    const mockLeetEntries: Record<LeetColumnId, LeetEntry[]> = {
-      plan: [
-        {
-          id: 4001,
-          problem: 'Binary Tree Zigzag Level Order Traversal',
-          problemType: 'Trees, BFS',
-          difficulty: 'Medium',
-          status: 'plan',
-          userId: 'mock-user',
-          dateCreated: isoWithDelta({ months: -1, days: -4, hour: 8 }),
-        },
-      ],
-      solved: [
-        {
-          id: 4002,
-          problem: 'Two Sum',
-          problemType: 'Hash Map',
-          difficulty: 'Easy',
-          url: 'https://leetcode.com/problems/two-sum/',
-          status: 'solved',
-          userId: 'mock-user',
-          dateCreated: isoWithDelta({ months: -4, days: -6, hour: 7 }),
-        },
-      ],
-      reflect: [
-        {
-          id: 4003,
-          problem: 'Word Ladder',
-          problemType: 'Graphs, BFS',
-          difficulty: 'Hard',
-          reflection: 'Notice the transformation count hints at BFS on word graph.',
-          status: 'reflect',
-          userId: 'mock-user',
-          dateCreated: isoWithDelta({ months: -9, days: -2, hour: 20 }),
-        },
-      ],
-    };
-
-    const mockTargetOfferDate = new Date(now);
-    mockTargetOfferDate.setMonth(mockTargetOfferDate.getMonth() + 3);
-
     setAppColumns(mockApplications);
     setLinkedinOutreachColumns(mockLinkedinOutreach);
     setEventColumns(mockEvents);
-    setLeetColumns(mockLeetEntries);
     setIsLoading(false);
     setIsLoadingLinkedinOutreach(false);
     setIsLoadingEvents(false);
-    setIsLoadingLeet(false);
     setActiveTab('overview');
-    setTargetOfferDate(mockTargetOfferDate);
     setUserData({
       appsWithOutreachPerWeek: 6,
       linkedinOutreachPerWeek: 8,
-      targetOfferDate: mockTargetOfferDate.toISOString(),
       inPersonEventsPerMonth: 3,
-      resetStartDate: isoWithDelta({ months: -1, days: -18, hour: 8 }),
+      careerFairsPerYear: 2,
     });
   }, []);
   // <<<<< MOCK DATA SEEDING EFFECT END >>>>>
@@ -1481,6 +1199,52 @@ const hasSeededMockDataRef = useRef(false);
     checkInstructorAndFetchUserName();
   }, [userIdParam]);
 
+  const fetchLeetCodeStats = useCallback(async () => {
+    if (ENABLE_DASHBOARD_MOCKS) {
+      setLeetCodeStats({
+        solved: 33,
+        easy: 20,
+        medium: 12,
+        hard: 1,
+        username: 'mock-user',
+        hasUsername: true,
+        unavailable: false,
+      });
+      return;
+    }
+    if (isFetchingLeetCodeStatsRef.current) return;
+    try {
+      isFetchingLeetCodeStatsRef.current = true;
+      const url = userIdParam ? `/api/leetcode/stats?userId=${userIdParam}` : '/api/leetcode/stats';
+      const response = await fetch(url);
+      if (!response.ok) {
+        setLeetCodeStats((prev) => ({ ...prev, unavailable: true }));
+        return;
+      }
+      const data = await response.json();
+      setLeetCodeStats({
+        solved: Number(data.solved) || 0,
+        easy: Number(data.easy) || 0,
+        medium: Number(data.medium) || 0,
+        hard: Number(data.hard) || 0,
+        username: typeof data.username === 'string' && data.username.trim().length > 0 ? data.username.trim() : null,
+        hasUsername: Boolean(data.hasUsername),
+        unavailable: Boolean(data.unavailable),
+      });
+    } catch (error) {
+      console.error('Error fetching LeetCode stats:', error);
+      setLeetCodeStats((prev) => ({ ...prev, unavailable: true }));
+    } finally {
+      isFetchingLeetCodeStatsRef.current = false;
+    }
+  }, [userIdParam]);
+
+  useEffect(() => {
+    if (activeTab === 'overview') {
+      fetchLeetCodeStats();
+    }
+  }, [activeTab, fetchLeetCodeStats]);
+
   useEffect(() => {
     if (ENABLE_DASHBOARD_MOCKS) return;
     let isMounted = true;
@@ -1507,17 +1271,6 @@ const hasSeededMockDataRef = useRef(false);
         const user = await res.json();
         if (isMounted) {
           setUserData(user);
-          if (user?.targetOfferDate) {
-            const d = new Date(user.targetOfferDate);
-            if (!isNaN(d.getTime())) setTargetOfferDate(d);
-          }
-          // Initialize the sync ref with the stored projectedOfferDate to prevent unnecessary syncing on initial load
-          if (user?.projectedOfferDate) {
-            const storedDate = new Date(user.projectedOfferDate);
-            if (!isNaN(storedDate.getTime())) {
-              lastProjectedOfferSyncRef.current = storedDate.toISOString();
-            }
-          }
         }
       } catch (e) {
         // If error and we haven't exceeded retries, retry after a delay
@@ -1534,11 +1287,6 @@ const hasSeededMockDataRef = useRef(false);
     return () => { isMounted = false; };
   }, [userIdParam]);
 
-  const targetOfferDateText = useMemo(() => {
-    if (!targetOfferDate) return '—';
-    return formatDateWithFullMonth(targetOfferDate);
-  }, [targetOfferDate]);
-
   // Calculate applications metrics for this month
   const metricsMonth = useMemo(() => {
     const now = new Date();
@@ -1553,19 +1301,6 @@ const hasSeededMockDataRef = useRef(false);
     end.setMonth(end.getMonth() + 1);
     return end;
   }, [metricsMonth]);
-
-  // Calculate last month's date range for projected offer date
-  const lastMonthStart = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return start;
-  }, []);
-
-  const lastMonthEnd = useMemo(() => {
-    const end = new Date(lastMonthStart);
-    end.setMonth(end.getMonth() + 1);
-    return end;
-  }, [lastMonthStart]);
 
   const getHabitStatusStyles = useCallback((
     count: number,
@@ -1605,7 +1340,6 @@ const hasSeededMockDataRef = useRef(false);
   }, []);
 
   const applicationsMetrics = useMemo(() => {
-    
     // Count applications in columns: messagedHiringManager, messagedRecruiter, followedUp, interview
     // (any column to the right of "applied")
     let count = 0;
@@ -1637,65 +1371,7 @@ const hasSeededMockDataRef = useRef(false);
     };
   }, [appColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
 
-  // Calculate linkedin outreach metrics for this month
-  const linkedinOutreachMetrics = useMemo(() => {
-    // Count all linkedin outreach entries from all 4 columns (outreach, accepted, followedUpLinkedin, linkedinOutreach)
-    let count = 0;
-    
-    LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
-      linkedinOutreachColumns[col].forEach(chat => {
-        const chatDate = new Date(chat.dateCreated);
-        if (!Number.isNaN(chatDate.getTime()) && chatDate >= metricsMonth && chatDate < metricsMonthEnd) {
-          count++;
-        }
-      });
-    });
-
-    // Goal is linkedinOutreachPerWeek (converted to monthly) from user's onboarding data
-    const goal = userData?.linkedinOutreachPerWeek ? userData.linkedinOutreachPerWeek * 4 : 0;
-    const rawPercentage = goal > 0 ? (count / goal) * 100 : 0;
-    const clampedPercentage = Math.min(Math.max(rawPercentage, 0), 100);
-    const styles = getHabitStatusStyles(count, goal, clampedPercentage);
-    const statusText = `${Math.round(clampedPercentage)}%`;
-
-    return {
-      count,
-      goal,
-      percentage: clampedPercentage,
-      statusText,
-      statusTextColor: styles.textClass,
-      statusDotClass: styles.dotClass,
-      statusBarClass: styles.barClass,
-    };
-  }, [linkedinOutreachColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
-
-  const careerFairsThisYear = useMemo(() => {
-    const now = new Date();
-    const yearStart = new Date(now.getFullYear(), 0, 1);
-    const yearEnd = new Date(now.getFullYear() + 1, 0, 1);
-    const eligibleStatuses: InPersonEventStatus[] = ['attended', 'sendLinkedInRequest', 'followUp'];
-    let count = 0;
-    (Object.values(eventColumns) as InPersonEvent[][]).forEach(columnEvents => {
-      columnEvents.forEach(event => {
-        if (!event.careerFair || !event.date) return;
-        if (!eligibleStatuses.includes(event.status)) return;
-        const eventDate = new Date(event.date);
-        if (Number.isNaN(eventDate.getTime())) return;
-        if (eventDate >= yearStart && eventDate < yearEnd) {
-          count += 1;
-        }
-      });
-    });
-    return count;
-  }, [eventColumns]);
-
   const careerFairPlanGoal = userData?.careerFairsPerYear ?? 0;
-
-  const careerFairProgress = useMemo(() => {
-    if (careerFairPlanGoal <= 0) return 1;
-    if (!careerFairsThisYear || careerFairsThisYear <= 0) return 0;
-    return Math.min(careerFairsThisYear / careerFairPlanGoal, 1);
-  }, [careerFairsThisYear, careerFairPlanGoal]);
 
   const eventsMetrics = useMemo(() => {
     let eventCount = 0;
@@ -1735,33 +1411,6 @@ const hasSeededMockDataRef = useRef(false);
     };
   }, [eventColumns, userData, metricsMonth, metricsMonthEnd, getHabitStatusStyles, careerFairPlanGoal]);
 
-  const leetMetrics = useMemo(() => {
-    let count = 0;
-    leetColumns.reflect.forEach(entry => {
-      if (!entry.dateCreated) return;
-      const entryDate = new Date(entry.dateCreated);
-      if (!Number.isNaN(entryDate.getTime()) && entryDate >= metricsMonth && entryDate < metricsMonthEnd) {
-        count += 1;
-      }
-    });
-
-    const goal = 4;
-    const rawPercentage = goal > 0 ? (count / goal) * 100 : 0;
-    const clampedPercentage = Math.min(Math.max(rawPercentage, 0), 100);
-    const styles = getHabitStatusStyles(count, goal, clampedPercentage);
-    const statusText = `${Math.round(clampedPercentage)}%`;
-
-    return {
-      count,
-      goal,
-      percentage: clampedPercentage,
-      statusText,
-      statusTextColor: styles.textClass,
-      statusDotClass: styles.dotClass,
-      statusBarClass: styles.barClass,
-    };
-  }, [leetColumns, metricsMonth, metricsMonthEnd, getHabitStatusStyles]);
-
   // Calculate all-time counts for each metric
   const applicationsAllTimeCount = useMemo(() => {
     let count = 0;
@@ -1771,14 +1420,6 @@ const hasSeededMockDataRef = useRef(false);
     return count;
   }, [appColumns]);
 
-  const linkedinOutreachAllTimeCount = useMemo(() => {
-    let count = 0;
-    LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
-      count += linkedinOutreachColumns[col].length;
-    });
-    return count;
-  }, [linkedinOutreachColumns]);
-
   const eventsAllTimeCount = useMemo(() => {
     let count = 0;
     EVENT_COMPLETION_COLUMNS.forEach(col => {
@@ -1786,10 +1427,6 @@ const hasSeededMockDataRef = useRef(false);
     });
     return count;
   }, [eventColumns]);
-
-  const leetAllTimeCount = useMemo(() => {
-    return LEET_COMPLETION_COLUMNS.reduce((acc, col) => acc + leetColumns[col].length, 0);
-  }, [leetColumns]);
 
   const isWithinCurrentMonth = useCallback(
     (value?: string | null) => {
@@ -1801,146 +1438,24 @@ const hasSeededMockDataRef = useRef(false);
     [metricsMonth, metricsMonthEnd]
   );
 
-  const PROJECTED_WEEKS_PER_MONTH = 4;
 
-  // Calculate last month's metrics for projected offer date (using dateModified)
-  const lastMonthApplicationsMetrics = useMemo(() => {
-    let count = 0;
-    APPLICATION_COMPLETION_COLUMNS.forEach(col => {
-      appColumns[col].forEach(app => {
-        if (!app.dateModified) return;
-        const modifiedDate = new Date(app.dateModified);
-        if (!Number.isNaN(modifiedDate.getTime()) && modifiedDate >= lastMonthStart && modifiedDate < lastMonthEnd) {
-          count++;
-        }
-      });
-    });
-    return count;
-  }, [appColumns, lastMonthStart, lastMonthEnd]);
+  const openSourceCriteria = useMemo(() => {
+    const doneEntries = openSourceColumns.done ?? [];
+    const totalCriteria = activePartnershipCriteria.reduce((sum, criteria) => {
+      const count = Number(criteria?.count);
+      return sum + (Number.isFinite(count) && count > 0 ? count : 1);
+    }, 0);
+    const activePartnershipDoneCount = selectedPartnership
+      ? doneEntries.filter((entry) => entry.partnershipName === selectedPartnership).reduce((sum, entry) => {
+          const extras = Array.isArray(entry.selectedExtras) ? entry.selectedExtras.length : 0;
+          return sum + 1 + extras;
+        }, 0)
+      : 0;
+    const completedCriteria =
+      totalCriteria > 0 ? Math.min(activePartnershipDoneCount, totalCriteria) : activePartnershipDoneCount;
 
-  const lastMonthLinkedinOutreachMetrics = useMemo(() => {
-    let count = 0;
-    LINKEDIN_COMPLETION_COLUMNS.forEach(col => {
-      linkedinOutreachColumns[col].forEach(chat => {
-        if (!chat.dateModified) return;
-        const modifiedDate = new Date(chat.dateModified);
-        if (!Number.isNaN(modifiedDate.getTime()) && modifiedDate >= lastMonthStart && modifiedDate < lastMonthEnd) {
-          count++;
-        }
-      });
-    });
-    return count;
-  }, [linkedinOutreachColumns, lastMonthStart, lastMonthEnd]);
-
-  const lastMonthEventsMetrics = useMemo(() => {
-    let count = 0;
-    EVENT_COMPLETION_COLUMNS.forEach(col => {
-      eventColumns[col].forEach(event => {
-        if (!event.dateModified) return;
-        const modifiedDate = new Date(event.dateModified);
-        if (!Number.isNaN(modifiedDate.getTime()) && modifiedDate >= lastMonthStart && modifiedDate < lastMonthEnd) {
-          count++;
-        }
-      });
-    });
-    return count;
-  }, [eventColumns, lastMonthStart, lastMonthEnd]);
-
-  const derivedPlanStartDate = useMemo(() => {
-    if (!targetOfferDate || !userData) return null;
-
-    const planApps = userData.appsWithOutreachPerWeek ?? 0;
-    const planLinkedin = userData.linkedinOutreachPerWeek ?? 0;
-    const planEvents = userData.inPersonEventsPerMonth ?? 0;
-    const planFairs = userData.careerFairsPerYear ?? 0;
-
-    const epoch = new Date(0);
-    const planDurationDate = calculateProjectedOfferDate(
-      planApps,
-      planLinkedin,
-      planEvents,
-      planFairs,
-      epoch
-    );
-    if (!planDurationDate) return null;
-    const planDurationMs = planDurationDate.getTime() - epoch.getTime();
-    if (!Number.isFinite(planDurationMs) || planDurationMs <= 0) return null;
-
-    return new Date(targetOfferDate.getTime() - planDurationMs);
-  }, [
-    targetOfferDate,
-    userData?.appsWithOutreachPerWeek,
-    userData?.linkedinOutreachPerWeek,
-    userData?.inPersonEventsPerMonth,
-    userData?.careerFairsPerYear,
-    userData,
-  ]);
-
-  const projectedOfferDate = useMemo(() => {
-    // Use last month's metrics instead of current month's
-    const appsPerWeekRaw = lastMonthApplicationsMetrics / PROJECTED_WEEKS_PER_MONTH;
-    const linkedinPerWeekRaw = lastMonthLinkedinOutreachMetrics / PROJECTED_WEEKS_PER_MONTH;
-    const appsPerWeek = Number.isFinite(appsPerWeekRaw) ? appsPerWeekRaw : 0;
-    const linkedinPerWeek = Number.isFinite(linkedinPerWeekRaw) ? linkedinPerWeekRaw : 0;
-    const eventsPerMonth = Number.isFinite(lastMonthEventsMetrics) ? lastMonthEventsMetrics : 0;
-    const careerFairsPerYear = careerFairPlanGoal > 0
-      ? careerFairPlanGoal * careerFairProgress
-      : careerFairsThisYear;
-
-    const referenceDate = userData?.resetStartDate
-      ? new Date(userData.resetStartDate)
-      : derivedPlanStartDate ?? undefined;
-
-    return calculateProjectedOfferDate(
-      appsPerWeek,
-      linkedinPerWeek,
-      eventsPerMonth,
-      careerFairsPerYear,
-      referenceDate
-    );
-  }, [
-    lastMonthApplicationsMetrics,
-    lastMonthLinkedinOutreachMetrics,
-    lastMonthEventsMetrics,
-    careerFairsThisYear,
-    careerFairPlanGoal,
-    careerFairProgress,
-    derivedPlanStartDate,
-    userData?.careerFairsPerYear,
-    userData?.resetStartDate,
-  ]);
-
-  const projectedOfferDateText = useMemo(() => {
-    if (!projectedOfferDate) return targetOfferDateText;
-    return formatDateWithFullMonth(projectedOfferDate);
-  }, [projectedOfferDate, targetOfferDateText]);
-
-  // Debounced function to sync projected offer date (prevents rapid-fire requests)
-  const syncProjectedOfferDate = useDebouncedCallback((date: Date) => {
-    const iso = date.toISOString();
-    if (lastProjectedOfferSyncRef.current === iso) return;
-
-    const url = userIdParam ? `/api/users/projected-offer?userId=${userIdParam}` : '/api/users/projected-offer';
-    fetch(url, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify({ projectedOfferDate: iso }),
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to update projected offer date');
-        }
-        lastProjectedOfferSyncRef.current = iso;
-      })
-      .catch(error => {
-        console.error('Error syncing projected offer date:', error);
-      });
-  }, 500); // Wait 500ms after last change before sending request
-
-  useEffect(() => {
-    if (!projectedOfferDate) return;
-    syncProjectedOfferDate(projectedOfferDate);
-  }, [projectedOfferDate, syncProjectedOfferDate]);
+    return { completedCriteria, totalCriteria };
+  }, [openSourceColumns, selectedPartnership, activePartnershipCriteria]);
 
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
@@ -1996,23 +1511,6 @@ const hasSeededMockDataRef = useRef(false);
     });
     return filtered;
   }, [eventColumns, eventsFilter, isWithinCurrentMonth]);
-
-  const filteredLeetColumns = useMemo(() => {
-    if (leetFilter === 'allTime') return leetColumns;
-    const filtered: Record<LeetColumnId, LeetEntry[]> = {
-      plan: [],
-      solved: [],
-      reflect: [],
-    };
-    (Object.keys(leetColumns) as LeetColumnId[]).forEach(columnId => {
-      if (leetFilter === 'modifiedThisMonth') {
-        filtered[columnId] = leetColumns[columnId].filter(entry =>
-          isWithinCurrentMonth(entry.dateModified)
-        );
-      }
-    });
-    return filtered;
-  }, [leetColumns, leetFilter, isWithinCurrentMonth]);
 
   const filteredOpenSourceColumns = useMemo(() => {
     let filtered: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
@@ -2140,16 +1638,6 @@ const hasSeededMockDataRef = useRef(false);
               >
                 <Users className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />Events
               </button>
-              <button 
-                onClick={() => handleTabClick('leetcode')}
-                className={`main-tab-btn flex-1 py-3 sm:py-4 px-3 sm:px-6 text-center font-semibold transition-colors whitespace-nowrap ${
-                  activeTab === 'leetcode' 
-                    ? 'bg-electric-blue text-white' 
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                }`}
-              >
-                <Code className="inline mr-1 sm:mr-2 w-4 h-4 sm:w-5 sm:h-5" />LeetCode
-              </button>
             </div>
           </div>
         </section>
@@ -2157,16 +1645,12 @@ const hasSeededMockDataRef = useRef(false);
         {/* Overview Content */}
         {activeTab === 'overview' && (
           <OverviewTab
-            targetOfferDateText={targetOfferDateText}
-            projectedOfferDateText={projectedOfferDateText}
+            openSourceCriteria={openSourceCriteria}
+            leetCodeStats={leetCodeStats}
             applicationsMetrics={applicationsMetrics}
             applicationsAllTimeCount={applicationsAllTimeCount}
-            linkedinOutreachMetrics={linkedinOutreachMetrics}
-            linkedinOutreachAllTimeCount={linkedinOutreachAllTimeCount}
             eventsMetrics={eventsMetrics}
             eventsAllTimeCount={eventsAllTimeCount}
-            leetMetrics={leetMetrics}
-            leetAllTimeCount={leetAllTimeCount}
             handleHabitCardClick={handleHabitCardClick}
           />
         )}
@@ -2250,34 +1734,6 @@ const hasSeededMockDataRef = useRef(false);
             isDeletingEvent={isDeletingEvent}
             fetchEvents={fetchEvents}
             isDraggingEventRef={isDraggingEventRef}
-            userIdParam={userIdParam}
-            readOnly={!canEditViewedUser && !!userIdParam}
-          />
-        )}
-
-        {/* LeetCode Content */}
-        {activeTab === 'leetcode' && (
-          <LeetCodeTab
-            filteredLeetColumns={filteredLeetColumns}
-            leetColumns={leetColumns}
-            setLeetColumns={setLeetColumns}
-            isLoadingLeet={isLoadingLeet}
-            leetFilter={leetFilter}
-            setLeetFilter={setLeetFilter}
-            setIsLeetModalOpen={setIsLeetModalOpen}
-            setEditingLeet={setEditingLeet}
-            sensors={sensors}
-            handleLeetDragStart={handleLeetDragStart}
-            handleLeetDragOver={handleLeetDragOver}
-            handleLeetDragEnd={handleLeetDragEnd}
-            activeLeetId={activeLeetId}
-            getLeetColumnOfItem={getLeetColumnOfItem}
-            isLeetModalOpen={isLeetModalOpen}
-            editingLeet={editingLeet}
-            setIsDeletingLeet={setIsDeletingLeet}
-            isDeletingLeet={isDeletingLeet}
-            fetchLeetEntries={fetchLeetEntries}
-            isDraggingLeetRef={isDraggingLeetRef}
             userIdParam={userIdParam}
             readOnly={!canEditViewedUser && !!userIdParam}
           />

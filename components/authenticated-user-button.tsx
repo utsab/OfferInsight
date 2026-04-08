@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { SignOut } from "./auth-components"
 import { Settings } from "lucide-react";
 
@@ -16,6 +16,7 @@ export function AuthenticatedUserButton() {
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     // Fetch user data
@@ -68,6 +69,16 @@ export function AuthenticatedUserButton() {
           {showSettingsDropdown && (
             <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-light-steel-blue rounded-lg shadow-lg z-50">
               <div className="py-2">
+                <button
+                  onClick={() => {
+                    setShowSettingsDropdown(false);
+                    router.push('/account');
+                  }}
+                  className="w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                >
+                  Account
+                </button>
+                <hr className="border-light-steel-blue my-1" />
                 {/* ===== PROFILE & PREFERENCES: Commented out until features are implemented ===== */}
                 {/* Uncomment the buttons below when Profile and Preferences features are ready */}
                 {/* 
