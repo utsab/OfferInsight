@@ -94,6 +94,9 @@ model User {
   inPersonEventsPerMonth Int?
   careerFairsPerYear     Int?
   partnerships           UserPartnership[]
+  lastInactivityWarningSent DateTime?
+  inactivityWarningCount    Int       @default(0)
+  removedFromResumeBook     Boolean   @default(false)
 }
 
 model Partnership {
