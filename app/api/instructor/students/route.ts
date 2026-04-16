@@ -25,6 +25,8 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
+        removedFromResumeBook: true,
+        inactivityWarningCount: true,
       },
       orderBy: {
         name: 'asc',
@@ -245,6 +247,8 @@ export async function GET() {
           activeStatus,
           progressStatus,
           referralCount,
+          removedFromResumeBook: user.removedFromResumeBook,
+          inactivityWarningCount: user.inactivityWarningCount,
           openSource: {
             issuesCompleted: issuesCompletedCount,
             partnershipsCompleted: completedPartnershipsCount,

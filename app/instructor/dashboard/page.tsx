@@ -10,6 +10,8 @@ interface UserData {
   activeStatus: number; // 0 = red, 1 = yellow, 2 = green
   progressStatus: number; // 0 = red, 1 = yellow, 2 = green
   referralCount: number; // Number of referrals received
+  removedFromResumeBook: boolean;
+  inactivityWarningCount: number; // 0 = none, 1 = first warning, 2 = second warning, 3 = removed
   openSource: {
     issuesCompleted: number;
     partnershipsCompleted?: number;
@@ -77,6 +79,10 @@ function generateDebugUsers(): UserData[] {
     const partnershipsCompleted = Math.floor(Math.random() * 4);
     const totalCriteria = Math.max(issuesCompleted + Math.floor(Math.random() * 5), 1);
 
+    // Some users are removed for testing
+    const removedFromResumeBook = index % 10 === 9;
+    const inactivityWarningCount = removedFromResumeBook ? 3 : (index % 8 === 7 ? 2 : (index % 6 === 5 ? 1 : 0));
+
     return {
       id: `debug-${index}`,
       name: name,
@@ -84,6 +90,8 @@ function generateDebugUsers(): UserData[] {
       activeStatus,
       progressStatus,
       referralCount,
+      removedFromResumeBook,
+      inactivityWarningCount,
       openSource: {
         issuesCompleted,
         partnershipsCompleted,
@@ -267,6 +275,20 @@ export default function InstructorDashboard() {
                   >
                     {user.name}
                   </Link>
+                  {user.removedFromResumeBook && (
+                    <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold bg-red-900/50 text-red-400 border border-red-500 rounded">
+                      REMOVED
+                    </span>
+                  )}
+                  {!user.removedFromResumeBook && user.inactivityWarningCount > 0 && (
+                    <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded border ${
+                      user.inactivityWarningCount === 2
+                        ? 'bg-orange-900/50 text-orange-400 border-orange-500'
+                        : 'bg-yellow-900/50 text-yellow-400 border-yellow-500'
+                    }`}>
+                      Warning {user.inactivityWarningCount}/2
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-4 xl:gap-6 items-start flex-1 min-w-0">
