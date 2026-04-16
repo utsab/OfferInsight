@@ -1,8 +1,9 @@
 {
   "crons": [
     {
-      "path": "/api/cron/inactive-warning2",
-      "schedule": "0 9 * * *"
+      "path": "/api/cron/inactive-warning",
+      "schedule": "1 17 * * *"
     }
   ]
 }
+
