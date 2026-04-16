@@ -17,6 +17,8 @@ interface EmailResult {
   error?: string;
 }
 
+const DEBUG_TEST_EMAILS = ["utsab.k.saha@gmail.com", "ttran913@gmail.com"];
+
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -31,26 +33,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const debugMode = searchParams.get("debug") === "true";
+
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const inactiveUsers = await prisma.user.findMany({
-      where: {
-        email: { not: null },
-        partnerships: { some: { status: "active" } },
-        removedFromResumeBook: false,
-        openSource: {
-          some: {},
-          none: { dateModified: { gte: thirtyDaysAgo } },
-        },
-        OR: [
-          { inactivityWarningCount: 0 },
-          {
-            inactivityWarningCount: { in: [1, 2] },
-            lastInactivityWarningSent: { lt: sevenDaysAgo },
-          },
-        ],
+    const baseWhere = {
+      email: { not: null },
+      partnerships: { some: { status: "active" } },
+      removedFromResumeBook: false,
+      openSource: {
+        some: {},
+        none: { dateModified: { gte: thirtyDaysAgo } },
       },
+      OR: [
+        { inactivityWarningCount: 0 },
+        {
+          inactivityWarningCount: { in: [1, 2] },
+          lastInactivityWarningSent: { lt: sevenDaysAgo },
+        },
+      ],
+    };
+
+    const inactiveUsers = await prisma.user.findMany({
+      where: debugMode
+        ? { ...baseWhere, email: { in: DEBUG_TEST_EMAILS } }
+        : baseWhere,
       select: {
         id: true,
         email: true,
@@ -127,6 +136,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       message: "Inactivity warning job completed",
+      debugMode,
       totalProcessed: inactiveUsers.length,
       summary,
       emailsFailed: failed.length,
