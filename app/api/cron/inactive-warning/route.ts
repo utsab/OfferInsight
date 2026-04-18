@@ -41,7 +41,10 @@ export async function GET(request: NextRequest) {
 
     const baseWhere = {
       email: { not: null },
-      partnerships: { some: { status: "active" } },
+      partnerships: {
+        some: { status: "active" },
+        none: { status: "completed" },
+      },
       removedFromResumeBook: false,
       openSource: {
         some: {},
