@@ -70,6 +70,27 @@
                 }
             ]
         },
+        "reliability_artifact": {
+            "is_primary": true,
+            "short_name": "reliability_artifact",
+            "quality": "Interest in designing reliable, fault-tolerant systems", 
+            "metric": "1 artifact demonsrating an interest in designing a system to be reliable/fault-tolerant. The artifact could be a personal project, open source contribution, or a blog post).", 
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [
+                {
+                    "type": "URL",
+                    "text": "Link to the artifact (personal project, blog post, or open source pull request): "
+                },
+                {
+                    "type": "text",
+                    "text": "Write a 1 sentence explanation of how your artifact demonstrates an interest in designing a system to be reliabile/fault-tolerant."
+                }
+            ]
+        },
         "edge_cases": {
             "is_primary": false,
             "short_name": "edge_cases",
@@ -137,6 +158,21 @@
             "short_name": "video_demo",
             "quality": "Technical Communication", 
             "metric": "1 example of a video demo walking through a contribution.", 
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to your video demo:"
+            }]
+        },
+        "impact_video_demo": {
+            "is_primary": true,
+            "short_name": "impact_video_demo",
+            "quality": "Technical Communication", 
+            "metric": "1 example of a video demo walking through the impact of your contributions.", 
             "baby_step_column_fields": [{
                 "type": "checkbox",
                 "text": "Helper video is coming soon...",

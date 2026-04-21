@@ -182,12 +182,14 @@
             "company": "",
             "role": "",
             "criteria": [
+                { "type": "find_bug", "count": 2 },
+                { "type": "complex_bug", "count": 1 },
+                { "type": "above_and_beyond", "count": 2 },
+                { "type": "edge_cases", "count": 1 },
+                { "type": "reliability_artifact", "count": 1 },
+                { "type": "propose_implementation_plan", "count": 1},
                 { "type": "issue", "count": 6 },
-                { "type": "initiative", "count": 1 },
-                { "type": "high_quality_question", "count": 1 },
-                { "type": "thorough_documentation", "count": 1 },
-                { "type": "video_demo", "count": 1 },
-                { "type": "video_streaming_experience", "count": 1 }
+                { "type": "impact_video_demo", "count": 1} 
             ]
         }
 
