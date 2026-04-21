@@ -2,10 +2,10 @@
     "partnerships": [
         {
             "id": 1, 
-            "name": "Mark Flores",
-            "linkedIn": "https://www.linkedin.com/in/mark-f-flores-8184815/",
-            "company": "Whoop",
-            "role": "VP of Software",
+            "name": "Mark F.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 6 },
                 { "type": "receive_feedback", "count": 2 },
@@ -15,10 +15,10 @@
 
         {
             "id": 2, 
-            "name": "Krishna Pitchikala",
-            "linkedIn": "https://www.linkedin.com/in/nskmohan/",
-            "company": "Amazon",
-            "role": "Software Engineer",
+            "name": "Krishna P.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 3 },
                 { "type": "blog_post", "count": 1 },
@@ -31,10 +31,10 @@
 
         {
             "id": 3, 
-            "name": "Brianna Potvin",
-            "linkedIn": "https://www.linkedin.com/in/bripot/",
-            "company": "Microsoft",
-            "role": "Principal SWE Lead",
+            "name": "Brianna P.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 6 },
                 { "type": "give_feedback", "count": 2 },
@@ -48,10 +48,10 @@
 
         {
             "id": 4, 
-            "name": "Jagbir Kaur",
-            "linkedIn": "https://www.linkedin.com/in/jagbir-kaur/",
-            "company": "Google",
-            "role": "Strategy and Ops Manager",
+            "name": "Jagbir K.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 3 },
                 { "type": "above_and_beyond", "count": 1}, 
@@ -66,10 +66,10 @@
         }, 
         {
             "id": 5, 
-            "name": "Nikhil Maddirala",
-            "linkedIn": "https://www.linkedin.com/in/nikhilmaddirala/",
-            "company": "Meta",
-            "role": "Product Manager",
+            "name": "Nikhil M.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 6 },
                 { "type": "above_and_beyond", "count": 2}, 
@@ -81,10 +81,10 @@
         },
         {
             "id": 6, 
-            "name": "Akshatha Anantharamu",
-            "linkedIn": "https://www.linkedin.com/in/akshathaanantharamu/",
-            "company": "Adobe",
-            "role": "Software Engineer",
+            "name": "Akshatha A.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 4 },
                 { "type": "blog_post", "count": 1 },
@@ -98,10 +98,10 @@
         },
         {
             "id": 7, 
-            "name": "Kevin Mershon",
-            "linkedIn": "https://theorg.com/org/ride-health/org-chart/kevin-mershon",
-            "company": "Ride Health",
-            "role": "Senior Software Engineer",
+            "name": "Kevin M.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 3 },
                 { "type": "outside_comfort_zone", "count": 1 },
@@ -117,10 +117,10 @@
         },
         {
             "id": 8, 
-            "name": "Jim Anderson",
-            "linkedIn": "https://www.linkedin.com/in/jim-anderson-056993/",
-            "company": "Mastercard",
-            "role": "Senior Software Engineer",
+            "name": "Jim A.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 3 },
                 { "type": "give_feedback", "count": 2 },
@@ -135,10 +135,10 @@
         },
         {
             "id": 9, 
-            "name": "Ajay Gupta",
-            "linkedIn": "https://www.linkedin.com/in/a7aygupta/",
-            "company": "Quizlet",
-            "role": "Senior Director of Engineering",
+            "name": "Ajay G.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 6 },
                 { "type": "outside_comfort_zone", "count": 1 },
@@ -149,10 +149,10 @@
         },
         {
             "id": 10, 
-            "name": "Brendan Clement",
-            "linkedIn": "https://www.linkedin.com/in/brendanclement/",
-            "company": "Amazon",
-            "role": "Lead Software Developer",
+            "name": "Brendan C.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 6 },
                 { "type": "multiple_approaches", "count": 2 },
@@ -163,9 +163,24 @@
         {
             "id": 11, 
             "name": "Ian B.",
-            "linkedIn": "https://www.linkedin.com/in/ibirnam/",
-            "company": "Disney",
-            "role": "Lead Technical Program Manager",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
+            "criteria": [
+                { "type": "issue", "count": 6 },
+                { "type": "initiative", "count": 1 },
+                { "type": "high_quality_question", "count": 1 },
+                { "type": "thorough_documentation", "count": 1 },
+                { "type": "video_demo", "count": 1 },
+                { "type": "video_streaming_experience", "count": 1 }
+            ]
+        },
+        {
+            "id": 12, 
+            "name": "Manu S.",
+            "linkedIn": "",
+            "company": "",
+            "role": "",
             "criteria": [
                 { "type": "issue", "count": 6 },
                 { "type": "initiative", "count": 1 },
