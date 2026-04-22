@@ -546,6 +546,22 @@
                 "text": "Write a 1 sentence description of the project and how it relates to the video streaming space: "
             }
             ]
+        },
+        "same_project_issue": {
+            "is_primary": false,
+            "short_name": "same_project_issue",
+            "quality": "Growth and Commitment", 
+            "metric": "Reasonably challenging issue from the same project", 
+            "plan_column_fields": [],
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Helper video is coming soon...",
+                "helper_video": "" 
+            }],
+            "proof_of_completion_column_fields": [{
+                "type": "checkbox",
+                "text": "Did you solve the issue within the same project and includes some variety in the size of the issues (2 medium sized issues and/or one large issue and not all small issues)?"
+            }]
         }
     }   
 }
