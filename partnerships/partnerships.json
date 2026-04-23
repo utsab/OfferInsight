@@ -199,15 +199,13 @@
             "company": "",
             "role": "",
             "criteria": [
-                { "type": "product_opinion", "count": 1 },
+                { "type": "initiative", "count": 1 },
                 { "type": "above_and_beyond", "count": 1 },
                 { "type": "propose_implementation_plan", "count": 1 },
                 { "type": "blog_post", "count": 1 },
                 { "type": "receive_feedback", "count": 1 },
-                { "type": "issue", "count": 5 },
-                { "type": "same_project_issue", "count": 5 }
+                { "type": "issue", "count": 5 }
             ]
         }
-
     ]
 }   
