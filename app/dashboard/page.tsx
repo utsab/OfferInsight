@@ -40,6 +40,73 @@ import {
   APPLICATION_COMPLETION_COLUMNS,
   EVENT_COMPLETION_COLUMNS,
 } from './components/types';
+import partnershipsData from '@/partnerships/partnerships.json';
+
+/** Trims and lowercases for resilient matching when DB/JSON/Partnership.name drift. */
+function normalizePartnerName(s: string | null | undefined): string {
+  return (s ?? '').trim().toLowerCase();
+}
+
+/** All known string forms for a partnership (display name, JSON, API lists) — no DB column changes. */
+function buildPartnershipNameMatchSet(
+  partnershipId: number | null,
+  displayName: string | null,
+  availablePartnerships: Array<{ id: number; name: string }>,
+  fullPartnerships: Array<{ id: number; name: string }>
+): Set<string> {
+  const out = new Set<string>();
+  if (displayName) out.add(normalizePartnerName(displayName));
+  if (partnershipId != null) {
+    const fromJson = partnershipsData.partnerships.find(p => p.id === partnershipId)?.name;
+    if (fromJson) out.add(normalizePartnerName(fromJson));
+    const fromAvail = availablePartnerships.find(p => p.id === partnershipId)?.name;
+    if (fromAvail) out.add(normalizePartnerName(fromAvail));
+    const fromFull = fullPartnerships.find(p => p.id === partnershipId)?.name;
+    if (fromFull) out.add(normalizePartnerName(fromFull));
+  }
+  return out;
+}
+
+function openSourceDateForMonthFilter(entry: OpenSourceEntry): string | null {
+  return entry.dateModified ?? entry.dateCreated ?? null;
+}
+
+function mapCompletedPartnershipsFromApi(
+  completed: { id: number; partnershipId: number; partnershipName: string; criteria: unknown }[]
+) {
+  return (completed || []).map((p) => ({
+    id: p.id,
+    partnershipId: p.partnershipId,
+    partnershipName: p.partnershipName,
+    criteria: p.criteria || [],
+  }));
+}
+
+function withAugmentNameSetForActiveSingleDistinct(
+  nameSet: Set<string>,
+  timeFiltered: Record<OpenSourceColumnId, OpenSourceEntry[]>
+): Set<string> {
+  const out = new Set(nameSet);
+  const flat = Object.values(timeFiltered).flat() as OpenSourceEntry[];
+  const distinct = [
+    ...new Set(flat.map(e => normalizePartnerName(e.partnershipName)).filter(n => n !== '')),
+  ];
+  if (distinct.length === 1) {
+    out.add(distinct[0]!);
+  }
+  return out;
+}
+
+function openSourceEntryMatchesNameSet(
+  entry: OpenSourceEntry,
+  nameSet: Set<string> | null,
+  isActiveView: boolean
+): boolean {
+  if (!nameSet || nameSet.size === 0) return true;
+  const n = normalizePartnerName(entry.partnershipName);
+  if (n === '') return isActiveView;
+  return nameSet.has(n);
+}
 
 // ===== MOCK DATA FEATURE TOGGLE START =====
 // Toggle this flag or comment out the seeding effect below to disable mock data.
@@ -622,10 +689,12 @@ const hasSeededMockDataRef = useRef(false);
   const [isLoadingOpenSource, setIsLoadingOpenSource] = useState(true);
   const [openSourceFilter, setOpenSourceFilter] = useState<BoardTimeFilter>('allTime');
   const [selectedPartnership, setSelectedPartnership] = useState<string | null>(null);
-  const [, setSelectedPartnershipId] = useState<number | null>(null);
+  const [selectedPartnershipId, setSelectedPartnershipId] = useState<number | null>(null);
   const [activePartnershipDbId, setActivePartnershipDbId] = useState<number | null>(null);
   const [activePartnershipCriteria, setActivePartnershipCriteria] = useState<any[]>([]);
-  const [completedPartnerships, setCompletedPartnerships] = useState<Array<{ id: number; partnershipName: string; criteria: any[] }>>([]);
+  const [completedPartnerships, setCompletedPartnerships] = useState<
+    Array<{ id: number; partnershipId: number; partnershipName: string; criteria: any[] }>
+  >([]);
   const [viewingCompletedPartnershipName, setViewingCompletedPartnershipName] = useState<string | null>(null);
   const [availablePartnerships, setAvailablePartnerships] = useState<Array<{ id: number; name: string; spotsRemaining: number }>>([]);
   const [fullPartnerships, setFullPartnerships] = useState<Array<{ id: number; name: string }>>([]);
@@ -647,18 +716,15 @@ const hasSeededMockDataRef = useRef(false);
         const url = userIdParam ? `/api/open_source?userId=${userIdParam}` : '/api/open_source';
       const response = await fetch(url);
       if (!response.ok) {
-        // If endpoint doesn't exist yet, just set empty columns
-        setOpenSourceColumns({
-          plan: [],
-          babyStep: [],
-          inProgress: [],
-          done: [],
-        });
-        setIsLoadingOpenSource(false);
-        isFetchingOpenSourceRef.current = false;
+        // Do not wipe the board on transient 401/503 (e.g. session not ready) — that hid real DB rows in prod.
+        console.warn('Open source fetch failed:', response.status, response.statusText);
         return;
       }
-      const data = await response.json() as OpenSourceEntry[];
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        console.error('Open source: expected array', data);
+        return;
+      }
 
       const grouped: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
         plan: [],
@@ -667,7 +733,7 @@ const hasSeededMockDataRef = useRef(false);
         done: [],
       };
 
-      data.forEach((entry: OpenSourceEntry) => {
+      (data as OpenSourceEntry[]).forEach((entry: OpenSourceEntry) => {
         const column = openSourceStatusToColumn[entry.status] ?? 'plan';
         grouped[column].push(entry);
       });
@@ -675,13 +741,6 @@ const hasSeededMockDataRef = useRef(false);
       setOpenSourceColumns(grouped);
     } catch (error) {
       console.error('Error fetching open source entries:', error);
-      // On error, set empty columns
-      setOpenSourceColumns({
-        plan: [],
-        babyStep: [],
-        inProgress: [],
-        done: [],
-      });
     } finally {
       setIsLoadingOpenSource(false);
       isFetchingOpenSourceRef.current = false;
@@ -711,17 +770,17 @@ const hasSeededMockDataRef = useRef(false);
         setSelectedPartnershipId(null);
         setActivePartnershipDbId(null);
         setCompletedPartnerships([]);
+        setViewingCompletedPartnershipName(null);
         return;
       }
       const data = await response.json();
-      const completed = (data.completed || []).map((p: { id: number; partnershipName: string; criteria: any[] }) => ({ id: p.id, partnershipName: p.partnershipName, criteria: p.criteria || [] }));
-      setCompletedPartnerships(completed);
+      setCompletedPartnerships(mapCompletedPartnershipsFromApi(data.completed || []));
       if (data.active) {
         setSelectedPartnership(data.active.partnershipName);
         setSelectedPartnershipId(data.active.partnershipId);
         setActivePartnershipDbId(data.active.id);
         setActivePartnershipCriteria(data.active.criteria || []);
-        setViewingCompletedPartnershipName(null); // Clear completed view when active exists
+        // Do not clear completed-view here: refetch runs often and would undo a click on history.
       } else if (completed.length > 0) {
         // No active partnership, but there are completed ones - show the most recent completed
         const mostRecent = completed[0]; // Already sorted by completedAt desc from API
@@ -751,8 +810,7 @@ const hasSeededMockDataRef = useRef(false);
       const response = await fetch(url);
       if (!response.ok) return;
       const data = await response.json();
-      const completed = (data.completed || []).map((p: { id: number; partnershipName: string; criteria: any[] }) => ({ id: p.id, partnershipName: p.partnershipName, criteria: p.criteria || [] }));
-      setCompletedPartnerships(completed);
+      setCompletedPartnerships(mapCompletedPartnershipsFromApi(data.completed || []));
     } catch (error) {
       console.error('Error refreshing completed partnerships:', error);
     }
@@ -1438,24 +1496,89 @@ const hasSeededMockDataRef = useRef(false);
     [metricsMonth, metricsMonthEnd]
   );
 
+  /** Time filter, partnership name set (incl. single-name drift), and view mode — shared by board and criteria. */
+  const openSourceNameFilterState = useMemo(() => {
+    const effectiveTimeFilter: BoardTimeFilter = viewingCompletedPartnershipName ? 'allTime' : openSourceFilter;
+
+    let timeFiltered: Record<OpenSourceColumnId, OpenSourceEntry[]>;
+    if (effectiveTimeFilter === 'allTime') {
+      timeFiltered = { ...openSourceColumns };
+    } else {
+      timeFiltered = {
+        plan: [],
+        babyStep: [],
+        inProgress: [],
+        done: [],
+      };
+      (Object.keys(openSourceColumns) as OpenSourceColumnId[]).forEach(columnId => {
+        if (effectiveTimeFilter === 'modifiedThisMonth') {
+          timeFiltered[columnId] = openSourceColumns[columnId].filter(entry =>
+            isWithinCurrentMonth(openSourceDateForMonthFilter(entry))
+          );
+        }
+      });
+    }
+
+    let nameSet: Set<string> | null = null;
+    if (viewingCompletedPartnershipName) {
+      const cp = completedPartnerships.find(
+        c => normalizePartnerName(c.partnershipName) === normalizePartnerName(viewingCompletedPartnershipName)
+      );
+      nameSet = buildPartnershipNameMatchSet(
+        cp?.partnershipId ?? null,
+        viewingCompletedPartnershipName,
+        availablePartnerships,
+        fullPartnerships
+      );
+    } else if (selectedPartnership) {
+      nameSet = buildPartnershipNameMatchSet(
+        selectedPartnershipId,
+        selectedPartnership,
+        availablePartnerships,
+        fullPartnerships
+      );
+    }
+
+    if (nameSet && nameSet.size > 0 && selectedPartnership && !viewingCompletedPartnershipName) {
+      nameSet = withAugmentNameSetForActiveSingleDistinct(nameSet, timeFiltered);
+    }
+
+    const isActiveView = Boolean(selectedPartnership && !viewingCompletedPartnershipName);
+
+    return { timeFiltered, nameSet, isActiveView };
+  }, [
+    openSourceColumns,
+    openSourceFilter,
+    viewingCompletedPartnershipName,
+    completedPartnerships,
+    selectedPartnership,
+    selectedPartnershipId,
+    availablePartnerships,
+    fullPartnerships,
+    isWithinCurrentMonth,
+  ]);
 
   const openSourceCriteria = useMemo(() => {
     const doneEntries = openSourceColumns.done ?? [];
+    const { nameSet, isActiveView } = openSourceNameFilterState;
     const totalCriteria = activePartnershipCriteria.reduce((sum, criteria) => {
       const count = Number(criteria?.count);
       return sum + (Number.isFinite(count) && count > 0 ? count : 1);
     }, 0);
-    const activePartnershipDoneCount = selectedPartnership
-      ? doneEntries.filter((entry) => entry.partnershipName === selectedPartnership).reduce((sum, entry) => {
-          const extras = Array.isArray(entry.selectedExtras) ? entry.selectedExtras.length : 0;
-          return sum + 1 + extras;
-        }, 0)
-      : 0;
+    const activePartnershipDoneCount =
+      nameSet && nameSet.size > 0
+        ? doneEntries
+            .filter(entry => openSourceEntryMatchesNameSet(entry, nameSet, isActiveView))
+            .reduce((sum, entry) => {
+              const extras = Array.isArray(entry.selectedExtras) ? entry.selectedExtras.length : 0;
+              return sum + 1 + extras;
+            }, 0)
+        : 0;
     const completedCriteria =
       totalCriteria > 0 ? Math.min(activePartnershipDoneCount, totalCriteria) : activePartnershipDoneCount;
 
     return { completedCriteria, totalCriteria };
-  }, [openSourceColumns, selectedPartnership, activePartnershipCriteria]);
+  }, [openSourceColumns, openSourceNameFilterState, activePartnershipCriteria]);
 
   const filteredAppColumns = useMemo(() => {
     if (applicationsFilter === 'allTime') return appColumns;
@@ -1513,38 +1636,38 @@ const hasSeededMockDataRef = useRef(false);
   }, [eventColumns, eventsFilter, isWithinCurrentMonth]);
 
   const filteredOpenSourceColumns = useMemo(() => {
-    let filtered: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
-      plan: [],
-      babyStep: [],
-      inProgress: [],
-      done: [],
+    const { timeFiltered, nameSet, isActiveView } = openSourceNameFilterState;
+    const filtered: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
+      plan: [...timeFiltered.plan],
+      babyStep: [...timeFiltered.babyStep],
+      inProgress: [...timeFiltered.inProgress],
+      done: [...timeFiltered.done],
     };
 
-    // First apply time filter
-    if (openSourceFilter === 'allTime') {
-      filtered = { ...openSourceColumns };
-    } else {
-      (Object.keys(openSourceColumns) as OpenSourceColumnId[]).forEach(columnId => {
-        if (openSourceFilter === 'modifiedThisMonth') {
-          filtered[columnId] = openSourceColumns[columnId].filter(entry =>
-            isWithinCurrentMonth(entry.dateModified)
-          );
-        }
-      });
-    }
-
-    // Then apply partnership filter - use viewing completed partnership if set, else current
-    const partnershipFilter = viewingCompletedPartnershipName ?? selectedPartnership;
-    if (partnershipFilter) {
+    if (nameSet && nameSet.size > 0) {
       (Object.keys(filtered) as OpenSourceColumnId[]).forEach(columnId => {
         filtered[columnId] = filtered[columnId].filter(entry =>
-          entry.partnershipName === partnershipFilter
+          openSourceEntryMatchesNameSet(entry, nameSet, isActiveView)
         );
       });
     }
 
+    if (selectedPartnership && !viewingCompletedPartnershipName) {
+      const total = (Object.keys(filtered) as OpenSourceColumnId[]).reduce(
+        (acc, k) => acc + filtered[k as OpenSourceColumnId].length,
+        0
+      );
+      const timeTotal = (Object.keys(timeFiltered) as OpenSourceColumnId[]).reduce(
+        (acc, k) => acc + timeFiltered[k as OpenSourceColumnId].length,
+        0
+      );
+      if (total === 0 && timeTotal > 0) {
+        return timeFiltered;
+      }
+    }
+
     return filtered;
-  }, [openSourceColumns, openSourceFilter, selectedPartnership, viewingCompletedPartnershipName, isWithinCurrentMonth]);
+  }, [openSourceNameFilterState, selectedPartnership, viewingCompletedPartnershipName]);
 
   const handleTabClick = (tabId: string) => {
     setActiveTab(tabId);

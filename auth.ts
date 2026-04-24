@@ -11,7 +11,14 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   ...authConfig,
-  callbacks: { 
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user?.id) {
+        (token as { prismaUserId?: string }).prismaUserId = user.id;
+      }
+      return token;
+    },
+
     async redirect({ url, baseUrl }) {
       // Handle relative paths - allow them to pass through
       if (url.startsWith("/")) {
@@ -26,11 +33,20 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
       return baseUrl
     },
    
-    async session({ session, user }) {
-      // Fetch the user from the database to include all fields
-      const dbUser = await prisma.user.findUnique({
-        where: { email: session.user.email },
-      })
+    async session({ session, token }) {
+      const email =
+        (typeof session.user?.email === "string" && session.user.email) ||
+        (typeof token.email === "string" && token.email) ||
+        undefined;
+
+      let dbUser = email
+        ? await prisma.user.findUnique({ where: { email } })
+        : null;
+
+      const prismaUserId = (token as { prismaUserId?: string }).prismaUserId;
+      if (!dbUser && prismaUserId) {
+        dbUser = await prisma.user.findUnique({ where: { id: prismaUserId } });
+      }
 
       if (dbUser) {
         session.user = {
@@ -46,10 +62,10 @@ export const { handlers: { GET, POST }, auth, signIn, signOut } = NextAuth({
           inPersonEventsPerMonth: dbUser.inPersonEventsPerMonth,
           careerFairsPerYear: dbUser.careerFairsPerYear,
           resetStartDate: dbUser.resetStartDate,
-        } as typeof session.user
+        } as typeof session.user;
       }
 
-      return session
+      return session;
     },
   }
 })
