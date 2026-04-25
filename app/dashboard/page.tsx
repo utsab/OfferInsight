@@ -780,15 +780,44 @@ const hasSeededMockDataRef = useRef(false);
       const qs = params.toString();
       const url = `/api/open_source${qs ? `?${qs}` : ''}`;
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        // Do not wipe the board on transient 401/503 (e.g. session not ready) — that hid real DB rows in prod.
-        console.warn('Open source fetch failed:', response.status, response.statusText);
-        return;
+      const fullListUrl = userIdParam
+        ? `/api/open_source?userId=${encodeURIComponent(userIdParam)}`
+        : '/api/open_source';
+
+      const first = await fetch(url);
+      let rows: OpenSourceEntry[] = [];
+      if (first.ok) {
+        const j: unknown = await first.json();
+        if (Array.isArray(j)) {
+          rows = j as OpenSourceEntry[];
+        }
       }
-      const data = await response.json();
-      if (!Array.isArray(data)) {
-        console.error('Open source: expected array', data);
+
+      const usedScopedUrl = openSourceFetchQuery.type === 'enrollment';
+      const tryFullListFallback = usedScopedUrl && (!first.ok || rows.length === 0);
+      let scopeMode: 'all' | 'enrollment' = 'all';
+      let scopeEnroll: number | null = null;
+      if (openSourceFetchQuery.type === 'enrollment') {
+        scopeEnroll = openSourceFetchQuery.enrollmentId;
+        scopeMode = 'enrollment';
+      }
+
+      if (tryFullListFallback) {
+        const second = await fetch(fullListUrl);
+        if (second.ok) {
+          const j: unknown = await second.json();
+          if (Array.isArray(j)) {
+            rows = j as OpenSourceEntry[];
+            // Revert to unscoped list; client `openSourceNameFilterState` filters by name / FK
+            scopeMode = 'all';
+            scopeEnroll = null;
+          }
+        } else if (!first.ok) {
+          console.warn('Open source fetch failed:', first.status, first.statusText);
+          return;
+        }
+      } else if (!first.ok) {
+        console.warn('Open source fetch failed:', first.status, first.statusText);
         return;
       }
 
@@ -799,20 +828,16 @@ const hasSeededMockDataRef = useRef(false);
         done: [],
       };
 
-      (data as OpenSourceEntry[]).forEach((entry: OpenSourceEntry) => {
+      rows.forEach((entry: OpenSourceEntry) => {
         const column = openSourceStatusToColumn[entry.status] ?? 'plan';
         grouped[column].push(entry);
       });
 
-      if (openSourceFetchQuery.type === 'enrollment') {
-        setOpenSourceListScope({
-          mode: 'enrollment',
-          enrollmentId: openSourceFetchQuery.enrollmentId,
-        });
-      } else {
-        setOpenSourceListScope({ mode: 'all', enrollmentId: null });
-      }
-
+      setOpenSourceListScope(
+        scopeMode === 'enrollment' && scopeEnroll != null
+          ? { mode: 'enrollment', enrollmentId: scopeEnroll }
+          : { mode: 'all', enrollmentId: null }
+      );
       setOpenSourceColumns(grouped);
     } catch (error) {
       console.error('Error fetching open source entries:', error);
