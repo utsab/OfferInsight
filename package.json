@@ -2,6 +2,8 @@
   "private": true,
   "scripts": {
     "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:db:push": "prisma db push --accept-data-loss",
     "prisma:seed": "prisma db seed",
     "prisma:generate:nvm": "PATH=$HOME/.nvm/versions/node/v24.15.0/bin:$PATH prisma generate",

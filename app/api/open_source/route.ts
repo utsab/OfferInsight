@@ -1,8 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db";
 import { canMutateUserDataForRequest, getUserIdForRequest } from "@/app/lib/api-user-helper";
+import { normalizePartnerName } from "@/app/lib/partnership-name";
 
-// GET: Fetch all open source entries for a user
+/** Resolves the active enrollment for this user when the program name matches. */
+async function resolveUserPartnershipIdForCreate(
+  userId: string,
+  partnershipName: string,
+  explicitId: unknown
+): Promise<number | null> {
+  if (typeof explicitId === "number" && Number.isInteger(explicitId) && explicitId > 0) {
+    const up = await prisma.userPartnership.findFirst({
+      where: { id: explicitId, userId },
+    });
+    if (up) return up.id;
+  }
+  const active = await prisma.userPartnership.findFirst({
+    where: { userId, status: "active" },
+    include: { partnership: true },
+  });
+  if (
+    active &&
+    normalizePartnerName(active.partnership.name) === normalizePartnerName(partnershipName)
+  ) {
+    return active.id;
+  }
+  return null;
+}
+
+// GET: All entries for the user, or for one enrollment (FK + optional legacy name OR).
+// ?enrollment=<UserPartnership.id> — repeat &name=... for legacy cards with null `userPartnerhipId`.
 export async function GET(request: NextRequest) {
   try {
     const { userId, error } = await getUserIdForRequest(request);
@@ -11,9 +38,47 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error || "Unauthorized" }, { status: 401 });
     }
 
+    const url = new URL(request.url);
+    const enrollmentParam = url.searchParams.get("enrollment");
+    const nameAliases = url.searchParams
+      .getAll("name")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (enrollmentParam != null && enrollmentParam !== "") {
+      const enrollmentId = parseInt(enrollmentParam, 10);
+      if (Number.isNaN(enrollmentId) || enrollmentId < 1) {
+        return NextResponse.json({ error: "Invalid enrollment" }, { status: 400 });
+      }
+      const up = await prisma.userPartnership.findFirst({
+        where: { id: enrollmentId, userId },
+      });
+      if (!up) {
+        return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const orClauses: any[] = [{ userPartnershipId: enrollmentId }];
+      if (nameAliases.length > 0) {
+        orClauses.push({
+          userPartnershipId: null,
+          OR: nameAliases.map((name) => ({
+            partnershipName: { equals: name, mode: "insensitive" as const },
+          })),
+        });
+      }
+
+      const entries = await prisma.openSourceEntry.findMany({
+        where: { userId, OR: orClauses },
+        orderBy: { dateCreated: "desc" },
+      });
+
+      return NextResponse.json(entries);
+    }
+
     const entries = await prisma.openSourceEntry.findMany({
       where: { userId },
-      orderBy: { dateCreated: 'desc' },
+      orderBy: { dateCreated: "desc" },
     });
 
     return NextResponse.json(entries);
@@ -42,6 +107,12 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json();
 
+    const userPartnershipId = await resolveUserPartnershipIdForCreate(
+      userId,
+      String(data.partnershipName ?? ""),
+      data.userPartnershipId
+    );
+
     const entry = await prisma.openSourceEntry.create({
       data: {
         partnershipName: data.partnershipName,
@@ -56,6 +127,7 @@ export async function POST(request: NextRequest) {
         proofOfCompletion: data.proofOfCompletion || [],
         proofResponses: data.proofResponses || {},
         userId: userId,
+        ...(userPartnershipId != null ? { userPartnershipId } : {}),
         dateCreated: data.dateCreated ? new Date(data.dateCreated) : new Date(),
         dateModified: new Date(),
       },

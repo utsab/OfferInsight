@@ -40,32 +40,11 @@ import {
   APPLICATION_COMPLETION_COLUMNS,
   EVENT_COMPLETION_COLUMNS,
 } from './components/types';
-import partnershipsData from '@/partnerships/partnerships.json';
-
-/** Trims and lowercases for resilient matching when DB/JSON/Partnership.name drift. */
-function normalizePartnerName(s: string | null | undefined): string {
-  return (s ?? '').trim().toLowerCase();
-}
-
-/** All known string forms for a partnership (display name, JSON, API lists) — no DB column changes. */
-function buildPartnershipNameMatchSet(
-  partnershipId: number | null,
-  displayName: string | null,
-  availablePartnerships: Array<{ id: number; name: string }>,
-  fullPartnerships: Array<{ id: number; name: string }>
-): Set<string> {
-  const out = new Set<string>();
-  if (displayName) out.add(normalizePartnerName(displayName));
-  if (partnershipId != null) {
-    const fromJson = partnershipsData.partnerships.find(p => p.id === partnershipId)?.name;
-    if (fromJson) out.add(normalizePartnerName(fromJson));
-    const fromAvail = availablePartnerships.find(p => p.id === partnershipId)?.name;
-    if (fromAvail) out.add(normalizePartnerName(fromAvail));
-    const fromFull = fullPartnerships.find(p => p.id === partnershipId)?.name;
-    if (fromFull) out.add(normalizePartnerName(fromFull));
-  }
-  return out;
-}
+import { normalizePartnerName } from '@/app/lib/partnership-name';
+import {
+  buildPartnershipNameMatchSet,
+  getPartnershipNameAliasStrings,
+} from '@/app/lib/partnership-aliases';
 
 function openSourceDateForMonthFilter(entry: OpenSourceEntry): string | null {
   return entry.dateModified ?? entry.dateCreated ?? null;
@@ -106,6 +85,26 @@ function openSourceEntryMatchesNameSet(
   const n = normalizePartnerName(entry.partnershipName);
   if (n === '') return isActiveView;
   return nameSet.has(n);
+}
+
+/** When `enrollmentId` is set, prefer `userPartnershipId`; otherwise fall back to name matching. */
+function openSourceEntryMatchesProgram(
+  entry: OpenSourceEntry,
+  enrollmentId: number | null,
+  nameSet: Set<string> | null,
+  isActiveView: boolean
+): boolean {
+  if (enrollmentId != null) {
+    if (entry.userPartnershipId != null) {
+      return entry.userPartnershipId === enrollmentId;
+    }
+    if (nameSet && nameSet.size > 0) {
+      return openSourceEntryMatchesNameSet(entry, nameSet, isActiveView);
+    }
+    return false;
+  }
+  if (!nameSet || nameSet.size === 0) return true;
+  return openSourceEntryMatchesNameSet(entry, nameSet, isActiveView);
 }
 
 // ===== MOCK DATA FEATURE TOGGLE START =====
@@ -696,6 +695,11 @@ const hasSeededMockDataRef = useRef(false);
     Array<{ id: number; partnershipId: number; partnershipName: string; criteria: any[] }>
   >([]);
   const [viewingCompletedPartnershipName, setViewingCompletedPartnershipName] = useState<string | null>(null);
+  /** Set after each successful open-source list fetch; when enrollment matches the UI, client skips redundant program matching. */
+  const [openSourceListScope, setOpenSourceListScope] = useState<{
+    mode: 'all' | 'enrollment';
+    enrollmentId: number | null;
+  }>({ mode: 'all', enrollmentId: null });
   const [availablePartnerships, setAvailablePartnerships] = useState<Array<{ id: number; name: string; spotsRemaining: number }>>([]);
   const [fullPartnerships, setFullPartnerships] = useState<Array<{ id: number; name: string }>>([]);
   const isFetchingOpenSourceRef = useRef(false);
@@ -703,6 +707,56 @@ const hasSeededMockDataRef = useRef(false);
   const isFetchingAvailablePartnershipsRef = useRef(false);
   const isDraggingOpenSourceRef = useRef(false);
   const [showProofOfWorkWarning, setShowProofOfWorkWarning] = useState(false);
+
+  /** When we have a stable `UserPartnerhip` id + aliases, request only those rows (server filter). */
+  const openSourceFetchQuery = useMemo(():
+    | { type: 'all' }
+    | { type: 'enrollment'; enrollmentId: number; nameAliases: string[] } => {
+    if (!selectedPartnership) {
+      return { type: 'all' };
+    }
+    if (viewingCompletedPartnershipName) {
+      const cp = completedPartnerships.find(
+        c =>
+          normalizePartnerName(c.partnershipName) ===
+          normalizePartnerName(viewingCompletedPartnershipName)
+      );
+      if (!cp) {
+        return { type: 'all' };
+      }
+      return {
+        type: 'enrollment',
+        enrollmentId: cp.id,
+        nameAliases: getPartnershipNameAliasStrings(
+          cp.partnershipId,
+          viewingCompletedPartnershipName,
+          availablePartnerships,
+          fullPartnerships
+        ),
+      };
+    }
+    if (activePartnershipDbId == null) {
+      return { type: 'all' };
+    }
+    return {
+      type: 'enrollment',
+      enrollmentId: activePartnershipDbId,
+      nameAliases: getPartnershipNameAliasStrings(
+        selectedPartnershipId,
+        selectedPartnership,
+        availablePartnerships,
+        fullPartnerships
+      ),
+    };
+  }, [
+    selectedPartnership,
+    viewingCompletedPartnershipName,
+    completedPartnerships,
+    activePartnershipDbId,
+    selectedPartnershipId,
+    availablePartnerships,
+    fullPartnerships,
+  ]);
 
   const fetchOpenSourceEntries = useCallback(async () => {
     // --- MOCK DATA BYPASS FOR OPENSOURCE FETCH START ---
@@ -713,7 +767,19 @@ const hasSeededMockDataRef = useRef(false);
     try {
       isFetchingOpenSourceRef.current = true;
       setIsLoadingOpenSource(true);
-        const url = userIdParam ? `/api/open_source?userId=${userIdParam}` : '/api/open_source';
+      const params = new URLSearchParams();
+      if (userIdParam) {
+        params.set('userId', userIdParam);
+      }
+      if (openSourceFetchQuery.type === 'enrollment') {
+        params.set('enrollment', String(openSourceFetchQuery.enrollmentId));
+        for (const a of openSourceFetchQuery.nameAliases) {
+          params.append('name', a);
+        }
+      }
+      const qs = params.toString();
+      const url = `/api/open_source${qs ? `?${qs}` : ''}`;
+
       const response = await fetch(url);
       if (!response.ok) {
         // Do not wipe the board on transient 401/503 (e.g. session not ready) — that hid real DB rows in prod.
@@ -738,6 +804,15 @@ const hasSeededMockDataRef = useRef(false);
         grouped[column].push(entry);
       });
 
+      if (openSourceFetchQuery.type === 'enrollment') {
+        setOpenSourceListScope({
+          mode: 'enrollment',
+          enrollmentId: openSourceFetchQuery.enrollmentId,
+        });
+      } else {
+        setOpenSourceListScope({ mode: 'all', enrollmentId: null });
+      }
+
       setOpenSourceColumns(grouped);
     } catch (error) {
       console.error('Error fetching open source entries:', error);
@@ -745,7 +820,7 @@ const hasSeededMockDataRef = useRef(false);
       setIsLoadingOpenSource(false);
       isFetchingOpenSourceRef.current = false;
     }
-  }, [userIdParam]);
+  }, [userIdParam, openSourceFetchQuery]);
 
   useEffect(() => {
     // --- MOCK DATA BYPASS FOR OPENSOURCE EFFECT START ---
@@ -781,9 +856,9 @@ const hasSeededMockDataRef = useRef(false);
         setActivePartnershipDbId(data.active.id);
         setActivePartnershipCriteria(data.active.criteria || []);
         // Do not clear completed-view here: refetch runs often and would undo a click on history.
-      } else if (completed.length > 0) {
+      } else if (Array.isArray(data.completed) && data.completed.length > 0) {
         // No active partnership, but there are completed ones - show the most recent completed
-        const mostRecent = completed[0]; // Already sorted by completedAt desc from API
+        const mostRecent = data.completed[0]; // Already sorted by completedAt desc from API
         setSelectedPartnership(mostRecent.partnershipName);
         setSelectedPartnershipId(null); // No active partnership ID
         setActivePartnershipDbId(null);
@@ -1519,6 +1594,33 @@ const hasSeededMockDataRef = useRef(false);
       });
     }
 
+    let enrollmentFilterId: number | null = null;
+    if (viewingCompletedPartnershipName) {
+      const cp = completedPartnerships.find(
+        c => normalizePartnerName(c.partnershipName) === normalizePartnerName(viewingCompletedPartnershipName)
+      );
+      enrollmentFilterId = cp?.id ?? null;
+    } else if (selectedPartnership) {
+      enrollmentFilterId = activePartnershipDbId;
+    }
+
+    const isActiveView = Boolean(selectedPartnership && !viewingCompletedPartnershipName);
+
+    const skipProgramFilter =
+      openSourceListScope.mode === 'enrollment' &&
+      openSourceListScope.enrollmentId != null &&
+      openSourceListScope.enrollmentId === enrollmentFilterId;
+
+    if (skipProgramFilter) {
+      return {
+        timeFiltered,
+        nameSet: null,
+        isActiveView,
+        enrollmentFilterId,
+        skipProgramFilter: true as const,
+      };
+    }
+
     let nameSet: Set<string> | null = null;
     if (viewingCompletedPartnershipName) {
       const cp = completedPartnerships.find(
@@ -1543,9 +1645,13 @@ const hasSeededMockDataRef = useRef(false);
       nameSet = withAugmentNameSetForActiveSingleDistinct(nameSet, timeFiltered);
     }
 
-    const isActiveView = Boolean(selectedPartnership && !viewingCompletedPartnershipName);
-
-    return { timeFiltered, nameSet, isActiveView };
+    return {
+      timeFiltered,
+      nameSet,
+      isActiveView,
+      enrollmentFilterId,
+      skipProgramFilter: false as const,
+    };
   }, [
     openSourceColumns,
     openSourceFilter,
@@ -1556,24 +1662,32 @@ const hasSeededMockDataRef = useRef(false);
     availablePartnerships,
     fullPartnerships,
     isWithinCurrentMonth,
+    activePartnershipDbId,
+    openSourceListScope,
   ]);
 
   const openSourceCriteria = useMemo(() => {
     const doneEntries = openSourceColumns.done ?? [];
-    const { nameSet, isActiveView } = openSourceNameFilterState;
+    const { nameSet, isActiveView, enrollmentFilterId, skipProgramFilter } = openSourceNameFilterState;
     const totalCriteria = activePartnershipCriteria.reduce((sum, criteria) => {
       const count = Number(criteria?.count);
       return sum + (Number.isFinite(count) && count > 0 ? count : 1);
     }, 0);
-    const activePartnershipDoneCount =
-      nameSet && nameSet.size > 0
-        ? doneEntries
-            .filter(entry => openSourceEntryMatchesNameSet(entry, nameSet, isActiveView))
-            .reduce((sum, entry) => {
-              const extras = Array.isArray(entry.selectedExtras) ? entry.selectedExtras.length : 0;
-              return sum + 1 + extras;
-            }, 0)
-        : 0;
+    const hasProgramFilter =
+      skipProgramFilter ||
+      enrollmentFilterId != null ||
+      (nameSet != null && nameSet.size > 0);
+    const activePartnershipDoneCount = hasProgramFilter
+      ? (skipProgramFilter
+          ? doneEntries
+          : doneEntries.filter(entry =>
+              openSourceEntryMatchesProgram(entry, enrollmentFilterId, nameSet, isActiveView)
+            )
+        ).reduce((sum, entry) => {
+        const extras = Array.isArray(entry.selectedExtras) ? entry.selectedExtras.length : 0;
+        return sum + 1 + extras;
+      }, 0)
+      : 0;
     const completedCriteria =
       totalCriteria > 0 ? Math.min(activePartnershipDoneCount, totalCriteria) : activePartnershipDoneCount;
 
@@ -1636,7 +1750,11 @@ const hasSeededMockDataRef = useRef(false);
   }, [eventColumns, eventsFilter, isWithinCurrentMonth]);
 
   const filteredOpenSourceColumns = useMemo(() => {
-    const { timeFiltered, nameSet, isActiveView } = openSourceNameFilterState;
+    const { timeFiltered, nameSet, isActiveView, enrollmentFilterId, skipProgramFilter } =
+      openSourceNameFilterState;
+    if (skipProgramFilter) {
+      return timeFiltered;
+    }
     const filtered: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
       plan: [...timeFiltered.plan],
       babyStep: [...timeFiltered.babyStep],
@@ -1644,10 +1762,12 @@ const hasSeededMockDataRef = useRef(false);
       done: [...timeFiltered.done],
     };
 
-    if (nameSet && nameSet.size > 0) {
+    const hasProgramFilter =
+      enrollmentFilterId != null || (nameSet != null && nameSet.size > 0);
+    if (hasProgramFilter) {
       (Object.keys(filtered) as OpenSourceColumnId[]).forEach(columnId => {
         filtered[columnId] = filtered[columnId].filter(entry =>
-          openSourceEntryMatchesNameSet(entry, nameSet, isActiveView)
+          openSourceEntryMatchesProgram(entry, enrollmentFilterId, nameSet, isActiveView)
         );
       });
     }

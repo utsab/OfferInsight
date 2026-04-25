@@ -189,12 +189,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If instructor is switching partnerships, abandon the old one and delete all cards
+    // If instructor is switching partnerships, delete only that program's open-source cards, then maybe abandon
     // This happens BEFORE creating the new one to ensure proper count tracking
     if (existingActive && isInstructor) {
-      // Delete all open source entries for this user
+      // Only remove cards for the active enrollment (keep completed / other history)
       await prisma.openSourceEntry.deleteMany({
-        where: { userId },
+        where: { userId, userPartnershipId: existingActive.id },
       });
 
       // Abandon the old partnership (only if switching to a different one)
@@ -267,6 +267,7 @@ export async function POST(request: NextRequest) {
                 await tx.openSourceEntry.create({
                   data: {
                     userId,
+                    userPartnershipId: newPartnership.id,
                     partnershipName: partnershipDef.name,
                     criteriaType: selectedChoice.type,
                     metric: typeDef?.metric || selectedChoice.type,
@@ -294,6 +295,7 @@ export async function POST(request: NextRequest) {
               await tx.openSourceEntry.create({
                 data: {
                   userId,
+                  userPartnershipId: newPartnership.id,
                   partnershipName: partnershipDef.name,
                   criteriaType: criteria.type,
                   metric: typeDef.metric || criteria.type,
@@ -464,9 +466,8 @@ export async function DELETE(request: NextRequest) {
 
     // Delete all cards and abandon partnership
     await prisma.$transaction(async (tx) => {
-      // Delete all open source entries for this user
       await tx.openSourceEntry.deleteMany({
-        where: { userId },
+        where: { userId, userPartnershipId: activePartnership.id },
       });
 
       // Abandon the partnership

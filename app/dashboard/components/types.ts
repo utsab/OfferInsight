@@ -64,6 +64,8 @@ export type InPersonEvent = {
 export type OpenSourceEntry = {
   id: number;
   partnershipName: string;
+  /** Ties the card to a `UserPartnership` enrollment; null for legacy or unmatched rows. */
+  userPartnershipId?: number | null;
   criteriaType?: string | null;
   metric?: string | null;
   status: OpenSourceStatus;
