@@ -5,6 +5,32 @@ import { getInstructorSession } from "@/app/lib/instructor-auth";
 import partnershipsData from "@/partnerships/partnerships.json";
 import typesData from "@/partnerships/types.json";
 
+function normalizeName(s: string | null | undefined): string {
+  return (s ?? "").trim().toLowerCase();
+}
+
+/** Build all known partnership name aliases (DB + JSON) for safer matching. */
+function buildPartnershipAliases(partnershipId: number, dbName?: string | null): string[] {
+  const out = new Map<string, string>();
+  const add = (value?: string | null) => {
+    const raw = (value ?? "").trim();
+    if (!raw) return;
+    const n = normalizeName(raw);
+    if (!out.has(n)) out.set(n, raw);
+  };
+
+  add(dbName);
+  const fromJson = partnershipsData.partnerships.find(p => p.id === partnershipId)?.name;
+  add(fromJson);
+  return [...out.values()];
+}
+
+function partnershipNameOrWhere(aliasNames: string[]) {
+  return aliasNames.map((name) => ({
+    partnershipName: { equals: name, mode: "insensitive" as const },
+  }));
+}
+
 // Builds the full criteria array for a given partnership + user multiple-choice selections.
 function buildCriteria(partnershipId: number, selections: Record<string, string>) {
   let mcIndex = 0;
@@ -189,13 +215,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If instructor is switching partnerships, abandon the old one and delete all cards
+    // If instructor is switching partnerships, abandon the old one and delete only that partnership's cards
     // This happens BEFORE creating the new one to ensure proper count tracking
     if (existingActive && isInstructor) {
-      // Delete all open source entries for this user
-      await prisma.openSourceEntry.deleteMany({
-        where: { userId },
+      const activeAliases = buildPartnershipAliases(
+        existingActive.partnershipId,
+        existingActive.partnership?.name
+      );
+      const completedRows = await prisma.userPartnership.findMany({
+        where: { userId, status: "completed" },
+        include: { partnership: true },
       });
+      const protectedAliases = new Set(
+        completedRows
+          .flatMap((row) =>
+            buildPartnershipAliases(row.partnershipId, row.partnership?.name)
+          )
+          .map((n) => normalizeName(n))
+      );
+      const overlap = activeAliases.filter((n) =>
+        protectedAliases.has(normalizeName(n))
+      );
+      if (overlap.length > 0) {
+        // Safer to skip deletion than risk removing historical completed cards.
+        console.warn(
+          "[Partnership] Switch delete skipped due to active/completed alias overlap",
+          { userId, activePartnershipId: existingActive.partnershipId, overlap }
+        );
+      } else {
+        const activeOr = partnershipNameOrWhere(activeAliases);
+        const [targetCount, totalUserCount] = await Promise.all([
+          prisma.openSourceEntry.count({ where: { userId, OR: activeOr } }),
+          prisma.openSourceEntry.count({ where: { userId } }),
+        ]);
+        if (targetCount > totalUserCount) {
+          console.warn("[Partnership] Switch delete aborted due to invalid counts", {
+            userId,
+            targetCount,
+            totalUserCount,
+            activePartnershipId: existingActive.partnershipId,
+          });
+        } else {
+          if (targetCount === 0) {
+            console.info("[Partnership] Switch delete matched no cards", {
+              userId,
+              activePartnershipId: existingActive.partnershipId,
+              activeAliases,
+            });
+          }
+          // Keep completed-history cards from other partnerships intact
+          await prisma.openSourceEntry.deleteMany({
+            where: {
+              userId,
+              OR: activeOr,
+            },
+          });
+        }
+      }
 
       // Abandon the old partnership (only if switching to a different one)
       if (existingActive.partnershipId !== partnershipId) {
@@ -453,6 +529,9 @@ export async function DELETE(request: NextRequest) {
         userId,
         status: "active",
       },
+      include: {
+        partnership: true,
+      },
     });
 
     if (!activePartnership) {
@@ -462,12 +541,61 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete all cards and abandon partnership
+    // Delete only active partnership cards and abandon partnership
     await prisma.$transaction(async (tx) => {
-      // Delete all open source entries for this user
-      await tx.openSourceEntry.deleteMany({
-        where: { userId },
+      const activeAliases = buildPartnershipAliases(
+        activePartnership.partnershipId,
+        activePartnership.partnership?.name
+      );
+      const completedRows = await tx.userPartnership.findMany({
+        where: { userId, status: "completed" },
+        include: { partnership: true },
       });
+      const protectedAliases = new Set(
+        completedRows
+          .flatMap((row) =>
+            buildPartnershipAliases(row.partnershipId, row.partnership?.name)
+          )
+          .map((n) => normalizeName(n))
+      );
+      const overlap = activeAliases.filter((n) =>
+        protectedAliases.has(normalizeName(n))
+      );
+      if (overlap.length > 0) {
+        console.warn(
+          "[Partnership] Abandon delete skipped due to active/completed alias overlap",
+          { userId, activePartnershipId: activePartnership.partnershipId, overlap }
+        );
+      } else {
+        const activeOr = partnershipNameOrWhere(activeAliases);
+        const [targetCount, totalUserCount] = await Promise.all([
+          tx.openSourceEntry.count({ where: { userId, OR: activeOr } }),
+          tx.openSourceEntry.count({ where: { userId } }),
+        ]);
+        if (targetCount > totalUserCount) {
+          console.warn("[Partnership] Abandon delete aborted due to invalid counts", {
+            userId,
+            targetCount,
+            totalUserCount,
+            activePartnershipId: activePartnership.partnershipId,
+          });
+        } else {
+          if (targetCount === 0) {
+            console.info("[Partnership] Abandon delete matched no cards", {
+              userId,
+              activePartnershipId: activePartnership.partnershipId,
+              activeAliases,
+            });
+          }
+          // Keep cards from completed/other partnerships
+          await tx.openSourceEntry.deleteMany({
+            where: {
+              userId,
+              OR: activeOr,
+            },
+          });
+        }
+      }
 
       // Abandon the partnership
       await tx.userPartnership.update({
