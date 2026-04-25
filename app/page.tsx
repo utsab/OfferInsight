@@ -7,11 +7,13 @@ import { handleSignIn } from '@/components/auth-actions';
 export default function Page() {
   const [onboardingProgress, setOnboardingProgress] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isInstructor, setIsInstructor] = useState<boolean>(false);
 
   // Fetch user's onboarding progress and instructor status on component mount
   useEffect(() => {
+    setMounted(true);
     const fetchStatus = async () => {
       try {
         const [userRes, instructorRes] = await Promise.all([
@@ -88,12 +90,16 @@ export default function Page() {
               <p className="text-base sm:text-lg lg:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-2">
                 OSRB helps you track your job search journey and build a comprehensive resume based on your applications, networking, and skill development. Master the four key habits that lead to success.
               </p>
-              <button 
+              <button
                 onClick={handleGoToDashboard}
-                disabled={loading}
-                className="bg-electric-blue hover:bg-blue-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-disabled={!mounted || loading}
+                className={`bg-electric-blue text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-colors ${
+                  !mounted || loading
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-blue-600'
+                }`}
               >
-                {loading ? 'Loading...' : 'Go to Dashboard'}
+                Go to Dashboard
               </button>
             </div>
           </section>
