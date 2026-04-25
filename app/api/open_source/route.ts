@@ -14,6 +14,24 @@ export async function GET(request: NextRequest) {
     const entries = await prisma.openSourceEntry.findMany({
       where: { userId },
       orderBy: { dateCreated: 'desc' },
+      // Explicit select keeps this route compatible with DBs that don't yet have newer optional columns.
+      select: {
+        id: true,
+        partnershipName: true,
+        criteriaType: true,
+        metric: true,
+        status: true,
+        selectedExtras: true,
+        planFields: true,
+        planResponses: true,
+        babyStepFields: true,
+        babyStepResponses: true,
+        proofOfCompletion: true,
+        proofResponses: true,
+        dateCreated: true,
+        dateModified: true,
+        userId: true,
+      },
     });
 
     return NextResponse.json(entries);
