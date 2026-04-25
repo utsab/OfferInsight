@@ -52,12 +52,12 @@ function openSourceDateForMonthFilter(entry: OpenSourceEntry): string | null {
 
 function mapCompletedPartnershipsFromApi(
   completed: { id: number; partnershipId: number; partnershipName: string; criteria: unknown }[]
-) {
-  return (completed || []).map((p) => ({
+): Array<{ id: number; partnershipId: number; partnershipName: string; criteria: any[] }> {
+  return (completed || []).map(p => ({
     id: p.id,
     partnershipId: p.partnershipId,
     partnershipName: p.partnershipName,
-    criteria: p.criteria || [],
+    criteria: Array.isArray(p.criteria) ? p.criteria : [],
   }));
 }
 
