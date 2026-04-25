@@ -1726,31 +1726,33 @@ const hasSeededMockDataRef = useRef(false);
       }
     }
 
-    const finalTotal = (Object.keys(filtered) as OpenSourceColumnId[]).reduce(
-      (acc, k) => acc + filtered[k as OpenSourceColumnId].length,
-      0
-    );
-    if (finalTotal === 0) {
-      const base: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
-        plan: [],
-        babyStep: [],
-        inProgress: [],
-        done: [],
-      };
-      (Object.keys(openSourceColumns) as OpenSourceColumnId[]).forEach(columnId => {
-        base[columnId] =
-          effectiveTimeFilter === 'allTime'
-            ? [...openSourceColumns[columnId]]
-            : openSourceColumns[columnId].filter(entry =>
-                isWithinCurrentMonth(openSourceDateForMonthFilter(entry))
-              );
-      });
-      const baseTotal = (Object.keys(base) as OpenSourceColumnId[]).reduce(
-        (acc, k) => acc + base[k as OpenSourceColumnId].length,
+    if (!viewingCompletedPartnershipName) {
+      const finalTotal = (Object.keys(filtered) as OpenSourceColumnId[]).reduce(
+        (acc, k) => acc + filtered[k as OpenSourceColumnId].length,
         0
       );
-      if (baseTotal > 0) {
-        return base;
+      if (finalTotal === 0) {
+        const base: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
+          plan: [],
+          babyStep: [],
+          inProgress: [],
+          done: [],
+        };
+        (Object.keys(openSourceColumns) as OpenSourceColumnId[]).forEach(columnId => {
+          base[columnId] =
+            effectiveTimeFilter === 'allTime'
+              ? [...openSourceColumns[columnId]]
+              : openSourceColumns[columnId].filter(entry =>
+                  isWithinCurrentMonth(openSourceDateForMonthFilter(entry))
+                );
+        });
+        const baseTotal = (Object.keys(base) as OpenSourceColumnId[]).reduce(
+          (acc, k) => acc + base[k as OpenSourceColumnId].length,
+          0
+        );
+        if (baseTotal > 0) {
+          return base;
+        }
       }
     }
 
