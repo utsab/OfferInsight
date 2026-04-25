@@ -50,6 +50,22 @@ function openSourceDateForMonthFilter(entry: OpenSourceEntry): string | null {
   return entry.dateModified ?? entry.dateCreated ?? null;
 }
 
+function groupOpenSourceRowsByStatus(
+  rows: OpenSourceEntry[]
+): Record<OpenSourceColumnId, OpenSourceEntry[]> {
+  const grouped: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
+    plan: [],
+    babyStep: [],
+    inProgress: [],
+    done: [],
+  };
+  rows.forEach((entry: OpenSourceEntry) => {
+    const column = openSourceStatusToColumn[entry.status] ?? 'plan';
+    grouped[column].push(entry);
+  });
+  return grouped;
+}
+
 function mapCompletedPartnershipsFromApi(
   completed: { id: number; partnershipId: number; partnershipName: string; criteria: unknown }[]
 ): Array<{ id: number; partnershipId: number; partnershipName: string; criteria: any[] }> {
@@ -708,7 +724,7 @@ const hasSeededMockDataRef = useRef(false);
   const isDraggingOpenSourceRef = useRef(false);
   const [showProofOfWorkWarning, setShowProofOfWorkWarning] = useState(false);
 
-  /** When we have a stable `UserPartnerhip` id + aliases, request only those rows (server filter). */
+  /** When we have a stable `UserPartnership` enrollment id + aliases, request only those rows (server filter; may fall back to full list). */
   const openSourceFetchQuery = useMemo(():
     | { type: 'all' }
     | { type: 'enrollment'; enrollmentId: number; nameAliases: string[] } => {
@@ -793,8 +809,8 @@ const hasSeededMockDataRef = useRef(false);
         }
       }
 
-      const usedScopedUrl = openSourceFetchQuery.type === 'enrollment';
-      const tryFullListFallback = usedScopedUrl && (!first.ok || rows.length === 0);
+      const tryFullListFallback =
+        openSourceFetchQuery.type === 'enrollment' && (!first.ok || rows.length === 0);
       let scopeMode: 'all' | 'enrollment' = 'all';
       let scopeEnroll: number | null = null;
       if (openSourceFetchQuery.type === 'enrollment') {
@@ -821,24 +837,12 @@ const hasSeededMockDataRef = useRef(false);
         return;
       }
 
-      const grouped: Record<OpenSourceColumnId, OpenSourceEntry[]> = {
-        plan: [],
-        babyStep: [],
-        inProgress: [],
-        done: [],
-      };
-
-      rows.forEach((entry: OpenSourceEntry) => {
-        const column = openSourceStatusToColumn[entry.status] ?? 'plan';
-        grouped[column].push(entry);
-      });
-
       setOpenSourceListScope(
         scopeMode === 'enrollment' && scopeEnroll != null
           ? { mode: 'enrollment', enrollmentId: scopeEnroll }
           : { mode: 'all', enrollmentId: null }
       );
-      setOpenSourceColumns(grouped);
+      setOpenSourceColumns(groupOpenSourceRowsByStatus(rows));
     } catch (error) {
       console.error('Error fetching open source entries:', error);
     } finally {
@@ -1619,12 +1623,17 @@ const hasSeededMockDataRef = useRef(false);
       });
     }
 
+    const completedForView = viewingCompletedPartnershipName
+      ? completedPartnerships.find(
+          c =>
+            normalizePartnerName(c.partnershipName) ===
+            normalizePartnerName(viewingCompletedPartnershipName)
+        )
+      : undefined;
+
     let enrollmentFilterId: number | null = null;
     if (viewingCompletedPartnershipName) {
-      const cp = completedPartnerships.find(
-        c => normalizePartnerName(c.partnershipName) === normalizePartnerName(viewingCompletedPartnershipName)
-      );
-      enrollmentFilterId = cp?.id ?? null;
+      enrollmentFilterId = completedForView?.id ?? null;
     } else if (selectedPartnership) {
       enrollmentFilterId = activePartnershipDbId;
     }
@@ -1648,11 +1657,8 @@ const hasSeededMockDataRef = useRef(false);
 
     let nameSet: Set<string> | null = null;
     if (viewingCompletedPartnershipName) {
-      const cp = completedPartnerships.find(
-        c => normalizePartnerName(c.partnershipName) === normalizePartnerName(viewingCompletedPartnershipName)
-      );
       nameSet = buildPartnershipNameMatchSet(
-        cp?.partnershipId ?? null,
+        completedForView?.partnershipId ?? null,
         viewingCompletedPartnershipName,
         availablePartnerships,
         fullPartnerships

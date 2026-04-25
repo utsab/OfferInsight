@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db";
 import { canMutateUserDataForRequest, getUserIdForRequest } from "@/app/lib/api-user-helper";
@@ -29,7 +30,7 @@ async function resolveUserPartnershipIdForCreate(
 }
 
 // GET: All entries for the user, or for one enrollment (FK + optional legacy name OR).
-// ?enrollment=<UserPartnership.id> — repeat &name=... for legacy cards with null `userPartnerhipId`.
+// ?enrollment=<UserPartnership.id> — repeat &name=... for legacy rows with null `userPartnershipId`.
 export async function GET(request: NextRequest) {
   try {
     const { userId, error } = await getUserIdForRequest(request);
@@ -57,8 +58,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const orClauses: any[] = [{ userPartnershipId: enrollmentId }];
+      const orClauses: Prisma.OpenSourceEntryWhereInput[] = [
+        { userPartnershipId: enrollmentId },
+      ];
       if (nameAliases.length > 0) {
         orClauses.push({
           userPartnershipId: null,
