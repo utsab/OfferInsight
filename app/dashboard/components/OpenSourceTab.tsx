@@ -44,7 +44,14 @@ type OpenSourceTabProps = {
   fullPartnerships: Array<{ id: number; name: string; criteria?: any[] }>;
   fetchAvailablePartnerships: () => Promise<void>;
   refreshCompletedPartnerships?: () => Promise<void>;
-  completedPartnerships?: Array<{ id: number; partnershipName: string; criteria: any[] }>;
+  completedPartnerships?: Array<{
+    id: number;
+    partnershipId?: number;
+    partnershipName: string;
+    criteria: any[];
+    startedAt?: string | null;
+    completedAt?: string | null;
+  }>;
   viewingCompletedPartnershipName?: string | null;
   setViewingCompletedPartnershipName?: (name: string | null) => void;
   isInstructor?: boolean;
