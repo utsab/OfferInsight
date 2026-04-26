@@ -39,6 +39,29 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
+    const reactivatedUsersWhere = {
+      email: { not: null },
+      partnerships: {
+        some: { status: "active" },
+        none: { status: "completed" },
+      },
+      removedFromResumeBook: false,
+      inactivityWarningCount: { gt: 0 },
+      openSource: {
+        some: { dateModified: { gte: thirtyDaysAgo } },
+      },
+    };
+
+    const resetResult = await prisma.user.updateMany({
+      where: debugMode
+        ? { ...reactivatedUsersWhere, email: { in: DEBUG_TEST_EMAILS } }
+        : reactivatedUsersWhere,
+      data: {
+        inactivityWarningCount: 0,
+        lastInactivityWarningSent: null,
+      },
+    });
+
     const baseWhere = {
       email: { not: null },
       partnerships: {
@@ -134,12 +157,13 @@ export async function GET(request: NextRequest) {
     };
 
     console.log(
-      `Inactivity warnings sent: ${summary.firstWarnings} first, ${summary.secondWarnings} second, ${summary.removalNotices} removals. Failed: ${failed.length}`
+      `Inactivity warnings sent: ${summary.firstWarnings} first, ${summary.secondWarnings} second, ${summary.removalNotices} removals. Failed: ${failed.length}. Reset warnings: ${resetResult.count}`
     );
 
     return NextResponse.json({
       message: "Inactivity warning job completed",
       debugMode,
+      warningsReset: resetResult.count,
       totalProcessed: inactiveUsers.length,
       summary,
       emailsFailed: failed.length,
