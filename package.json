@@ -7,6 +7,8 @@
     "prisma:generate:nvm": "PATH=$HOME/.nvm/versions/node/v24.15.0/bin:$PATH prisma generate",
     "prisma:db:push:nvm": "PATH=$HOME/.nvm/versions/node/v24.15.0/bin:$PATH prisma db push --accept-data-loss",
     "prisma:seed:nvm": "PATH=$HOME/.nvm/versions/node/v24.15.0/bin:$PATH prisma db seed",
+    "partnerships:shorten-last-names": "tsx scripts/shorten-partnership-last-names.ts",
+    "partnerships:shorten-last-names:apply": "tsx scripts/shorten-partnership-last-names.ts --apply",
     "build": "pnpm run prisma:generate:nvm && pnpm run prisma:db:push:nvm && pnpm run prisma:seed:nvm && next build",
     "build:nvm": "pnpm run build",
     "dev": "next dev -H 0.0.0.0",
