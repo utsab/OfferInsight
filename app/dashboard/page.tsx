@@ -14,6 +14,7 @@ import EventsTab from './components/EventsTab';
 import OpenSourceTab from './components/OpenSourceTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 import { getFilteredOpenSourceColumns } from './lib/open-source-filter';
+import partnershipsData from '@/partnerships/partnerships.json';
 import type {
   Application,
   ApplicationStatus,
@@ -41,6 +42,29 @@ import {
   APPLICATION_COMPLETION_COLUMNS,
   EVENT_COMPLETION_COLUMNS,
 } from './components/types';
+
+function normalizePartnerName(s: string | null | undefined): string {
+  return (s ?? '').trim().toLowerCase();
+}
+
+function buildPartnershipNameMatchSet(
+  partnershipId: number | null,
+  displayName: string | null,
+  availablePartnerships: Array<{ id: number; name: string }>,
+  fullPartnerships: Array<{ id: number; name: string }>
+): Set<string> {
+  const out = new Set<string>();
+  if (displayName) out.add(normalizePartnerName(displayName));
+  if (partnershipId != null) {
+    const fromJson = partnershipsData.partnerships.find(p => p.id === partnershipId)?.name;
+    if (fromJson) out.add(normalizePartnerName(fromJson));
+    const fromAvail = availablePartnerships.find(p => p.id === partnershipId)?.name;
+    if (fromAvail) out.add(normalizePartnerName(fromAvail));
+    const fromFull = fullPartnerships.find(p => p.id === partnershipId)?.name;
+    if (fromFull) out.add(normalizePartnerName(fromFull));
+  }
+  return out;
+}
 // ===== MOCK DATA FEATURE TOGGLE START =====
 // Toggle this flag or comment out the seeding effect below to disable mock data.
 const ENABLE_DASHBOARD_MOCKS = false;
