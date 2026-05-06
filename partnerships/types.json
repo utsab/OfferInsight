@@ -546,6 +546,25 @@
                 "text": "Write a 1 sentence description of the project and how it relates to the video streaming space: "
             }
             ]
+        },
+        "writing_unit_tests": {
+            "is_primary": false,
+            "short_name": "writing_unit_tests",
+            "quality": "Testing", 
+            "metric": "1 example of a pull request that adds or updates unit tests (new behavior, changed behavior, or previously untested code).",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "Write a 1 sentence summary of what you did for testing."
+            },
+            {
+                "type": "checkbox",
+                "text": "Did you write unit tests or update existing tests for new behavior, or add tests for previously untested behavior?"
+            }]
         }
     }   
 }
