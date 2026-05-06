@@ -14,6 +14,7 @@ import EventsTab from './components/EventsTab';
 import OpenSourceTab from './components/OpenSourceTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 import { getFilteredOpenSourceColumns } from './lib/open-source-filter';
+import { buildPartnershipNameMatchSet, normalizePartnerName } from './lib/partnership-name-match';
 import type {
   Application,
   ApplicationStatus,
@@ -41,6 +42,7 @@ import {
   APPLICATION_COMPLETION_COLUMNS,
   EVENT_COMPLETION_COLUMNS,
 } from './components/types';
+
 // ===== MOCK DATA FEATURE TOGGLE START =====
 // Toggle this flag or comment out the seeding effect below to disable mock data.
 const ENABLE_DASHBOARD_MOCKS = false;
