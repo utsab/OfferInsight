@@ -565,6 +565,116 @@
                 "type": "checkbox",
                 "text": "Did you write unit tests or update existing tests for new behavior, or add tests for previously untested behavior?"
             }]
+        },
+        "ronald_t_domain_knowledge": {
+            "is_primary": true,
+            "short_name": "ronald_t_domain_knowledge",
+            "quality": "Domain Knowledge", 
+            "metric": "Open source experience in at least 1 of the following: React, Typescript, php, Laravel, data engineering problems(transforming data with python)",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "Write 1 sentence explaining which technology you have experience with and which open source project featured that technology."
+            }]
+        },
+        "james_f_domain_knowledge": {
+            "is_primary": true,
+            "short_name": "james_f_domain_knowledge",
+            "quality": "Domain Knowledge", 
+            "metric": "Open source experience in at least 1 of the following: big data (e.g. Spark, Druid, SigNoz), edge/CDN (CDNs, third-party CDN integration, HTTP / OSI)",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "Write 1 sentence explaining which technology you have experience with and which open source project featured that technology."
+            }]
+        },
+        "leetcode_problem": {
+            "is_primary": true,
+            "short_name": "leetcode_problem",
+            "quality": "Problem-solving skills", 
+            "metric": "Can you solve a medium-difficulty LeetCode problem in 15 minutes or less?",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Provide a link to a medium-difficulty leetcode problem you solved."
+            },
+            {
+                "type": "checkbox",
+                "text": "Did you solve this problem in 15 minutes or less?"
+            }]
+        },
+        "learn_and_apply": {
+            "is_primary": false,
+            "short_name": "learn_and_apply",
+            "quality": "Curiosity",
+            "metric": "Learned something new, then applying that new skill to a contribution to the project.",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the pull request: "
+            },
+            {
+                "type": "text",
+                "text": "In 1 sentence, describe what new thing you learned and how you applied it to the project."
+            },
+            {
+                "type": "URL",
+                "text": "Link to the blog post or video: "
+            }]
+        },
+        "documentation_gap": {
+            "is_primary": false,
+            "short_name": "documentation_gap",
+            "quality": "Curiosity",
+            "metric": "Updated a missing gap in the documentation (e.g. a specific permutation of using the product in a particular way that is not covered in the docs).",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to the pull request that updates the documentation: "
+            },
+            {
+                "type": "text",
+                "text": "In 1 sentence, describe the documentation gap you filled (e.g. a specific permutation of using the product in a particular way that is not covered in the docs)."
+            }]
+        },
+        "applied_domain_skill": {
+            "is_primary": true,
+            "short_name": "applied_domain_skill",
+            "quality": "Curiosity",
+            "metric": "Applying certain domain knowledge or a specific skill toward doing something truly useful. For example, using the open source project in a way that is genuinely useful for yourself or others.",
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to a short (< 750 words) blog post where you describe how you applied domain knowledge or a specific skill toward doing something truly useful: "
+            },
+            {
+                "type": "text",
+                "text": "In 1 sentence, explain which domain knowledge or specific skill you applied and how you used it to do something useful."
+            }]
         }
     }   
 }
