@@ -217,6 +217,7 @@
                 { "type": "give_feedback", "count": 2 },
                 { "type": "receive_feedback", "count": 2 },
                 { "type": "outside_comfort_zone", "count": 2 },
+                { "type": "ronald_t_domain_knowledge", "count": 1 },
                 { "type": "issue", "count": 10 }
             ]
         },
@@ -230,6 +231,7 @@
                 { "type": "writing_unit_tests", "count": 3 },
                 { "type": "receive_feedback", "count": 2 },
                 { "type": "initiative", "count": 1 },
+                { "type": "james_f_domain_knowledge", "count": 1 },
                 { "type": "issue", "count": 6 }
             ]
         },
@@ -243,6 +245,7 @@
                 { "type": "initiative", "count": 1 },
                 { "type": "product_opinion", "count": 1 },
                 { "type": "thorough_documentation", "count": 1 },
+                { "type": "leetcode_problem", "count": 6 },
                 { "type": "issue", "count": 3 }
             ]
         },
@@ -255,7 +258,7 @@
             "criteria": [
                 { "type": "outside_comfort_zone", "count": 1 },
                 { "type": "initiative", "count": 1 },
-                { "type": "case_study", "count": 1 },
+                { "type": "learn_and_apply", "count": 1 },
                 { "type": "issue", "count": 3 }
             ]
         },
@@ -269,6 +272,9 @@
                 { "type": "outside_comfort_zone", "count": 1 },
                 { "type": "edge_cases", "count": 1 },
                 { "type": "give_feedback", "count": 1 },
+                { "type": "documentation_gap", "count": 1 },
+                { "type": "applied_domain_skill", "count": 1 },
+                { "type": "multiple_approaches", "count": 2 },
                 { "type": "issue", "count": 5 }
             ]
         },
