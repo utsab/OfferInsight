@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
+import { HOME_ASSETS } from './homeAssets';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -18,6 +19,8 @@ const DESKTOP_WORD_GAP_PX = 16;
 
 /** Timeline position where phase 3 starts (hero rises, Who we are fades in) */
 const PHASE3_START = 0.74;
+/** Timeline position where phase 4 starts (How it works + contracts) */
+const PHASE4_START = 1.22;
 
 function clearScrollLockStyles() {
   gsap.set([document.documentElement, document.body], {
@@ -100,8 +103,10 @@ export function OsrbHero() {
   const sectionRef = useRef<HTMLElement>(null);
   const heroLayerRef = useRef<HTMLDivElement>(null);
   const whoWeAreRef = useRef<HTMLDivElement>(null);
+  const howItWorksRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const contractRefs = useRef<(HTMLImageElement | null)[]>([]);
   const groupRefs = useRef<(HTMLDivElement | null)[]>([]);
   const suffixRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
@@ -110,13 +115,15 @@ export function OsrbHero() {
       const section = sectionRef.current;
       const heroLayer = heroLayerRef.current;
       const whoWeAre = whoWeAreRef.current;
+      const howItWorks = howItWorksRef.current;
       const row = rowRef.current;
       const track = trackRef.current;
-      if (!section || !heroLayer || !whoWeAre || !row || !track) return;
+      if (!section || !heroLayer || !whoWeAre || !howItWorks || !row || !track) return;
 
       const groups = groupRefs.current.filter(Boolean) as HTMLDivElement[];
       const suffixes = suffixRefs.current.filter(Boolean) as HTMLSpanElement[];
-      if (groups.length !== 4 || suffixes.length !== 4) return;
+      const contracts = contractRefs.current.filter(Boolean) as HTMLImageElement[];
+      if (groups.length !== 4 || suffixes.length !== 4 || contracts.length !== 3) return;
 
       clearScrollLockStyles();
 
@@ -126,8 +133,10 @@ export function OsrbHero() {
         gsap.set(track, { gap: DESKTOP_WORD_GAP_PX });
         gsap.set(suffixes, { opacity: 1, maxWidth: 'none' });
         gsap.set(groups, { clearProps: 'transform' });
-        gsap.set(heroLayer, { opacity: 1, y: 0 });
-        gsap.set(whoWeAre, { opacity: 1, y: 0, scale: 1 });
+        gsap.set(heroLayer, { opacity: 0, y: 0 });
+        gsap.set(whoWeAre, { opacity: 0, y: 0, scale: 1, clearProps: 'filter' });
+        gsap.set(howItWorks, { opacity: 1, y: 0, scale: 1 });
+        gsap.set(contracts, { opacity: 1, y: 0, rotate: 0, scale: 1 });
         return;
       }
 
@@ -140,7 +149,14 @@ export function OsrbHero() {
         gsap.set(track, { gap: 0 });
         gsap.set(suffixes, { opacity: 0, maxWidth: 0 });
         gsap.set(heroLayer, { y: 0, opacity: 1 });
-        gsap.set(whoWeAre, { opacity: 0, y: 20, scale: 0.985 });
+        gsap.set(whoWeAre, { opacity: 0, y: 20, scale: 0.985, filter: 'blur(0px)' });
+        gsap.set(howItWorks, { opacity: 0, y: 26, scale: 0.985 });
+        gsap.set(contracts, {
+          opacity: 0,
+          y: 56,
+          rotate: (i: number) => (i === 1 ? -6 : i === 2 ? 6 : 0),
+          scale: (i: number) => (i === 0 ? 0.97 : 0.94),
+        });
 
         const navbarOffset = getNavbarHeightPx();
         const mobileSpread = computeEqualGapSpreadY(groups, row, 48);
@@ -149,7 +165,7 @@ export function OsrbHero() {
           scrollTrigger: {
             trigger: section,
             start: `top top+=${navbarOffset}`,
-            end: '+=340%',
+            end: '+=480%',
             pin: true,
             pinSpacing: true,
             scrub: 0.45,
@@ -226,6 +242,46 @@ export function OsrbHero() {
             ease: 'none',
           },
           PHASE3_START + 0.04,
+        );
+
+        // Phase 4 — keep pinned: Who we are dissolves up, contracts/story fade-pop in
+        tl.to(
+          whoWeAre,
+          {
+            opacity: 0,
+            y: -72,
+            scale: 0.95,
+            filter: 'blur(4px)',
+            duration: 0.3,
+            ease: 'none',
+          },
+          PHASE4_START - 0.08,
+        );
+
+        tl.to(
+          howItWorks,
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.34,
+            ease: 'none',
+          },
+          PHASE4_START,
+        );
+
+        tl.to(
+          contracts,
+          {
+            opacity: 1,
+            y: 0,
+            rotate: (i: number) => (i === 1 ? -5 : i === 2 ? 5 : 0),
+            scale: (i: number) => (i === 0 ? 1 : 0.965),
+            duration: 0.38,
+            stagger: 0.08,
+            ease: 'none',
+          },
+          PHASE4_START + 0.03,
         );
       };
 
@@ -315,6 +371,53 @@ export function OsrbHero() {
             We are a pathway for entry-level SWEs to become valuable contributors to the tech industry by
             making deep contributions to open source.
           </p>
+        </div>
+      </div>
+
+      {/* Phase 4: How it works + contracts (same pinned viewport) */}
+      <div
+        ref={howItWorksRef}
+        className="absolute inset-0 flex items-center justify-center px-4 sm:px-8"
+        aria-labelledby="how-it-works-heading"
+      >
+        <div className="w-full max-w-6xl text-center">
+          <h2
+            id="how-it-works-heading"
+            className="mb-5 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl"
+          >
+            How it works
+          </h2>
+          <p className="mx-auto mb-10 max-w-4xl text-lg leading-relaxed text-gray-200 sm:text-xl md:text-2xl">
+            SWE Hiring Managers define their dream candidate in terms of measurable open source
+            achievements. Their personal bar becomes an actionable pathway for junior devs.
+          </p>
+
+          <div className="relative mx-auto h-[420px] w-full max-w-6xl md:h-[520px]">
+            <img
+              ref={(el) => {
+                contractRefs.current[0] = el;
+              }}
+              src={HOME_ASSETS.contracts[0]}
+              alt="Redacted contract 001"
+              className="absolute left-1/2 top-1/2 h-[340px] w-auto max-w-[88vw] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-light-steel-blue/50 bg-gray-800/80 object-contain shadow-2xl md:h-[430px] md:max-w-none"
+            />
+            <img
+              ref={(el) => {
+                contractRefs.current[1] = el;
+              }}
+              src={HOME_ASSETS.contracts[1]}
+              alt="Redacted contract 005"
+              className="absolute left-[24%] top-[56%] hidden h-[300px] w-auto -translate-x-1/2 -translate-y-1/2 rounded-xl border border-light-steel-blue/40 bg-gray-800/70 object-contain shadow-xl md:block"
+            />
+            <img
+              ref={(el) => {
+                contractRefs.current[2] = el;
+              }}
+              src={HOME_ASSETS.contracts[2]}
+              alt="Redacted contract 011"
+              className="absolute left-[76%] top-[56%] hidden h-[300px] w-auto -translate-x-1/2 -translate-y-1/2 rounded-xl border border-light-steel-blue/40 bg-gray-800/70 object-contain shadow-xl md:block"
+            />
+          </div>
         </div>
       </div>
     </section>
