@@ -14,8 +14,10 @@ const WORD_GROUPS = [
   { letter: 'B', suffix: 'ook' },
 ] as const;
 
-/** Slightly larger so OSRB separation reads in the first part of the scroll */
 const DESKTOP_WORD_GAP_PX = 16;
+
+/** Timeline position where phase 3 starts (hero rises, Who we are fades in) */
+const PHASE3_START = 0.74;
 
 function clearScrollLockStyles() {
   gsap.set([document.documentElement, document.body], {
@@ -96,6 +98,8 @@ function computeEqualGapSpreadY(
 
 export function OsrbHero() {
   const sectionRef = useRef<HTMLElement>(null);
+  const heroLayerRef = useRef<HTMLDivElement>(null);
+  const whoWeAreRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const groupRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -104,9 +108,11 @@ export function OsrbHero() {
   useGSAP(
     () => {
       const section = sectionRef.current;
+      const heroLayer = heroLayerRef.current;
+      const whoWeAre = whoWeAreRef.current;
       const row = rowRef.current;
       const track = trackRef.current;
-      if (!section || !row || !track) return;
+      if (!section || !heroLayer || !whoWeAre || !row || !track) return;
 
       const groups = groupRefs.current.filter(Boolean) as HTMLDivElement[];
       const suffixes = suffixRefs.current.filter(Boolean) as HTMLSpanElement[];
@@ -120,6 +126,8 @@ export function OsrbHero() {
         gsap.set(track, { gap: DESKTOP_WORD_GAP_PX });
         gsap.set(suffixes, { opacity: 1, maxWidth: 'none' });
         gsap.set(groups, { clearProps: 'transform' });
+        gsap.set(heroLayer, { opacity: 1, y: 0 });
+        gsap.set(whoWeAre, { opacity: 1, y: 0, scale: 1 });
         return;
       }
 
@@ -131,6 +139,8 @@ export function OsrbHero() {
         gsap.set(groups, { x: 0, y: 0 });
         gsap.set(track, { gap: 0 });
         gsap.set(suffixes, { opacity: 0, maxWidth: 0 });
+        gsap.set(heroLayer, { y: 0, opacity: 1 });
+        gsap.set(whoWeAre, { opacity: 0, y: 20, scale: 0.985 });
 
         const navbarOffset = getNavbarHeightPx();
         const mobileSpread = computeEqualGapSpreadY(groups, row, 48);
@@ -139,7 +149,7 @@ export function OsrbHero() {
           scrollTrigger: {
             trigger: section,
             start: `top top+=${navbarOffset}`,
-            end: '+=240%',
+            end: '+=340%',
             pin: true,
             pinSpacing: true,
             scrub: 0.45,
@@ -149,7 +159,6 @@ export function OsrbHero() {
         });
 
         if (isDesktop) {
-          // Gap opens first (visible OSRB spread), suffixes start almost immediately so early scroll isn't "dead"
           tl.to(
             track,
             {
@@ -194,6 +203,30 @@ export function OsrbHero() {
             0.62,
           );
         }
+
+        // Phase 3 — still pinned: headline scrolls up, Who we are fades in at center
+        tl.to(
+          heroLayer,
+          {
+            y: () => -Math.min(window.innerHeight * 0.38, 320),
+            opacity: 0,
+            duration: 0.44,
+            ease: 'none',
+          },
+          PHASE3_START,
+        );
+
+        tl.to(
+          whoWeAre,
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.44,
+            ease: 'none',
+          },
+          PHASE3_START + 0.04,
+        );
       };
 
       const initAnimations = () => {
@@ -225,36 +258,63 @@ export function OsrbHero() {
   return (
     <section
       ref={sectionRef}
-      className="relative flex min-h-[calc(100dvh-var(--navbar-height))] w-full items-center justify-center overflow-hidden bg-gradient-to-br from-midnight-blue to-gray-900 px-4 sm:px-8"
+      className="relative min-h-[calc(100dvh-var(--navbar-height))] w-full overflow-hidden bg-gradient-to-br from-midnight-blue to-gray-900"
       aria-label="Open Source Resume Book"
     >
       <p className="sr-only">Open Source Resume Book</p>
-      <div ref={rowRef} className="flex w-full justify-center px-1">
-        <div
-          ref={trackRef}
-          className="inline-flex max-w-full flex-col items-center md:flex-row md:items-baseline"
-        >
-          {WORD_GROUPS.map((word, index) => (
-            <div
-              key={word.letter}
-              ref={(el) => {
-                groupRefs.current[index] = el;
-              }}
-              className="inline-flex shrink-0 items-baseline whitespace-nowrap"
-            >
-              <span className="select-none font-bold leading-none tracking-tight text-white text-[clamp(3.5rem,18vw,9rem)] md:text-[clamp(4rem,11vw,10rem)]">
-                {word.letter}
-              </span>
-              <span
+
+      {/* Phase 1–2: OSRB headline */}
+      <div
+        ref={heroLayerRef}
+        className="absolute inset-0 flex items-center justify-center px-4 sm:px-8"
+      >
+        <div ref={rowRef} className="flex w-full justify-center px-1">
+          <div
+            ref={trackRef}
+            className="inline-flex max-w-full flex-col items-center md:flex-row md:items-baseline"
+          >
+            {WORD_GROUPS.map((word, index) => (
+              <div
+                key={word.letter}
                 ref={(el) => {
-                  suffixRefs.current[index] = el;
+                  groupRefs.current[index] = el;
                 }}
-                className="pointer-events-none inline-block max-w-0 overflow-hidden align-baseline select-none font-bold leading-none text-white opacity-0 text-[clamp(1.75rem,8vw,4.5rem)] md:text-[clamp(2rem,5vw,5rem)]"
+                className="inline-flex shrink-0 items-baseline whitespace-nowrap"
               >
-                {word.suffix}
-              </span>
-            </div>
-          ))}
+                <span className="select-none font-bold leading-none tracking-tight text-white text-[clamp(3.5rem,18vw,9rem)] md:text-[clamp(4rem,11vw,10rem)]">
+                  {word.letter}
+                </span>
+                <span
+                  ref={(el) => {
+                    suffixRefs.current[index] = el;
+                  }}
+                  className="pointer-events-none inline-block max-w-0 overflow-hidden align-baseline select-none font-bold leading-none text-white opacity-0 text-[clamp(1.75rem,8vw,4.5rem)] md:text-[clamp(2rem,5vw,5rem)]"
+                >
+                  {word.suffix}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Phase 3: Who we are (same pinned viewport) */}
+      <div
+        ref={whoWeAreRef}
+        className="absolute inset-0 flex items-center justify-center px-4 sm:px-8"
+        aria-labelledby="who-we-are-heading"
+      >
+        <div className="max-w-3xl text-center will-change-transform">
+          <h2
+            id="who-we-are-heading"
+            className="mb-6 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl"
+          >
+            Who we are
+          </h2>
+          <p className="text-lg leading-relaxed text-gray-200 sm:text-xl md:text-2xl">
+            We are a pathway for entry-level SWEs to become valuable contributors to the tech industry by
+            making deep contributions to open source.
+          </p>
         </div>
       </div>
     </section>

@@ -51,14 +51,14 @@
   }
 
   html {
-    background-color: var(--color-gray-900);
+    background-color: var(--color-midnight-blue);
     width: 100%;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
   }
   body {
-    background-color: var(--color-gray-900);
+    background-color: var(--color-midnight-blue);
     color: var(--color-white);
     width: 100%;
     margin: 0;

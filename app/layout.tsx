@@ -24,9 +24,9 @@ export default function RootLayout({
           `
         }} />
       </head>
-      <body className={`${inter.className} antialiased bg-midnight-blue min-h-full w-full`} suppressHydrationWarning={true}>
+      <body className={`${inter.className} antialiased bg-gradient-to-br from-midnight-blue to-gray-900 min-h-full w-full`} suppressHydrationWarning={true}>
         <Navbar />
-        <main className="w-full bg-midnight-blue pt-[var(--navbar-height)]">{children}</main>
+        <main className="w-full bg-gradient-to-br from-midnight-blue to-gray-900 pt-[var(--navbar-height)]">{children}</main>
       </body>
     </html>
   );
