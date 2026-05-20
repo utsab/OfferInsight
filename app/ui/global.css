@@ -39,6 +39,17 @@
 }
 
 @layer base {
+  :root {
+    /* Matches fixed navbar height (py-4/text-lg mobile, py-6/text-2xl sm+) */
+    --navbar-height: 4.5rem;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --navbar-height: 5.75rem;
+    }
+  }
+
   html {
     background-color: var(--color-gray-900);
     width: 100%;

@@ -2,7 +2,7 @@
 
 /* Main container spacing - scoped to onboarding page1 only */
 [data-onboarding-page="page1"].min-h-screen {
-  padding-top: 10rem;    /* Space between navbar and component */
+  padding-top: 2rem;     /* Extra space below fixed navbar (main already offsets) */
   padding-bottom: 10rem; /* Space between component and bottom */
 }
 
