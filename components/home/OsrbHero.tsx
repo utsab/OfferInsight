@@ -21,6 +21,8 @@ const DESKTOP_WORD_GAP_PX = 16;
 const PHASE3_START = 0.74;
 /** Timeline position where phase 4 starts (How it works + contracts) */
 const PHASE4_START = 1.22;
+/** Timeline position where phase 5 starts (Hiring Manager Affiliations) */
+const PHASE5_START = 1.72;
 
 function clearScrollLockStyles() {
   gsap.set([document.documentElement, document.body], {
@@ -104,9 +106,11 @@ export function OsrbHero() {
   const heroLayerRef = useRef<HTMLDivElement>(null);
   const whoWeAreRef = useRef<HTMLDivElement>(null);
   const howItWorksRef = useRef<HTMLDivElement>(null);
+  const affiliationsRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const contractRefs = useRef<(HTMLImageElement | null)[]>([]);
+  const logoRefs = useRef<(HTMLImageElement | null)[]>([]);
   const groupRefs = useRef<(HTMLDivElement | null)[]>([]);
   const suffixRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
@@ -116,14 +120,16 @@ export function OsrbHero() {
       const heroLayer = heroLayerRef.current;
       const whoWeAre = whoWeAreRef.current;
       const howItWorks = howItWorksRef.current;
+      const affiliations = affiliationsRef.current;
       const row = rowRef.current;
       const track = trackRef.current;
-      if (!section || !heroLayer || !whoWeAre || !howItWorks || !row || !track) return;
+      if (!section || !heroLayer || !whoWeAre || !howItWorks || !affiliations || !row || !track) return;
 
       const groups = groupRefs.current.filter(Boolean) as HTMLDivElement[];
       const suffixes = suffixRefs.current.filter(Boolean) as HTMLSpanElement[];
       const contracts = contractRefs.current.filter(Boolean) as HTMLImageElement[];
-      if (groups.length !== 4 || suffixes.length !== 4 || contracts.length !== 3) return;
+      const logos = logoRefs.current.filter(Boolean) as HTMLImageElement[];
+      if (groups.length !== 4 || suffixes.length !== 4 || contracts.length !== 3 || logos.length !== HOME_ASSETS.affiliations.length) return;
 
       clearScrollLockStyles();
 
@@ -135,8 +141,10 @@ export function OsrbHero() {
         gsap.set(groups, { clearProps: 'transform' });
         gsap.set(heroLayer, { opacity: 0, y: 0 });
         gsap.set(whoWeAre, { opacity: 0, y: 0, scale: 1, clearProps: 'filter' });
-        gsap.set(howItWorks, { opacity: 1, y: 0, scale: 1 });
+        gsap.set(howItWorks, { opacity: 0, y: 0, scale: 1 });
+        gsap.set(affiliations, { opacity: 1, y: 0, scale: 1 });
         gsap.set(contracts, { opacity: 1, y: 0, rotate: 0, scale: 1 });
+        gsap.set(logos, { opacity: 1, y: 0, scale: 1 });
         return;
       }
 
@@ -151,11 +159,17 @@ export function OsrbHero() {
         gsap.set(heroLayer, { y: 0, opacity: 1 });
         gsap.set(whoWeAre, { opacity: 0, y: 20, scale: 0.985, filter: 'blur(0px)' });
         gsap.set(howItWorks, { opacity: 0, y: 26, scale: 0.985 });
+        gsap.set(affiliations, { opacity: 0, y: 24, scale: 0.99 });
         gsap.set(contracts, {
           opacity: 0,
           y: 56,
           rotate: (i: number) => (i === 1 ? -6 : i === 2 ? 6 : 0),
           scale: (i: number) => (i === 0 ? 0.97 : 0.94),
+        });
+        gsap.set(logos, {
+          opacity: 0,
+          y: 26,
+          scale: (i: number) => HOME_ASSETS.affiliations[i].scale * 0.92,
         });
 
         const navbarOffset = getNavbarHeightPx();
@@ -165,7 +179,7 @@ export function OsrbHero() {
           scrollTrigger: {
             trigger: section,
             start: `top top+=${navbarOffset}`,
-            end: '+=480%',
+            end: '+=620%',
             pin: true,
             pinSpacing: true,
             scrub: 0.45,
@@ -282,6 +296,57 @@ export function OsrbHero() {
             ease: 'none',
           },
           PHASE4_START + 0.03,
+        );
+
+        // Phase 5 — contracts clear out, affiliations grid comes in
+        tl.to(
+          howItWorks,
+          {
+            opacity: 0,
+            y: -58,
+            scale: 0.96,
+            duration: 0.28,
+            ease: 'none',
+          },
+          PHASE5_START - 0.08,
+        );
+
+        tl.to(
+          contracts,
+          {
+            opacity: 0,
+            y: -24,
+            scale: 0.9,
+            duration: 0.26,
+            stagger: 0.04,
+            ease: 'none',
+          },
+          PHASE5_START - 0.08,
+        );
+
+        tl.to(
+          affiliations,
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.32,
+            ease: 'none',
+          },
+          PHASE5_START,
+        );
+
+        tl.to(
+          logos,
+          {
+            opacity: 1,
+            y: 0,
+            scale: (i: number) => HOME_ASSETS.affiliations[i].scale,
+            duration: 0.34,
+            stagger: 0.03,
+            ease: 'none',
+          },
+          PHASE5_START + 0.02,
         );
       };
 
@@ -418,6 +483,53 @@ export function OsrbHero() {
               className="absolute left-[76%] top-[56%] hidden h-[300px] w-auto -translate-x-1/2 -translate-y-1/2 rounded-xl border border-light-steel-blue/40 bg-gray-800/70 object-contain shadow-xl md:block"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Phase 5: Hiring Manager Affiliations */}
+      <div
+        ref={affiliationsRef}
+        className="absolute inset-0 flex items-center justify-center px-4 sm:px-8"
+        aria-labelledby="affiliations-heading"
+      >
+        <div className="w-full max-w-6xl text-center">
+          <h2
+            id="affiliations-heading"
+            className="mb-4 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl"
+          >
+            Hiring Manager Affiliations
+          </h2>
+          <p className="mx-auto mb-3 max-w-5xl text-base leading-relaxed text-gray-200 sm:text-lg md:text-xl">
+            Participating managers at these companies commit to interview candidates who meet their
+            defined open-source benchmarks.
+          </p>
+          <p className="mx-auto mb-9 max-w-4xl text-sm text-gray-300 sm:text-base">
+            Standards are manager-defined and do not represent official company policy.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:gap-5">
+            {HOME_ASSETS.affiliations.map((logo, index) => (
+              <div
+                key={logo.path}
+                className="flex h-[78px] items-center justify-center rounded-xl border border-light-steel-blue/35 bg-white/95 p-3 shadow-lg sm:h-[92px] sm:p-4"
+              >
+                <img
+                  ref={(el) => {
+                    logoRefs.current[index] = el;
+                  }}
+                  src={logo.path}
+                  alt={`${logo.label} logo`}
+                  className="max-h-full max-w-full origin-center object-contain"
+                  style={{
+                    transform: `scale(${logo.scale})`,
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-xl font-semibold italic tracking-wide text-gray-200 sm:mt-7 sm:text-2xl">
+            and more...
+          </p>
         </div>
       </div>
     </section>
