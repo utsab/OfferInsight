@@ -117,6 +117,8 @@ function generateDebugUsers(): UserData[] {
 export default function InstructorDashboard() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reinstatingUserId, setReinstatingUserId] = useState<string | null>(null);
+  const [canMutateUserData, setCanMutateUserData] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [minIssuesFilter, setMinIssuesFilter] = useState('');
   const [sortOrder, setSortOrder] = useState<'name-asc' | 'name-desc' | 'issues-high' | 'issues-low'>('name-asc');
@@ -150,6 +152,56 @@ export default function InstructorDashboard() {
     }
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    async function fetchInstructorPermissions() {
+      try {
+        const response = await fetch('/api/instructor');
+        if (!response.ok) {
+          return;
+        }
+        const data = await response.json();
+        setCanMutateUserData(Boolean(data?.canEditViewedUser));
+      } catch (error) {
+        console.error('Error fetching instructor permissions:', error);
+      }
+    }
+
+    fetchInstructorPermissions();
+  }, []);
+
+  async function handleReinstateUser(userId: string) {
+    setReinstatingUserId(userId);
+    try {
+      const response = await fetch('/api/instructor/students/reinstate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reinstate user');
+      }
+
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                removedFromResumeBook: false,
+                inactivityWarningCount: 0,
+              }
+            : user
+        )
+      );
+    } catch (error) {
+      console.error('Error reinstating user:', error);
+    } finally {
+      setReinstatingUserId(null);
+    }
+  }
 
   // Parse min issues filter: only apply when a valid non-negative number is entered
   const minIssues = minIssuesFilter.trim() === '' ? null : Math.max(0, parseInt(minIssuesFilter, 10));
@@ -276,9 +328,21 @@ export default function InstructorDashboard() {
                     {user.name}
                   </Link>
                   {user.removedFromResumeBook && (
-                    <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold bg-red-900/50 text-red-400 border border-red-500 rounded">
-                      REMOVED
-                    </span>
+                    <div className="mt-1 flex flex-col items-start gap-2">
+                      <span className="inline-block px-2 py-0.5 text-xs font-semibold bg-red-900/50 text-red-400 border border-red-500 rounded">
+                        REMOVED
+                      </span>
+                      {canMutateUserData && (
+                        <button
+                          type="button"
+                          onClick={() => handleReinstateUser(user.id)}
+                          disabled={reinstatingUserId === user.id}
+                          className="px-2.5 py-1 text-xs font-semibold rounded border border-green-500 text-green-300 bg-green-900/30 hover:bg-green-900/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {reinstatingUserId === user.id ? 'Reinstating...' : 'Reinstate'}
+                        </button>
+                      )}
+                    </div>
                   )}
                   {!user.removedFromResumeBook && user.inactivityWarningCount > 0 && (
                     <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded border ${
