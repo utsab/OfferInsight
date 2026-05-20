@@ -97,7 +97,7 @@ export default function Page() {
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900">
+    <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-gradient-to-br from-midnight-blue to-gray-900">
       {dashboardButton}
       <OsrbHero />
     </div>

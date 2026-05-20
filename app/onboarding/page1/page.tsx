@@ -79,7 +79,7 @@ export default function Page1() {
 
   if (loading) {
     return (
-      <div data-onboarding-page="page1" className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+      <div data-onboarding-page="page1" className="min-h-screen min-h-[calc(100dvh-var(--navbar-height))] bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
         <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-7 w-[700px] max-w-4xl">
           <div className="flex flex-col items-center justify-center py-32 text-gray-300">
             <Loader2 className="h-12 w-12 animate-spin text-electric-blue" />
@@ -91,7 +91,7 @@ export default function Page1() {
   }
 
   return (
-    <div data-onboarding-page="page1" className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+    <div data-onboarding-page="page1" className="min-h-screen min-h-[calc(100dvh-var(--navbar-height))] bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
       <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-7 w-[700px] max-w-4xl">
         {/* Header */}
         <div className="text-center mb-4">

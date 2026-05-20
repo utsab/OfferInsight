@@ -249,7 +249,7 @@ function Page3Content() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+    <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
       <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
         {/* Header (condensed) */}
         <div className="text-center mb-6">
@@ -492,7 +492,7 @@ function Page3Content() {
 export default function Page3() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+      <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
         <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
           <div className="flex flex-col items-center justify-center py-32 text-gray-300">
             <Loader2 className="h-12 w-12 animate-spin text-electric-blue" />

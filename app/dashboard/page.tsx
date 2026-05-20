@@ -1599,7 +1599,7 @@ const hasSeededMockDataRef = useRef(false);
 
 
   return (
-    <div className="bg-gradient-to-br from-midnight-blue to-gray-900 text-white min-h-screen w-full">
+    <div className="bg-gradient-to-br from-midnight-blue to-gray-900 text-white min-h-[calc(100dvh-var(--navbar-height))] w-full">
       {/* Instructor View Banner */}
       {isInstructor && userIdParam && viewedUserName && (
         <div className="bg-gradient-to-br from-midnight-blue to-gray-900 border-b border-light-steel-blue/40 w-full">
