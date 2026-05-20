@@ -36,6 +36,85 @@ function getNavbarHeightPx(): number {
   return parseFloat(raw) || 72;
 }
 
+/** Full rendered word width (letter + suffix); suffix is absolutely positioned. */
+function measureWordWidth(group: HTMLDivElement): number {
+  const letter = group.firstElementChild as HTMLElement | null;
+  const suffix = group.lastElementChild as HTMLElement | null;
+  if (!letter || !suffix) return group.getBoundingClientRect().width;
+  return letter.getBoundingClientRect().width + suffix.getBoundingClientRect().width;
+}
+
+function measureWordHeight(group: HTMLDivElement): number {
+  const letter = group.firstElementChild as HTMLElement | null;
+  const suffix = group.lastElementChild as HTMLElement | null;
+  if (!letter || !suffix) return group.getBoundingClientRect().height;
+  return Math.max(letter.getBoundingClientRect().height, suffix.getBoundingClientRect().height);
+}
+
+/**
+ * Positions word groups so the gap after each full word (e.g. n→S, e→R, e→B) is equal.
+ * Returns GSAP x offsets from the clustered flex layout.
+ */
+function computeEqualGapSpreadX(
+  groups: HTMLDivElement[],
+  row: HTMLDivElement,
+  horizontalPadding: number,
+): number[] {
+  const wordWidths = groups.map(measureWordWidth);
+  const available = row.clientWidth - horizontalPadding;
+  const sumWords = wordWidths.reduce((sum, w) => sum + w, 0);
+
+  let gap = (available - sumWords) / 3;
+  const minGap = 16;
+  const maxGap = 80;
+  gap = Math.max(minGap, Math.min(maxGap, gap));
+  if (sumWords + 3 * gap > available) {
+    gap = Math.max(minGap, (available - sumWords) / 3);
+  }
+
+  const totalSpan = sumWords + 3 * gap;
+  let cursor = (row.clientWidth - totalSpan) / 2;
+
+  const targetLefts = wordWidths.map((width) => {
+    const left = cursor;
+    cursor += width + gap;
+    return left;
+  });
+
+  const naturalLefts = groups.map((group) => group.offsetLeft);
+  return groups.map((_, index) => targetLefts[index] - naturalLefts[index]);
+}
+
+function computeEqualGapSpreadY(
+  groups: HTMLDivElement[],
+  row: HTMLDivElement,
+  verticalPadding: number,
+): number[] {
+  const wordHeights = groups.map(measureWordHeight);
+  const available = row.clientHeight - verticalPadding;
+  const sumHeights = wordHeights.reduce((sum, h) => sum + h, 0);
+
+  let gap = (available - sumHeights) / 3;
+  const minGap = 12;
+  const maxGap = 56;
+  gap = Math.max(minGap, Math.min(maxGap, gap));
+  if (sumHeights + 3 * gap > available) {
+    gap = Math.max(minGap, (available - sumHeights) / 3);
+  }
+
+  const totalSpan = sumHeights + 3 * gap;
+  let cursor = (row.clientHeight - totalSpan) / 2;
+
+  const targetTops = wordHeights.map((height) => {
+    const top = cursor;
+    cursor += height + gap;
+    return top;
+  });
+
+  const naturalTops = groups.map((group) => group.offsetTop);
+  return groups.map((_, index) => targetTops[index] - naturalTops[index]);
+}
+
 export function OsrbHero() {
   const sectionRef = useRef<HTMLElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
@@ -70,27 +149,15 @@ export function OsrbHero() {
         gsap.set(groups, { x: 0, y: 0 });
         gsap.set(suffixes, { opacity: 0 });
 
-        const desktopSpread = [
-          -Math.min(window.innerWidth * 0.22, 220),
-          -Math.min(window.innerWidth * 0.07, 70),
-          Math.min(window.innerWidth * 0.07, 70),
-          Math.min(window.innerWidth * 0.22, 220),
-        ];
-
-        const mobileSpread = [
-          -Math.min(window.innerHeight * 0.12, 96),
-          -Math.min(window.innerHeight * 0.04, 32),
-          Math.min(window.innerHeight * 0.04, 32),
-          Math.min(window.innerHeight * 0.12, 96),
-        ];
-
         const navbarOffset = getNavbarHeightPx();
+        const desktopSpread = computeEqualGapSpreadX(groups, row, 48);
+        const mobileSpread = computeEqualGapSpreadY(groups, row, 48);
 
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: section,
             start: `top top+=${navbarOffset}`,
-            end: '+=160%',
+            end: '+=240%',
             pin: true,
             pinSpacing: true,
             scrub: 0.8,
@@ -104,7 +171,7 @@ export function OsrbHero() {
             groups,
             {
               x: (i: number) => desktopSpread[i],
-              duration: 1,
+              duration: 0.5,
               ease: 'power2.inOut',
             },
             0,
@@ -114,7 +181,7 @@ export function OsrbHero() {
             groups,
             {
               y: (i: number) => mobileSpread[i],
-              duration: 1,
+              duration: 0.5,
               ease: 'power2.inOut',
             },
             0,
@@ -125,24 +192,28 @@ export function OsrbHero() {
           suffixes,
           {
             opacity: 1,
-            duration: 0.45,
-            stagger: 0.08,
+            duration: 0.4,
+            stagger: 0.1,
             ease: 'power1.out',
           },
-          0.55,
+          0.62,
         );
       };
 
-      mm.add('(min-width: 768px)', () => setupAnimation(true));
-      mm.add('(max-width: 767px)', () => setupAnimation(false));
+      const initAnimations = () => {
+        mm.revert();
+        mm.add('(min-width: 768px)', () => setupAnimation(true));
+        mm.add('(max-width: 767px)', () => setupAnimation(false));
+        refreshScrollTriggers();
+      };
 
-      refreshScrollTriggers();
+      initAnimations();
 
       const onLoad = () => refreshScrollTriggers();
       window.addEventListener('load', onLoad);
 
       if (document.fonts?.ready) {
-        document.fonts.ready.then(refreshScrollTriggers);
+        document.fonts.ready.then(initAnimations);
       }
 
       return () => {
@@ -164,7 +235,7 @@ export function OsrbHero() {
       <p className="sr-only">Open Source Resume Book</p>
       <div
         ref={rowRef}
-        className="flex w-full flex-col items-center justify-center gap-0 md:flex-row md:gap-0"
+        className="relative flex w-full flex-col items-center justify-center gap-0 md:flex-row md:gap-0"
       >
         {WORD_GROUPS.map((word, index) => (
           <div
