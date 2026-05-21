@@ -8,6 +8,7 @@ import { HOME_ASSETS } from './homeAssets';
 import { OSR_SCROLL_HEIGHT_VH, getScrollPhase } from './osrIntroTimeline';
 import { TYPING_DESCRIPTIONS, getOsrSceneConfig } from './osrScrollUtils';
 import { TypingHeroLine } from './TypingHeroLine';
+import { WhoopPersonalBarSection } from './WhoopPersonalBarSection';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -21,19 +22,27 @@ function attachScene(
   animation: gsap.core.Animation,
   scrub: number | false = 0.45,
 ) {
-  const { startPx, durationPx, scrub: sceneScrub } = getOsrSceneConfig(
-    offsetVh,
-    durationPercent,
-    scrub,
-  );
-
   ScrollTrigger.create({
     trigger,
-    start: `top+=${startPx} top`,
-    end: `+=${durationPx}`,
-    scrub: sceneScrub,
+    start: () => {
+      const { startPx } = getOsrSceneConfig(offsetVh, durationPercent, scrub);
+      return `top+=${startPx} top`;
+    },
+    end: () => {
+      const { startPx, durationPx } = getOsrSceneConfig(offsetVh, durationPercent, scrub);
+      return `top+=${startPx + durationPx} top`;
+    },
+    scrub: typeof scrub === 'number' ? scrub : false,
     animation,
     invalidateOnRefresh: true,
+  });
+}
+
+const SCRUB_DEFAULTS = { ease: 'none' as const, immediateRender: false };
+
+function refreshScrollTriggers() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => ScrollTrigger.refresh(true));
   });
 }
 
@@ -50,6 +59,9 @@ export function OsrIntroScroll() {
   const howLetterORef = useRef<HTMLDivElement>(null);
   const howLetterSRef = useRef<HTMLDivElement>(null);
   const howLetterRRef = useRef<HTMLDivElement>(null);
+  const sectionPersonalBarRef = useRef<HTMLElement>(null);
+  const personalBarBgLogoRef = useRef<HTMLDivElement>(null);
+  const personalBarContentRef = useRef<HTMLDivElement>(null);
   const sectionAffiliationsRef = useRef<HTMLElement>(null);
   const logoRefs = useRef<(HTMLImageElement | null)[]>([]);
 
@@ -67,6 +79,9 @@ export function OsrIntroScroll() {
       const howLetterO = howLetterORef.current;
       const howLetterS = howLetterSRef.current;
       const howLetterR = howLetterRRef.current;
+      const sectionPersonalBar = sectionPersonalBarRef.current;
+      const personalBarBgLogo = personalBarBgLogoRef.current;
+      const personalBarContent = personalBarContentRef.current;
       const sectionAffiliations = sectionAffiliationsRef.current;
       const logos = logoRefs.current.filter(Boolean) as HTMLImageElement[];
 
@@ -83,11 +98,16 @@ export function OsrIntroScroll() {
         !howLetterO ||
         !howLetterS ||
         !howLetterR ||
-        !sectionAffiliations ||
-        logos.length !== HOME_ASSETS.affiliations.length
+        !sectionPersonalBar ||
+        !personalBarBgLogo ||
+        !personalBarContent ||
+        !sectionAffiliations
       ) {
         return;
       }
+
+      window.scrollTo(0, 0);
+      ScrollTrigger.clearScrollMemory();
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const isMobile = window.matchMedia('(max-width: 767px)').matches;
@@ -97,55 +117,66 @@ export function OsrIntroScroll() {
         gsap.set(sectionOne, { opacity: 1 });
         gsap.set(whoWeAreContent, { opacity: 1 });
         gsap.set(sectionTwo, { opacity: 0 });
+        gsap.set(sectionPersonalBar, { opacity: 1 });
+        gsap.set(personalBarBgLogo, { opacity: 0.5 });
+        gsap.set(personalBarContent, { y: 0 });
         gsap.set(sectionAffiliations, { opacity: 1 });
-        gsap.set(logos, { opacity: 1, y: 0, scale: 1 });
+        if (logos.length === HOME_ASSETS.affiliations.length) {
+          gsap.set(logos, { opacity: 1, y: 0, scale: 1 });
+        }
         gsap.set(pageIndicator, { opacity: 0 });
         return;
       }
 
-      gsap.set(sectionZero, { opacity: 1 });
-      gsap.set(sectionOne, { opacity: 0 });
-      gsap.set(whoWeAreContent, { opacity: 0 });
-      gsap.set(sectionTwo, { opacity: 0 });
-      gsap.set(sectionAffiliations, { opacity: 0 });
-      gsap.set(logos, {
-        opacity: 0,
-        y: 26,
-        scale: (i: number) => HOME_ASSETS.affiliations[i].scale * 0.92,
-      });
-      gsap.set(pageIndicator, { top: '90%', yPercent: 0 });
-
       const ctx = gsap.context(() => {
+        gsap.set(sectionZero, { opacity: 1 });
+        gsap.set(sectionOne, { opacity: 0 });
+        gsap.set(whoWeAreContent, { opacity: 0 });
+        gsap.set(sectionTwo, { opacity: 0 });
+        gsap.set(sectionPersonalBar, { opacity: 0 });
+        gsap.set(personalBarBgLogo, { opacity: 0, scale: 0.88 });
+        gsap.set(personalBarContent, { y: '140vh' });
+        gsap.set(sectionAffiliations, { opacity: 0 });
+        if (logos.length === HOME_ASSETS.affiliations.length) {
+          gsap.set(logos, {
+            opacity: 0,
+            y: 26,
+            scale: (i: number) => HOME_ASSETS.affiliations[i].scale * 0.92,
+          });
+        }
+        gsap.set(pageIndicator, { top: '90%', yPercent: 0 });
         const typingFadeOut = getScrollPhase('typingFadeOut', isMobile);
-        const pageIndicator = getScrollPhase('pageIndicator', isMobile);
+        const pageIndicatorPhase = getScrollPhase('pageIndicator', isMobile);
         const whoSectionIn = getScrollPhase('whoSectionIn', isMobile);
         const whoLettersMove = getScrollPhase('whoLettersMove', isMobile);
         const whoContentIn = getScrollPhase('whoContentIn', isMobile);
         const whoSectionOut = getScrollPhase('whoSectionOut', isMobile);
         const howSectionIn = getScrollPhase('howSectionIn', isMobile);
         const howLettersMove = getScrollPhase('howLettersMove', isMobile);
-        const howToAffiliations = getScrollPhase('howToAffiliations', isMobile);
+        const howSectionOut = getScrollPhase('howSectionOut', isMobile);
+        const personalBarScroll = getScrollPhase('personalBarScroll', isMobile);
+        const personalBarToAffiliations = getScrollPhase('personalBarToAffiliations', isMobile);
         const affiliationsLogos = getScrollPhase('affiliationsLogos', isMobile);
 
         attachScene(
           scrollTrack,
           typingFadeOut.at,
           typingFadeOut.durationPercent,
-          gsap.to(sectionZero, { opacity: 0, ease: 'none' }),
+          gsap.to(sectionZero, { opacity: 0, ...SCRUB_DEFAULTS }),
         );
 
         attachScene(
           scrollTrack,
-          pageIndicator.at,
-          pageIndicator.durationPercent,
-          gsap.to(pageIndicator, { top: '-50%', ease: 'none' }),
+          pageIndicatorPhase.at,
+          pageIndicatorPhase.durationPercent,
+          gsap.to(pageIndicator, { top: '-50%', ...SCRUB_DEFAULTS }),
         );
 
         attachScene(
           scrollTrack,
           whoSectionIn.at,
           whoSectionIn.durationPercent,
-          gsap.to(sectionOne, { opacity: 1, ease: 'none' }),
+          gsap.to(sectionOne, { opacity: 1, ...SCRUB_DEFAULTS }),
         );
 
         if (isMobile) {
@@ -176,21 +207,21 @@ export function OsrIntroScroll() {
           scrollTrack,
           whoContentIn.at,
           whoContentIn.durationPercent,
-          gsap.to(whoWeAreContent, { opacity: 1, ease: 'none' }),
+          gsap.to(whoWeAreContent, { opacity: 1, ...SCRUB_DEFAULTS }),
         );
 
         attachScene(
           scrollTrack,
           whoSectionOut.at,
           whoSectionOut.durationPercent,
-          gsap.to(sectionOne, { opacity: 0, ease: 'none' }),
+          gsap.to(sectionOne, { opacity: 0, ...SCRUB_DEFAULTS }),
         );
 
         attachScene(
           scrollTrack,
           howSectionIn.at,
           howSectionIn.durationPercent,
-          gsap.to(sectionTwo, { opacity: 1, ease: 'none' }),
+          gsap.to(sectionTwo, { opacity: 1, ...SCRUB_DEFAULTS }),
         );
 
         if (isMobile) {
@@ -219,41 +250,93 @@ export function OsrIntroScroll() {
 
         attachScene(
           scrollTrack,
-          howToAffiliations.at,
-          howToAffiliations.durationPercent,
-          gsap
-            .timeline({ defaults: { ease: 'none' } })
-            .to(sectionTwo, { opacity: 0 }, 0)
-            .to(sectionAffiliations, { opacity: 1 }, 0)
-            .to(pageIndicator, { opacity: 0 }, 0),
+          howSectionOut.at,
+          howSectionOut.durationPercent,
+          gsap.to(sectionTwo, { opacity: 0, ...SCRUB_DEFAULTS }),
         );
 
         attachScene(
           scrollTrack,
-          affiliationsLogos.at,
-          affiliationsLogos.durationPercent,
-          gsap.to(logos, {
-            opacity: 1,
-            y: 0,
-            scale: (i: number) => HOME_ASSETS.affiliations[i].scale,
-            duration: 1,
-            stagger: 0.08,
-            ease: 'none',
-          }),
+          personalBarScroll.at,
+          personalBarScroll.durationPercent,
+          gsap
+            .timeline({ defaults: { ease: 'none' } })
+            .to(sectionPersonalBar, { opacity: 1 }, 0)
+            .to(personalBarContent, { y: '-135vh', ease: 'none', duration: 1 }, 0)
+            .to(
+              personalBarBgLogo,
+              { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
+              0,
+            ),
         );
+
+        attachScene(
+          scrollTrack,
+          personalBarToAffiliations.at,
+          personalBarToAffiliations.durationPercent,
+          gsap
+            .timeline({ defaults: { ease: 'none' } })
+            .to(sectionPersonalBar, { opacity: 0 }, 0)
+            .to(sectionAffiliations, { opacity: 1 }, 0)
+            .to(pageIndicator, { opacity: 0 }, 0),
+        );
+
+        let affiliationsLogosAttached = false;
+        const attachAffiliationLogos = () => {
+          if (affiliationsLogosAttached) return true;
+          const readyLogos = logoRefs.current.filter(Boolean) as HTMLImageElement[];
+          if (readyLogos.length !== HOME_ASSETS.affiliations.length) return false;
+
+          affiliationsLogosAttached = true;
+          attachScene(
+            scrollTrack,
+            affiliationsLogos.at,
+            affiliationsLogos.durationPercent,
+            gsap.to(readyLogos, {
+              opacity: 1,
+              y: 0,
+              scale: (i: number) => HOME_ASSETS.affiliations[i].scale,
+              duration: 1,
+              stagger: 0.08,
+              ...SCRUB_DEFAULTS,
+            }),
+          );
+          return true;
+        };
+
+        if (!attachAffiliationLogos()) {
+          let attempts = 0;
+          const retryLogos = () => {
+            if (attachAffiliationLogos() || attempts++ > 24) return;
+            requestAnimationFrame(retryLogos);
+          };
+          requestAnimationFrame(retryLogos);
+        }
       }, scrollTrack);
 
-      const refresh = () => {
-        requestAnimationFrame(() => ScrollTrigger.refresh(false));
-      };
+      refreshScrollTriggers();
+      window.addEventListener('load', refreshScrollTriggers);
+      document.fonts?.ready.then(refreshScrollTriggers);
 
-      refresh();
-      window.addEventListener('load', refresh);
-      document.fonts?.ready.then(refresh);
+      const resizeObserver = new ResizeObserver(refreshScrollTriggers);
+      resizeObserver.observe(scrollTrack);
+      resizeObserver.observe(document.documentElement);
+
+      const onPageShow = (event: PageTransitionEvent) => {
+        if (event.persisted) {
+          window.scrollTo(0, 0);
+          ScrollTrigger.clearScrollMemory();
+          refreshScrollTriggers();
+        }
+      };
+      window.addEventListener('pageshow', onPageShow);
 
       return () => {
-        window.removeEventListener('load', refresh);
+        window.removeEventListener('load', refreshScrollTriggers);
+        window.removeEventListener('pageshow', onPageShow);
+        resizeObserver.disconnect();
         ctx.revert();
+        ScrollTrigger.clearScrollMemory();
       };
     },
     { scope: scrollTrackRef },
@@ -392,7 +475,16 @@ export function OsrIntroScroll() {
         </div>
       </section>
 
-      {/* Phase 4 — hiring manager affiliations (same fixed viewport as intro) */}
+      <WhoopPersonalBarSection
+        sectionShell={sectionShell}
+        refs={{
+          section: sectionPersonalBarRef,
+          bgLogo: personalBarBgLogoRef,
+          content: personalBarContentRef,
+        }}
+      />
+
+      {/* Phase 5 — hiring manager affiliations (same fixed viewport as intro) */}
       <section
         ref={sectionAffiliationsRef}
         id="intro-affiliations"
