@@ -5,11 +5,8 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { HOME_ASSETS } from './homeAssets';
-import {
-  OSR_SCROLL_HEIGHT_VH,
-  TYPING_DESCRIPTIONS,
-  getOsrSceneConfig,
-} from './osrScrollUtils';
+import { OSR_SCROLL_HEIGHT_VH, getScrollPhase } from './osrIntroTimeline';
+import { TYPING_DESCRIPTIONS, getOsrSceneConfig } from './osrScrollUtils';
 import { TypingHeroLine } from './TypingHeroLine';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -119,32 +116,43 @@ export function OsrIntroScroll() {
       gsap.set(pageIndicator, { top: '90%', yPercent: 0 });
 
       const ctx = gsap.context(() => {
+        const typingFadeOut = getScrollPhase('typingFadeOut', isMobile);
+        const pageIndicator = getScrollPhase('pageIndicator', isMobile);
+        const whoSectionIn = getScrollPhase('whoSectionIn', isMobile);
+        const whoLettersMove = getScrollPhase('whoLettersMove', isMobile);
+        const whoContentIn = getScrollPhase('whoContentIn', isMobile);
+        const whoSectionOut = getScrollPhase('whoSectionOut', isMobile);
+        const howSectionIn = getScrollPhase('howSectionIn', isMobile);
+        const howLettersMove = getScrollPhase('howLettersMove', isMobile);
+        const howToAffiliations = getScrollPhase('howToAffiliations', isMobile);
+        const affiliationsLogos = getScrollPhase('affiliationsLogos', isMobile);
+
         attachScene(
           scrollTrack,
-          0,
-          isMobile ? 20 : 40,
+          typingFadeOut.at,
+          typingFadeOut.durationPercent,
           gsap.to(sectionZero, { opacity: 0, ease: 'none' }),
         );
 
         attachScene(
           scrollTrack,
-          0,
-          520,
+          pageIndicator.at,
+          pageIndicator.durationPercent,
           gsap.to(pageIndicator, { top: '-50%', ease: 'none' }),
         );
 
         attachScene(
           scrollTrack,
-          isMobile ? 0.4 : 1.0,
-          isMobile ? 20 : 50,
+          whoSectionIn.at,
+          whoSectionIn.durationPercent,
           gsap.to(sectionOne, { opacity: 1, ease: 'none' }),
         );
 
         if (isMobile) {
           attachScene(
             scrollTrack,
-            0.5,
-            30,
+            whoLettersMove.at,
+            whoLettersMove.durationPercent,
             gsap
               .timeline({ defaults: { ease: 'power2.in' } })
               .to(whoLetterO, { left: '140%', top: '-27%' }, 0)
@@ -154,8 +162,8 @@ export function OsrIntroScroll() {
         } else {
           attachScene(
             scrollTrack,
-            1.2,
-            170,
+            whoLettersMove.at,
+            whoLettersMove.durationPercent,
             gsap
               .timeline({ defaults: { ease: 'power2.in' } })
               .to(whoLetterO, { left: '100%', top: '-140%' }, 0)
@@ -166,20 +174,30 @@ export function OsrIntroScroll() {
 
         attachScene(
           scrollTrack,
-          isMobile ? 0.8 : 2.6,
-          isMobile ? 20 : 40,
+          whoContentIn.at,
+          whoContentIn.durationPercent,
           gsap.to(whoWeAreContent, { opacity: 1, ease: 'none' }),
         );
 
-        attachScene(scrollTrack, 4.1, 40, gsap.to(sectionOne, { opacity: 0, ease: 'none' }));
+        attachScene(
+          scrollTrack,
+          whoSectionOut.at,
+          whoSectionOut.durationPercent,
+          gsap.to(sectionOne, { opacity: 0, ease: 'none' }),
+        );
 
-        attachScene(scrollTrack, 4.6, 30, gsap.to(sectionTwo, { opacity: 1, ease: 'none' }));
+        attachScene(
+          scrollTrack,
+          howSectionIn.at,
+          howSectionIn.durationPercent,
+          gsap.to(sectionTwo, { opacity: 1, ease: 'none' }),
+        );
 
         if (isMobile) {
           attachScene(
             scrollTrack,
-            4.9,
-            95,
+            howLettersMove.at,
+            howLettersMove.durationPercent,
             gsap
               .timeline()
               .to(howLetterO, { top: '15%', left: '-12%' }, 0)
@@ -189,8 +207,8 @@ export function OsrIntroScroll() {
         } else {
           attachScene(
             scrollTrack,
-            4.9,
-            110,
+            howLettersMove.at,
+            howLettersMove.durationPercent,
             gsap
               .timeline({ defaults: { ease: 'power2.in' } })
               .to(howLetterO, { top: '-20%', left: '-8%' }, 0)
@@ -199,11 +217,10 @@ export function OsrIntroScroll() {
           );
         }
 
-        // Hold How it works after letter motion, then crossfade to affiliations
         attachScene(
           scrollTrack,
-          6.4,
-          40,
+          howToAffiliations.at,
+          howToAffiliations.durationPercent,
           gsap
             .timeline({ defaults: { ease: 'none' } })
             .to(sectionTwo, { opacity: 0 }, 0)
@@ -213,13 +230,14 @@ export function OsrIntroScroll() {
 
         attachScene(
           scrollTrack,
-          6.85,
-          70,
+          affiliationsLogos.at,
+          affiliationsLogos.durationPercent,
           gsap.to(logos, {
             opacity: 1,
             y: 0,
             scale: (i: number) => HOME_ASSETS.affiliations[i].scale,
-            stagger: 0.04,
+            duration: 1,
+            stagger: 0.08,
             ease: 'none',
           }),
         );
@@ -249,7 +267,7 @@ export function OsrIntroScroll() {
 
   return (
     <div className="relative w-full">
-      {/* Tall scroll track (6.1 × viewport) */}
+      {/* Tall scroll track — phase timings live in osrIntroTimeline.ts */}
       <div
         ref={scrollTrackRef}
         className="relative w-full"
