@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { handleSignIn } from '@/components/auth-actions';
 import { OsrIntroScroll } from '@/components/home/OsrIntroScroll';
-import { OsrHero } from '@/components/home/OsrHero';
 
 export default function Page() {
   const [onboardingProgress, setOnboardingProgress] = useState<number | null>(null);
@@ -101,7 +100,6 @@ export default function Page() {
     <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-gradient-to-br from-midnight-blue to-gray-900">
       {dashboardButton}
       <OsrIntroScroll />
-      <OsrHero />
     </div>
   );
 }

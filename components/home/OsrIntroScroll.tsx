@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
+import { HOME_ASSETS } from './homeAssets';
 import {
   OSR_SCROLL_HEIGHT_VH,
   TYPING_DESCRIPTIONS,
@@ -52,6 +53,8 @@ export function OsrIntroScroll() {
   const howLetterORef = useRef<HTMLDivElement>(null);
   const howLetterSRef = useRef<HTMLDivElement>(null);
   const howLetterRRef = useRef<HTMLDivElement>(null);
+  const sectionAffiliationsRef = useRef<HTMLElement>(null);
+  const logoRefs = useRef<(HTMLImageElement | null)[]>([]);
 
   useGSAP(
     () => {
@@ -67,6 +70,8 @@ export function OsrIntroScroll() {
       const howLetterO = howLetterORef.current;
       const howLetterS = howLetterSRef.current;
       const howLetterR = howLetterRRef.current;
+      const sectionAffiliations = sectionAffiliationsRef.current;
+      const logos = logoRefs.current.filter(Boolean) as HTMLImageElement[];
 
       if (
         !scrollTrack ||
@@ -80,7 +85,9 @@ export function OsrIntroScroll() {
         !whoLetterR ||
         !howLetterO ||
         !howLetterS ||
-        !howLetterR
+        !howLetterR ||
+        !sectionAffiliations ||
+        logos.length !== HOME_ASSETS.affiliations.length
       ) {
         return;
       }
@@ -93,6 +100,8 @@ export function OsrIntroScroll() {
         gsap.set(sectionOne, { opacity: 1 });
         gsap.set(whoWeAreContent, { opacity: 1 });
         gsap.set(sectionTwo, { opacity: 0 });
+        gsap.set(sectionAffiliations, { opacity: 1 });
+        gsap.set(logos, { opacity: 1, y: 0, scale: 1 });
         gsap.set(pageIndicator, { opacity: 0 });
         return;
       }
@@ -101,6 +110,12 @@ export function OsrIntroScroll() {
       gsap.set(sectionOne, { opacity: 0 });
       gsap.set(whoWeAreContent, { opacity: 0 });
       gsap.set(sectionTwo, { opacity: 0 });
+      gsap.set(sectionAffiliations, { opacity: 0 });
+      gsap.set(logos, {
+        opacity: 0,
+        y: 26,
+        scale: (i: number) => HOME_ASSETS.affiliations[i].scale * 0.92,
+      });
       gsap.set(pageIndicator, { top: '90%', yPercent: 0 });
 
       const ctx = gsap.context(() => {
@@ -164,7 +179,7 @@ export function OsrIntroScroll() {
           attachScene(
             scrollTrack,
             4.9,
-            80,
+            95,
             gsap
               .timeline()
               .to(howLetterO, { top: '15%', left: '-12%' }, 0)
@@ -175,7 +190,7 @@ export function OsrIntroScroll() {
           attachScene(
             scrollTrack,
             4.9,
-            80,
+            110,
             gsap
               .timeline({ defaults: { ease: 'power2.in' } })
               .to(howLetterO, { top: '-20%', left: '-8%' }, 0)
@@ -184,7 +199,30 @@ export function OsrIntroScroll() {
           );
         }
 
-        attachScene(scrollTrack, 5.7, 30, gsap.to(sectionTwo, { opacity: 0, ease: 'none' }));
+        // Hold How it works after letter motion, then crossfade to affiliations
+        attachScene(
+          scrollTrack,
+          6.4,
+          40,
+          gsap
+            .timeline({ defaults: { ease: 'none' } })
+            .to(sectionTwo, { opacity: 0 }, 0)
+            .to(sectionAffiliations, { opacity: 1 }, 0)
+            .to(pageIndicator, { opacity: 0 }, 0),
+        );
+
+        attachScene(
+          scrollTrack,
+          6.85,
+          70,
+          gsap.to(logos, {
+            opacity: 1,
+            y: 0,
+            scale: (i: number) => HOME_ASSETS.affiliations[i].scale,
+            stagger: 0.04,
+            ease: 'none',
+          }),
+        );
       }, scrollTrack);
 
       const refresh = () => {
@@ -297,7 +335,7 @@ export function OsrIntroScroll() {
       <section
         ref={sectionTwoRef}
         id="intro-two"
-        className={`${sectionShell} z-[19] overflow-hidden bg-white opacity-0`}
+        className={`${sectionShell} z-[19] overflow-hidden bg-gradient-to-br from-midnight-blue to-gray-900 opacity-0`}
         aria-labelledby="intro-how-heading"
       >
         <div
@@ -325,14 +363,64 @@ export function OsrIntroScroll() {
         <div className="relative z-[2] w-[75%] max-w-3xl md:w-1/2">
           <h2
             id="intro-how-heading"
-            className="text-sm font-extrabold uppercase tracking-wide text-gray-800 md:text-xl"
+            className="text-sm font-extrabold uppercase tracking-wide text-white md:text-xl"
           >
             How it works
           </h2>
-          <p className="mt-5 text-lg leading-relaxed text-gray-700 md:text-4xl">
+          <p className="mt-5 text-lg leading-relaxed text-gray-200 md:text-4xl">
             SWE Hiring Managers define their dream candidate in terms of measurable open source
             achievements. Their personal bar becomes an actionable pathway for junior devs.
           </p>
+        </div>
+      </section>
+
+      {/* Phase 4 — hiring manager affiliations (same fixed viewport as intro) */}
+      <section
+        ref={sectionAffiliationsRef}
+        id="intro-affiliations"
+        className={`${sectionShell} z-[21] overflow-hidden bg-gradient-to-br from-midnight-blue to-gray-900 opacity-0`}
+        aria-labelledby="affiliations-heading"
+      >
+        <div className="relative z-[2] flex w-full items-center justify-center px-4 sm:px-8">
+          <div className="w-full max-w-6xl text-center">
+            <h2
+              id="affiliations-heading"
+              className="mb-4 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl"
+            >
+              Hiring Manager Affiliations
+            </h2>
+            <p className="mx-auto mb-3 max-w-5xl text-base leading-relaxed text-gray-200 sm:text-lg md:text-xl">
+              Participating managers at these companies commit to interview candidates who meet their
+              defined open-source benchmarks.
+            </p>
+            <p className="mx-auto mb-9 max-w-4xl text-sm text-gray-300 sm:text-base">
+              Standards are manager-defined and do not represent official company policy.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:gap-5">
+              {HOME_ASSETS.affiliations.map((logo, index) => (
+                <div
+                  key={logo.path}
+                  className="flex h-[78px] items-center justify-center rounded-xl border border-light-steel-blue/35 bg-white/95 p-3 shadow-lg sm:h-[92px] sm:p-4"
+                >
+                  <img
+                    ref={(el) => {
+                      logoRefs.current[index] = el;
+                    }}
+                    src={logo.path}
+                    alt={`${logo.label} logo`}
+                    className="max-h-full max-w-full origin-center object-contain"
+                    style={{
+                      transform: `scale(${logo.scale})`,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-xl font-semibold italic tracking-wide text-gray-200 sm:mt-7 sm:text-2xl">
+              and more...
+            </p>
+          </div>
         </div>
       </section>
     </div>

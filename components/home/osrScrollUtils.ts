@@ -1,4 +1,5 @@
-export const OSR_SCROLL_HEIGHT_VH = 6.1;
+/** Total homepage intro scroll length (viewport height multiples). */
+export const OSR_SCROLL_HEIGHT_VH = 8;
 
 export const TYPING_DESCRIPTIONS = [
   'A pathway for entry-level SWEs',
