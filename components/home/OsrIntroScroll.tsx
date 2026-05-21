@@ -8,6 +8,7 @@ import { HOME_ASSETS } from './homeAssets';
 import { OSR_SCROLL_HEIGHT_VH, getScrollPhase } from './osrIntroTimeline';
 import { TYPING_DESCRIPTIONS, getOsrSceneConfig } from './osrScrollUtils';
 import { TypingHeroLine } from './TypingHeroLine';
+import { MicrosoftPersonalBarSection } from './MicrosoftPersonalBarSection';
 import { WhoopPersonalBarSection } from './WhoopPersonalBarSection';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -59,9 +60,12 @@ export function OsrIntroScroll() {
   const howLetterORef = useRef<HTMLDivElement>(null);
   const howLetterSRef = useRef<HTMLDivElement>(null);
   const howLetterRRef = useRef<HTMLDivElement>(null);
-  const sectionPersonalBarRef = useRef<HTMLElement>(null);
-  const personalBarBgLogoRef = useRef<HTMLDivElement>(null);
-  const personalBarContentRef = useRef<HTMLDivElement>(null);
+  const sectionWhoopPersonalBarRef = useRef<HTMLElement>(null);
+  const whoopPersonalBarBgLogoRef = useRef<HTMLDivElement>(null);
+  const whoopPersonalBarContentRef = useRef<HTMLDivElement>(null);
+  const sectionMicrosoftPersonalBarRef = useRef<HTMLElement>(null);
+  const microsoftPersonalBarBgLogoRef = useRef<HTMLDivElement>(null);
+  const microsoftPersonalBarContentRef = useRef<HTMLDivElement>(null);
   const sectionAffiliationsRef = useRef<HTMLElement>(null);
   const logoRefs = useRef<(HTMLImageElement | null)[]>([]);
 
@@ -79,9 +83,12 @@ export function OsrIntroScroll() {
       const howLetterO = howLetterORef.current;
       const howLetterS = howLetterSRef.current;
       const howLetterR = howLetterRRef.current;
-      const sectionPersonalBar = sectionPersonalBarRef.current;
-      const personalBarBgLogo = personalBarBgLogoRef.current;
-      const personalBarContent = personalBarContentRef.current;
+      const sectionWhoopPersonalBar = sectionWhoopPersonalBarRef.current;
+      const whoopPersonalBarBgLogo = whoopPersonalBarBgLogoRef.current;
+      const whoopPersonalBarContent = whoopPersonalBarContentRef.current;
+      const sectionMicrosoftPersonalBar = sectionMicrosoftPersonalBarRef.current;
+      const microsoftPersonalBarBgLogo = microsoftPersonalBarBgLogoRef.current;
+      const microsoftPersonalBarContent = microsoftPersonalBarContentRef.current;
       const sectionAffiliations = sectionAffiliationsRef.current;
       const logos = logoRefs.current.filter(Boolean) as HTMLImageElement[];
 
@@ -98,9 +105,12 @@ export function OsrIntroScroll() {
         !howLetterO ||
         !howLetterS ||
         !howLetterR ||
-        !sectionPersonalBar ||
-        !personalBarBgLogo ||
-        !personalBarContent ||
+        !sectionWhoopPersonalBar ||
+        !whoopPersonalBarBgLogo ||
+        !whoopPersonalBarContent ||
+        !sectionMicrosoftPersonalBar ||
+        !microsoftPersonalBarBgLogo ||
+        !microsoftPersonalBarContent ||
         !sectionAffiliations
       ) {
         return;
@@ -117,9 +127,12 @@ export function OsrIntroScroll() {
         gsap.set(sectionOne, { opacity: 1 });
         gsap.set(whoWeAreContent, { opacity: 1 });
         gsap.set(sectionTwo, { opacity: 0 });
-        gsap.set(sectionPersonalBar, { opacity: 1 });
-        gsap.set(personalBarBgLogo, { opacity: 0.5 });
-        gsap.set(personalBarContent, { y: 0 });
+        gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
+        gsap.set(sectionMicrosoftPersonalBar, { opacity: 1 });
+        gsap.set(whoopPersonalBarBgLogo, { opacity: 0 });
+        gsap.set(microsoftPersonalBarBgLogo, { opacity: 0.5 });
+        gsap.set(whoopPersonalBarContent, { y: 0 });
+        gsap.set(microsoftPersonalBarContent, { y: 0 });
         gsap.set(sectionAffiliations, { opacity: 1 });
         if (logos.length === HOME_ASSETS.affiliations.length) {
           gsap.set(logos, { opacity: 1, y: 0, scale: 1 });
@@ -133,9 +146,12 @@ export function OsrIntroScroll() {
         gsap.set(sectionOne, { opacity: 0 });
         gsap.set(whoWeAreContent, { opacity: 0 });
         gsap.set(sectionTwo, { opacity: 0 });
-        gsap.set(sectionPersonalBar, { opacity: 0 });
-        gsap.set(personalBarBgLogo, { opacity: 0, scale: 0.88 });
-        gsap.set(personalBarContent, { y: '140vh' });
+        gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
+        gsap.set(sectionMicrosoftPersonalBar, { opacity: 0 });
+        gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
+        gsap.set(microsoftPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
+        gsap.set(whoopPersonalBarContent, { y: '140vh' });
+        gsap.set(microsoftPersonalBarContent, { y: '140vh' });
         gsap.set(sectionAffiliations, { opacity: 0 });
         if (logos.length === HOME_ASSETS.affiliations.length) {
           gsap.set(logos, {
@@ -154,8 +170,10 @@ export function OsrIntroScroll() {
         const howSectionIn = getScrollPhase('howSectionIn', isMobile);
         const howLettersMove = getScrollPhase('howLettersMove', isMobile);
         const howSectionOut = getScrollPhase('howSectionOut', isMobile);
-        const personalBarScroll = getScrollPhase('personalBarScroll', isMobile);
-        const personalBarToAffiliations = getScrollPhase('personalBarToAffiliations', isMobile);
+        const whoopPersonalBarScroll = getScrollPhase('whoopPersonalBarScroll', isMobile);
+        const whoopToMicrosoft = getScrollPhase('whoopToMicrosoft', isMobile);
+        const microsoftPersonalBarScroll = getScrollPhase('microsoftPersonalBarScroll', isMobile);
+        const microsoftToAffiliations = getScrollPhase('microsoftToAffiliations', isMobile);
         const affiliationsLogos = getScrollPhase('affiliationsLogos', isMobile);
 
         attachScene(
@@ -257,14 +275,14 @@ export function OsrIntroScroll() {
 
         attachScene(
           scrollTrack,
-          personalBarScroll.at,
-          personalBarScroll.durationPercent,
+          whoopPersonalBarScroll.at,
+          whoopPersonalBarScroll.durationPercent,
           gsap
             .timeline({ defaults: { ease: 'none' } })
-            .to(sectionPersonalBar, { opacity: 1 }, 0)
-            .to(personalBarContent, { y: '-135vh', ease: 'none', duration: 1 }, 0)
+            .to(sectionWhoopPersonalBar, { opacity: 1, ...SCRUB_DEFAULTS }, 0)
+            .to(whoopPersonalBarContent, { y: '-135vh', ease: 'none', duration: 1 }, 0)
             .to(
-              personalBarBgLogo,
+              whoopPersonalBarBgLogo,
               { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
               0,
             ),
@@ -272,13 +290,37 @@ export function OsrIntroScroll() {
 
         attachScene(
           scrollTrack,
-          personalBarToAffiliations.at,
-          personalBarToAffiliations.durationPercent,
+          whoopToMicrosoft.at,
+          whoopToMicrosoft.durationPercent,
           gsap
             .timeline({ defaults: { ease: 'none' } })
-            .to(sectionPersonalBar, { opacity: 0 }, 0)
-            .to(sectionAffiliations, { opacity: 1 }, 0)
-            .to(pageIndicator, { opacity: 0 }, 0),
+            .to(sectionWhoopPersonalBar, { opacity: 0, ...SCRUB_DEFAULTS }, 0)
+            .to(sectionMicrosoftPersonalBar, { opacity: 1, ...SCRUB_DEFAULTS }, 0),
+        );
+
+        attachScene(
+          scrollTrack,
+          microsoftPersonalBarScroll.at,
+          microsoftPersonalBarScroll.durationPercent,
+          gsap
+            .timeline({ defaults: { ease: 'none' } })
+            .to(microsoftPersonalBarContent, { y: '-185vh', ease: 'none', duration: 1 }, 0)
+            .to(
+              microsoftPersonalBarBgLogo,
+              { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
+              0,
+            ),
+        );
+
+        attachScene(
+          scrollTrack,
+          microsoftToAffiliations.at,
+          microsoftToAffiliations.durationPercent,
+          gsap
+            .timeline({ defaults: { ease: 'none' } })
+            .to(sectionMicrosoftPersonalBar, { opacity: 0, ...SCRUB_DEFAULTS }, 0)
+            .to(sectionAffiliations, { opacity: 1, ...SCRUB_DEFAULTS }, 0)
+            .to(pageIndicator, { opacity: 0, ...SCRUB_DEFAULTS }, 0),
         );
 
         let affiliationsLogosAttached = false;
@@ -478,13 +520,22 @@ export function OsrIntroScroll() {
       <WhoopPersonalBarSection
         sectionShell={sectionShell}
         refs={{
-          section: sectionPersonalBarRef,
-          bgLogo: personalBarBgLogoRef,
-          content: personalBarContentRef,
+          section: sectionWhoopPersonalBarRef,
+          bgLogo: whoopPersonalBarBgLogoRef,
+          content: whoopPersonalBarContentRef,
         }}
       />
 
-      {/* Phase 5 — hiring manager affiliations (same fixed viewport as intro) */}
+      <MicrosoftPersonalBarSection
+        sectionShell={sectionShell}
+        refs={{
+          section: sectionMicrosoftPersonalBarRef,
+          bgLogo: microsoftPersonalBarBgLogoRef,
+          content: microsoftPersonalBarContentRef,
+        }}
+      />
+
+      {/* Phase 6 — hiring manager affiliations (same fixed viewport as intro) */}
       <section
         ref={sectionAffiliationsRef}
         id="intro-affiliations"

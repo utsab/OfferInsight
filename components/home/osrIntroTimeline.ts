@@ -17,10 +17,11 @@ export const OSR_SCROLL_PHASES = {
   howSectionIn: { at: 4.6, durationPercent: 30 },
   howLettersMove: { at: 4.9, durationPercent: 80 },
   howSectionOut: { at: 5.7, durationPercent: 28 },
-  /** One continuous page scroll-up: title, rule, and 2-column rows together. */
-  personalBarScroll: { at: 5.88, durationPercent: 230 },
-  personalBarToAffiliations: { at: 8.22, durationPercent: 36 },
-  affiliationsLogos: { at: 8.46, durationPercent: 88 },
+  whoopPersonalBarScroll: { at: 5.88, durationPercent: 300 },
+  whoopToMicrosoft: { at: 8.92, durationPercent: 32 },
+  microsoftPersonalBarScroll: { at: 9.26, durationPercent: 320 },
+  microsoftToAffiliations: { at: 12.5, durationPercent: 36 },
+  affiliationsLogos: { at: 12.74, durationPercent: 88 },
 } as const satisfies Record<string, OsrScrollPhase>;
 
 /** Extra scroll after the last scrub scene so logo stagger can finish. */
@@ -40,9 +41,11 @@ export const OSR_SCROLL_PHASES_MOBILE: Partial<typeof OSR_SCROLL_PHASES> = {
   whoLettersMove: { at: 0.5, durationPercent: 30 },
   whoContentIn: { at: 0.8, durationPercent: 20 },
   howLettersMove: { at: 4.9, durationPercent: 80 },
-  personalBarScroll: { at: 5.88, durationPercent: 255 },
-  personalBarToAffiliations: { at: 8.38, durationPercent: 38 },
-  affiliationsLogos: { at: 8.6, durationPercent: 90 },
+  whoopPersonalBarScroll: { at: 5.88, durationPercent: 330 },
+  whoopToMicrosoft: { at: 9.22, durationPercent: 34 },
+  microsoftPersonalBarScroll: { at: 9.58, durationPercent: 350 },
+  microsoftToAffiliations: { at: 13.12, durationPercent: 38 },
+  affiliationsLogos: { at: 13.36, durationPercent: 90 },
 };
 
 export function getScrollPhase(
