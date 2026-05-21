@@ -8,6 +8,7 @@ import { HOME_ASSETS } from './homeAssets';
 import { OSR_SCROLL_HEIGHT_VH, getScrollPhase } from './osrIntroTimeline';
 import { TYPING_DESCRIPTIONS, getOsrSceneConfig } from './osrScrollUtils';
 import { TypingHeroLine } from './TypingHeroLine';
+import { MetaPersonalBarSection } from './MetaPersonalBarSection';
 import { MicrosoftPersonalBarSection } from './MicrosoftPersonalBarSection';
 import { WhoopPersonalBarSection } from './WhoopPersonalBarSection';
 
@@ -66,6 +67,9 @@ export function OsrIntroScroll() {
   const sectionMicrosoftPersonalBarRef = useRef<HTMLElement>(null);
   const microsoftPersonalBarBgLogoRef = useRef<HTMLDivElement>(null);
   const microsoftPersonalBarContentRef = useRef<HTMLDivElement>(null);
+  const sectionMetaPersonalBarRef = useRef<HTMLElement>(null);
+  const metaPersonalBarBgLogoRef = useRef<HTMLDivElement>(null);
+  const metaPersonalBarContentRef = useRef<HTMLDivElement>(null);
   const sectionAffiliationsRef = useRef<HTMLElement>(null);
   const logoRefs = useRef<(HTMLImageElement | null)[]>([]);
 
@@ -89,6 +93,9 @@ export function OsrIntroScroll() {
       const sectionMicrosoftPersonalBar = sectionMicrosoftPersonalBarRef.current;
       const microsoftPersonalBarBgLogo = microsoftPersonalBarBgLogoRef.current;
       const microsoftPersonalBarContent = microsoftPersonalBarContentRef.current;
+      const sectionMetaPersonalBar = sectionMetaPersonalBarRef.current;
+      const metaPersonalBarBgLogo = metaPersonalBarBgLogoRef.current;
+      const metaPersonalBarContent = metaPersonalBarContentRef.current;
       const sectionAffiliations = sectionAffiliationsRef.current;
       const logos = logoRefs.current.filter(Boolean) as HTMLImageElement[];
 
@@ -111,6 +118,9 @@ export function OsrIntroScroll() {
         !sectionMicrosoftPersonalBar ||
         !microsoftPersonalBarBgLogo ||
         !microsoftPersonalBarContent ||
+        !sectionMetaPersonalBar ||
+        !metaPersonalBarBgLogo ||
+        !metaPersonalBarContent ||
         !sectionAffiliations
       ) {
         return;
@@ -128,11 +138,14 @@ export function OsrIntroScroll() {
         gsap.set(whoWeAreContent, { opacity: 1 });
         gsap.set(sectionTwo, { opacity: 0 });
         gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
-        gsap.set(sectionMicrosoftPersonalBar, { opacity: 1 });
+        gsap.set(sectionMicrosoftPersonalBar, { opacity: 0 });
+        gsap.set(sectionMetaPersonalBar, { opacity: 1 });
         gsap.set(whoopPersonalBarBgLogo, { opacity: 0 });
-        gsap.set(microsoftPersonalBarBgLogo, { opacity: 0.5 });
+        gsap.set(microsoftPersonalBarBgLogo, { opacity: 0 });
+        gsap.set(metaPersonalBarBgLogo, { opacity: 0.5 });
         gsap.set(whoopPersonalBarContent, { y: 0 });
         gsap.set(microsoftPersonalBarContent, { y: 0 });
+        gsap.set(metaPersonalBarContent, { y: 0 });
         gsap.set(sectionAffiliations, { opacity: 1 });
         if (logos.length === HOME_ASSETS.affiliations.length) {
           gsap.set(logos, { opacity: 1, y: 0, scale: 1 });
@@ -148,10 +161,13 @@ export function OsrIntroScroll() {
         gsap.set(sectionTwo, { opacity: 0 });
         gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
         gsap.set(sectionMicrosoftPersonalBar, { opacity: 0 });
+        gsap.set(sectionMetaPersonalBar, { opacity: 0 });
         gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
         gsap.set(microsoftPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
+        gsap.set(metaPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
         gsap.set(whoopPersonalBarContent, { y: '140vh' });
         gsap.set(microsoftPersonalBarContent, { y: '140vh' });
+        gsap.set(metaPersonalBarContent, { y: '140vh' });
         gsap.set(sectionAffiliations, { opacity: 0 });
         if (logos.length === HOME_ASSETS.affiliations.length) {
           gsap.set(logos, {
@@ -173,7 +189,9 @@ export function OsrIntroScroll() {
         const whoopPersonalBarScroll = getScrollPhase('whoopPersonalBarScroll', isMobile);
         const whoopToMicrosoft = getScrollPhase('whoopToMicrosoft', isMobile);
         const microsoftPersonalBarScroll = getScrollPhase('microsoftPersonalBarScroll', isMobile);
-        const microsoftToAffiliations = getScrollPhase('microsoftToAffiliations', isMobile);
+        const microsoftToMeta = getScrollPhase('microsoftToMeta', isMobile);
+        const metaPersonalBarScroll = getScrollPhase('metaPersonalBarScroll', isMobile);
+        const metaToAffiliations = getScrollPhase('metaToAffiliations', isMobile);
         const affiliationsLogos = getScrollPhase('affiliationsLogos', isMobile);
 
         attachScene(
@@ -314,11 +332,35 @@ export function OsrIntroScroll() {
 
         attachScene(
           scrollTrack,
-          microsoftToAffiliations.at,
-          microsoftToAffiliations.durationPercent,
+          microsoftToMeta.at,
+          microsoftToMeta.durationPercent,
           gsap
             .timeline({ defaults: { ease: 'none' } })
             .to(sectionMicrosoftPersonalBar, { opacity: 0, ...SCRUB_DEFAULTS }, 0)
+            .to(sectionMetaPersonalBar, { opacity: 1, ...SCRUB_DEFAULTS }, 0),
+        );
+
+        attachScene(
+          scrollTrack,
+          metaPersonalBarScroll.at,
+          metaPersonalBarScroll.durationPercent,
+          gsap
+            .timeline({ defaults: { ease: 'none' } })
+            .to(metaPersonalBarContent, { y: '-185vh', ease: 'none', duration: 1 }, 0)
+            .to(
+              metaPersonalBarBgLogo,
+              { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
+              0,
+            ),
+        );
+
+        attachScene(
+          scrollTrack,
+          metaToAffiliations.at,
+          metaToAffiliations.durationPercent,
+          gsap
+            .timeline({ defaults: { ease: 'none' } })
+            .to(sectionMetaPersonalBar, { opacity: 0, ...SCRUB_DEFAULTS }, 0)
             .to(sectionAffiliations, { opacity: 1, ...SCRUB_DEFAULTS }, 0)
             .to(pageIndicator, { opacity: 0, ...SCRUB_DEFAULTS }, 0),
         );
@@ -535,7 +577,16 @@ export function OsrIntroScroll() {
         }}
       />
 
-      {/* Phase 6 — hiring manager affiliations (same fixed viewport as intro) */}
+      <MetaPersonalBarSection
+        sectionShell={sectionShell}
+        refs={{
+          section: sectionMetaPersonalBarRef,
+          bgLogo: metaPersonalBarBgLogoRef,
+          content: metaPersonalBarContentRef,
+        }}
+      />
+
+      {/* Phase 7 — hiring manager affiliations (same fixed viewport as intro) */}
       <section
         ref={sectionAffiliationsRef}
         id="intro-affiliations"

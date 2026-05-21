@@ -20,8 +20,10 @@ export const OSR_SCROLL_PHASES = {
   whoopPersonalBarScroll: { at: 5.88, durationPercent: 300 },
   whoopToMicrosoft: { at: 8.92, durationPercent: 32 },
   microsoftPersonalBarScroll: { at: 9.26, durationPercent: 320 },
-  microsoftToAffiliations: { at: 12.5, durationPercent: 36 },
-  affiliationsLogos: { at: 12.74, durationPercent: 88 },
+  microsoftToMeta: { at: 12.5, durationPercent: 32 },
+  metaPersonalBarScroll: { at: 12.84, durationPercent: 320 },
+  metaToAffiliations: { at: 16.08, durationPercent: 36 },
+  affiliationsLogos: { at: 16.32, durationPercent: 88 },
 } as const satisfies Record<string, OsrScrollPhase>;
 
 /** Extra scroll after the last scrub scene so logo stagger can finish. */
@@ -44,8 +46,10 @@ export const OSR_SCROLL_PHASES_MOBILE: Partial<typeof OSR_SCROLL_PHASES> = {
   whoopPersonalBarScroll: { at: 5.88, durationPercent: 330 },
   whoopToMicrosoft: { at: 9.22, durationPercent: 34 },
   microsoftPersonalBarScroll: { at: 9.58, durationPercent: 350 },
-  microsoftToAffiliations: { at: 13.12, durationPercent: 38 },
-  affiliationsLogos: { at: 13.36, durationPercent: 90 },
+  microsoftToMeta: { at: 13.12, durationPercent: 34 },
+  metaPersonalBarScroll: { at: 13.48, durationPercent: 350 },
+  metaToAffiliations: { at: 17.0, durationPercent: 38 },
+  affiliationsLogos: { at: 17.24, durationPercent: 90 },
 };
 
 export function getScrollPhase(

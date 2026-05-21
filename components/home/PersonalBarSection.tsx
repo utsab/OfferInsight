@@ -24,14 +24,27 @@ function CriterionDetail({ detail }: { detail: PersonalBarCriterion['detail'] })
 
   return (
     <ul className={`${detailClass} list-none space-y-3 sm:space-y-4`}>
-      {detail.map((bullet, index) => (
-        <li key={index} className="flex gap-2 sm:gap-3">
-          <span className="shrink-0 text-light-steel-blue" aria-hidden>
-            ●
-          </span>
-          <span>{bullet}</span>
-        </li>
-      ))}
+      {detail.map((bullet, index) => {
+        if (bullet === 'Examples:') {
+          return (
+            <li
+              key={index}
+              className="pt-1 text-sm font-semibold uppercase tracking-wide text-gray-300 sm:text-base"
+            >
+              {bullet}
+            </li>
+          );
+        }
+
+        return (
+          <li key={index} className="flex gap-2 sm:gap-3">
+            <span className="shrink-0 text-light-steel-blue" aria-hidden>
+              ●
+            </span>
+            <span>{bullet}</span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
