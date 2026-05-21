@@ -46,14 +46,12 @@ export function OsrIntroScroll() {
   const sectionTwoRef = useRef<HTMLElement>(null);
   const whoWeAreContentRef = useRef<HTMLDivElement>(null);
   const pageIndicatorRef = useRef<HTMLDivElement>(null);
-  const letter1Ref = useRef<HTMLDivElement>(null);
-  const letter2Ref = useRef<HTMLDivElement>(null);
-  const letter3Ref = useRef<HTMLDivElement>(null);
-  const letter4Ref = useRef<HTMLDivElement>(null);
-  const letter5Ref = useRef<HTMLDivElement>(null);
-  const letter10Ref = useRef<HTMLDivElement>(null);
-  const letter11Ref = useRef<HTMLDivElement>(null);
-  const letter12Ref = useRef<HTMLDivElement>(null);
+  const whoLetterORef = useRef<HTMLDivElement>(null);
+  const whoLetterSRef = useRef<HTMLDivElement>(null);
+  const whoLetterRRef = useRef<HTMLDivElement>(null);
+  const howLetterORef = useRef<HTMLDivElement>(null);
+  const howLetterSRef = useRef<HTMLDivElement>(null);
+  const howLetterRRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
@@ -63,14 +61,12 @@ export function OsrIntroScroll() {
       const sectionTwo = sectionTwoRef.current;
       const whoWeAreContent = whoWeAreContentRef.current;
       const pageIndicator = pageIndicatorRef.current;
-      const letter1 = letter1Ref.current;
-      const letter2 = letter2Ref.current;
-      const letter3 = letter3Ref.current;
-      const letter4 = letter4Ref.current;
-      const letter5 = letter5Ref.current;
-      const letter10 = letter10Ref.current;
-      const letter11 = letter11Ref.current;
-      const letter12 = letter12Ref.current;
+      const whoLetterO = whoLetterORef.current;
+      const whoLetterS = whoLetterSRef.current;
+      const whoLetterR = whoLetterRRef.current;
+      const howLetterO = howLetterORef.current;
+      const howLetterS = howLetterSRef.current;
+      const howLetterR = howLetterRRef.current;
 
       if (
         !scrollTrack ||
@@ -79,14 +75,12 @@ export function OsrIntroScroll() {
         !sectionTwo ||
         !whoWeAreContent ||
         !pageIndicator ||
-        !letter1 ||
-        !letter2 ||
-        !letter3 ||
-        !letter4 ||
-        !letter5 ||
-        !letter10 ||
-        !letter11 ||
-        !letter12
+        !whoLetterO ||
+        !whoLetterS ||
+        !whoLetterR ||
+        !howLetterO ||
+        !howLetterS ||
+        !howLetterR
       ) {
         return;
       }
@@ -138,11 +132,9 @@ export function OsrIntroScroll() {
             30,
             gsap
               .timeline({ defaults: { ease: 'power2.in' } })
-              .to(letter1, { top: '0%', left: '-25%' }, 0)
-              .to(letter2, { left: '140%', top: '-27%' }, 0)
-              .to(letter3, { bottom: '-10%', left: '-30%' }, 0)
-              .to(letter4, { bottom: '-20%' }, 0)
-              .to(letter5, { bottom: '4%', right: '-25%' }, 0),
+              .to(whoLetterO, { left: '140%', top: '-27%' }, 0)
+              .to(whoLetterS, { bottom: '-10%', left: '-30%' }, 0)
+              .to(whoLetterR, { bottom: '4%', right: '-25%' }, 0),
           );
         } else {
           attachScene(
@@ -151,11 +143,9 @@ export function OsrIntroScroll() {
             170,
             gsap
               .timeline({ defaults: { ease: 'power2.in' } })
-              .to(letter1, { top: '-40%', left: '-30%' }, 0)
-              .to(letter2, { left: '100%', top: '-140%' }, 0)
-              .to(letter3, { bottom: '-75%', left: '30%' }, 0)
-              .to(letter4, { bottom: '-45%' }, 0)
-              .to(letter5, { bottom: '-40%', right: '-26%' }, 0),
+              .to(whoLetterO, { left: '100%', top: '-140%' }, 0)
+              .to(whoLetterS, { bottom: '-75%', left: '30%' }, 0)
+              .to(whoLetterR, { bottom: '-40%', right: '-26%' }, 0),
           );
         }
 
@@ -177,9 +167,9 @@ export function OsrIntroScroll() {
             80,
             gsap
               .timeline()
-              .to(letter10, { top: '15%', left: '-12%' }, 0)
-              .to(letter12, { bottom: '0%', right: '30%' }, 0)
-              .to(letter11, { right: '15%', top: '0%' }, 0),
+              .to(howLetterO, { top: '15%', left: '-12%' }, 0)
+              .to(howLetterR, { bottom: '0%', right: '30%' }, 0)
+              .to(howLetterS, { right: '15%', top: '0%' }, 0),
           );
         } else {
           attachScene(
@@ -188,9 +178,9 @@ export function OsrIntroScroll() {
             80,
             gsap
               .timeline({ defaults: { ease: 'power2.in' } })
-              .to(letter10, { top: '-20%', left: '-8%' }, 0)
-              .to(letter12, { bottom: '-35%', right: '30%' }, 0)
-              .to(letter11, { right: '22%', top: '-15%' }, 0),
+              .to(howLetterO, { top: '-20%', left: '-8%' }, 0)
+              .to(howLetterR, { bottom: '-35%', right: '30%' }, 0)
+              .to(howLetterS, { right: '22%', top: '-15%' }, 0),
           );
         }
 
@@ -248,7 +238,7 @@ export function OsrIntroScroll() {
             className="text-sm font-semibold uppercase tracking-wide md:text-xl"
             style={{ color: ACCENT_CORAL }}
           >
-            OSRB IS{' '}
+            Open Source Resume is{' '}
           </p>
           <TypingHeroLine
             descriptions={TYPING_DESCRIPTIONS}
@@ -265,39 +255,25 @@ export function OsrIntroScroll() {
         aria-labelledby="intro-who-heading"
       >
         <div
-          ref={letter1Ref}
-          className={`${letterBase} left-[-4%] top-[10%] md:left-[-4%] md:top-[-17%]`}
+          ref={whoLetterORef}
+          className={`${letterBase} left-1/2 top-[30%] md:top-[-4%]`}
           style={{ color: ACCENT_CORAL }}
         >
-          a
+          O
         </div>
         <div
-          ref={letter2Ref}
-          className={`${letterBase} left-1/2 top-[24%] md:top-[-8%]`}
-          style={{ color: ACCENT_CORAL }}
-        >
-          p
-        </div>
-        <div
-          ref={letter3Ref}
+          ref={whoLetterSRef}
           className={`${letterBase} bottom-[10%] left-[15%] md:right-[41%] md:bottom-[-5%] md:left-auto`}
           style={{ color: ACCENT_TEAL }}
         >
-          p
+          S
         </div>
         <div
-          ref={letter4Ref}
-          className={`${letterBase} bottom-[10%] left-[45%] md:right-[25%] md:bottom-[-5%] md:left-auto`}
-          style={{ color: ACCENT_TEAL }}
-        >
-          r
-        </div>
-        <div
-          ref={letter5Ref}
+          ref={whoLetterRRef}
           className={`${letterBase} bottom-[10%] right-0 md:right-[2%] md:bottom-[-5%]`}
           style={{ color: ACCENT_CORAL }}
         >
-          e
+          R
         </div>
 
         <div
@@ -325,25 +301,25 @@ export function OsrIntroScroll() {
         aria-labelledby="intro-how-heading"
       >
         <div
-          ref={letter10Ref}
+          ref={howLetterORef}
           className={`${letterBase} left-[-5%] top-[20%] md:left-[-4%] md:top-[-10%]`}
           style={{ color: ACCENT_CORAL }}
         >
-          n
+          O
         </div>
         <div
-          ref={letter11Ref}
+          ref={howLetterSRef}
           className={`${letterBase} right-[30%] top-[10%] md:top-[-8%]`}
           style={{ color: ACCENT_TEAL }}
         >
-          t
+          S
         </div>
         <div
-          ref={letter12Ref}
+          ref={howLetterRRef}
           className={`${letterBase} bottom-[15%] right-[10%] md:bottom-[-5%]`}
           style={{ color: ACCENT_CORAL }}
         >
-          a
+          R
         </div>
 
         <div className="relative z-[2] w-[75%] max-w-3xl md:w-1/2">
