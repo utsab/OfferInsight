@@ -245,7 +245,7 @@
                 { "type": "initiative", "count": 1 },
                 { "type": "product_opinion", "count": 1 },
                 { "type": "thorough_documentation", "count": 1 },
-                { "type": "leetcode_problem", "count": 6 },
+                { "type": "leetcode_problem", "count": 3 },
                 { "type": "issue", "count": 3 }
             ]
         },
