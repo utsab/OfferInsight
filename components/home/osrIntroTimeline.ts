@@ -29,15 +29,10 @@ export const OSR_SCROLL_PHASES = {
 /** Extra scroll after the last scrub scene so logo stagger can finish. */
 const SCROLL_TAIL_HOLD_VH = 0.65;
 
-const lastPhaseEndVh =
-  OSR_SCROLL_PHASES.affiliationsLogos.at +
-  OSR_SCROLL_PHASES.affiliationsLogos.durationPercent / 100;
-
-/** Total scroll track height — always past the final animation. */
-export const OSR_SCROLL_HEIGHT_VH = lastPhaseEndVh + SCROLL_TAIL_HOLD_VH;
-
 /** Mobile overrides for phases that differ from desktop. */
-export const OSR_SCROLL_PHASES_MOBILE: Partial<typeof OSR_SCROLL_PHASES> = {
+export const OSR_SCROLL_PHASES_MOBILE: Partial<
+  Record<keyof typeof OSR_SCROLL_PHASES, OsrScrollPhase>
+> = {
   typingFadeOut: { at: 0, durationPercent: 20 },
   whoSectionIn: { at: 0.4, durationPercent: 20 },
   whoLettersMove: { at: 0.5, durationPercent: 30 },
@@ -63,3 +58,12 @@ export function getScrollPhase(
   }
   return desktop;
 }
+
+/** Total scroll track height — always past the final animation. */
+export function getOsrScrollHeightVh(isMobile: boolean): number {
+  const logos = getScrollPhase('affiliationsLogos', isMobile);
+  return logos.at + logos.durationPercent / 100 + SCROLL_TAIL_HOLD_VH;
+}
+
+/** Desktop scroll height (default). */
+export const OSR_SCROLL_HEIGHT_VH = getOsrScrollHeightVh(false);

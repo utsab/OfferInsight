@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { HOME_ASSETS } from './homeAssets';
-import { OSR_SCROLL_HEIGHT_VH, getScrollPhase } from './osrIntroTimeline';
+import { getOsrScrollHeightVh, getScrollPhase } from './osrIntroTimeline';
 import { TYPING_DESCRIPTIONS, getOsrSceneConfig } from './osrScrollUtils';
 import { TypingHeroLine } from './TypingHeroLine';
 import { MetaPersonalBarSection } from './MetaPersonalBarSection';
@@ -42,13 +42,40 @@ function attachScene(
 
 const SCRUB_DEFAULTS = { ease: 'none' as const, immediateRender: false };
 
-function refreshScrollTriggers() {
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => ScrollTrigger.refresh(true));
-  });
+const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
+
+function applyIntroStartFrame(
+  sectionZero: HTMLElement,
+  sectionOne: HTMLElement,
+  sectionTwo: HTMLElement,
+  whoWeAreContent: HTMLElement,
+  sectionWhoopPersonalBar: HTMLElement,
+  sectionMicrosoftPersonalBar: HTMLElement,
+  sectionMetaPersonalBar: HTMLElement,
+  sectionAffiliations: HTMLElement,
+  pageIndicator: HTMLElement,
+) {
+  gsap.set(sectionZero, { opacity: 1 });
+  gsap.set(sectionOne, { opacity: 0 });
+  gsap.set(sectionTwo, { opacity: 0 });
+  gsap.set(whoWeAreContent, { opacity: 0 });
+  gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
+  gsap.set(sectionMicrosoftPersonalBar, { opacity: 0 });
+  gsap.set(sectionMetaPersonalBar, { opacity: 0 });
+  gsap.set(sectionAffiliations, { opacity: 0 });
+  gsap.set(pageIndicator, { opacity: 1, top: '90%', yPercent: 0 });
+}
+
+function readIsMobileViewport() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
 }
 
 export function OsrIntroScroll() {
+  const introRootRef = useRef<HTMLDivElement>(null);
+  const [scrollHeightVh, setScrollHeightVh] = useState(() =>
+    getOsrScrollHeightVh(readIsMobileViewport()),
+  );
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const sectionZeroRef = useRef<HTMLElement>(null);
   const sectionOneRef = useRef<HTMLElement>(null);
@@ -75,6 +102,7 @@ export function OsrIntroScroll() {
 
   useGSAP(
     () => {
+      const introRoot = introRootRef.current;
       const scrollTrack = scrollTrackRef.current;
       const sectionZero = sectionZeroRef.current;
       const sectionOne = sectionOneRef.current;
@@ -100,6 +128,7 @@ export function OsrIntroScroll() {
       const logos = logoRefs.current.filter(Boolean) as HTMLImageElement[];
 
       if (
+        !introRoot ||
         !scrollTrack ||
         !sectionZero ||
         !sectionOne ||
@@ -123,14 +152,32 @@ export function OsrIntroScroll() {
         !metaPersonalBarContent ||
         !sectionAffiliations
       ) {
-        return;
+        return undefined;
       }
 
-      window.scrollTo(0, 0);
-      ScrollTrigger.clearScrollMemory();
-
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const isMobile = window.matchMedia('(max-width: 767px)').matches;
+
+      const scheduleLayoutSync = () => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            ScrollTrigger.clearScrollMemory();
+            ScrollTrigger.refresh(true);
+            if (window.scrollY < 8) {
+              applyIntroStartFrame(
+                sectionZero,
+                sectionOne,
+                sectionTwo,
+                whoWeAreContent,
+                sectionWhoopPersonalBar,
+                sectionMicrosoftPersonalBar,
+                sectionMetaPersonalBar,
+                sectionAffiliations,
+                pageIndicator,
+              );
+            }
+          });
+        });
+      };
 
       if (reducedMotion) {
         gsap.set(sectionZero, { opacity: 0 });
@@ -154,51 +201,63 @@ export function OsrIntroScroll() {
         return;
       }
 
-      const ctx = gsap.context(() => {
-        gsap.set(sectionZero, { opacity: 1 });
-        gsap.set(sectionOne, { opacity: 0 });
-        gsap.set(whoWeAreContent, { opacity: 0 });
-        gsap.set(sectionTwo, { opacity: 0 });
-        gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
-        gsap.set(sectionMicrosoftPersonalBar, { opacity: 0 });
-        gsap.set(sectionMetaPersonalBar, { opacity: 0 });
-        gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
-        gsap.set(microsoftPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
-        gsap.set(metaPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
-        gsap.set(whoopPersonalBarContent, { y: '140vh' });
-        gsap.set(microsoftPersonalBarContent, { y: '140vh' });
-        gsap.set(metaPersonalBarContent, { y: '140vh' });
-        gsap.set(sectionAffiliations, { opacity: 0 });
-        if (logos.length === HOME_ASSETS.affiliations.length) {
-          gsap.set(logos, {
-            opacity: 0,
-            y: 26,
-            scale: (i: number) => HOME_ASSETS.affiliations[i].scale * 0.92,
-          });
-        }
-        gsap.set(pageIndicator, { top: '90%', yPercent: 0 });
-        const typingFadeOut = getScrollPhase('typingFadeOut', isMobile);
-        const pageIndicatorPhase = getScrollPhase('pageIndicator', isMobile);
-        const whoSectionIn = getScrollPhase('whoSectionIn', isMobile);
-        const whoLettersMove = getScrollPhase('whoLettersMove', isMobile);
-        const whoContentIn = getScrollPhase('whoContentIn', isMobile);
-        const whoSectionOut = getScrollPhase('whoSectionOut', isMobile);
-        const howSectionIn = getScrollPhase('howSectionIn', isMobile);
-        const howLettersMove = getScrollPhase('howLettersMove', isMobile);
-        const howSectionOut = getScrollPhase('howSectionOut', isMobile);
-        const whoopPersonalBarScroll = getScrollPhase('whoopPersonalBarScroll', isMobile);
-        const whoopToMicrosoft = getScrollPhase('whoopToMicrosoft', isMobile);
-        const microsoftPersonalBarScroll = getScrollPhase('microsoftPersonalBarScroll', isMobile);
-        const microsoftToMeta = getScrollPhase('microsoftToMeta', isMobile);
-        const metaPersonalBarScroll = getScrollPhase('metaPersonalBarScroll', isMobile);
-        const metaToAffiliations = getScrollPhase('metaToAffiliations', isMobile);
-        const affiliationsLogos = getScrollPhase('affiliationsLogos', isMobile);
+      const mm = gsap.matchMedia();
 
-        attachScene(
+      const ctx = gsap.context(() => {
+        const buildScenes = (isMobile: boolean) => {
+          const heightVh = getOsrScrollHeightVh(isMobile);
+          scrollTrack.style.height = `${heightVh * 100}vh`;
+          setScrollHeightVh(heightVh);
+          applyIntroStartFrame(
+            sectionZero,
+            sectionOne,
+            sectionTwo,
+            whoWeAreContent,
+            sectionWhoopPersonalBar,
+            sectionMicrosoftPersonalBar,
+            sectionMetaPersonalBar,
+            sectionAffiliations,
+            pageIndicator,
+          );
+          gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
+          gsap.set(microsoftPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
+          gsap.set(metaPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
+          gsap.set(whoopPersonalBarContent, { y: '140vh' });
+          gsap.set(microsoftPersonalBarContent, { y: '140vh' });
+          gsap.set(metaPersonalBarContent, { y: '140vh' });
+          if (logos.length === HOME_ASSETS.affiliations.length) {
+            gsap.set(logos, {
+              opacity: 0,
+              y: 26,
+              scale: (i: number) => HOME_ASSETS.affiliations[i].scale * 0.92,
+            });
+          }
+          const typingFadeOut = getScrollPhase('typingFadeOut', isMobile);
+          const pageIndicatorPhase = getScrollPhase('pageIndicator', isMobile);
+          const whoSectionIn = getScrollPhase('whoSectionIn', isMobile);
+          const whoLettersMove = getScrollPhase('whoLettersMove', isMobile);
+          const whoContentIn = getScrollPhase('whoContentIn', isMobile);
+          const whoSectionOut = getScrollPhase('whoSectionOut', isMobile);
+          const howSectionIn = getScrollPhase('howSectionIn', isMobile);
+          const howLettersMove = getScrollPhase('howLettersMove', isMobile);
+          const howSectionOut = getScrollPhase('howSectionOut', isMobile);
+          const whoopPersonalBarScroll = getScrollPhase('whoopPersonalBarScroll', isMobile);
+          const whoopToMicrosoft = getScrollPhase('whoopToMicrosoft', isMobile);
+          const microsoftPersonalBarScroll = getScrollPhase('microsoftPersonalBarScroll', isMobile);
+          const microsoftToMeta = getScrollPhase('microsoftToMeta', isMobile);
+          const metaPersonalBarScroll = getScrollPhase('metaPersonalBarScroll', isMobile);
+          const metaToAffiliations = getScrollPhase('metaToAffiliations', isMobile);
+          const affiliationsLogos = getScrollPhase('affiliationsLogos', isMobile);
+
+          attachScene(
           scrollTrack,
           typingFadeOut.at,
           typingFadeOut.durationPercent,
-          gsap.to(sectionZero, { opacity: 0, ...SCRUB_DEFAULTS }),
+          gsap.fromTo(
+            sectionZero,
+            { opacity: 1 },
+            { opacity: 0, ...SCRUB_DEFAULTS },
+          ),
         );
 
         attachScene(
@@ -212,7 +271,11 @@ export function OsrIntroScroll() {
           scrollTrack,
           whoSectionIn.at,
           whoSectionIn.durationPercent,
-          gsap.to(sectionOne, { opacity: 1, ...SCRUB_DEFAULTS }),
+          gsap.fromTo(
+            sectionOne,
+            { opacity: 0 },
+            { opacity: 1, ...SCRUB_DEFAULTS },
+          ),
         );
 
         if (isMobile) {
@@ -388,42 +451,63 @@ export function OsrIntroScroll() {
           return true;
         };
 
-        if (!attachAffiliationLogos()) {
-          let attempts = 0;
-          const retryLogos = () => {
-            if (attachAffiliationLogos() || attempts++ > 24) return;
+          if (!attachAffiliationLogos()) {
+            let attempts = 0;
+            const retryLogos = () => {
+              if (attachAffiliationLogos()) {
+                scheduleLayoutSync();
+                return;
+              }
+              if (attempts++ > 24) {
+                scheduleLayoutSync();
+                return;
+              }
+              requestAnimationFrame(retryLogos);
+            };
             requestAnimationFrame(retryLogos);
-          };
-          requestAnimationFrame(retryLogos);
-        }
-      }, scrollTrack);
+          } else {
+            scheduleLayoutSync();
+          }
+        };
 
-      refreshScrollTriggers();
-      window.addEventListener('load', refreshScrollTriggers);
-      document.fonts?.ready.then(refreshScrollTriggers);
+        mm.add(MOBILE_MEDIA_QUERY, () => buildScenes(true));
+        mm.add('(min-width: 768px)', () => buildScenes(false));
+      }, introRoot);
 
-      const resizeObserver = new ResizeObserver(refreshScrollTriggers);
-      resizeObserver.observe(scrollTrack);
-      resizeObserver.observe(document.documentElement);
+      const resetScrollToIntroStart = () => {
+        window.scrollTo(0, 0);
+        scheduleLayoutSync();
+      };
+
+      resetScrollToIntroStart();
+      window.addEventListener('load', scheduleLayoutSync);
+      document.fonts?.ready.then(scheduleLayoutSync);
+
+      let resizeTimer: ReturnType<typeof setTimeout> | undefined;
+      const onWindowResize = () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(scheduleLayoutSync, 120);
+      };
+      window.addEventListener('resize', onWindowResize);
 
       const onPageShow = (event: PageTransitionEvent) => {
         if (event.persisted) {
-          window.scrollTo(0, 0);
-          ScrollTrigger.clearScrollMemory();
-          refreshScrollTriggers();
+          resetScrollToIntroStart();
         }
       };
       window.addEventListener('pageshow', onPageShow);
 
       return () => {
-        window.removeEventListener('load', refreshScrollTriggers);
+        window.removeEventListener('load', scheduleLayoutSync);
         window.removeEventListener('pageshow', onPageShow);
-        resizeObserver.disconnect();
+        window.removeEventListener('resize', onWindowResize);
+        if (resizeTimer) clearTimeout(resizeTimer);
+        mm.revert();
         ctx.revert();
         ScrollTrigger.clearScrollMemory();
       };
     },
-    { scope: scrollTrackRef },
+    { scope: introRootRef },
   );
 
   const sectionShell =
@@ -433,12 +517,12 @@ export function OsrIntroScroll() {
     'pointer-events-none absolute select-none font-bold leading-none font-[Montserrat,sans-serif] text-[clamp(5rem,22vw,14rem)] md:text-[clamp(7rem,22em,22rem)]';
 
   return (
-    <div className="relative w-full">
+    <div ref={introRootRef} className="relative w-full">
       {/* Tall scroll track — phase timings live in osrIntroTimeline.ts */}
       <div
         ref={scrollTrackRef}
         className="relative w-full"
-        style={{ height: `${OSR_SCROLL_HEIGHT_VH * 100}vh` }}
+        style={{ height: `${scrollHeightVh * 100}vh` }}
         aria-hidden
       />
 
