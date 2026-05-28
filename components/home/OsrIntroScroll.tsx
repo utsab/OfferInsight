@@ -170,23 +170,31 @@ export function OsrIntroScroll() {
         return sections.some((section) => parseFloat(getComputedStyle(section).opacity || '0') > 0.02);
       };
 
+      const ensureIntroVisible = () => {
+        if (window.scrollY < 8 || !hasVisibleIntroSection()) {
+          applyIntroStartFrame(
+            sectionZero,
+            sectionOne,
+            sectionTwo,
+            whoWeAreContent,
+            sectionWhoopPersonalBar,
+            sectionMicrosoftPersonalBar,
+            sectionMetaPersonalBar,
+            sectionAffiliations,
+            pageIndicator,
+          );
+        }
+      };
+
       const scheduleLayoutSync = () => {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             ScrollTrigger.refresh(true);
-            if (window.scrollY < 8 || !hasVisibleIntroSection()) {
-              applyIntroStartFrame(
-                sectionZero,
-                sectionOne,
-                sectionTwo,
-                whoWeAreContent,
-                sectionWhoopPersonalBar,
-                sectionMicrosoftPersonalBar,
-                sectionMetaPersonalBar,
-                sectionAffiliations,
-                pageIndicator,
-              );
-            }
+            ensureIntroVisible();
+            // Some maximize/restore flows apply styles one frame later.
+            requestAnimationFrame(() => {
+              ensureIntroVisible();
+            });
           });
         });
       };
