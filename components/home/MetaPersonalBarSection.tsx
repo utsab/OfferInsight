@@ -1,6 +1,7 @@
 'use client';
 
 import { PersonalBarSection } from './PersonalBarSection';
+import type { CSSProperties } from 'react';
 import type { PersonalBarRefs } from './personalBarTypes';
 import {
   META_LOGO_PATH,
@@ -13,9 +14,16 @@ export type MetaPersonalBarRefs = PersonalBarRefs;
 type MetaPersonalBarSectionProps = {
   sectionShell: string;
   refs: MetaPersonalBarRefs;
+  sectionStyle?: CSSProperties;
+  compactLayout?: boolean;
 };
 
-export function MetaPersonalBarSection({ sectionShell, refs }: MetaPersonalBarSectionProps) {
+export function MetaPersonalBarSection({
+  sectionShell,
+  refs,
+  sectionStyle,
+  compactLayout,
+}: MetaPersonalBarSectionProps) {
   return (
     <PersonalBarSection
       sectionShell={sectionShell}
@@ -26,6 +34,8 @@ export function MetaPersonalBarSection({ sectionShell, refs }: MetaPersonalBarSe
       logoAlt="Meta"
       criteria={META_PERSONAL_BAR_CRITERIA}
       refs={refs}
+      sectionStyle={sectionStyle}
+      compactLayout={compactLayout}
       zIndexClass="z-[24]"
     />
   );

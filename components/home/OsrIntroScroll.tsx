@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
@@ -42,7 +42,11 @@ function attachScene(
 
 const SCRUB_DEFAULTS = { ease: 'none' as const, immediateRender: false };
 
-const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
+const COMPACT_MODE_WIDTH_THRESHOLD_PX = 1278;
+const STAGE_BASE_WIDTH = 1920;
+const STAGE_BASE_HEIGHT = 1080;
+const STAGE_WIDTH_OFFSET_PX = 2;
+const SCALE_BUCKET_MIN_WIDTHS = [638, 852, 1278, 1918, 2558, 3838] as const;
 
 function applyIntroStartFrame(
   sectionZero: HTMLElement,
@@ -66,16 +70,25 @@ function applyIntroStartFrame(
   gsap.set(pageIndicator, { opacity: 1, top: '90%', yPercent: 0 });
 }
 
-function readIsMobileViewport() {
+function readIsCompactViewport() {
   if (typeof window === 'undefined') return false;
-  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+  return window.outerWidth < COMPACT_MODE_WIDTH_THRESHOLD_PX;
+}
+
+function getScaleBucket(width: number) {
+  let bucket = 0;
+  for (let i = 0; i < SCALE_BUCKET_MIN_WIDTHS.length; i += 1) {
+    if (width >= SCALE_BUCKET_MIN_WIDTHS[i]) bucket = i;
+  }
+  return bucket;
 }
 
 export function OsrIntroScroll() {
   const introRootRef = useRef<HTMLDivElement>(null);
-  const [scrollHeightVh, setScrollHeightVh] = useState(() =>
-    getOsrScrollHeightVh(readIsMobileViewport()),
-  );
+  const [scrollHeightVh, setScrollHeightVh] = useState(() => getOsrScrollHeightVh(false));
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [stageScale, setStageScale] = useState(1);
+  const [useFixedStage, setUseFixedStage] = useState(true);
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const sectionZeroRef = useRef<HTMLElement>(null);
   const sectionOneRef = useRef<HTMLElement>(null);
@@ -99,6 +112,47 @@ export function OsrIntroScroll() {
   const metaPersonalBarContentRef = useRef<HTMLDivElement>(null);
   const sectionAffiliationsRef = useRef<HTMLElement>(null);
   const logoRefs = useRef<(HTMLImageElement | null)[]>([]);
+  const lastViewportModeRef = useRef<{ compact: boolean; scaleBucket: number } | null>(null);
+
+  useEffect(() => {
+    let reloadTimer: ReturnType<typeof setTimeout> | undefined;
+    const computeViewportMode = () => {
+      const compact = readIsCompactViewport();
+      const width = window.outerWidth;
+      const scaleBucket = getScaleBucket(width);
+
+      const last = lastViewportModeRef.current;
+      if (last) {
+        const crossedModeThreshold = last.compact !== compact;
+        const crossedScaleThreshold = !compact && !last.compact && last.scaleBucket !== scaleBucket;
+        if (crossedModeThreshold || crossedScaleThreshold) {
+          if (reloadTimer) clearTimeout(reloadTimer);
+          reloadTimer = setTimeout(() => {
+            window.scrollTo(0, 0);
+            window.location.reload();
+          }, 60);
+          return;
+        }
+      }
+
+      lastViewportModeRef.current = { compact, scaleBucket };
+      setIsCompactViewport(compact);
+      setUseFixedStage(!compact);
+      if (compact) {
+        setStageScale(1);
+        return;
+      }
+
+      setStageScale(Math.max((width - STAGE_WIDTH_OFFSET_PX) / (STAGE_BASE_WIDTH - STAGE_WIDTH_OFFSET_PX), 0.3334));
+    };
+
+    computeViewportMode();
+    window.addEventListener('resize', computeViewportMode);
+    return () => {
+      window.removeEventListener('resize', computeViewportMode);
+      if (reloadTimer) clearTimeout(reloadTimer);
+    };
+  }, []);
 
   useGSAP(
     () => {
@@ -157,45 +211,9 @@ export function OsrIntroScroll() {
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      const hasVisibleIntroSection = () => {
-        const sections = [
-          sectionZero,
-          sectionOne,
-          sectionTwo,
-          sectionWhoopPersonalBar,
-          sectionMicrosoftPersonalBar,
-          sectionMetaPersonalBar,
-          sectionAffiliations,
-        ];
-        return sections.some((section) => parseFloat(getComputedStyle(section).opacity || '0') > 0.02);
-      };
-
-      const ensureIntroVisible = () => {
-        if (window.scrollY < 8 || !hasVisibleIntroSection()) {
-          applyIntroStartFrame(
-            sectionZero,
-            sectionOne,
-            sectionTwo,
-            whoWeAreContent,
-            sectionWhoopPersonalBar,
-            sectionMicrosoftPersonalBar,
-            sectionMetaPersonalBar,
-            sectionAffiliations,
-            pageIndicator,
-          );
-        }
-      };
-
       const scheduleLayoutSync = () => {
         requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            ScrollTrigger.refresh(true);
-            ensureIntroVisible();
-            // Some maximize/restore flows apply styles one frame later.
-            requestAnimationFrame(() => {
-              ensureIntroVisible();
-            });
-          });
+          ScrollTrigger.refresh(true);
         });
       };
 
@@ -221,11 +239,9 @@ export function OsrIntroScroll() {
         return;
       }
 
-      const mm = gsap.matchMedia();
-
       const ctx = gsap.context(() => {
-        const buildScenes = (isMobile: boolean) => {
-          const heightVh = getOsrScrollHeightVh(isMobile);
+        const buildScenes = (compactMode: boolean) => {
+          const heightVh = getOsrScrollHeightVh(compactMode);
           scrollTrack.style.height = `${heightVh * 100}vh`;
           setScrollHeightVh(heightVh);
           applyIntroStartFrame(
@@ -252,22 +268,22 @@ export function OsrIntroScroll() {
               scale: (i: number) => HOME_ASSETS.affiliations[i].scale * 0.92,
             });
           }
-          const typingFadeOut = getScrollPhase('typingFadeOut', isMobile);
-          const pageIndicatorPhase = getScrollPhase('pageIndicator', isMobile);
-          const whoSectionIn = getScrollPhase('whoSectionIn', isMobile);
-          const whoLettersMove = getScrollPhase('whoLettersMove', isMobile);
-          const whoContentIn = getScrollPhase('whoContentIn', isMobile);
-          const whoSectionOut = getScrollPhase('whoSectionOut', isMobile);
-          const howSectionIn = getScrollPhase('howSectionIn', isMobile);
-          const howLettersMove = getScrollPhase('howLettersMove', isMobile);
-          const howSectionOut = getScrollPhase('howSectionOut', isMobile);
-          const whoopPersonalBarScroll = getScrollPhase('whoopPersonalBarScroll', isMobile);
-          const whoopToMicrosoft = getScrollPhase('whoopToMicrosoft', isMobile);
-          const microsoftPersonalBarScroll = getScrollPhase('microsoftPersonalBarScroll', isMobile);
-          const microsoftToMeta = getScrollPhase('microsoftToMeta', isMobile);
-          const metaPersonalBarScroll = getScrollPhase('metaPersonalBarScroll', isMobile);
-          const metaToAffiliations = getScrollPhase('metaToAffiliations', isMobile);
-          const affiliationsLogos = getScrollPhase('affiliationsLogos', isMobile);
+          const typingFadeOut = getScrollPhase('typingFadeOut', compactMode);
+          const pageIndicatorPhase = getScrollPhase('pageIndicator', compactMode);
+          const whoSectionIn = getScrollPhase('whoSectionIn', compactMode);
+          const whoLettersMove = getScrollPhase('whoLettersMove', compactMode);
+          const whoContentIn = getScrollPhase('whoContentIn', compactMode);
+          const whoSectionOut = getScrollPhase('whoSectionOut', compactMode);
+          const howSectionIn = getScrollPhase('howSectionIn', compactMode);
+          const howLettersMove = getScrollPhase('howLettersMove', compactMode);
+          const howSectionOut = getScrollPhase('howSectionOut', compactMode);
+          const whoopPersonalBarScroll = getScrollPhase('whoopPersonalBarScroll', compactMode);
+          const whoopToMicrosoft = getScrollPhase('whoopToMicrosoft', compactMode);
+          const microsoftPersonalBarScroll = getScrollPhase('microsoftPersonalBarScroll', compactMode);
+          const microsoftToMeta = getScrollPhase('microsoftToMeta', compactMode);
+          const metaPersonalBarScroll = getScrollPhase('metaPersonalBarScroll', compactMode);
+          const metaToAffiliations = getScrollPhase('metaToAffiliations', compactMode);
+          const affiliationsLogos = getScrollPhase('affiliationsLogos', compactMode);
 
           attachScene(
           scrollTrack,
@@ -298,7 +314,7 @@ export function OsrIntroScroll() {
           ),
         );
 
-        if (isMobile) {
+        if (compactMode) {
           attachScene(
             scrollTrack,
             whoLettersMove.at,
@@ -343,7 +359,7 @@ export function OsrIntroScroll() {
           gsap.to(sectionTwo, { opacity: 1, ...SCRUB_DEFAULTS }),
         );
 
-        if (isMobile) {
+        if (compactMode) {
           attachScene(
             scrollTrack,
             howLettersMove.at,
@@ -490,16 +506,11 @@ export function OsrIntroScroll() {
           }
         };
 
-        mm.add(MOBILE_MEDIA_QUERY, () => buildScenes(true));
-        mm.add('(min-width: 768px)', () => buildScenes(false));
+        buildScenes(isCompactViewport);
       }, introRoot);
 
-      const resetScrollToIntroStart = () => {
-        window.scrollTo(0, 0);
-        scheduleLayoutSync();
-      };
-
-      resetScrollToIntroStart();
+      window.scrollTo(0, 0);
+      scheduleLayoutSync();
       window.addEventListener('load', scheduleLayoutSync);
       document.fonts?.ready.then(scheduleLayoutSync);
 
@@ -510,38 +521,29 @@ export function OsrIntroScroll() {
       };
       window.addEventListener('resize', onWindowResize);
 
-      const onVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
-          scheduleLayoutSync();
-        }
-      };
-      document.addEventListener('visibilitychange', onVisibilityChange);
-      window.addEventListener('focus', scheduleLayoutSync);
-
-      const onPageShow = (event: PageTransitionEvent) => {
-        if (event.persisted) {
-          resetScrollToIntroStart();
-        }
-      };
-      window.addEventListener('pageshow', onPageShow);
-
       return () => {
         window.removeEventListener('load', scheduleLayoutSync);
-        window.removeEventListener('pageshow', onPageShow);
         window.removeEventListener('resize', onWindowResize);
-        document.removeEventListener('visibilitychange', onVisibilityChange);
-        window.removeEventListener('focus', scheduleLayoutSync);
         if (resizeTimer) clearTimeout(resizeTimer);
-        mm.revert();
         ctx.revert();
         ScrollTrigger.clearScrollMemory();
       };
     },
-    { scope: introRootRef },
+    { scope: introRootRef, dependencies: [isCompactViewport] },
   );
 
-  const sectionShell =
-    'pointer-events-none fixed left-0 right-0 top-[var(--navbar-height)] z-10 flex h-[calc(100dvh-var(--navbar-height))] items-center justify-center bg-white';
+  const sectionShell = useFixedStage
+    ? 'pointer-events-none fixed left-1/2 z-10 flex items-center justify-center overflow-hidden bg-white'
+    : 'pointer-events-none fixed left-0 right-0 top-[var(--navbar-height)] z-10 flex h-[calc(100dvh-var(--navbar-height))] items-center justify-center overflow-hidden bg-white';
+  const sectionShellStyle = useFixedStage
+    ? ({
+        top: 'calc(var(--navbar-height) + (100dvh - var(--navbar-height)) / 2)',
+        width: `${STAGE_BASE_WIDTH}px`,
+        height: `${STAGE_BASE_HEIGHT}px`,
+        transform: `translate(-50%, -50%) scale(${stageScale})`,
+        transformOrigin: 'center center',
+      } as const)
+    : undefined;
 
   const letterBase =
     'pointer-events-none absolute select-none font-bold leading-none font-[Montserrat,sans-serif] text-[clamp(5rem,22vw,14rem)] md:text-[clamp(7rem,22em,22rem)]';
@@ -568,6 +570,7 @@ export function OsrIntroScroll() {
         ref={sectionZeroRef}
         id="intro-zero"
         className={`${sectionShell} z-[7]`}
+        style={sectionShellStyle}
         aria-label="Introduction"
       >
         <div className="w-[75%] max-w-4xl md:w-1/2">
@@ -589,6 +592,7 @@ export function OsrIntroScroll() {
         ref={sectionOneRef}
         id="intro-one"
         className={`${sectionShell} z-10 overflow-hidden opacity-0`}
+        style={sectionShellStyle}
         aria-labelledby="intro-who-heading"
       >
         <div
@@ -635,6 +639,7 @@ export function OsrIntroScroll() {
         ref={sectionTwoRef}
         id="intro-two"
         className={`${sectionShell} z-[19] overflow-hidden opacity-0`}
+        style={sectionShellStyle}
         aria-labelledby="intro-how-heading"
       >
         <div
@@ -675,6 +680,8 @@ export function OsrIntroScroll() {
 
       <WhoopPersonalBarSection
         sectionShell={sectionShell}
+        sectionStyle={sectionShellStyle}
+        compactLayout={!useFixedStage}
         refs={{
           section: sectionWhoopPersonalBarRef,
           bgLogo: whoopPersonalBarBgLogoRef,
@@ -684,6 +691,8 @@ export function OsrIntroScroll() {
 
       <MicrosoftPersonalBarSection
         sectionShell={sectionShell}
+        sectionStyle={sectionShellStyle}
+        compactLayout={!useFixedStage}
         refs={{
           section: sectionMicrosoftPersonalBarRef,
           bgLogo: microsoftPersonalBarBgLogoRef,
@@ -693,6 +702,8 @@ export function OsrIntroScroll() {
 
       <MetaPersonalBarSection
         sectionShell={sectionShell}
+        sectionStyle={sectionShellStyle}
+        compactLayout={!useFixedStage}
         refs={{
           section: sectionMetaPersonalBarRef,
           bgLogo: metaPersonalBarBgLogoRef,
@@ -705,6 +716,7 @@ export function OsrIntroScroll() {
         ref={sectionAffiliationsRef}
         id="intro-affiliations"
         className={`${sectionShell} z-[21] overflow-hidden opacity-0`}
+        style={sectionShellStyle}
         aria-labelledby="affiliations-heading"
       >
         <div className="relative z-[2] flex w-full items-center justify-center px-4 sm:px-8">

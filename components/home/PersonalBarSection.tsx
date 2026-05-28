@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import type { PersonalBarCriterion, PersonalBarRefs } from './personalBarTypes';
 
 type PersonalBarSectionProps = {
@@ -12,6 +13,8 @@ type PersonalBarSectionProps = {
   criteria: readonly PersonalBarCriterion[];
   refs: PersonalBarRefs;
   zIndexClass?: string;
+  sectionStyle?: CSSProperties;
+  compactLayout?: boolean;
 };
 
 function CriterionDetail({ detail }: { detail: PersonalBarCriterion['detail'] }) {
@@ -59,6 +62,8 @@ export function PersonalBarSection({
   criteria,
   refs,
   zIndexClass = 'z-20',
+  sectionStyle,
+  compactLayout = false,
 }: PersonalBarSectionProps) {
   return (
     <section
@@ -66,6 +71,7 @@ export function PersonalBarSection({
       id={sectionId}
       className={`${sectionShell} ${zIndexClass} overflow-hidden bg-white opacity-0`}
       aria-labelledby={headingId}
+      style={sectionStyle}
     >
       <div
         ref={refs.bgLogo}
@@ -98,7 +104,13 @@ export function PersonalBarSection({
             {criteria.map((criterion) => (
               <div key={criterion.id} className="pt-2 sm:pt-4">
                 <hr className="mb-8 border-0 border-t border-light-steel-blue/45 sm:mb-10 md:mb-12" />
-                <div className="grid gap-5 md:grid-cols-2 md:gap-x-[clamp(2.5rem,10vw,11rem)] md:gap-y-6 lg:gap-x-[clamp(3.5rem,14vw,16rem)] xl:gap-x-[clamp(4rem,16vw,20rem)]">
+                <div
+                  className={`grid gap-5 ${
+                    compactLayout
+                      ? ''
+                      : 'md:grid-cols-2 md:gap-x-[clamp(2.5rem,10vw,11rem)] md:gap-y-6 lg:gap-x-[clamp(3.5rem,14vw,16rem)] xl:gap-x-[clamp(4rem,16vw,20rem)]'
+                  }`}
+                >
                   <p className="text-left text-lg font-bold leading-snug text-black sm:text-xl md:text-2xl lg:text-3xl">
                     {criterion.label}
                   </p>

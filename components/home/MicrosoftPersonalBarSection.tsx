@@ -1,6 +1,7 @@
 'use client';
 
 import { PersonalBarSection } from './PersonalBarSection';
+import type { CSSProperties } from 'react';
 import type { PersonalBarRefs } from './personalBarTypes';
 import {
   MICROSOFT_LOGO_PATH,
@@ -13,11 +14,15 @@ export type MicrosoftPersonalBarRefs = PersonalBarRefs;
 type MicrosoftPersonalBarSectionProps = {
   sectionShell: string;
   refs: MicrosoftPersonalBarRefs;
+  sectionStyle?: CSSProperties;
+  compactLayout?: boolean;
 };
 
 export function MicrosoftPersonalBarSection({
   sectionShell,
   refs,
+  sectionStyle,
+  compactLayout,
 }: MicrosoftPersonalBarSectionProps) {
   return (
     <PersonalBarSection
@@ -29,6 +34,8 @@ export function MicrosoftPersonalBarSection({
       logoAlt="Microsoft"
       criteria={MICROSOFT_PERSONAL_BAR_CRITERIA}
       refs={refs}
+      sectionStyle={sectionStyle}
+      compactLayout={compactLayout}
       zIndexClass="z-[22]"
     />
   );
