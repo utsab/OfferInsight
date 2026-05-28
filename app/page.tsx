@@ -97,7 +97,7 @@ export default function Page() {
     );
 
   return (
-    <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-white">
+    <div className="-mt-[var(--navbar-height)] min-h-screen bg-white pt-[var(--navbar-height)]">
       {dashboardButton}
       <OsrIntroScroll />
     </div>

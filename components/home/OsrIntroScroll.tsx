@@ -157,12 +157,24 @@ export function OsrIntroScroll() {
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+      const hasVisibleIntroSection = () => {
+        const sections = [
+          sectionZero,
+          sectionOne,
+          sectionTwo,
+          sectionWhoopPersonalBar,
+          sectionMicrosoftPersonalBar,
+          sectionMetaPersonalBar,
+          sectionAffiliations,
+        ];
+        return sections.some((section) => parseFloat(getComputedStyle(section).opacity || '0') > 0.02);
+      };
+
       const scheduleLayoutSync = () => {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            ScrollTrigger.clearScrollMemory();
             ScrollTrigger.refresh(true);
-            if (window.scrollY < 8) {
+            if (window.scrollY < 8 || !hasVisibleIntroSection()) {
               applyIntroStartFrame(
                 sectionZero,
                 sectionOne,
@@ -490,6 +502,14 @@ export function OsrIntroScroll() {
       };
       window.addEventListener('resize', onWindowResize);
 
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          scheduleLayoutSync();
+        }
+      };
+      document.addEventListener('visibilitychange', onVisibilityChange);
+      window.addEventListener('focus', scheduleLayoutSync);
+
       const onPageShow = (event: PageTransitionEvent) => {
         if (event.persisted) {
           resetScrollToIntroStart();
@@ -501,6 +521,8 @@ export function OsrIntroScroll() {
         window.removeEventListener('load', scheduleLayoutSync);
         window.removeEventListener('pageshow', onPageShow);
         window.removeEventListener('resize', onWindowResize);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        window.removeEventListener('focus', scheduleLayoutSync);
         if (resizeTimer) clearTimeout(resizeTimer);
         mm.revert();
         ctx.revert();
