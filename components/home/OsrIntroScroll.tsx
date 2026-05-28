@@ -70,9 +70,8 @@ function applyIntroStartFrame(
   gsap.set(pageIndicator, { opacity: 1, top: '90%', yPercent: 0 });
 }
 
-function readIsCompactViewport() {
-  if (typeof window === 'undefined') return false;
-  return window.outerWidth < COMPACT_MODE_WIDTH_THRESHOLD_PX;
+function readIsCompactViewport(width: number) {
+  return width < COMPACT_MODE_WIDTH_THRESHOLD_PX;
 }
 
 function getScaleBucket(width: number) {
@@ -85,10 +84,8 @@ function getScaleBucket(width: number) {
 
 export function OsrIntroScroll() {
   const introRootRef = useRef<HTMLDivElement>(null);
-  const [scrollHeightVh, setScrollHeightVh] = useState(() => getOsrScrollHeightVh(false));
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [stageScale, setStageScale] = useState(1);
-  const [useFixedStage, setUseFixedStage] = useState(true);
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const sectionZeroRef = useRef<HTMLElement>(null);
   const sectionOneRef = useRef<HTMLElement>(null);
@@ -117,14 +114,14 @@ export function OsrIntroScroll() {
   useEffect(() => {
     let reloadTimer: ReturnType<typeof setTimeout> | undefined;
     const computeViewportMode = () => {
-      const compact = readIsCompactViewport();
       const width = window.outerWidth;
+      const isCompact = readIsCompactViewport(width);
       const scaleBucket = getScaleBucket(width);
 
       const last = lastViewportModeRef.current;
       if (last) {
-        const crossedModeThreshold = last.compact !== compact;
-        const crossedScaleThreshold = !compact && !last.compact && last.scaleBucket !== scaleBucket;
+        const crossedModeThreshold = last.compact !== isCompact;
+        const crossedScaleThreshold = !isCompact && !last.compact && last.scaleBucket !== scaleBucket;
         if (crossedModeThreshold || crossedScaleThreshold) {
           if (reloadTimer) clearTimeout(reloadTimer);
           reloadTimer = setTimeout(() => {
@@ -135,10 +132,9 @@ export function OsrIntroScroll() {
         }
       }
 
-      lastViewportModeRef.current = { compact, scaleBucket };
-      setIsCompactViewport(compact);
-      setUseFixedStage(!compact);
-      if (compact) {
+      lastViewportModeRef.current = { compact: isCompact, scaleBucket };
+      setIsCompactViewport(isCompact);
+      if (isCompact) {
         setStageScale(1);
         return;
       }
@@ -240,10 +236,7 @@ export function OsrIntroScroll() {
       }
 
       const ctx = gsap.context(() => {
-        const buildScenes = (compactMode: boolean) => {
-          const heightVh = getOsrScrollHeightVh(compactMode);
-          scrollTrack.style.height = `${heightVh * 100}vh`;
-          setScrollHeightVh(heightVh);
+        const buildScenes = (isCompactMode: boolean) => {
           applyIntroStartFrame(
             sectionZero,
             sectionOne,
@@ -268,224 +261,224 @@ export function OsrIntroScroll() {
               scale: (i: number) => HOME_ASSETS.affiliations[i].scale * 0.92,
             });
           }
-          const typingFadeOut = getScrollPhase('typingFadeOut', compactMode);
-          const pageIndicatorPhase = getScrollPhase('pageIndicator', compactMode);
-          const whoSectionIn = getScrollPhase('whoSectionIn', compactMode);
-          const whoLettersMove = getScrollPhase('whoLettersMove', compactMode);
-          const whoContentIn = getScrollPhase('whoContentIn', compactMode);
-          const whoSectionOut = getScrollPhase('whoSectionOut', compactMode);
-          const howSectionIn = getScrollPhase('howSectionIn', compactMode);
-          const howLettersMove = getScrollPhase('howLettersMove', compactMode);
-          const howSectionOut = getScrollPhase('howSectionOut', compactMode);
-          const whoopPersonalBarScroll = getScrollPhase('whoopPersonalBarScroll', compactMode);
-          const whoopToMicrosoft = getScrollPhase('whoopToMicrosoft', compactMode);
-          const microsoftPersonalBarScroll = getScrollPhase('microsoftPersonalBarScroll', compactMode);
-          const microsoftToMeta = getScrollPhase('microsoftToMeta', compactMode);
-          const metaPersonalBarScroll = getScrollPhase('metaPersonalBarScroll', compactMode);
-          const metaToAffiliations = getScrollPhase('metaToAffiliations', compactMode);
-          const affiliationsLogos = getScrollPhase('affiliationsLogos', compactMode);
+          const phases = {
+            typingFadeOut: getScrollPhase('typingFadeOut', isCompactMode),
+            pageIndicator: getScrollPhase('pageIndicator', isCompactMode),
+            whoSectionIn: getScrollPhase('whoSectionIn', isCompactMode),
+            whoLettersMove: getScrollPhase('whoLettersMove', isCompactMode),
+            whoContentIn: getScrollPhase('whoContentIn', isCompactMode),
+            whoSectionOut: getScrollPhase('whoSectionOut', isCompactMode),
+            howSectionIn: getScrollPhase('howSectionIn', isCompactMode),
+            howLettersMove: getScrollPhase('howLettersMove', isCompactMode),
+            howSectionOut: getScrollPhase('howSectionOut', isCompactMode),
+            whoopPersonalBarScroll: getScrollPhase('whoopPersonalBarScroll', isCompactMode),
+            whoopToMicrosoft: getScrollPhase('whoopToMicrosoft', isCompactMode),
+            microsoftPersonalBarScroll: getScrollPhase('microsoftPersonalBarScroll', isCompactMode),
+            microsoftToMeta: getScrollPhase('microsoftToMeta', isCompactMode),
+            metaPersonalBarScroll: getScrollPhase('metaPersonalBarScroll', isCompactMode),
+            metaToAffiliations: getScrollPhase('metaToAffiliations', isCompactMode),
+            affiliationsLogos: getScrollPhase('affiliationsLogos', isCompactMode),
+          };
+          const attachSectionCrossfade = (
+            phase: { at: number; durationPercent: number },
+            fromSection: HTMLElement,
+            toSection: HTMLElement,
+          ) => {
+            attachScene(
+              scrollTrack,
+              phase.at,
+              phase.durationPercent,
+              gsap
+                .timeline({ defaults: { ease: 'none' } })
+                .to(fromSection, { opacity: 0, ...SCRUB_DEFAULTS }, 0)
+                .to(toSection, { opacity: 1, ...SCRUB_DEFAULTS }, 0),
+            );
+          };
+          const attachPersonalBarScroll = (
+            phase: { at: number; durationPercent: number },
+            section: HTMLElement,
+            content: HTMLElement,
+            bgLogo: HTMLElement,
+            contentY: string,
+          ) => {
+            attachScene(
+              scrollTrack,
+              phase.at,
+              phase.durationPercent,
+              gsap
+                .timeline({ defaults: { ease: 'none' } })
+                .to(section, { opacity: 1, ...SCRUB_DEFAULTS }, 0)
+                .to(content, { y: contentY, ease: 'none', duration: 1 }, 0)
+                .to(bgLogo, { opacity: 1, scale: 1, ease: 'none', duration: 0.55 }, 0),
+            );
+          };
 
-          attachScene(
-          scrollTrack,
-          typingFadeOut.at,
-          typingFadeOut.durationPercent,
-          gsap.fromTo(
-            sectionZero,
-            { opacity: 1 },
-            { opacity: 0, ...SCRUB_DEFAULTS },
-          ),
-        );
-
-        attachScene(
-          scrollTrack,
-          pageIndicatorPhase.at,
-          pageIndicatorPhase.durationPercent,
-          gsap.to(pageIndicator, { top: '-50%', ...SCRUB_DEFAULTS }),
-        );
-
-        attachScene(
-          scrollTrack,
-          whoSectionIn.at,
-          whoSectionIn.durationPercent,
-          gsap.fromTo(
-            sectionOne,
-            { opacity: 0 },
-            { opacity: 1, ...SCRUB_DEFAULTS },
-          ),
-        );
-
-        if (compactMode) {
           attachScene(
             scrollTrack,
-            whoLettersMove.at,
-            whoLettersMove.durationPercent,
+            phases.typingFadeOut.at,
+            phases.typingFadeOut.durationPercent,
+            gsap.fromTo(sectionZero, { opacity: 1 }, { opacity: 0, ...SCRUB_DEFAULTS }),
+          );
+
+          attachScene(
+            scrollTrack,
+            phases.pageIndicator.at,
+            phases.pageIndicator.durationPercent,
+            gsap.to(pageIndicator, { top: '-50%', ...SCRUB_DEFAULTS }),
+          );
+
+          attachScene(
+            scrollTrack,
+            phases.whoSectionIn.at,
+            phases.whoSectionIn.durationPercent,
+            gsap.fromTo(sectionOne, { opacity: 0 }, { opacity: 1, ...SCRUB_DEFAULTS }),
+          );
+
+          if (isCompactMode) {
+            attachScene(
+              scrollTrack,
+              phases.whoLettersMove.at,
+              phases.whoLettersMove.durationPercent,
+              gsap
+                .timeline({ defaults: { ease: 'power2.in' } })
+                .to(whoLetterO, { left: '140%', top: '-27%' }, 0)
+                .to(whoLetterS, { bottom: '-10%', left: '-30%' }, 0)
+                .to(whoLetterR, { bottom: '4%', right: '-25%' }, 0),
+            );
+          } else {
+            attachScene(
+              scrollTrack,
+              phases.whoLettersMove.at,
+              phases.whoLettersMove.durationPercent,
+              gsap
+                .timeline({ defaults: { ease: 'power2.in' } })
+                .to(whoLetterO, { left: '100%', top: '-140%' }, 0)
+                .to(whoLetterS, { bottom: '-75%', left: '30%' }, 0)
+                .to(whoLetterR, { bottom: '-40%', right: '-26%' }, 0),
+            );
+          }
+
+          attachScene(
+            scrollTrack,
+            phases.whoContentIn.at,
+            phases.whoContentIn.durationPercent,
+            gsap.to(whoWeAreContent, { opacity: 1, ...SCRUB_DEFAULTS }),
+          );
+
+          attachScene(
+            scrollTrack,
+            phases.whoSectionOut.at,
+            phases.whoSectionOut.durationPercent,
+            gsap.to(sectionOne, { opacity: 0, ...SCRUB_DEFAULTS }),
+          );
+
+          attachScene(
+            scrollTrack,
+            phases.howSectionIn.at,
+            phases.howSectionIn.durationPercent,
+            gsap.to(sectionTwo, { opacity: 1, ...SCRUB_DEFAULTS }),
+          );
+
+          if (isCompactMode) {
+            attachScene(
+              scrollTrack,
+              phases.howLettersMove.at,
+              phases.howLettersMove.durationPercent,
+              gsap
+                .timeline()
+                .to(howLetterO, { top: '15%', left: '-12%' }, 0)
+                .to(howLetterR, { bottom: '0%', right: '30%' }, 0)
+                .to(howLetterS, { right: '15%', top: '0%' }, 0),
+            );
+          } else {
+            attachScene(
+              scrollTrack,
+              phases.howLettersMove.at,
+              phases.howLettersMove.durationPercent,
+              gsap
+                .timeline({ defaults: { ease: 'power2.in' } })
+                .to(howLetterO, { top: '-20%', left: '-8%' }, 0)
+                .to(howLetterR, { bottom: '-35%', right: '30%' }, 0)
+                .to(howLetterS, { right: '22%', top: '-15%' }, 0),
+            );
+          }
+
+          attachScene(
+            scrollTrack,
+            phases.howSectionOut.at,
+            phases.howSectionOut.durationPercent,
+            gsap.to(sectionTwo, { opacity: 0, ...SCRUB_DEFAULTS }),
+          );
+
+          attachPersonalBarScroll(
+            phases.whoopPersonalBarScroll,
+            sectionWhoopPersonalBar,
+            whoopPersonalBarContent,
+            whoopPersonalBarBgLogo,
+            '-135vh',
+          );
+
+          attachSectionCrossfade(
+            phases.whoopToMicrosoft,
+            sectionWhoopPersonalBar,
+            sectionMicrosoftPersonalBar,
+          );
+
+          attachPersonalBarScroll(
+            phases.microsoftPersonalBarScroll,
+            sectionMicrosoftPersonalBar,
+            microsoftPersonalBarContent,
+            microsoftPersonalBarBgLogo,
+            '-185vh',
+          );
+
+          attachSectionCrossfade(
+            phases.microsoftToMeta,
+            sectionMicrosoftPersonalBar,
+            sectionMetaPersonalBar,
+          );
+
+          attachPersonalBarScroll(
+            phases.metaPersonalBarScroll,
+            sectionMetaPersonalBar,
+            metaPersonalBarContent,
+            metaPersonalBarBgLogo,
+            '-185vh',
+          );
+
+          attachScene(
+            scrollTrack,
+            phases.metaToAffiliations.at,
+            phases.metaToAffiliations.durationPercent,
             gsap
-              .timeline({ defaults: { ease: 'power2.in' } })
-              .to(whoLetterO, { left: '140%', top: '-27%' }, 0)
-              .to(whoLetterS, { bottom: '-10%', left: '-30%' }, 0)
-              .to(whoLetterR, { bottom: '4%', right: '-25%' }, 0),
+              .timeline({ defaults: { ease: 'none' } })
+              .to(sectionMetaPersonalBar, { opacity: 0, ...SCRUB_DEFAULTS }, 0)
+              .to(sectionAffiliations, { opacity: 1, ...SCRUB_DEFAULTS }, 0)
+              .to(pageIndicator, { opacity: 0, ...SCRUB_DEFAULTS }, 0),
           );
-        } else {
-          attachScene(
-            scrollTrack,
-            whoLettersMove.at,
-            whoLettersMove.durationPercent,
-            gsap
-              .timeline({ defaults: { ease: 'power2.in' } })
-              .to(whoLetterO, { left: '100%', top: '-140%' }, 0)
-              .to(whoLetterS, { bottom: '-75%', left: '30%' }, 0)
-              .to(whoLetterR, { bottom: '-40%', right: '-26%' }, 0),
-          );
-        }
 
-        attachScene(
-          scrollTrack,
-          whoContentIn.at,
-          whoContentIn.durationPercent,
-          gsap.to(whoWeAreContent, { opacity: 1, ...SCRUB_DEFAULTS }),
-        );
+          let affiliationsLogosAttached = false;
+          const attachAffiliationLogos = () => {
+            if (affiliationsLogosAttached) return true;
+            const readyLogos = logoRefs.current.filter(Boolean) as HTMLImageElement[];
+            if (readyLogos.length !== HOME_ASSETS.affiliations.length) return false;
 
-        attachScene(
-          scrollTrack,
-          whoSectionOut.at,
-          whoSectionOut.durationPercent,
-          gsap.to(sectionOne, { opacity: 0, ...SCRUB_DEFAULTS }),
-        );
-
-        attachScene(
-          scrollTrack,
-          howSectionIn.at,
-          howSectionIn.durationPercent,
-          gsap.to(sectionTwo, { opacity: 1, ...SCRUB_DEFAULTS }),
-        );
-
-        if (compactMode) {
-          attachScene(
-            scrollTrack,
-            howLettersMove.at,
-            howLettersMove.durationPercent,
-            gsap
-              .timeline()
-              .to(howLetterO, { top: '15%', left: '-12%' }, 0)
-              .to(howLetterR, { bottom: '0%', right: '30%' }, 0)
-              .to(howLetterS, { right: '15%', top: '0%' }, 0),
-          );
-        } else {
-          attachScene(
-            scrollTrack,
-            howLettersMove.at,
-            howLettersMove.durationPercent,
-            gsap
-              .timeline({ defaults: { ease: 'power2.in' } })
-              .to(howLetterO, { top: '-20%', left: '-8%' }, 0)
-              .to(howLetterR, { bottom: '-35%', right: '30%' }, 0)
-              .to(howLetterS, { right: '22%', top: '-15%' }, 0),
-          );
-        }
-
-        attachScene(
-          scrollTrack,
-          howSectionOut.at,
-          howSectionOut.durationPercent,
-          gsap.to(sectionTwo, { opacity: 0, ...SCRUB_DEFAULTS }),
-        );
-
-        attachScene(
-          scrollTrack,
-          whoopPersonalBarScroll.at,
-          whoopPersonalBarScroll.durationPercent,
-          gsap
-            .timeline({ defaults: { ease: 'none' } })
-            .to(sectionWhoopPersonalBar, { opacity: 1, ...SCRUB_DEFAULTS }, 0)
-            .to(whoopPersonalBarContent, { y: '-135vh', ease: 'none', duration: 1 }, 0)
-            .to(
-              whoopPersonalBarBgLogo,
-              { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
-              0,
-            ),
-        );
-
-        attachScene(
-          scrollTrack,
-          whoopToMicrosoft.at,
-          whoopToMicrosoft.durationPercent,
-          gsap
-            .timeline({ defaults: { ease: 'none' } })
-            .to(sectionWhoopPersonalBar, { opacity: 0, ...SCRUB_DEFAULTS }, 0)
-            .to(sectionMicrosoftPersonalBar, { opacity: 1, ...SCRUB_DEFAULTS }, 0),
-        );
-
-        attachScene(
-          scrollTrack,
-          microsoftPersonalBarScroll.at,
-          microsoftPersonalBarScroll.durationPercent,
-          gsap
-            .timeline({ defaults: { ease: 'none' } })
-            .to(microsoftPersonalBarContent, { y: '-185vh', ease: 'none', duration: 1 }, 0)
-            .to(
-              microsoftPersonalBarBgLogo,
-              { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
-              0,
-            ),
-        );
-
-        attachScene(
-          scrollTrack,
-          microsoftToMeta.at,
-          microsoftToMeta.durationPercent,
-          gsap
-            .timeline({ defaults: { ease: 'none' } })
-            .to(sectionMicrosoftPersonalBar, { opacity: 0, ...SCRUB_DEFAULTS }, 0)
-            .to(sectionMetaPersonalBar, { opacity: 1, ...SCRUB_DEFAULTS }, 0),
-        );
-
-        attachScene(
-          scrollTrack,
-          metaPersonalBarScroll.at,
-          metaPersonalBarScroll.durationPercent,
-          gsap
-            .timeline({ defaults: { ease: 'none' } })
-            .to(metaPersonalBarContent, { y: '-185vh', ease: 'none', duration: 1 }, 0)
-            .to(
-              metaPersonalBarBgLogo,
-              { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
-              0,
-            ),
-        );
-
-        attachScene(
-          scrollTrack,
-          metaToAffiliations.at,
-          metaToAffiliations.durationPercent,
-          gsap
-            .timeline({ defaults: { ease: 'none' } })
-            .to(sectionMetaPersonalBar, { opacity: 0, ...SCRUB_DEFAULTS }, 0)
-            .to(sectionAffiliations, { opacity: 1, ...SCRUB_DEFAULTS }, 0)
-            .to(pageIndicator, { opacity: 0, ...SCRUB_DEFAULTS }, 0),
-        );
-
-        let affiliationsLogosAttached = false;
-        const attachAffiliationLogos = () => {
-          if (affiliationsLogosAttached) return true;
-          const readyLogos = logoRefs.current.filter(Boolean) as HTMLImageElement[];
-          if (readyLogos.length !== HOME_ASSETS.affiliations.length) return false;
-
-          affiliationsLogosAttached = true;
-          attachScene(
-            scrollTrack,
-            affiliationsLogos.at,
-            affiliationsLogos.durationPercent,
-            gsap.to(readyLogos, {
-              opacity: 1,
-              y: 0,
-              scale: (i: number) => HOME_ASSETS.affiliations[i].scale,
-              duration: 1,
-              stagger: 0.08,
-              ...SCRUB_DEFAULTS,
-            }),
-          );
-          return true;
-        };
+            affiliationsLogosAttached = true;
+            attachScene(
+              scrollTrack,
+              phases.affiliationsLogos.at,
+              phases.affiliationsLogos.durationPercent,
+              gsap.to(readyLogos, {
+                opacity: 1,
+                y: 0,
+                scale: (i: number) => HOME_ASSETS.affiliations[i].scale,
+                duration: 1,
+                stagger: 0.08,
+                ...SCRUB_DEFAULTS,
+              }),
+            );
+            return true;
+          };
 
           if (!attachAffiliationLogos()) {
             let attempts = 0;
@@ -505,7 +498,6 @@ export function OsrIntroScroll() {
             scheduleLayoutSync();
           }
         };
-
         buildScenes(isCompactViewport);
       }, introRoot);
 
@@ -532,6 +524,8 @@ export function OsrIntroScroll() {
     { scope: introRootRef, dependencies: [isCompactViewport] },
   );
 
+  const useFixedStage = !isCompactViewport;
+  const scrollHeightVh = getOsrScrollHeightVh(isCompactViewport);
   const sectionShell = useFixedStage
     ? 'pointer-events-none fixed left-1/2 z-10 flex items-center justify-center overflow-hidden bg-white'
     : 'pointer-events-none fixed left-0 right-0 top-[var(--navbar-height)] z-10 flex h-[calc(100dvh-var(--navbar-height))] items-center justify-center overflow-hidden bg-white';

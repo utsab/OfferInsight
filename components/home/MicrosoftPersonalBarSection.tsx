@@ -9,11 +9,9 @@ import {
   MICROSOFT_PERSONAL_BAR_TITLE,
 } from './microsoftPersonalBar';
 
-export type MicrosoftPersonalBarRefs = PersonalBarRefs;
-
 type MicrosoftPersonalBarSectionProps = {
   sectionShell: string;
-  refs: MicrosoftPersonalBarRefs;
+  refs: PersonalBarRefs;
   sectionStyle?: CSSProperties;
   compactLayout?: boolean;
 };

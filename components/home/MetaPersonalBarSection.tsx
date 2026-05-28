@@ -9,11 +9,9 @@ import {
   META_PERSONAL_BAR_TITLE,
 } from './metaPersonalBar';
 
-export type MetaPersonalBarRefs = PersonalBarRefs;
-
 type MetaPersonalBarSectionProps = {
   sectionShell: string;
-  refs: MetaPersonalBarRefs;
+  refs: PersonalBarRefs;
   sectionStyle?: CSSProperties;
   compactLayout?: boolean;
 };

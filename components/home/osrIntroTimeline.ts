@@ -65,5 +65,3 @@ export function getOsrScrollHeightVh(isMobile: boolean): number {
   return logos.at + logos.durationPercent / 100 + SCROLL_TAIL_HOLD_VH;
 }
 
-/** Desktop scroll height (default). */
-export const OSR_SCROLL_HEIGHT_VH = getOsrScrollHeightVh(false);

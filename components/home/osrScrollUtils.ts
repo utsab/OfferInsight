@@ -1,5 +1,3 @@
-export { OSR_SCROLL_HEIGHT_VH } from './osrIntroTimeline';
-
 export const TYPING_DESCRIPTIONS = [
   'A pathway for entry-level SWEs',
   'Measurable open source achievements',

@@ -9,11 +9,9 @@ import {
   WHOOP_PERSONAL_BAR_TITLE,
 } from './whoopPersonalBar';
 
-export type WhoopPersonalBarRefs = PersonalBarRefs;
-
 type WhoopPersonalBarSectionProps = {
   sectionShell: string;
-  refs: WhoopPersonalBarRefs;
+  refs: PersonalBarRefs;
   sectionStyle?: CSSProperties;
   compactLayout?: boolean;
 };
