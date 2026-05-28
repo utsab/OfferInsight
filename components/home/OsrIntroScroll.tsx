@@ -511,13 +511,13 @@ export function OsrIntroScroll() {
   );
 
   const sectionShell =
-    'pointer-events-none fixed left-0 right-0 top-[var(--navbar-height)] z-10 flex h-[calc(100dvh-var(--navbar-height))] items-center justify-center';
+    'pointer-events-none fixed left-0 right-0 top-[var(--navbar-height)] z-10 flex h-[calc(100dvh-var(--navbar-height))] items-center justify-center bg-white';
 
   const letterBase =
     'pointer-events-none absolute select-none font-bold leading-none font-[Montserrat,sans-serif] text-[clamp(5rem,22vw,14rem)] md:text-[clamp(7rem,22em,22rem)]';
 
   return (
-    <div ref={introRootRef} className="relative w-full">
+    <div ref={introRootRef} className="relative w-full bg-white">
       {/* Tall scroll track — phase timings live in osrIntroTimeline.ts */}
       <div
         ref={scrollTrackRef}
@@ -537,7 +537,7 @@ export function OsrIntroScroll() {
       <section
         ref={sectionZeroRef}
         id="intro-zero"
-        className={`${sectionShell} z-[7] bg-gradient-to-br from-midnight-blue to-gray-900`}
+        className={`${sectionShell} z-[7]`}
         aria-label="Introduction"
       >
         <div className="w-[75%] max-w-4xl md:w-1/2">
@@ -558,7 +558,7 @@ export function OsrIntroScroll() {
       <section
         ref={sectionOneRef}
         id="intro-one"
-        className={`${sectionShell} z-10 overflow-hidden bg-gradient-to-br from-midnight-blue to-gray-900 opacity-0`}
+        className={`${sectionShell} z-10 overflow-hidden opacity-0`}
         aria-labelledby="intro-who-heading"
       >
         <div
@@ -589,11 +589,11 @@ export function OsrIntroScroll() {
         >
           <h2
             id="intro-who-heading"
-            className="text-sm font-extrabold uppercase tracking-wide text-white md:text-xl"
+            className="text-sm font-extrabold uppercase tracking-wide text-black md:text-xl"
           >
             Who we are
           </h2>
-          <p className="mt-5 text-lg leading-relaxed text-gray-200 md:text-4xl">
+          <p className="mt-5 text-lg leading-relaxed text-gray-800 md:text-4xl">
             We are a pathway for entry-level SWEs to become valuable contributors to the tech
             industry by making deep contributions to open source.
           </p>
@@ -604,7 +604,7 @@ export function OsrIntroScroll() {
       <section
         ref={sectionTwoRef}
         id="intro-two"
-        className={`${sectionShell} z-[19] overflow-hidden bg-gradient-to-br from-midnight-blue to-gray-900 opacity-0`}
+        className={`${sectionShell} z-[19] overflow-hidden opacity-0`}
         aria-labelledby="intro-how-heading"
       >
         <div
@@ -632,11 +632,11 @@ export function OsrIntroScroll() {
         <div className="relative z-[2] w-[75%] max-w-3xl md:w-1/2">
           <h2
             id="intro-how-heading"
-            className="text-sm font-extrabold uppercase tracking-wide text-white md:text-xl"
+            className="text-sm font-extrabold uppercase tracking-wide text-black md:text-xl"
           >
             How it works
           </h2>
-          <p className="mt-5 text-lg leading-relaxed text-gray-200 md:text-4xl">
+          <p className="mt-5 text-lg leading-relaxed text-gray-800 md:text-4xl">
             SWE Hiring Managers define their dream candidate in terms of measurable open source
             achievements. Their personal bar becomes an actionable pathway for junior devs.
           </p>
@@ -674,22 +674,22 @@ export function OsrIntroScroll() {
       <section
         ref={sectionAffiliationsRef}
         id="intro-affiliations"
-        className={`${sectionShell} z-[21] overflow-hidden bg-gradient-to-br from-midnight-blue to-gray-900 opacity-0`}
+        className={`${sectionShell} z-[21] overflow-hidden opacity-0`}
         aria-labelledby="affiliations-heading"
       >
         <div className="relative z-[2] flex w-full items-center justify-center px-4 sm:px-8">
           <div className="w-full max-w-6xl text-center">
             <h2
               id="affiliations-heading"
-              className="mb-4 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl"
+              className="mb-4 text-3xl font-bold tracking-tight text-black sm:text-4xl md:text-5xl"
             >
               Hiring Manager Affiliations
             </h2>
-            <p className="mx-auto mb-3 max-w-5xl text-base leading-relaxed text-gray-200 sm:text-lg md:text-xl">
+            <p className="mx-auto mb-3 max-w-5xl text-base leading-relaxed text-gray-800 sm:text-lg md:text-xl">
               Participating managers at these companies commit to interview candidates who meet their
               defined open-source benchmarks.
             </p>
-            <p className="mx-auto mb-9 max-w-4xl text-sm text-gray-300 sm:text-base">
+            <p className="mx-auto mb-9 max-w-4xl text-sm text-gray-600 sm:text-base">
               Standards are manager-defined and do not represent official company policy.
             </p>
 
@@ -713,7 +713,7 @@ export function OsrIntroScroll() {
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-xl font-semibold italic tracking-wide text-gray-200 sm:mt-7 sm:text-2xl">
+            <p className="mt-6 text-xl font-semibold italic tracking-wide text-gray-800 sm:mt-7 sm:text-2xl">
               and more...
             </p>
           </div>
