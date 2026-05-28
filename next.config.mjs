@@ -2,6 +2,8 @@
 
 // LOCAL_IP from .env.local for phone/WiFi access - not set in production
 const localIp = process.env.LOCAL_IP || '';
+const fallbackDevIps = ['192.168.1.152'];
+const devIps = [...new Set([...(localIp ? [localIp] : []), ...fallbackDevIps])];
 
 const nextConfig = {
   experimental: {
@@ -17,7 +19,7 @@ const nextConfig = {
         : [
             'https://offer-insight-swart.vercel.app',
             'localhost:3000', // localhost
-            ...(localIp ? [`${localIp}:3000`] : []), // Phone access via WiFi (from .env.local)
+            ...devIps.map((ip) => `${ip}:3000`), // Phone access via WiFi
           ],
     },
   },
@@ -25,7 +27,7 @@ const nextConfig = {
   allowedDevOrigins: [
     'https://offer-insight-swart.vercel.app',
     'localhost:3000',
-    ...(localIp ? [localIp, `${localIp}:3000`] : []),
+    ...devIps.flatMap((ip) => [ip, `${ip}:3000`]),
   ],
 };
 
