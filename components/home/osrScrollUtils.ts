@@ -1,3 +1,5 @@
+import gsap from 'gsap';
+
 export const TYPING_DESCRIPTIONS = [
   'A pathway for entry-level SWEs',
   'Measurable open source achievements',
@@ -38,4 +40,36 @@ export function getOsrSceneConfig(
     durationPx: Math.round((durationPercent / 100) * vh),
     scrub,
   };
+}
+
+const PERSONAL_BAR_CONTENT_START_VH = 140;
+
+/** Measure personal-bar content height without transform affecting layout reads. */
+export function measurePersonalBarContentHeight(content: HTMLElement): number {
+  gsap.set(content, { y: 0 });
+  const height = content.scrollHeight;
+  gsap.set(content, { y: `${PERSONAL_BAR_CONTENT_START_VH}vh` });
+  return height;
+}
+
+/** How far content travels upward (vh) so tall lists can fully scroll through. */
+export function getPersonalBarContentEndY(
+  contentHeightPx: number,
+  viewportHeightPx: number,
+  minEndVh: number,
+): string {
+  const contentVh = (contentHeightPx / viewportHeightPx) * 100;
+  const endVh = Math.max(minEndVh, Math.round(contentVh + 55));
+  return `-${endVh}vh`;
+}
+
+/** Scroll duration (durationPercent) scaled to measured content height. */
+export function getPersonalBarScrollDurationPercent(
+  contentHeightPx: number,
+  viewportHeightPx: number,
+  minDurationPercent: number,
+): number {
+  const contentVh = (contentHeightPx / viewportHeightPx) * 100;
+  const travelVh = PERSONAL_BAR_CONTENT_START_VH + Math.max(135, contentVh + 55);
+  return Math.round(Math.max(minDurationPercent, travelVh));
 }
