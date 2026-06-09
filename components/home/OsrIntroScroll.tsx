@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
@@ -8,26 +8,27 @@ import { HOME_ASSETS } from './homeAssets';
 import {
   getOsrScrollHeightVh,
   getScrollPhase,
-  applyCompactPersonalBarAdaptivePhases,
+  applyIntroContentPhaseChain,
 } from './osrIntroTimeline';
 import {
   TYPING_DESCRIPTIONS,
-  PERSONAL_BAR_CONTENT_START_VH,
   PERSONAL_BAR_CONTENT_START_Y,
-  extendContentEndY,
-  getMatchedScrollDurationPercent,
   getOsrSceneConfig,
-  getActionsContentEndY,
-  getActionsScrollTravelVh,
   getViewportBelowNavbar,
   measurePersonalBarContentHeight,
-  parseNegativeVh,
 } from './osrScrollUtils';
 import { TypingHeroLine } from './TypingHeroLine';
 import { IntroActionsSection } from './IntroActionsSection';
 import { MetaPersonalBarSection } from './MetaPersonalBarSection';
 import { MicrosoftPersonalBarSection } from './MicrosoftPersonalBarSection';
 import { WhoopPersonalBarSection } from './WhoopPersonalBarSection';
+import { IntroScrollNav } from './IntroScrollNav';
+import { computeScrollVhForAnchorTarget } from './introScrollJump';
+import {
+  buildIntroNavSections,
+  getActiveIntroNavId,
+  type IntroNavSection,
+} from './introScrollNav';
 
 gsap.registerPlugin(ScrollTrigger);
 ScrollTrigger.config({ ignoreMobileResize: true });
@@ -78,7 +79,6 @@ function applyIntroStartFrame(
   sectionMetaPersonalBar: HTMLElement,
   sectionAffiliations: HTMLElement,
   sectionActions: HTMLElement,
-  pageIndicator: HTMLElement,
 ) {
   gsap.set(sectionZero, { autoAlpha: 1 });
   gsap.set(sectionOne, { autoAlpha: 0 });
@@ -89,7 +89,6 @@ function applyIntroStartFrame(
   gsap.set(sectionMetaPersonalBar, { autoAlpha: 0 });
   gsap.set(sectionAffiliations, { autoAlpha: 0 });
   gsap.set(sectionActions, { autoAlpha: 0 });
-  gsap.set(pageIndicator, { opacity: 1, top: '90%', yPercent: 0 });
 }
 
 function readIsCompactViewport(width: number) {
@@ -109,12 +108,13 @@ export function OsrIntroScroll() {
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [scrollHeightVh, setScrollHeightVh] = useState(() => getOsrScrollHeightVh(false));
   const [stageScale, setStageScale] = useState(1);
+  const [introNavSections, setIntroNavSections] = useState<IntroNavSection[]>([]);
+  const [activeNavId, setActiveNavId] = useState('intro');
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const sectionZeroRef = useRef<HTMLElement>(null);
   const sectionOneRef = useRef<HTMLElement>(null);
   const sectionTwoRef = useRef<HTMLElement>(null);
   const whoWeAreContentRef = useRef<HTMLDivElement>(null);
-  const pageIndicatorRef = useRef<HTMLDivElement>(null);
   const whoLetterORef = useRef<HTMLDivElement>(null);
   const whoLetterSRef = useRef<HTMLDivElement>(null);
   const whoLetterRRef = useRef<HTMLDivElement>(null);
@@ -135,6 +135,51 @@ export function OsrIntroScroll() {
   const sectionActionsRef = useRef<HTMLElement>(null);
   const actionsContentRef = useRef<HTMLDivElement>(null);
   const lastViewportModeRef = useRef<{ compact: boolean; scaleBucket: number } | null>(null);
+
+  const scrollToNavSection = useCallback((section: IntroNavSection) => {
+    const track = scrollTrackRef.current;
+    if (!track) return;
+
+    const anchorJump = section.anchorJump;
+    if (anchorJump) {
+      const anchor = document.getElementById(anchorJump.anchorId);
+      if (anchor) {
+        const jumpVh = computeScrollVhForAnchorTarget(
+          track,
+          anchor,
+          anchorJump.targetFromTopVh,
+          anchorJump.scrollMinVh,
+          anchorJump.scrollMaxVh,
+        );
+        const { startPx } = getOsrSceneConfig(jumpVh, 0, false);
+        window.scrollTo({ top: track.offsetTop + startPx, behavior: 'smooth' });
+        return;
+      }
+    }
+
+    const { startPx } = getOsrSceneConfig(section.jumpVh, 0, false);
+    window.scrollTo({ top: track.offsetTop + startPx, behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    const track = scrollTrackRef.current;
+    if (!track || introNavSections.length === 0) return;
+
+    const updateActive = () => {
+      const vh = getViewportBelowNavbar();
+      const relativePx = Math.max(window.scrollY - track.offsetTop, 0);
+      const relativeVh = relativePx / vh;
+      setActiveNavId(getActiveIntroNavId(introNavSections, relativeVh));
+    };
+
+    updateActive();
+    window.addEventListener('scroll', updateActive, { passive: true });
+    ScrollTrigger.addEventListener('refresh', updateActive);
+    return () => {
+      window.removeEventListener('scroll', updateActive);
+      ScrollTrigger.removeEventListener('refresh', updateActive);
+    };
+  }, [introNavSections]);
 
   useEffect(() => {
     const previousOverscroll = document.documentElement.style.overscrollBehaviorY;
@@ -199,7 +244,6 @@ export function OsrIntroScroll() {
       const sectionOne = sectionOneRef.current;
       const sectionTwo = sectionTwoRef.current;
       const whoWeAreContent = whoWeAreContentRef.current;
-      const pageIndicator = pageIndicatorRef.current;
       const whoLetterO = whoLetterORef.current;
       const whoLetterS = whoLetterSRef.current;
       const whoLetterR = whoLetterRRef.current;
@@ -227,7 +271,6 @@ export function OsrIntroScroll() {
         !sectionOne ||
         !sectionTwo ||
         !whoWeAreContent ||
-        !pageIndicator ||
         !whoLetterO ||
         !whoLetterS ||
         !whoLetterR ||
@@ -277,7 +320,6 @@ export function OsrIntroScroll() {
         gsap.set(affiliationsContent, { y: 0 });
         gsap.set(sectionActions, { opacity: 1 });
         gsap.set(actionsContent, { y: 0 });
-        gsap.set(pageIndicator, { opacity: 0 });
         return;
       }
 
@@ -299,7 +341,6 @@ export function OsrIntroScroll() {
             sectionMetaPersonalBar,
             sectionAffiliations,
             sectionActions,
-            pageIndicator,
           );
           gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
           gsap.set(microsoftPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
@@ -311,7 +352,6 @@ export function OsrIntroScroll() {
           gsap.set(actionsContent, { y: PERSONAL_BAR_CONTENT_START_Y });
           let phases = {
             typingFadeOut: getScrollPhase('typingFadeOut', isCompactMode),
-            pageIndicator: getScrollPhase('pageIndicator', isCompactMode),
             whoSectionIn: getScrollPhase('whoSectionIn', isCompactMode),
             whoLettersMove: getScrollPhase('whoLettersMove', isCompactMode),
             whoContentIn: getScrollPhase('whoContentIn', isCompactMode),
@@ -324,71 +364,47 @@ export function OsrIntroScroll() {
             microsoftPersonalBarScroll: getScrollPhase('microsoftPersonalBarScroll', isCompactMode),
             microsoftToMeta: getScrollPhase('microsoftToMeta', isCompactMode),
             metaPersonalBarScroll: getScrollPhase('metaPersonalBarScroll', isCompactMode),
+            metaToAffiliations: getScrollPhase('metaToAffiliations', isCompactMode),
             affiliationsScroll: getScrollPhase('affiliationsScroll', isCompactMode),
+            affiliationsToActions: getScrollPhase('affiliationsToActions', isCompactMode),
             actionsScroll: getScrollPhase('actionsScroll', isCompactMode),
-          };
-          let whoopContentEndY = '-135vh';
-          let microsoftContentEndY = '-185vh';
-          let metaContentEndY = '-185vh';
-
-          if (isCompactMode) {
-            const viewportHeight = getViewportBelowNavbar();
-            const adaptive = applyCompactPersonalBarAdaptivePhases(phases, {
-              viewportHeight,
-              whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
-              microsoftContentHeight: measurePersonalBarContentHeight(microsoftPersonalBarContent),
-              metaContentHeight: measurePersonalBarContentHeight(metaPersonalBarContent),
-            });
-            phases = adaptive.phases;
-            whoopContentEndY = adaptive.motion.whoopEndY;
-            microsoftContentEndY = adaptive.motion.microsoftEndY;
-            metaContentEndY = adaptive.motion.metaEndY;
-          }
-
-          const metaTravelVh =
-            PERSONAL_BAR_CONTENT_START_VH + parseNegativeVh(metaContentEndY);
-          const affiliationsDurationPercent = getMatchedScrollDurationPercent(
-            phases.metaPersonalBarScroll.durationPercent,
-            metaTravelVh,
-            PERSONAL_BAR_CONTENT_START_VH,
-            phases.affiliationsScroll.durationPercent,
-          );
-          phases = {
-            ...phases,
-            affiliationsScroll: {
-              at:
-                phases.metaPersonalBarScroll.at +
-                phases.metaPersonalBarScroll.durationPercent / 100,
-              durationPercent: affiliationsDurationPercent,
-            },
           };
 
           const viewportHeight = getViewportBelowNavbar();
-          const actionsEndY = getActionsContentEndY(
-            measurePersonalBarContentHeight(actionsContent),
+          const layoutReferenceHeight = isCompactMode ? viewportHeight : STAGE_BASE_HEIGHT;
+          const { phases: chainedPhases, motion } = applyIntroContentPhaseChain(phases, {
             viewportHeight,
-          );
-          const actionsTravelVh = getActionsScrollTravelVh(actionsEndY);
-          const actionsDurationPercent = getMatchedScrollDurationPercent(
-            phases.affiliationsScroll.durationPercent,
-            PERSONAL_BAR_CONTENT_START_VH,
-            actionsTravelVh,
-            phases.actionsScroll.durationPercent,
-          );
-          phases = {
-            ...phases,
-            actionsScroll: {
-              at:
-                phases.affiliationsScroll.at +
-                phases.affiliationsScroll.durationPercent / 100,
-              durationPercent: actionsDurationPercent,
-            },
-          };
+            layoutReferenceHeight,
+            whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
+            microsoftContentHeight: measurePersonalBarContentHeight(microsoftPersonalBarContent),
+            metaContentHeight: measurePersonalBarContentHeight(metaPersonalBarContent),
+            affiliationsContentHeight: measurePersonalBarContentHeight(affiliationsContent),
+            actionsContentHeight: measurePersonalBarContentHeight(actionsContent),
+          });
+          phases = chainedPhases;
+          const {
+            whoopEndY: whoopContentEndY,
+            microsoftEndY: microsoftContentEndY,
+            metaEndY: metaContentEndY,
+            affiliationsEndY,
+            actionsEndY,
+          } = motion;
 
           const scrollHeightVh =
             phases.actionsScroll.at + phases.actionsScroll.durationPercent / 100;
           scrollTrack.style.height = `${scrollHeightVh * 100}vh`;
           setScrollHeightVh(scrollHeightVh);
+          setIntroNavSections(
+            buildIntroNavSections({
+              whoSectionIn: phases.whoSectionIn,
+              howSectionIn: phases.howSectionIn,
+              whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
+              microsoftPersonalBarScroll: phases.microsoftPersonalBarScroll,
+              metaPersonalBarScroll: phases.metaPersonalBarScroll,
+              affiliationsScroll: phases.affiliationsScroll,
+              actionsScroll: phases.actionsScroll,
+            }),
+          );
           const attachSectionCrossfade = (
             phase: { at: number; durationPercent: number },
             fromSection: HTMLElement,
@@ -464,7 +480,6 @@ export function OsrIntroScroll() {
               sectionMetaPersonalBar,
               sectionAffiliations,
               sectionActions,
-              pageIndicator,
             );
             resetPersonalBarStartFrame();
             resetWhoLetterStartFrame();
@@ -562,13 +577,6 @@ export function OsrIntroScroll() {
             phases.typingFadeOut.at,
             phases.typingFadeOut.durationPercent,
             gsap.fromTo(sectionZero, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }),
-          );
-
-          attachScene(
-            scrollTrack,
-            phases.pageIndicator.at,
-            phases.pageIndicator.durationPercent,
-            gsap.to(pageIndicator, { top: '-50%', ...SCRUB_DEFAULTS }),
           );
 
           attachScene(
@@ -683,55 +691,25 @@ export function OsrIntroScroll() {
             metaPersonalBarBgLogo,
           );
 
-          const metaExitY = extendContentEndY(
-            metaContentEndY,
-            PERSONAL_BAR_CONTENT_START_VH,
-          );
-          attachScene(
-            scrollTrack,
-            phases.affiliationsScroll.at,
-            phases.affiliationsScroll.durationPercent,
-            gsap
-              .timeline({ defaults: { ease: 'none' } })
-              .to(sectionAffiliations, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0)
-              .fromTo(
-                affiliationsContent,
-                { y: PERSONAL_BAR_CONTENT_START_Y },
-                { y: 0, ease: 'none', duration: 1 },
-                0,
-              )
-              .fromTo(
-                metaPersonalBarContent,
-                { y: metaContentEndY },
-                { y: metaExitY, ease: 'none', duration: 1 },
-                0,
-              )
-              .to(sectionMetaPersonalBar, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0)
-              .to(pageIndicator, { opacity: 0, ...SCRUB_DEFAULTS }, 0),
+          attachSectionCrossfade(
+            phases.metaToAffiliations,
+            sectionMetaPersonalBar,
+            sectionAffiliations,
           );
 
-          const affiliationsExitY = `-${PERSONAL_BAR_CONTENT_START_VH}vh`;
-          attachScene(
-            scrollTrack,
-            phases.actionsScroll.at,
-            phases.actionsScroll.durationPercent,
-            gsap
-              .timeline({ defaults: { ease: 'none' } })
-              .to(sectionActions, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0)
-              .fromTo(
-                actionsContent,
-                { y: PERSONAL_BAR_CONTENT_START_Y },
-                { y: actionsEndY, ease: 'none', duration: 1 },
-                0,
-              )
-              .fromTo(
-                affiliationsContent,
-                { y: 0 },
-                { y: affiliationsExitY, ease: 'none', duration: 1 },
-                0,
-              )
-              .to(sectionAffiliations, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0),
+          attachContentScroll(
+            phases.affiliationsScroll,
+            affiliationsContent,
+            affiliationsEndY,
           );
+
+          attachSectionCrossfade(
+            phases.affiliationsToActions,
+            sectionAffiliations,
+            sectionActions,
+          );
+
+          attachContentScroll(phases.actionsScroll, actionsContent, actionsEndY);
 
           removeTopScrollEndListener = attachTopResetGuard();
           attachSectionVisibilityGuards();
@@ -808,18 +786,17 @@ export function OsrIntroScroll() {
         aria-hidden
       />
 
-      {/* White stage behind the scroll indicator; section layers sit above the bar */}
+      {/* White stage backdrop; fixed section layers sit above */}
       <div
         className={stageBackdropClass}
         style={sectionShellStyle}
         aria-hidden
       />
 
-      <div
-        ref={pageIndicatorRef}
-        className="pointer-events-none fixed left-[20%] z-[8] h-[45%] w-0.5 md:w-0.5"
-        style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
-        aria-hidden
+      <IntroScrollNav
+        sections={introNavSections}
+        activeId={activeNavId}
+        onSelect={scrollToNavSection}
       />
 
       {/* Phase 1 — typing hero */}
@@ -972,7 +949,7 @@ export function OsrIntroScroll() {
       <section
         ref={sectionAffiliationsRef}
         id="intro-affiliations"
-        className={`${sectionShell} z-[21] overflow-hidden opacity-0`}
+        className={`${sectionShell} z-[21] overflow-hidden bg-white opacity-0`}
         style={sectionShellStyle}
         aria-labelledby="affiliations-heading"
       >

@@ -7,7 +7,7 @@ export const TYPING_DESCRIPTIONS = [
   'Your portfolio, verifiable on GitHub',
 ] as const;
 
-function getNavbarHeightPx(): number {
+export function getNavbarHeightPx(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue('--navbar-height').trim();
   if (!raw) return 72;
   if (raw.endsWith('rem')) {
@@ -20,6 +20,11 @@ function getNavbarHeightPx(): number {
 /** Viewport height below the fixed navbar (matches pinned hero start). */
 export function getViewportBelowNavbar(): number {
   return Math.max(window.innerHeight - getNavbarHeightPx(), 320);
+}
+
+/** Absolute viewport Y for a point `offsetVh` below the navbar. */
+export function getViewportOffsetTopPx(offsetVh: number): number {
+  return getNavbarHeightPx() + (offsetVh / 100) * getViewportBelowNavbar();
 }
 
 /** Scroll-driven scene: offset and duration as multiples of viewport height. */
@@ -73,11 +78,6 @@ export function getPersonalBarScrollDurationPercent(
 export function parseNegativeVh(value: string): number {
   const match = value.match(/^-?(\d+(?:\.\d+)?)vh$/);
   return match ? Number(match[1]) : 0;
-}
-
-/** Extend an upward travel target so content keeps exiting off the top. */
-export function extendContentEndY(endY: string, extraVh: number): string {
-  return `-${parseNegativeVh(endY) + extraVh}vh`;
 }
 
 /** Resting y for actions CTA after the 140vh entry (lower than y=0 when content is short). */

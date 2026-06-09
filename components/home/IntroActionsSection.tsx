@@ -23,7 +23,7 @@ export function IntroActionsSection({
     <section
       ref={sectionRef}
       id="intro-actions"
-      className={`${sectionShell} overflow-hidden opacity-0`}
+      className={`${sectionShell} overflow-hidden bg-white opacity-0`}
       style={sectionStyle}
       aria-labelledby="intro-actions-heading"
     >
