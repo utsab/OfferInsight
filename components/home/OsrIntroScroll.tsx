@@ -281,8 +281,8 @@ export function OsrIntroScroll() {
         return;
       }
 
+      let removeTopScrollEndListener: (() => void) | undefined;
       const ctx = gsap.context(() => {
-        let removeTopScrollEndListener: (() => void) | undefined;
         const buildScenes = (isCompactMode: boolean) => {
           const resetWhoLetterStartFrame = () => {
             gsap.set(whoLetterO, { left: '50%', xPercent: -50, x: 0, y: 0 });

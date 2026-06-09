@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { getUserDashboardPath } from '@/lib/dashboard-destination';
 
 type DashboardNavButtonProps = {
@@ -12,7 +12,10 @@ export function DashboardNavButton({
   onboardingProgress,
   instructor = false,
 }: DashboardNavButtonProps) {
+  const pathname = usePathname();
   const router = useRouter();
+
+  if (pathname !== '/') return null;
 
   return (
     <button
