@@ -17,11 +17,12 @@ import {
   extendContentEndY,
   getMatchedScrollDurationPercent,
   getOsrSceneConfig,
+  getActionsContentEndY,
+  getActionsScrollTravelVh,
   getViewportBelowNavbar,
   measurePersonalBarContentHeight,
   parseNegativeVh,
 } from './osrScrollUtils';
-import { handleSignIn } from '@/components/auth-actions';
 import { TypingHeroLine } from './TypingHeroLine';
 import { IntroActionsSection } from './IntroActionsSection';
 import { MetaPersonalBarSection } from './MetaPersonalBarSection';
@@ -362,10 +363,16 @@ export function OsrIntroScroll() {
             },
           };
 
+          const viewportHeight = getViewportBelowNavbar();
+          const actionsEndY = getActionsContentEndY(
+            measurePersonalBarContentHeight(actionsContent),
+            viewportHeight,
+          );
+          const actionsTravelVh = getActionsScrollTravelVh(actionsEndY);
           const actionsDurationPercent = getMatchedScrollDurationPercent(
             phases.affiliationsScroll.durationPercent,
             PERSONAL_BAR_CONTENT_START_VH,
-            PERSONAL_BAR_CONTENT_START_VH,
+            actionsTravelVh,
             phases.actionsScroll.durationPercent,
           );
           phases = {
@@ -378,11 +385,8 @@ export function OsrIntroScroll() {
             },
           };
 
-          const scrollTailHoldVh = isCompactMode ? 0.04 : 0.65;
           const scrollHeightVh =
-            phases.actionsScroll.at +
-            phases.actionsScroll.durationPercent / 100 +
-            scrollTailHoldVh;
+            phases.actionsScroll.at + phases.actionsScroll.durationPercent / 100;
           scrollTrack.style.height = `${scrollHeightVh * 100}vh`;
           setScrollHeightVh(scrollHeightVh);
           const attachSectionCrossfade = (
@@ -717,7 +721,7 @@ export function OsrIntroScroll() {
               .fromTo(
                 actionsContent,
                 { y: PERSONAL_BAR_CONTENT_START_Y },
-                { y: 0, ease: 'none', duration: 1 },
+                { y: actionsEndY, ease: 'none', duration: 1 },
                 0,
               )
               .fromTo(
@@ -773,9 +777,11 @@ export function OsrIntroScroll() {
   );
 
   const useFixedStage = !isCompactViewport;
-  const sectionShell = useFixedStage
-    ? 'pointer-events-none fixed left-1/2 z-10 flex items-center justify-center overflow-hidden bg-transparent'
-    : 'pointer-events-none fixed left-0 right-0 top-[var(--navbar-height)] z-10 flex h-[calc(100dvh-var(--navbar-height))] items-center justify-center overflow-hidden bg-transparent';
+  const sectionShellCommon = useFixedStage
+    ? 'fixed left-1/2 flex items-center justify-center overflow-hidden bg-transparent'
+    : 'fixed left-0 right-0 top-[var(--navbar-height)] flex h-[calc(100dvh-var(--navbar-height))] items-center justify-center overflow-hidden bg-transparent';
+  const sectionShell = `${sectionShellCommon} pointer-events-none z-10`;
+  const actionsSectionShell = `${sectionShellCommon} pointer-events-auto z-[22]`;
   const stageBackdropClass = useFixedStage
     ? 'pointer-events-none fixed left-1/2 z-[6] bg-white'
     : 'pointer-events-none fixed left-0 right-0 top-[var(--navbar-height)] z-[6] h-[calc(100dvh-var(--navbar-height))] bg-white';
@@ -1016,13 +1022,10 @@ export function OsrIntroScroll() {
       </section>
 
       <IntroActionsSection
-        sectionShell={sectionShell}
+        sectionShell={actionsSectionShell}
         sectionStyle={sectionShellStyle}
         sectionRef={sectionActionsRef}
         contentRef={actionsContentRef}
-        onSignUp={() => {
-          void handleSignIn();
-        }}
       />
     </div>
   );

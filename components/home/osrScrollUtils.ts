@@ -22,18 +22,12 @@ export function getViewportBelowNavbar(): number {
   return Math.max(window.innerHeight - getNavbarHeightPx(), 320);
 }
 
-export type OsrSceneConfig = {
-  startPx: number;
-  durationPx: number;
-  scrub: number | false;
-};
-
 /** Scroll-driven scene: offset and duration as multiples of viewport height. */
 export function getOsrSceneConfig(
   offsetVh: number,
   durationPercent: number,
   scrub: number | false = 0.45,
-): OsrSceneConfig {
+) {
   const vh = getViewportBelowNavbar();
   return {
     startPx: Math.round(offsetVh * vh),
@@ -84,6 +78,32 @@ export function parseNegativeVh(value: string): number {
 /** Extend an upward travel target so content keeps exiting off the top. */
 export function extendContentEndY(endY: string, extraVh: number): string {
   return `-${parseNegativeVh(endY) + extraVh}vh`;
+}
+
+/** Resting y for actions CTA after the 140vh entry (lower than y=0 when content is short). */
+export function getActionsContentEndY(
+  contentHeightPx: number,
+  viewportHeightPx: number,
+): string {
+  const bottomMarginVh = 7;
+  const contentVh = (contentHeightPx / viewportHeightPx) * 100;
+
+  if (contentVh + 16 > 100) {
+    return getPersonalBarContentEndY(contentHeightPx, viewportHeightPx, 0);
+  }
+
+  const maxSafeEndVh = Math.max(0, (100 - 2 * bottomMarginVh - contentVh) / 2);
+  const endVh = Math.round(Math.min(maxSafeEndVh, 22));
+  return `${endVh}vh`;
+}
+
+/** Vertical travel for actions entry, paired with getMatchedScrollDurationPercent. */
+export function getActionsScrollTravelVh(endY: string): number {
+  if (endY.startsWith('-')) {
+    return PERSONAL_BAR_CONTENT_START_VH + parseNegativeVh(endY);
+  }
+  const endVh = Number.parseFloat(endY);
+  return PERSONAL_BAR_CONTENT_START_VH - (Number.isFinite(endVh) ? endVh : 0);
 }
 
 /** Match scroll duration to another phase's travel distance and rate. */

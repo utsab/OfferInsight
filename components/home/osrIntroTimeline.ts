@@ -7,12 +7,12 @@ import {
   getPersonalBarScrollDurationPercent,
 } from './osrScrollUtils';
 
-export type OsrScrollPhase = {
+type OsrScrollPhase = {
   at: number;
   durationPercent: number;
 };
 
-export const OSR_SCROLL_PHASES = {
+const OSR_SCROLL_PHASES = {
   typingFadeOut: { at: 0, durationPercent: 40 },
   pageIndicator: { at: 0, durationPercent: 520 },
   whoSectionIn: { at: 1.0, durationPercent: 50 },
@@ -29,14 +29,11 @@ export const OSR_SCROLL_PHASES = {
   metaPersonalBarScroll: { at: 14.86, durationPercent: 420 },
   // `at` for affiliations/actions is recomputed in OsrIntroScroll from metaPersonalBarScroll end.
   affiliationsScroll: { at: 0, durationPercent: 90 },
-  actionsScroll: { at: 0, durationPercent: 70 },
+  actionsScroll: { at: 0, durationPercent: 34 },
 } as const satisfies Record<string, OsrScrollPhase>;
 
-/** Extra scroll after the last scrub scene. */
-const SCROLL_TAIL_HOLD_VH = 0.65;
-
 /** Mobile overrides for phases that differ from desktop. */
-export const OSR_SCROLL_PHASES_MOBILE: Partial<
+const OSR_SCROLL_PHASES_MOBILE: Partial<
   Record<keyof typeof OSR_SCROLL_PHASES, OsrScrollPhase>
 > = {
   typingFadeOut: { at: 0, durationPercent: 20 },
@@ -51,7 +48,7 @@ export const OSR_SCROLL_PHASES_MOBILE: Partial<
   microsoftToMeta: { at: 15.12, durationPercent: 34 },
   metaPersonalBarScroll: { at: 15.48, durationPercent: 450 },
   affiliationsScroll: { at: 0, durationPercent: 70 },
-  actionsScroll: { at: 0, durationPercent: 55 },
+  actionsScroll: { at: 0, durationPercent: 34 },
 };
 
 export function getScrollPhase(
@@ -68,23 +65,22 @@ export function getScrollPhase(
 
 /** Total scroll track height — always past the final animation. */
 export function getOsrScrollHeightVh(isMobile: boolean): number {
-  const tailHold = isMobile ? 0.04 : SCROLL_TAIL_HOLD_VH;
   const meta = getScrollPhase('metaPersonalBarScroll', isMobile);
   const affiliationsScroll = getScrollPhase('affiliationsScroll', isMobile);
   const actionsScroll = getScrollPhase('actionsScroll', isMobile);
   const affiliationsAt = phaseEnd(meta);
   const actionsAt = affiliationsAt + affiliationsScroll.durationPercent / 100;
-  return actionsAt + actionsScroll.durationPercent / 100 + tailHold;
+  return actionsAt + actionsScroll.durationPercent / 100;
 }
 
-export type CompactPersonalBarMeasurements = {
+type CompactPersonalBarMeasurements = {
   viewportHeight: number;
   whoopContentHeight: number;
   microsoftContentHeight: number;
   metaContentHeight: number;
 };
 
-export type CompactPersonalBarMotion = {
+type CompactPersonalBarMotion = {
   whoopEndY: string;
   microsoftEndY: string;
   metaEndY: string;
