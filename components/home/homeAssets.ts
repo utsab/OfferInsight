@@ -1,9 +1,4 @@
 export const HOME_ASSETS = {
-  contracts: [
-    '/images/home/001_Redacted-1.png',
-    '/images/home/005_Redacted-1.png',
-    '/images/home/011_Redacted-1.png',
-  ] as const,
   affiliations: [
     { path: '/images/home/adobe--eps--vector-logo.png', label: 'Adobe', scale: 4 },
     { path: '/images/home/amazon-logo_brandlogos.net_ljucn.png', label: 'Amazon', scale: 1 },

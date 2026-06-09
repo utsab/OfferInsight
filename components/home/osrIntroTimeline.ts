@@ -1,6 +1,6 @@
 /**
  * Ordered homepage scroll phases (viewport-height multiples).
- * Insert new phases between `howLettersMove` and `howSectionOut`.
+ * Insert new phases between `howLettersMove` and `howToWhoop`.
  */
 import {
   getPersonalBarContentEndY,
@@ -21,17 +21,18 @@ export const OSR_SCROLL_PHASES = {
   whoSectionOut: { at: 4.1, durationPercent: 40 },
   howSectionIn: { at: 4.45, durationPercent: 30 },
   howLettersMove: { at: 4.9, durationPercent: 80 },
-  howSectionOut: { at: 5.7, durationPercent: 28 },
-  whoopPersonalBarScroll: { at: 5.88, durationPercent: 400 },
+  howToWhoop: { at: 5.7, durationPercent: 8 },
+  whoopPersonalBarScroll: { at: 5.78, durationPercent: 400 },
   whoopToMicrosoft: { at: 9.9, durationPercent: 32 },
   microsoftPersonalBarScroll: { at: 10.26, durationPercent: 420 },
   microsoftToMeta: { at: 14.5, durationPercent: 32 },
   metaPersonalBarScroll: { at: 14.86, durationPercent: 420 },
-  metaToAffiliations: { at: 19.1, durationPercent: 36 },
-  affiliationsLogos: { at: 19.34, durationPercent: 88 },
+  // `at` for affiliations/actions is recomputed in OsrIntroScroll from metaPersonalBarScroll end.
+  affiliationsScroll: { at: 0, durationPercent: 90 },
+  actionsScroll: { at: 0, durationPercent: 70 },
 } as const satisfies Record<string, OsrScrollPhase>;
 
-/** Extra scroll after the last scrub scene so logo stagger can finish. */
+/** Extra scroll after the last scrub scene. */
 const SCROLL_TAIL_HOLD_VH = 0.65;
 
 /** Mobile overrides for phases that differ from desktop. */
@@ -43,13 +44,14 @@ export const OSR_SCROLL_PHASES_MOBILE: Partial<
   whoLettersMove: { at: 0.5, durationPercent: 30 },
   whoContentIn: { at: 0.8, durationPercent: 20 },
   howLettersMove: { at: 4.9, durationPercent: 80 },
-  whoopPersonalBarScroll: { at: 5.88, durationPercent: 430 },
+  howToWhoop: { at: 5.7, durationPercent: 6 },
+  whoopPersonalBarScroll: { at: 5.76, durationPercent: 430 },
   whoopToMicrosoft: { at: 10.22, durationPercent: 34 },
   microsoftPersonalBarScroll: { at: 10.58, durationPercent: 450 },
   microsoftToMeta: { at: 15.12, durationPercent: 34 },
   metaPersonalBarScroll: { at: 15.48, durationPercent: 450 },
-  metaToAffiliations: { at: 20.02, durationPercent: 28 },
-  affiliationsLogos: { at: 20.14, durationPercent: 12 },
+  affiliationsScroll: { at: 0, durationPercent: 70 },
+  actionsScroll: { at: 0, durationPercent: 55 },
 };
 
 export function getScrollPhase(
@@ -67,8 +69,12 @@ export function getScrollPhase(
 /** Total scroll track height — always past the final animation. */
 export function getOsrScrollHeightVh(isMobile: boolean): number {
   const tailHold = isMobile ? 0.04 : SCROLL_TAIL_HOLD_VH;
-  const logos = getScrollPhase('affiliationsLogos', isMobile);
-  return phaseEnd(logos) + tailHold;
+  const meta = getScrollPhase('metaPersonalBarScroll', isMobile);
+  const affiliationsScroll = getScrollPhase('affiliationsScroll', isMobile);
+  const actionsScroll = getScrollPhase('actionsScroll', isMobile);
+  const affiliationsAt = phaseEnd(meta);
+  const actionsAt = affiliationsAt + affiliationsScroll.durationPercent / 100;
+  return actionsAt + actionsScroll.durationPercent / 100 + tailHold;
 }
 
 export type CompactPersonalBarMeasurements = {
@@ -96,10 +102,10 @@ export function applyCompactPersonalBarAdaptivePhases<
     microsoftPersonalBarScroll: OsrScrollPhase;
     microsoftToMeta: OsrScrollPhase;
     metaPersonalBarScroll: OsrScrollPhase;
-    metaToAffiliations: OsrScrollPhase;
-    affiliationsLogos: OsrScrollPhase;
+    affiliationsScroll: OsrScrollPhase;
+    actionsScroll: OsrScrollPhase;
   },
->(phases: T, measurements: CompactPersonalBarMeasurements): { phases: T; motion: CompactPersonalBarMotion; scrollHeightVh: number } {
+>(phases: T, measurements: CompactPersonalBarMeasurements): { phases: T; motion: CompactPersonalBarMotion } {
   const { viewportHeight, whoopContentHeight, microsoftContentHeight, metaContentHeight } =
     measurements;
 
@@ -142,14 +148,14 @@ export function applyCompactPersonalBarAdaptivePhases<
     ),
   };
 
-  const metaToAffiliations: OsrScrollPhase = {
-    ...phases.metaToAffiliations,
+  const affiliationsScroll: OsrScrollPhase = {
+    ...phases.affiliationsScroll,
     at: phaseEnd(metaPersonalBarScroll),
   };
 
-  const affiliationsLogos: OsrScrollPhase = {
-    ...phases.affiliationsLogos,
-    at: phaseEnd(metaToAffiliations),
+  const actionsScroll: OsrScrollPhase = {
+    ...phases.actionsScroll,
+    at: phaseEnd(affiliationsScroll),
   };
 
   const nextPhases = {
@@ -159,12 +165,9 @@ export function applyCompactPersonalBarAdaptivePhases<
     microsoftPersonalBarScroll,
     microsoftToMeta,
     metaPersonalBarScroll,
-    metaToAffiliations,
-    affiliationsLogos,
+    affiliationsScroll,
+    actionsScroll,
   };
-
-  const tailHold = 0.04;
-  const scrollHeightVh = phaseEnd(affiliationsLogos) + tailHold;
 
   return {
     phases: nextPhases,
@@ -173,7 +176,6 @@ export function applyCompactPersonalBarAdaptivePhases<
       microsoftEndY: getPersonalBarContentEndY(microsoftContentHeight, viewportHeight, 185),
       metaEndY: getPersonalBarContentEndY(metaContentHeight, viewportHeight, 185),
     },
-    scrollHeightVh,
   };
 }
 

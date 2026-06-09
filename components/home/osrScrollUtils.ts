@@ -42,13 +42,14 @@ export function getOsrSceneConfig(
   };
 }
 
-const PERSONAL_BAR_CONTENT_START_VH = 140;
+export const PERSONAL_BAR_CONTENT_START_VH = 140;
+export const PERSONAL_BAR_CONTENT_START_Y = `${PERSONAL_BAR_CONTENT_START_VH}vh`;
 
 /** Measure personal-bar content height without transform affecting layout reads. */
 export function measurePersonalBarContentHeight(content: HTMLElement): number {
   gsap.set(content, { y: 0 });
   const height = content.scrollHeight;
-  gsap.set(content, { y: `${PERSONAL_BAR_CONTENT_START_VH}vh` });
+  gsap.set(content, { y: PERSONAL_BAR_CONTENT_START_Y });
   return height;
 }
 
@@ -72,4 +73,28 @@ export function getPersonalBarScrollDurationPercent(
   const contentVh = (contentHeightPx / viewportHeightPx) * 100;
   const travelVh = PERSONAL_BAR_CONTENT_START_VH + Math.max(135, contentVh + 55);
   return Math.round(Math.max(minDurationPercent, travelVh));
+}
+
+/** Parse a negative vh string (e.g. `-185vh`) into a positive vh magnitude. */
+export function parseNegativeVh(value: string): number {
+  const match = value.match(/^-?(\d+(?:\.\d+)?)vh$/);
+  return match ? Number(match[1]) : 0;
+}
+
+/** Extend an upward travel target so content keeps exiting off the top. */
+export function extendContentEndY(endY: string, extraVh: number): string {
+  return `-${parseNegativeVh(endY) + extraVh}vh`;
+}
+
+/** Match scroll duration to another phase's travel distance and rate. */
+export function getMatchedScrollDurationPercent(
+  sourceDurationPercent: number,
+  sourceTravelVh: number,
+  targetTravelVh: number,
+  minDurationPercent: number,
+): number {
+  if (sourceTravelVh <= 0) return minDurationPercent;
+  return Math.round(
+    Math.max(minDurationPercent, sourceDurationPercent * (targetTravelVh / sourceTravelVh)),
+  );
 }
