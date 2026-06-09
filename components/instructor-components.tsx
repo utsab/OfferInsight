@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { DashboardNavButton } from "./dashboard-nav-button";
 import { Settings } from "lucide-react";
 
 // Instructor Authenticated Button - shown when instructor is signed in
@@ -69,7 +70,8 @@ export function InstructorAuthenticatedButton() {
   const defaultInstructorImage = "https://ui-avatars.com/api/?name=Instructor&background=007ACC&color=fff&size=128";
 
   return (
-    <div className="flex items-center space-x-4">
+    <div className="flex items-center space-x-3 sm:space-x-4">
+      <DashboardNavButton instructor />
       <nav className="flex items-center">
         <div className="relative" ref={dropdownRef}>
           <button 

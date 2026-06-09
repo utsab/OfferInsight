@@ -1,6 +1,5 @@
 import '@/app/ui/global.css';
 import { inter } from '@/app/ui/fonts';
-import { UserButton } from "@/components/user-button";
 import { Navbar } from '@/components/navbar';
 
 export default function RootLayout({
