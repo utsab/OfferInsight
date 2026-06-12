@@ -1,5 +1,9 @@
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { getViewportBelowNavbar, getViewportOffsetTopPx } from './osrScrollUtils';
+import {
+  getViewportBelowNavbar,
+  getViewportOffsetTopPx,
+  syncScrollTrackAnimations,
+} from './osrScrollUtils';
 
 /** Snap scroll + scrub state so anchor measurements match what the user sees. */
 function snapScrollTrackToRelativePx(
@@ -8,10 +12,7 @@ function snapScrollTrackToRelativePx(
 ): void {
   window.scrollTo(0, scrollTrack.offsetTop + relativePx);
   ScrollTrigger.update();
-  ScrollTrigger.getAll().forEach((st) => {
-    if (st.trigger !== scrollTrack || !st.animation) return;
-    st.animation.progress(st.progress);
-  });
+  syncScrollTrackAnimations(scrollTrack);
 }
 
 /**
@@ -56,10 +57,7 @@ export function computeScrollVhForAnchorTarget(
 
   window.scrollTo(0, savedScrollY);
   ScrollTrigger.update();
-  ScrollTrigger.getAll().forEach((st) => {
-    if (st.trigger !== scrollTrack || !st.animation) return;
-    st.animation.progress(st.progress);
-  });
+  syncScrollTrackAnimations(scrollTrack);
 
   return bestPx / viewportVh;
 }

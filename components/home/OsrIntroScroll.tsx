@@ -5,17 +5,16 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { HOME_ASSETS } from './homeAssets';
+import { buildIntroScrollPhases, getOsrScrollHeightVh } from './osrIntroTimeline';
 import {
-  getOsrScrollHeightVh,
-  getScrollPhase,
-  applyIntroContentPhaseChain,
-} from './osrIntroTimeline';
-import {
-  TYPING_DESCRIPTIONS,
+  ACTIONS_CONTENT_END_Y,
+  ACTIONS_CONTENT_START_Y,
   PERSONAL_BAR_CONTENT_START_Y,
+  TYPING_DESCRIPTIONS,
   getOsrSceneConfig,
   getViewportBelowNavbar,
   measurePersonalBarContentHeight,
+  syncScrollTrackAnimations,
 } from './osrScrollUtils';
 import { TypingHeroLine } from './TypingHeroLine';
 import { IntroActionsSection } from './IntroActionsSection';
@@ -323,7 +322,7 @@ export function OsrIntroScroll() {
         return;
       }
 
-      let removeTopScrollEndListener: (() => void) | undefined;
+      let removeTopScrubSyncListener: (() => void) | undefined;
       const ctx = gsap.context(() => {
         const buildScenes = (isCompactMode: boolean) => {
           const resetWhoLetterStartFrame = () => {
@@ -349,51 +348,26 @@ export function OsrIntroScroll() {
           gsap.set(microsoftPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
           gsap.set(metaPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
           gsap.set(affiliationsContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-          gsap.set(actionsContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-          let phases = {
-            typingFadeOut: getScrollPhase('typingFadeOut', isCompactMode),
-            whoSectionIn: getScrollPhase('whoSectionIn', isCompactMode),
-            whoLettersMove: getScrollPhase('whoLettersMove', isCompactMode),
-            whoContentIn: getScrollPhase('whoContentIn', isCompactMode),
-            whoSectionOut: getScrollPhase('whoSectionOut', isCompactMode),
-            howSectionIn: getScrollPhase('howSectionIn', isCompactMode),
-            howLettersMove: getScrollPhase('howLettersMove', isCompactMode),
-            howToWhoop: getScrollPhase('howToWhoop', isCompactMode),
-            whoopPersonalBarScroll: getScrollPhase('whoopPersonalBarScroll', isCompactMode),
-            whoopToMicrosoft: getScrollPhase('whoopToMicrosoft', isCompactMode),
-            microsoftPersonalBarScroll: getScrollPhase('microsoftPersonalBarScroll', isCompactMode),
-            microsoftToMeta: getScrollPhase('microsoftToMeta', isCompactMode),
-            metaPersonalBarScroll: getScrollPhase('metaPersonalBarScroll', isCompactMode),
-            metaToAffiliations: getScrollPhase('metaToAffiliations', isCompactMode),
-            affiliationsScroll: getScrollPhase('affiliationsScroll', isCompactMode),
-            affiliationsToActions: getScrollPhase('affiliationsToActions', isCompactMode),
-            actionsScroll: getScrollPhase('actionsScroll', isCompactMode),
-          };
-
+          gsap.set(actionsContent, { y: ACTIONS_CONTENT_START_Y });
           const viewportHeight = getViewportBelowNavbar();
           const layoutReferenceHeight = isCompactMode ? viewportHeight : STAGE_BASE_HEIGHT;
-          const { phases: chainedPhases, motion } = applyIntroContentPhaseChain(phases, {
+          const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(isCompactMode, {
             viewportHeight,
             layoutReferenceHeight,
             whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
             microsoftContentHeight: measurePersonalBarContentHeight(microsoftPersonalBarContent),
             metaContentHeight: measurePersonalBarContentHeight(metaPersonalBarContent),
             affiliationsContentHeight: measurePersonalBarContentHeight(affiliationsContent),
-            actionsContentHeight: measurePersonalBarContentHeight(actionsContent),
           });
-          phases = chainedPhases;
           const {
             whoopEndY: whoopContentEndY,
             microsoftEndY: microsoftContentEndY,
             metaEndY: metaContentEndY,
             affiliationsEndY,
-            actionsEndY,
           } = motion;
 
-          const scrollHeightVh =
-            phases.actionsScroll.at + phases.actionsScroll.durationPercent / 100;
-          scrollTrack.style.height = `${scrollHeightVh * 100}vh`;
-          setScrollHeightVh(scrollHeightVh);
+          scrollTrack.style.height = `${scrollTrackEndVh * 100}vh`;
+          setScrollHeightVh(scrollTrackEndVh);
           setIntroNavSections(
             buildIntroNavSections({
               whoSectionIn: phases.whoSectionIn,
@@ -416,8 +390,8 @@ export function OsrIntroScroll() {
               phase.durationPercent,
               gsap
                 .timeline({ defaults: { ease: 'none' } })
-                .to(fromSection, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0)
-                .to(toSection, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0),
+                .fromTo(fromSection, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0)
+                .fromTo(toSection, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0),
               isCompactMode ? 0.2 : 0.45,
             );
           };
@@ -426,149 +400,49 @@ export function OsrIntroScroll() {
             content: HTMLElement,
             contentY: string,
             bgLogo?: HTMLElement,
+            contentStartY: string = PERSONAL_BAR_CONTENT_START_Y,
           ) => {
             const timeline = gsap
               .timeline({ defaults: { ease: 'none' } })
               .fromTo(
                 content,
-                { y: PERSONAL_BAR_CONTENT_START_Y },
+                { y: contentStartY },
                 { y: contentY, ease: 'none', duration: 1 },
                 0,
               );
             if (bgLogo) {
-              timeline.to(bgLogo, { opacity: 1, scale: 1, ease: 'none', duration: 0.55 }, 0);
+              timeline.fromTo(
+                bgLogo,
+                { opacity: 0, scale: 0.88 },
+                { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
+                0,
+              );
             }
             attachScene(scrollTrack, phase.at, phase.durationPercent, timeline);
           };
-          const phaseBoundaryPx = (phase: { at: number; durationPercent: number }, edge: 'start' | 'end') => {
-            const { startPx, durationPx } = getOsrSceneConfig(phase.at, phase.durationPercent, false);
-            return edge === 'start' ? startPx : startPx + durationPx;
-          };
-          const resetAffiliationsStartFrame = (resetPosition = true) => {
-            gsap.set(sectionAffiliations, { autoAlpha: 0 });
-            if (resetPosition) gsap.set(affiliationsContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-          };
-          const resetActionsStartFrame = (resetPosition = true) => {
-            gsap.set(sectionActions, { autoAlpha: 0 });
-            if (resetPosition) gsap.set(actionsContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-          };
-          const resetPersonalBarStartFrame = () => {
-            gsap.set(sectionWhoopPersonalBar, { autoAlpha: 0 });
-            gsap.set(sectionMicrosoftPersonalBar, { autoAlpha: 0 });
-            gsap.set(sectionMetaPersonalBar, { autoAlpha: 0 });
-            gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
-            gsap.set(microsoftPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
-            gsap.set(metaPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
-            gsap.set(whoopPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-            gsap.set(microsoftPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-            gsap.set(metaPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-          };
-          const snapIntroScrubState = () => {
-            ScrollTrigger.getAll().forEach((st) => {
-              if (st.trigger !== scrollTrack || !st.animation) return;
-              st.animation.progress(st.progress);
-            });
-          };
-          const enforceIntroTopState = () => {
-            applyIntroStartFrame(
-              sectionZero,
-              sectionOne,
-              sectionTwo,
-              whoWeAreContent,
-              sectionWhoopPersonalBar,
-              sectionMicrosoftPersonalBar,
-              sectionMetaPersonalBar,
-              sectionAffiliations,
-              sectionActions,
-            );
-            resetPersonalBarStartFrame();
-            resetWhoLetterStartFrame();
-            resetAffiliationsStartFrame();
-            resetActionsStartFrame();
-          };
-          const settleIntroTopState = () => {
-            snapIntroScrubState();
-            enforceIntroTopState();
-            requestAnimationFrame(() => {
-              snapIntroScrubState();
-              enforceIntroTopState();
-            });
-          };
-          const attachVisibilityGuard = (
-            endPx: number,
-            onActive: () => void,
-          ) => {
-            ScrollTrigger.create({
-              trigger: scrollTrack,
-              start: 'top top',
-              end: `top+=${endPx} top`,
-              invalidateOnRefresh: true,
-              onEnter: onActive,
-              onEnterBack: onActive,
-              onUpdate: (self) => {
-                if (self.isActive) onActive();
-              },
-            });
-          };
-          const attachSectionVisibilityGuards = () => {
-            const typingFadeEndPx = phaseBoundaryPx(phases.typingFadeOut, 'end');
-
-            ScrollTrigger.create({
-              trigger: scrollTrack,
-              start: `top+=${typingFadeEndPx} top`,
-              end: 'bottom bottom',
-              invalidateOnRefresh: true,
-              onEnter: () => gsap.set(sectionZero, { autoAlpha: 0 }),
-              onEnterBack: () => gsap.set(sectionZero, { autoAlpha: 0 }),
-              onUpdate: (self) => {
-                if (self.isActive) gsap.set(sectionZero, { autoAlpha: 0 });
-              },
-            });
-
-            attachVisibilityGuard(
-              phaseBoundaryPx(phases.whoopPersonalBarScroll, 'start'),
-              resetPersonalBarStartFrame,
-            );
-            attachVisibilityGuard(
-              phaseBoundaryPx(phases.affiliationsScroll, 'start'),
-              () => resetAffiliationsStartFrame(false),
-            );
-            attachVisibilityGuard(
-              phaseBoundaryPx(phases.actionsScroll, 'start'),
-              () => resetActionsStartFrame(false),
-            );
-          };
-          const attachTopResetGuard = () => {
-            const isNearAbsoluteTop = () => {
+          /** Re-sync scrub progress at scroll top without overriding tween values. */
+          const attachTopScrubSync = () => {
+            const syncScrubToScroll = () => {
               const relativeScroll = Math.max(window.scrollY - scrollTrack.offsetTop, 0);
-              return relativeScroll <= 16;
+              if (relativeScroll > 1) return;
+              syncScrollTrackAnimations(scrollTrack);
             };
-            let bounceSettleTimer: ReturnType<typeof setTimeout> | undefined;
 
             ScrollTrigger.create({
               trigger: scrollTrack,
               start: 'top top',
-              end: 'top+=16 top',
+              end: 'top+=1 top',
               invalidateOnRefresh: true,
-              onEnterBack: () => {
-                if (isNearAbsoluteTop()) settleIntroTopState();
-              },
+              onEnterBack: syncScrubToScroll,
               onUpdate: (self) => {
-                if (self.isActive && isNearAbsoluteTop()) settleIntroTopState();
+                if (self.isActive) syncScrubToScroll();
               },
             });
 
-            const onScrollEnd = () => {
-              if (!isNearAbsoluteTop()) return;
-              settleIntroTopState();
-              if (bounceSettleTimer) clearTimeout(bounceSettleTimer);
-              bounceSettleTimer = setTimeout(settleIntroTopState, 80);
-            };
-            ScrollTrigger.addEventListener('scrollEnd', onScrollEnd);
+            ScrollTrigger.addEventListener('scrollEnd', syncScrubToScroll);
 
             return () => {
-              ScrollTrigger.removeEventListener('scrollEnd', onScrollEnd);
-              if (bounceSettleTimer) clearTimeout(bounceSettleTimer);
+              ScrollTrigger.removeEventListener('scrollEnd', syncScrubToScroll);
             };
           };
 
@@ -605,7 +479,7 @@ export function OsrIntroScroll() {
             phases.whoLettersMove.at,
             phases.whoLettersMove.durationPercent,
             gsap
-              .timeline({ defaults: { ease: 'power2.in' } })
+              .timeline({ defaults: { ease: 'none' } })
               .to(whoLetterO, whoLetterExit.O, 0)
               .to(whoLetterS, whoLetterExit.S, 0)
               .to(whoLetterR, whoLetterExit.R, 0),
@@ -615,21 +489,21 @@ export function OsrIntroScroll() {
             scrollTrack,
             phases.whoContentIn.at,
             phases.whoContentIn.durationPercent,
-            gsap.to(whoWeAreContent, { opacity: 1, ...SCRUB_DEFAULTS }),
+            gsap.fromTo(whoWeAreContent, { opacity: 0 }, { opacity: 1, ...SCRUB_DEFAULTS }),
           );
 
           attachScene(
             scrollTrack,
             phases.whoSectionOut.at,
             phases.whoSectionOut.durationPercent,
-            gsap.to(sectionOne, { autoAlpha: 0, ...SCRUB_DEFAULTS }),
+            gsap.fromTo(sectionOne, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }),
           );
 
           attachScene(
             scrollTrack,
             phases.howSectionIn.at,
             phases.howSectionIn.durationPercent,
-            gsap.to(sectionTwo, { autoAlpha: 1, ...SCRUB_DEFAULTS }),
+            gsap.fromTo(sectionTwo, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }),
           );
 
           if (isCompactMode) {
@@ -638,7 +512,7 @@ export function OsrIntroScroll() {
               phases.howLettersMove.at,
               phases.howLettersMove.durationPercent,
               gsap
-                .timeline()
+                .timeline({ defaults: { ease: 'none' } })
                 .to(howLetterO, { top: '15%', left: '-12%' }, 0)
                 .to(howLetterR, { bottom: '0%', right: '30%' }, 0)
                 .to(howLetterS, { right: '15%', top: '0%' }, 0),
@@ -649,7 +523,7 @@ export function OsrIntroScroll() {
               phases.howLettersMove.at,
               phases.howLettersMove.durationPercent,
               gsap
-                .timeline({ defaults: { ease: 'power2.in' } })
+                .timeline({ defaults: { ease: 'none' } })
                 .to(howLetterO, { top: '-20%', left: '-8%' }, 0)
                 .to(howLetterR, { bottom: '-35%', right: '30%' }, 0)
                 .to(howLetterS, { right: '22%', top: '-15%' }, 0),
@@ -709,10 +583,15 @@ export function OsrIntroScroll() {
             sectionActions,
           );
 
-          attachContentScroll(phases.actionsScroll, actionsContent, actionsEndY);
+          attachContentScroll(
+            phases.actionsScroll,
+            actionsContent,
+            ACTIONS_CONTENT_END_Y,
+            undefined,
+            ACTIONS_CONTENT_START_Y,
+          );
 
-          removeTopScrollEndListener = attachTopResetGuard();
-          attachSectionVisibilityGuards();
+          removeTopScrubSyncListener = attachTopScrubSync();
           scheduleLayoutSync();
         };
         buildScenes(isCompactViewport);
@@ -746,7 +625,7 @@ export function OsrIntroScroll() {
         window.removeEventListener('load', scheduleLayoutSync);
         window.removeEventListener('resize', onWindowResize);
         if (resizeTimer) clearTimeout(resizeTimer);
-        removeTopScrollEndListener?.();
+        removeTopScrubSyncListener?.();
         ctx.revert();
         ScrollTrigger.clearScrollMemory();
       };

@@ -1,4 +1,5 @@
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 export const TYPING_DESCRIPTIONS = [
   'A pathway for entry-level SWEs',
@@ -7,7 +8,7 @@ export const TYPING_DESCRIPTIONS = [
   'Your portfolio, verifiable on GitHub',
 ] as const;
 
-export function getNavbarHeightPx(): number {
+function getNavbarHeightPx(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue('--navbar-height').trim();
   if (!raw) return 72;
   if (raw.endsWith('rem')) {
@@ -27,7 +28,14 @@ export function getViewportOffsetTopPx(offsetVh: number): number {
   return getNavbarHeightPx() + (offsetVh / 100) * getViewportBelowNavbar();
 }
 
-/** Scroll-driven scene: offset and duration as multiples of viewport height. */
+/** Keep scrubbed ScrollTrigger timelines aligned with the current scroll position. */
+export function syncScrollTrackAnimations(scrollTrack: HTMLElement): void {
+  ScrollTrigger.getAll().forEach((st) => {
+    if (st.trigger !== scrollTrack || !st.animation) return;
+    st.animation.progress(st.progress);
+  });
+}
+
 export function getOsrSceneConfig(
   offsetVh: number,
   durationPercent: number,
@@ -43,6 +51,11 @@ export function getOsrSceneConfig(
 
 export const PERSONAL_BAR_CONTENT_START_VH = 140;
 export const PERSONAL_BAR_CONTENT_START_Y = `${PERSONAL_BAR_CONTENT_START_VH}vh`;
+
+/** Actions entry: one viewport below (not 140vh). Content scrolls up to y=0. */
+export const ACTIONS_CONTENT_START_VH = 100;
+export const ACTIONS_CONTENT_START_Y = `${ACTIONS_CONTENT_START_VH}vh`;
+export const ACTIONS_CONTENT_END_Y = '0';
 
 /** Measure personal-bar content height without transform affecting layout reads. */
 export function measurePersonalBarContentHeight(content: HTMLElement): number {
@@ -63,58 +76,52 @@ export function getPersonalBarContentEndY(
   return `-${endVh}vh`;
 }
 
-/** Scroll duration (durationPercent) scaled to measured content height. */
-export function getPersonalBarScrollDurationPercent(
-  contentHeightPx: number,
-  viewportHeightPx: number,
-  minDurationPercent: number,
-): number {
-  const contentVh = (contentHeightPx / viewportHeightPx) * 100;
-  const travelVh = PERSONAL_BAR_CONTENT_START_VH + Math.max(135, contentVh + 55);
-  return Math.round(Math.max(minDurationPercent, travelVh));
-}
-
-/** Parse a negative vh string (e.g. `-185vh`) into a positive vh magnitude. */
-export function parseNegativeVh(value: string): number {
+function parseNegativeVh(value: string): number {
   const match = value.match(/^-?(\d+(?:\.\d+)?)vh$/);
   return match ? Number(match[1]) : 0;
 }
 
-/** Resting y for actions CTA after the 140vh entry (lower than y=0 when content is short). */
-export function getActionsContentEndY(
+export function getPhaseEndVh(phase: { at: number; durationPercent: number }): number {
+  return phase.at + phase.durationPercent / 100;
+}
+
+/** Vertical travel (vh) for a content scroll from `startVh` to `endY`. */
+export function getContentScrollTravelVh(startVh: number, endY: string): number {
+  if (endY.startsWith('-')) {
+    return startVh + parseNegativeVh(endY);
+  }
+  const endVh = Number.parseFloat(endY);
+  return startVh - (Number.isFinite(endVh) ? endVh : 0);
+}
+
+/**
+ * Personal-bar scroll rate: one unit of scroll distance (durationPercent)
+ * per vh of content travel — keeps Meta → affiliations → actions continuous.
+ */
+export function getScrollDurationForTravelVh(
+  travelVh: number,
+  minDurationPercent: number,
+): number {
+  return Math.round(Math.max(minDurationPercent, travelVh));
+}
+
+/** Meta personal bar — shorter tail before affiliations, same scroll rate. */
+export function getMetaContentEndY(
   contentHeightPx: number,
   viewportHeightPx: number,
 ): string {
-  const bottomMarginVh = 7;
   const contentVh = (contentHeightPx / viewportHeightPx) * 100;
-
-  if (contentVh + 16 > 100) {
-    return getPersonalBarContentEndY(contentHeightPx, viewportHeightPx, 0);
-  }
-
-  const maxSafeEndVh = Math.max(0, (100 - 2 * bottomMarginVh - contentVh) / 2);
-  const endVh = Math.round(Math.min(maxSafeEndVh, 22));
-  return `${endVh}vh`;
+  const endVh = Math.max(48, Math.round(contentVh + 12));
+  return `-${endVh}vh`;
 }
 
-/** Vertical travel for actions entry, paired with getMatchedScrollDurationPercent. */
-export function getActionsScrollTravelVh(endY: string): number {
-  if (endY.startsWith('-')) {
-    return PERSONAL_BAR_CONTENT_START_VH + parseNegativeVh(endY);
-  }
-  const endVh = Number.parseFloat(endY);
-  return PERSONAL_BAR_CONTENT_START_VH - (Number.isFinite(endVh) ? endVh : 0);
+/** Affiliations logo grid — shorter tail than criteria pages, same scroll rate. */
+export function getAffiliationsContentEndY(
+  contentHeightPx: number,
+  viewportHeightPx: number,
+): string {
+  const contentVh = (contentHeightPx / viewportHeightPx) * 100;
+  const endVh = Math.max(20, Math.round(contentVh + 24));
+  return `-${endVh}vh`;
 }
 
-/** Match scroll duration to another phase's travel distance and rate. */
-export function getMatchedScrollDurationPercent(
-  sourceDurationPercent: number,
-  sourceTravelVh: number,
-  targetTravelVh: number,
-  minDurationPercent: number,
-): number {
-  if (sourceTravelVh <= 0) return minDurationPercent;
-  return Math.round(
-    Math.max(minDurationPercent, sourceDurationPercent * (targetTravelVh / sourceTravelVh)),
-  );
-}

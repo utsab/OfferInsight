@@ -1,3 +1,5 @@
+import { getPhaseEndVh } from './osrScrollUtils';
+
 /**
  * Left-nav sections for the homepage intro scroll story.
  *
@@ -59,10 +61,6 @@ const JUMP_OFFSET_VH = {
   how: 0.6,
 } as const;
 
-function phaseEndVh(phase: IntroNavPhase): number {
-  return phase.at + phase.durationPercent / 100;
-}
-
 function scrollContentAnchorJump(
   anchorId: string,
   scrollMinVh: number,
@@ -84,7 +82,7 @@ export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSect
   const meta = phases.metaPersonalBarScroll.at;
   const affiliations = phases.affiliationsScroll.at;
   const actions = phases.actionsScroll.at;
-  const scrollEndVh = phaseEndVh(phases.actionsScroll);
+  const scrollEndVh = getPhaseEndVh(phases.actionsScroll);
 
   return [
     {
@@ -113,7 +111,7 @@ export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSect
       anchorJump: scrollContentAnchorJump(
         'whoop-bar-heading',
         whoop,
-        phaseEndVh(phases.whoopPersonalBarScroll),
+        getPhaseEndVh(phases.whoopPersonalBarScroll),
       ),
     },
     {
@@ -124,7 +122,7 @@ export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSect
       anchorJump: scrollContentAnchorJump(
         'microsoft-bar-heading',
         microsoft,
-        phaseEndVh(phases.microsoftPersonalBarScroll),
+        getPhaseEndVh(phases.microsoftPersonalBarScroll),
       ),
     },
     {
@@ -135,7 +133,7 @@ export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSect
       anchorJump: scrollContentAnchorJump(
         'meta-bar-heading',
         meta,
-        phaseEndVh(phases.metaPersonalBarScroll),
+        getPhaseEndVh(phases.metaPersonalBarScroll),
       ),
     },
     {
@@ -146,7 +144,7 @@ export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSect
       anchorJump: scrollContentAnchorJump(
         'affiliations-heading',
         affiliations,
-        phaseEndVh(phases.affiliationsScroll),
+        getPhaseEndVh(phases.affiliationsScroll),
       ),
     },
     {

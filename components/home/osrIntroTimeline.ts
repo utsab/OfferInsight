@@ -1,14 +1,20 @@
 /**
- * Ordered homepage scroll phases (viewport-height multiples).
- * Insert new phases between `howLettersMove` and `howToWhoop`.
+ * Homepage scroll phases (viewport-height multiples).
+ *
+ * Every phase is strictly sequential: each `at` is the end of the previous phase.
+ * Store only `durationPercent` per phase; `buildIntroScrollPhases` assigns `at`.
+ *
+ * Pattern for content sections: scroll → crossfade → scroll → crossfade …
  */
 import {
-  getActionsContentEndY,
-  getActionsScrollTravelVh,
-  getMatchedScrollDurationPercent,
+  ACTIONS_CONTENT_END_Y,
+  ACTIONS_CONTENT_START_VH,
+  getAffiliationsContentEndY,
+  getContentScrollTravelVh,
+  getMetaContentEndY,
   getPersonalBarContentEndY,
-  getPersonalBarScrollDurationPercent,
-  parseNegativeVh,
+  getPhaseEndVh,
+  getScrollDurationForTravelVh,
   PERSONAL_BAR_CONTENT_START_VH,
 } from './osrScrollUtils';
 
@@ -17,79 +23,86 @@ type OsrScrollPhase = {
   durationPercent: number;
 };
 
-const OSR_SCROLL_PHASES = {
-  typingFadeOut: { at: 0, durationPercent: 40 },
-  whoSectionIn: { at: 1.0, durationPercent: 50 },
-  whoLettersMove: { at: 1.2, durationPercent: 170 },
-  whoContentIn: { at: 2.6, durationPercent: 40 },
-  whoSectionOut: { at: 4.1, durationPercent: 40 },
-  howSectionIn: { at: 4.45, durationPercent: 30 },
-  howLettersMove: { at: 4.9, durationPercent: 80 },
-  howToWhoop: { at: 5.7, durationPercent: 8 },
-  whoopPersonalBarScroll: { at: 5.78, durationPercent: 400 },
-  whoopToMicrosoft: { at: 9.9, durationPercent: 32 },
-  microsoftPersonalBarScroll: { at: 10.26, durationPercent: 420 },
-  microsoftToMeta: { at: 14.5, durationPercent: 32 },
-  metaPersonalBarScroll: { at: 14.86, durationPercent: 420 },
-  // Tail phases (`at`) are recomputed from measured content in applyIntroContentPhaseChain.
-  metaToAffiliations: { at: 0, durationPercent: 32 },
-  affiliationsScroll: { at: 0, durationPercent: 90 },
-  affiliationsToActions: { at: 0, durationPercent: 32 },
-  actionsScroll: { at: 0, durationPercent: 34 },
-} as const satisfies Record<string, OsrScrollPhase>;
+const OSR_INTRO_PHASE_DURATIONS = {
+  typingFadeOut: 40,
+  whoSectionIn: 50,
+  whoLettersMove: 170,
+  whoContentIn: 40,
+  whoSectionOut: 40,
+  howSectionIn: 30,
+  howLettersMove: 80,
+  howToWhoop: 8,
+} as const;
 
-/** Mobile overrides for phases that differ from desktop. */
-const OSR_SCROLL_PHASES_MOBILE: Partial<
-  Record<keyof typeof OSR_SCROLL_PHASES, OsrScrollPhase>
+const OSR_INTRO_PHASE_DURATIONS_MOBILE: Partial<
+  Record<keyof typeof OSR_INTRO_PHASE_DURATIONS, number>
 > = {
-  typingFadeOut: { at: 0, durationPercent: 20 },
-  whoSectionIn: { at: 0.4, durationPercent: 20 },
-  whoLettersMove: { at: 0.5, durationPercent: 30 },
-  whoContentIn: { at: 0.8, durationPercent: 20 },
-  howLettersMove: { at: 4.9, durationPercent: 80 },
-  howToWhoop: { at: 5.7, durationPercent: 6 },
-  whoopPersonalBarScroll: { at: 5.76, durationPercent: 430 },
-  whoopToMicrosoft: { at: 10.22, durationPercent: 34 },
-  microsoftPersonalBarScroll: { at: 10.58, durationPercent: 450 },
-  microsoftToMeta: { at: 15.12, durationPercent: 34 },
-  metaPersonalBarScroll: { at: 15.48, durationPercent: 450 },
-  metaToAffiliations: { at: 0, durationPercent: 34 },
-  affiliationsScroll: { at: 0, durationPercent: 70 },
-  affiliationsToActions: { at: 0, durationPercent: 34 },
-  actionsScroll: { at: 0, durationPercent: 34 },
+  typingFadeOut: 20,
+  whoSectionIn: 20,
+  whoLettersMove: 30,
+  whoContentIn: 20,
+  howToWhoop: 6,
 };
 
-export function getScrollPhase(
-  key: keyof typeof OSR_SCROLL_PHASES,
-  isMobile: boolean,
-): OsrScrollPhase {
-  const desktop = OSR_SCROLL_PHASES[key];
-  const mobile = OSR_SCROLL_PHASES_MOBILE[key];
-  if (isMobile && mobile) {
-    return { ...desktop, ...mobile };
-  }
-  return desktop;
-}
+const OSR_CONTENT_PHASE_DURATIONS = {
+  whoopPersonalBarScroll: 400,
+  whoopToMicrosoft: 32,
+  microsoftPersonalBarScroll: 420,
+  microsoftToMeta: 32,
+  metaPersonalBarScroll: 55,
+  metaToAffiliations: 32,
+  affiliationsScroll: 55,
+  affiliationsToActions: 32,
+  actionsScroll: 36,
+} as const;
 
-function phaseEnd(phase: OsrScrollPhase): number {
-  return phase.at + phase.durationPercent / 100;
-}
+const OSR_CONTENT_PHASE_DURATIONS_MOBILE: Partial<
+  Record<keyof typeof OSR_CONTENT_PHASE_DURATIONS, number>
+> = {
+  whoopPersonalBarScroll: 430,
+  whoopToMicrosoft: 34,
+  microsoftPersonalBarScroll: 450,
+  microsoftToMeta: 34,
+  metaPersonalBarScroll: 45,
+  metaToAffiliations: 34,
+  affiliationsScroll: 45,
+  actionsScroll: 36,
+};
 
-/** Total scroll track height — always past the final animation. */
-export function getOsrScrollHeightVh(isMobile: boolean): number {
-  const meta = getScrollPhase('metaPersonalBarScroll', isMobile);
-  const metaToAffiliations = getScrollPhase('metaToAffiliations', isMobile);
-  const affiliationsScroll = getScrollPhase('affiliationsScroll', isMobile);
-  const affiliationsToActions = getScrollPhase('affiliationsToActions', isMobile);
-  const actionsScroll = getScrollPhase('actionsScroll', isMobile);
-  return (
-    phaseEnd(meta) +
-    metaToAffiliations.durationPercent / 100 +
-    affiliationsScroll.durationPercent / 100 +
-    affiliationsToActions.durationPercent / 100 +
-    actionsScroll.durationPercent / 100
-  );
-}
+/** Scroll story order — must match scene attachment in OsrIntroScroll.tsx. */
+const PHASE_ORDER = [
+  'typingFadeOut',
+  'whoSectionIn',
+  'whoLettersMove',
+  'whoContentIn',
+  'whoSectionOut',
+  'howSectionIn',
+  'howLettersMove',
+  'howToWhoop',
+  'whoopPersonalBarScroll',
+  'whoopToMicrosoft',
+  'microsoftPersonalBarScroll',
+  'microsoftToMeta',
+  'metaPersonalBarScroll',
+  'metaToAffiliations',
+  'affiliationsScroll',
+  'affiliationsToActions',
+  'actionsScroll',
+] as const;
+
+type OsrIntroPhaseKey = keyof typeof OSR_INTRO_PHASE_DURATIONS;
+type OsrContentPhaseKey = keyof typeof OSR_CONTENT_PHASE_DURATIONS;
+type OsrPhaseKey = (typeof PHASE_ORDER)[number];
+
+const STAGE_BASE_HEIGHT = 1080;
+const MOBILE_VIEWPORT_HEIGHT = 844;
+
+const ESTIMATED_CONTENT_HEIGHTS = {
+  whoop: 900,
+  microsoft: 1100,
+  meta: 950,
+  affiliations: 500,
+} as const;
 
 type IntroContentMeasurements = {
   viewportHeight: number;
@@ -98,7 +111,6 @@ type IntroContentMeasurements = {
   microsoftContentHeight: number;
   metaContentHeight: number;
   affiliationsContentHeight: number;
-  actionsContentHeight: number;
 };
 
 type IntroContentMotion = {
@@ -106,136 +118,126 @@ type IntroContentMotion = {
   microsoftEndY: string;
   metaEndY: string;
   affiliationsEndY: string;
-  actionsEndY: string;
 };
 
-/** Re-chain personal-bar and tail phases from measured content heights. */
-export function applyIntroContentPhaseChain<
-  T extends {
-    whoopPersonalBarScroll: OsrScrollPhase;
-    whoopToMicrosoft: OsrScrollPhase;
-    microsoftPersonalBarScroll: OsrScrollPhase;
-    microsoftToMeta: OsrScrollPhase;
-    metaPersonalBarScroll: OsrScrollPhase;
-    metaToAffiliations: OsrScrollPhase;
-    affiliationsScroll: OsrScrollPhase;
-    affiliationsToActions: OsrScrollPhase;
-    actionsScroll: OsrScrollPhase;
-  },
->(
-  phases: T,
-  measurements: IntroContentMeasurements,
-): { phases: T; motion: IntroContentMotion } {
-  const {
-    viewportHeight,
-    layoutReferenceHeight,
-    whoopContentHeight,
-    microsoftContentHeight,
-    metaContentHeight,
-    affiliationsContentHeight,
-    actionsContentHeight,
-  } = measurements;
+function getIntroPhaseDuration(key: OsrIntroPhaseKey, isMobile: boolean): number {
+  const mobile = OSR_INTRO_PHASE_DURATIONS_MOBILE[key];
+  if (isMobile && mobile !== undefined) return mobile;
+  return OSR_INTRO_PHASE_DURATIONS[key];
+}
 
-  const whoopPersonalBarScroll: OsrScrollPhase = {
-    ...phases.whoopPersonalBarScroll,
-    durationPercent: getPersonalBarScrollDurationPercent(
-      whoopContentHeight,
-      viewportHeight,
-      phases.whoopPersonalBarScroll.durationPercent,
-    ),
-  };
+function getContentPhaseDuration(key: OsrContentPhaseKey, isMobile: boolean): number {
+  const mobile = OSR_CONTENT_PHASE_DURATIONS_MOBILE[key];
+  if (isMobile && mobile !== undefined) return mobile;
+  return OSR_CONTENT_PHASE_DURATIONS[key];
+}
 
-  const whoopToMicrosoft: OsrScrollPhase = {
-    ...phases.whoopToMicrosoft,
-    at: phaseEnd(whoopPersonalBarScroll),
-  };
-
-  const microsoftPersonalBarScroll: OsrScrollPhase = {
-    ...phases.microsoftPersonalBarScroll,
-    at: phaseEnd(whoopToMicrosoft),
-    durationPercent: getPersonalBarScrollDurationPercent(
-      microsoftContentHeight,
-      viewportHeight,
-      phases.microsoftPersonalBarScroll.durationPercent,
-    ),
-  };
-
-  const microsoftToMeta: OsrScrollPhase = {
-    ...phases.microsoftToMeta,
-    at: phaseEnd(microsoftPersonalBarScroll),
-  };
-
-  const metaPersonalBarScroll: OsrScrollPhase = {
-    ...phases.metaPersonalBarScroll,
-    at: phaseEnd(microsoftToMeta),
-    durationPercent: getPersonalBarScrollDurationPercent(
-      metaContentHeight,
-      viewportHeight,
-      phases.metaPersonalBarScroll.durationPercent,
-    ),
-  };
-
-  const metaToAffiliations: OsrScrollPhase = {
-    ...phases.metaToAffiliations,
-    at: phaseEnd(metaPersonalBarScroll),
-  };
-
-  const affiliationsEndY = getPersonalBarContentEndY(
-    affiliationsContentHeight,
-    layoutReferenceHeight,
-    40,
-  );
-
-  const affiliationsScroll: OsrScrollPhase = {
-    ...phases.affiliationsScroll,
-    at: phaseEnd(metaToAffiliations),
-    durationPercent: getPersonalBarScrollDurationPercent(
-      affiliationsContentHeight,
-      viewportHeight,
-      phases.affiliationsScroll.durationPercent,
-    ),
-  };
-
-  const affiliationsToActions: OsrScrollPhase = {
-    ...phases.affiliationsToActions,
-    at: phaseEnd(affiliationsScroll),
-  };
-
-  const actionsEndY = getActionsContentEndY(actionsContentHeight, layoutReferenceHeight);
-  const affiliationsTravelVh =
-    PERSONAL_BAR_CONTENT_START_VH + parseNegativeVh(affiliationsEndY);
-  const actionsTravelVh = getActionsScrollTravelVh(actionsEndY);
-
-  const actionsScroll: OsrScrollPhase = {
-    ...phases.actionsScroll,
-    at: phaseEnd(affiliationsToActions),
-    durationPercent: getMatchedScrollDurationPercent(
-      affiliationsScroll.durationPercent,
-      affiliationsTravelVh,
-      actionsTravelVh,
-      phases.actionsScroll.durationPercent,
-    ),
-  };
-
+function estimatedMeasurements(isMobile: boolean): IntroContentMeasurements {
+  const viewport = isMobile ? MOBILE_VIEWPORT_HEIGHT : STAGE_BASE_HEIGHT;
   return {
-    phases: {
-      ...phases,
-      whoopPersonalBarScroll,
-      whoopToMicrosoft,
-      microsoftPersonalBarScroll,
-      microsoftToMeta,
-      metaPersonalBarScroll,
-      metaToAffiliations,
-      affiliationsScroll,
-      affiliationsToActions,
-      actionsScroll,
-    },
-    motion: {
-      whoopEndY: getPersonalBarContentEndY(whoopContentHeight, viewportHeight, 135),
-      microsoftEndY: getPersonalBarContentEndY(microsoftContentHeight, viewportHeight, 185),
-      metaEndY: getPersonalBarContentEndY(metaContentHeight, viewportHeight, 185),
-      affiliationsEndY,
-      actionsEndY,
-    },
+    viewportHeight: viewport,
+    layoutReferenceHeight: viewport,
+    whoopContentHeight: ESTIMATED_CONTENT_HEIGHTS.whoop,
+    microsoftContentHeight: ESTIMATED_CONTENT_HEIGHTS.microsoft,
+    metaContentHeight: ESTIMATED_CONTENT_HEIGHTS.meta,
+    affiliationsContentHeight: ESTIMATED_CONTENT_HEIGHTS.affiliations,
   };
+}
+
+function resolveContentMotion(measurements: IntroContentMeasurements): IntroContentMotion {
+  const { viewportHeight, layoutReferenceHeight } = measurements;
+  return {
+    whoopEndY: getPersonalBarContentEndY(measurements.whoopContentHeight, viewportHeight, 135),
+    microsoftEndY: getPersonalBarContentEndY(
+      measurements.microsoftContentHeight,
+      viewportHeight,
+      185,
+    ),
+    metaEndY: getMetaContentEndY(measurements.metaContentHeight, layoutReferenceHeight),
+    affiliationsEndY: getAffiliationsContentEndY(
+      measurements.affiliationsContentHeight,
+      layoutReferenceHeight,
+    ),
+  };
+}
+
+function scrollDurationForEndY(
+  startVh: number,
+  endY: string,
+  minDurationPercent: number,
+): number {
+  return getScrollDurationForTravelVh(
+    getContentScrollTravelVh(startVh, endY),
+    minDurationPercent,
+  );
+}
+
+function resolvePhaseDuration(
+  key: OsrPhaseKey,
+  isMobile: boolean,
+  motion: IntroContentMotion,
+): number {
+  switch (key) {
+    case 'whoopPersonalBarScroll':
+      return scrollDurationForEndY(
+        PERSONAL_BAR_CONTENT_START_VH,
+        motion.whoopEndY,
+        getContentPhaseDuration(key, isMobile),
+      );
+    case 'microsoftPersonalBarScroll':
+      return scrollDurationForEndY(
+        PERSONAL_BAR_CONTENT_START_VH,
+        motion.microsoftEndY,
+        getContentPhaseDuration(key, isMobile),
+      );
+    case 'metaPersonalBarScroll':
+      return scrollDurationForEndY(
+        PERSONAL_BAR_CONTENT_START_VH,
+        motion.metaEndY,
+        getContentPhaseDuration(key, isMobile),
+      );
+    case 'affiliationsScroll':
+      return scrollDurationForEndY(
+        PERSONAL_BAR_CONTENT_START_VH,
+        motion.affiliationsEndY,
+        getContentPhaseDuration(key, isMobile),
+      );
+    case 'actionsScroll':
+      return scrollDurationForEndY(
+        ACTIONS_CONTENT_START_VH,
+        ACTIONS_CONTENT_END_Y,
+        getContentPhaseDuration(key, isMobile),
+      );
+    default:
+      if (key in OSR_INTRO_PHASE_DURATIONS) {
+        return getIntroPhaseDuration(key as OsrIntroPhaseKey, isMobile);
+      }
+      return getContentPhaseDuration(key as OsrContentPhaseKey, isMobile);
+  }
+}
+
+export function buildIntroScrollPhases(
+  isMobile: boolean,
+  measurements: IntroContentMeasurements,
+): {
+  phases: Record<OsrPhaseKey, OsrScrollPhase>;
+  motion: IntroContentMotion;
+  scrollTrackEndVh: number;
+} {
+  const motion = resolveContentMotion(measurements);
+  let at = 0;
+  const phases = {} as Record<OsrPhaseKey, OsrScrollPhase>;
+
+  for (const key of PHASE_ORDER) {
+    const durationPercent = resolvePhaseDuration(key, isMobile, motion);
+    phases[key] = { at, durationPercent };
+    at = getPhaseEndVh(phases[key]);
+  }
+
+  return { phases, motion, scrollTrackEndVh: getPhaseEndVh(phases.actionsScroll) };
+}
+
+/** Pre-measurement scroll track height (updated once content is measured in GSAP). */
+export function getOsrScrollHeightVh(isMobile: boolean): number {
+  return buildIntroScrollPhases(isMobile, estimatedMeasurements(isMobile)).scrollTrackEndVh;
 }
