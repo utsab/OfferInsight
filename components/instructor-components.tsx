@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardNavButton } from "./dashboard-nav-button";
+import { useNavbarTheme } from "./navbar-shell";
 import { Settings } from "lucide-react";
 
 // Instructor Authenticated Button - shown when instructor is signed in
@@ -16,6 +17,7 @@ export function InstructorAuthenticatedButton() {
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const isLightNavbar = useNavbarTheme() === 'light';
 
   useEffect(() => {
     // Fetch instructor data
@@ -76,7 +78,11 @@ export function InstructorAuthenticatedButton() {
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-            className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+            className={`flex items-center gap-2 rounded-lg p-2 transition-colors ${
+              isLightNavbar
+                ? 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+            }`}
             aria-label="Settings"
           >
             <Settings className="w-5 h-5" />
@@ -102,7 +108,9 @@ export function InstructorAuthenticatedButton() {
       <div className="flex items-center gap-2">
         {!loading && (
           <>
-            <span className="hidden md:inline text-sm text-white">{instructorData?.username || 'Instructor'}</span>
+            <span className={`hidden text-sm md:inline ${isLightNavbar ? 'text-gray-900' : 'text-white'}`}>
+              {instructorData?.username || 'Instructor'}
+            </span>
             <img 
               src={defaultInstructorImage}
               className="w-8 h-8 rounded-full"
