@@ -371,6 +371,7 @@ export function OsrIntroScroll() {
           setIntroNavSections(
             buildIntroNavSections({
               whoSectionIn: phases.whoSectionIn,
+              whoContentIn: phases.whoContentIn,
               howSectionIn: phases.howSectionIn,
               whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
               microsoftPersonalBarScroll: phases.microsoftPersonalBarScroll,

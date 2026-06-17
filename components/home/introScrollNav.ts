@@ -17,8 +17,8 @@ import { getPhaseEndVh } from './osrScrollUtils';
  * `introScrollJump.ts` searches scroll so the heading sits at
  * `SCROLL_CONTENT_HEADING_TOP_VH` below the navbar.
  *
- * **Fixed sections** (who, how): the heading does not move with scroll — tune
- * `JUMP_OFFSET_VH` (added to the phase start) instead.
+ * **Fixed sections** (who, how): content does not move with scroll — jump targets a
+ * scroll phase instead (`whoContentIn` end for Who, `howSectionIn` + offset for How).
  */
 
 type IntroNavAnchorJump = {
@@ -44,6 +44,7 @@ type IntroNavPhase = {
 /** Phase subset needed to resolve nav scroll ranges. */
 type IntroNavBuildPhases = {
   whoSectionIn: IntroNavPhase;
+  whoContentIn: IntroNavPhase;
   howSectionIn: IntroNavPhase;
   whoopPersonalBarScroll: IntroNavPhase;
   microsoftPersonalBarScroll: IntroNavPhase;
@@ -57,7 +58,6 @@ const SCROLL_CONTENT_HEADING_TOP_VH = 14;
 
 /** Extra scroll (vh) past phase start for fixed overlay sections. Positive = farther down. */
 const JUMP_OFFSET_VH = {
-  who: 2.2,
   how: 0.6,
 } as const;
 
@@ -95,7 +95,7 @@ export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSect
       id: 'who',
       label: 'Who',
       startVh: who,
-      jumpVh: who + JUMP_OFFSET_VH.who,
+      jumpVh: getPhaseEndVh(phases.whoContentIn),
     },
     {
       id: 'how',
