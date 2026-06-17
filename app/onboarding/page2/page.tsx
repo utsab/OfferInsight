@@ -67,7 +67,7 @@ export default function Page2() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
+    <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-gradient-to-br from-midnight-blue to-gray-900 flex items-center justify-center">
       <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-10 w-[700px] max-w-4xl">
         {/* Header */}
         <div className="text-center mb-6">

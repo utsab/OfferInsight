@@ -3,20 +3,28 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { SignOut } from "./auth-components"
+import { DashboardNavButton } from "./dashboard-nav-button";
+import { useNavbarTheme } from "./navbar-shell";
 import { Settings } from "lucide-react";
 
 interface UserData {
   name: string | null;
   image: string | null;
+  onboardingProgress: number | null;
 }
 
 export function AuthenticatedUserButton() {
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
-  const [userData, setUserData] = useState<UserData>({ name: null, image: null });
+  const [userData, setUserData] = useState<UserData>({
+    name: null,
+    image: null,
+    onboardingProgress: null,
+  });
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const isLightNavbar = useNavbarTheme() === 'light';
 
   useEffect(() => {
     // Fetch user data
@@ -27,7 +35,8 @@ export function AuthenticatedUserButton() {
           const user = await response.json();
           setUserData({
             name: user.name,
-            image: user.image
+            image: user.image,
+            onboardingProgress: user.onboardingProgress,
           });
         }
       } catch (error) {
@@ -54,12 +63,17 @@ export function AuthenticatedUserButton() {
   }, []);
 
   return (
-    <div className="flex items-center space-x-4">
+    <div className="flex items-center space-x-3 sm:space-x-4">
+      <DashboardNavButton onboardingProgress={userData.onboardingProgress} />
       <nav className="flex items-center">
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-            className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+            className={`flex items-center gap-2 rounded-lg p-2 transition-colors ${
+              isLightNavbar
+                ? 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+            }`}
             aria-label="Settings"
           >
             <Settings className="w-5 h-5" />
@@ -107,7 +121,9 @@ export function AuthenticatedUserButton() {
       <div className="flex items-center gap-2">
         {!loading && (
           <>
-            <span className="hidden md:inline text-sm text-white">{userData.name || 'User'}</span>
+            <span className={`hidden text-sm md:inline ${isLightNavbar ? 'text-gray-900' : 'text-white'}`}>
+              {userData.name || 'User'}
+            </span>
             <img 
               src={userData.image || "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"} 
               className="w-8 h-8 rounded-full"

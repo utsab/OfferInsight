@@ -106,7 +106,7 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+      <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-gray-900 text-white flex items-center justify-center">
         <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-8 w-full max-w-2xl">
           <div className="flex items-center justify-center py-20 text-gray-300">
             <Loader2 className="h-10 w-10 animate-spin text-electric-blue" />
@@ -117,7 +117,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="bg-gray-900 text-white min-h-screen w-full">
+    <div className="bg-gray-900 text-white min-h-[calc(100dvh-var(--navbar-height))] w-full">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="mb-4">
           <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors">

@@ -1,6 +1,5 @@
 import '@/app/ui/global.css';
 import { inter } from '@/app/ui/fonts';
-import { UserButton } from "@/components/user-button";
 import { Navbar } from '@/components/navbar';
 
 export default function RootLayout({
@@ -9,7 +8,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="min-h-full">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <script dangerouslySetInnerHTML={{
@@ -24,9 +23,9 @@ export default function RootLayout({
           `
         }} />
       </head>
-      <body className={`${inter.className} antialiased bg-gray-900 h-full w-full`} suppressHydrationWarning={true}>
+      <body className={`${inter.className} antialiased bg-gradient-to-br from-midnight-blue to-gray-900 min-h-full w-full`} suppressHydrationWarning={true}>
         <Navbar />
-        <main className="w-full">{children}</main>
+        <main className="w-full bg-gradient-to-br from-midnight-blue to-gray-900 pt-[var(--navbar-height)]">{children}</main>
       </body>
     </html>
   );

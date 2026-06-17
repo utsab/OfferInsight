@@ -1599,10 +1599,10 @@ const hasSeededMockDataRef = useRef(false);
 
 
   return (
-    <div className="bg-gray-900 text-white min-h-screen w-full">
+    <div className="bg-gradient-to-br from-midnight-blue to-gray-900 text-white min-h-[calc(100dvh-var(--navbar-height))] w-full">
       {/* Instructor View Banner */}
       {isInstructor && userIdParam && viewedUserName && (
-        <div className="bg-electric-blue/20 border-b border-electric-blue/50 w-full">
+        <div className="bg-gradient-to-br from-midnight-blue to-gray-900 border-b border-light-steel-blue/40 w-full">
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">

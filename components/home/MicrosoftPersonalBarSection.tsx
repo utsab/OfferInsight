@@ -1,0 +1,40 @@
+'use client';
+
+import { PersonalBarSection } from './PersonalBarSection';
+import type { CSSProperties } from 'react';
+import type { PersonalBarRefs } from './personalBarTypes';
+import {
+  MICROSOFT_LOGO_PATH,
+  MICROSOFT_PERSONAL_BAR_CRITERIA,
+  MICROSOFT_PERSONAL_BAR_TITLE,
+} from './microsoftPersonalBar';
+
+type MicrosoftPersonalBarSectionProps = {
+  sectionShell: string;
+  refs: PersonalBarRefs;
+  sectionStyle?: CSSProperties;
+  compactLayout?: boolean;
+};
+
+export function MicrosoftPersonalBarSection({
+  sectionShell,
+  refs,
+  sectionStyle,
+  compactLayout,
+}: MicrosoftPersonalBarSectionProps) {
+  return (
+    <PersonalBarSection
+      sectionShell={sectionShell}
+      sectionId="intro-microsoft-bar"
+      headingId="microsoft-bar-heading"
+      title={MICROSOFT_PERSONAL_BAR_TITLE}
+      logoPath={MICROSOFT_LOGO_PATH}
+      logoAlt="Microsoft"
+      criteria={MICROSOFT_PERSONAL_BAR_CRITERIA}
+      refs={refs}
+      sectionStyle={sectionStyle}
+      compactLayout={compactLayout}
+      zIndexClass="z-[22]"
+    />
+  );
+}

@@ -233,7 +233,7 @@ export default function InstructorDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-gray-900 text-white">
         <div className="container mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold mb-6">Instructor Dashboard</h1>
           <div className="text-gray-400">Loading users...</div>
@@ -243,7 +243,7 @@ export default function InstructorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-[calc(100dvh-var(--navbar-height))] bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Instructor Dashboard</h1>
         
