@@ -1,6 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+import { CriterionDetail } from './CriterionDetail';
 import type { PersonalBarCriterion, PersonalBarRefs } from './personalBarTypes';
 
 type PersonalBarSectionProps = {
@@ -16,41 +17,6 @@ type PersonalBarSectionProps = {
   sectionStyle?: CSSProperties;
   compactLayout?: boolean;
 };
-
-function CriterionDetail({ detail }: { detail: PersonalBarCriterion['detail'] }) {
-  const detailClass =
-    'text-left text-base leading-relaxed text-gray-800 sm:text-lg md:text-xl lg:text-2xl';
-
-  if (typeof detail === 'string') {
-    return <p className={detailClass}>{detail}</p>;
-  }
-
-  return (
-    <ul className={`${detailClass} list-none space-y-3 sm:space-y-4`}>
-      {detail.map((bullet, index) => {
-        if (bullet === 'Examples:') {
-          return (
-            <li
-              key={index}
-              className="pt-1 text-sm font-semibold uppercase tracking-wide text-gray-600 sm:text-base"
-            >
-              {bullet}
-            </li>
-          );
-        }
-
-        return (
-          <li key={index} className="flex gap-2 sm:gap-3">
-            <span className="shrink-0 text-gray-600" aria-hidden>
-              ●
-            </span>
-            <span>{bullet}</span>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
 
 export function PersonalBarSection({
   sectionShell,
