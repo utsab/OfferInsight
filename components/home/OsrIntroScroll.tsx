@@ -5,17 +5,19 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { HOME_ASSETS } from './homeAssets';
-import { buildIntroScrollPhases, getOsrScrollHeightVh } from './osrIntroTimeline';
+import { buildIntroScrollPhases, getOsrScrollHeightVh, getPageIndicatorScrollPhase } from './osrIntroTimeline';
 import {
-  ACTIONS_CONTENT_END_Y,
   ACTIONS_CONTENT_START_Y,
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
   getOsrSceneConfig,
+  getScrollTrackBottomPx,
   getViewportBelowNavbar,
+  measureActionsContentHeight,
   measurePersonalBarContentHeight,
   syncScrollTrackAnimations,
 } from './osrScrollUtils';
+import { handleSignIn } from '@/components/auth-actions';
 import { TypingHeroLine } from './TypingHeroLine';
 import { IntroActionsSection } from './IntroActionsSection';
 import { MetaPersonalBarSection } from './MetaPersonalBarSection';
@@ -26,6 +28,7 @@ import { computeScrollVhForAnchorTarget } from './introScrollJump';
 import {
   buildIntroNavSections,
   getActiveIntroNavId,
+  getIntroNavSectionProgress,
   type IntroNavSection,
 } from './introScrollNav';
 
@@ -78,6 +81,7 @@ function applyIntroStartFrame(
   sectionMetaPersonalBar: HTMLElement,
   sectionAffiliations: HTMLElement,
   sectionActions: HTMLElement,
+  pageIndicator?: HTMLElement | null,
 ) {
   gsap.set(sectionZero, { autoAlpha: 1 });
   gsap.set(sectionOne, { autoAlpha: 0 });
@@ -88,6 +92,9 @@ function applyIntroStartFrame(
   gsap.set(sectionMetaPersonalBar, { autoAlpha: 0 });
   gsap.set(sectionAffiliations, { autoAlpha: 0 });
   gsap.set(sectionActions, { autoAlpha: 0 });
+  if (pageIndicator) {
+    gsap.set(pageIndicator, { opacity: 1, top: '90%', yPercent: 0 });
+  }
 }
 
 function readIsCompactViewport(width: number) {
@@ -109,6 +116,7 @@ export function OsrIntroScroll() {
   const [stageScale, setStageScale] = useState(1);
   const [introNavSections, setIntroNavSections] = useState<IntroNavSection[]>([]);
   const [activeNavId, setActiveNavId] = useState('intro');
+  const [activeNavProgress, setActiveNavProgress] = useState(0);
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const sectionZeroRef = useRef<HTMLElement>(null);
   const sectionOneRef = useRef<HTMLElement>(null);
@@ -139,6 +147,12 @@ export function OsrIntroScroll() {
     const track = scrollTrackRef.current;
     if (!track) return;
 
+    if (section.id === 'contact') {
+      // DOM bottom — matches manual scroll; jumpVh alone stops ~1 viewport short.
+      window.scrollTo({ top: getScrollTrackBottomPx(track), behavior: 'smooth' });
+      return;
+    }
+
     const anchorJump = section.anchorJump;
     if (anchorJump) {
       const anchor = document.getElementById(anchorJump.anchorId);
@@ -168,7 +182,9 @@ export function OsrIntroScroll() {
       const vh = getViewportBelowNavbar();
       const relativePx = Math.max(window.scrollY - track.offsetTop, 0);
       const relativeVh = relativePx / vh;
-      setActiveNavId(getActiveIntroNavId(introNavSections, relativeVh));
+      const activeId = getActiveIntroNavId(introNavSections, relativeVh);
+      setActiveNavId(activeId);
+      setActiveNavProgress(getIntroNavSectionProgress(introNavSections, relativeVh, activeId));
     };
 
     updateActive();
@@ -293,6 +309,8 @@ export function OsrIntroScroll() {
         return undefined;
       }
 
+      const pageIndicator = introRoot.querySelector<HTMLElement>('[data-page-indicator]');
+
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       const scheduleLayoutSync = () => {
@@ -319,6 +337,7 @@ export function OsrIntroScroll() {
         gsap.set(affiliationsContent, { y: 0 });
         gsap.set(sectionActions, { opacity: 1 });
         gsap.set(actionsContent, { y: 0 });
+        if (pageIndicator) gsap.set(pageIndicator, { opacity: 0 });
         return;
       }
 
@@ -340,6 +359,7 @@ export function OsrIntroScroll() {
             sectionMetaPersonalBar,
             sectionAffiliations,
             sectionActions,
+            pageIndicator,
           );
           gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
           gsap.set(microsoftPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
@@ -358,27 +378,26 @@ export function OsrIntroScroll() {
             microsoftContentHeight: measurePersonalBarContentHeight(microsoftPersonalBarContent),
             metaContentHeight: measurePersonalBarContentHeight(metaPersonalBarContent),
             affiliationsContentHeight: measurePersonalBarContentHeight(affiliationsContent),
+            actionsContentHeight: measureActionsContentHeight(actionsContent),
           });
           const {
             whoopEndY: whoopContentEndY,
             microsoftEndY: microsoftContentEndY,
             metaEndY: metaContentEndY,
             affiliationsEndY,
+            actionsEndY,
           } = motion;
 
           scrollTrack.style.height = `${scrollTrackEndVh * 100}vh`;
           setScrollHeightVh(scrollTrackEndVh);
           setIntroNavSections(
-            buildIntroNavSections({
-              whoSectionIn: phases.whoSectionIn,
-              whoContentIn: phases.whoContentIn,
-              howSectionIn: phases.howSectionIn,
-              whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
-              microsoftPersonalBarScroll: phases.microsoftPersonalBarScroll,
-              metaPersonalBarScroll: phases.metaPersonalBarScroll,
-              affiliationsScroll: phases.affiliationsScroll,
-              actionsScroll: phases.actionsScroll,
-            }),
+            buildIntroNavSections(
+              {
+                whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
+                actionsScroll: phases.actionsScroll,
+              },
+              scrollTrackEndVh,
+            ),
           );
           const attachSectionCrossfade = (
             phase: { at: number; durationPercent: number },
@@ -456,6 +475,23 @@ export function OsrIntroScroll() {
 
           attachScene(
             scrollTrack,
+            phases.whoContentIn.at,
+            phases.whoContentIn.durationPercent,
+            gsap.fromTo(whoWeAreContent, { opacity: 0 }, { opacity: 1, ...SCRUB_DEFAULTS }),
+          );
+
+          const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.howToWhoop);
+          if (pageIndicator) {
+            attachScene(
+              scrollTrack,
+              pageIndicatorScroll.at,
+              pageIndicatorScroll.durationPercent,
+              gsap.fromTo(pageIndicator, { top: '90%' }, { top: '-50%', ...SCRUB_DEFAULTS }),
+            );
+          }
+
+          attachScene(
+            scrollTrack,
             phases.whoSectionIn.at,
             phases.whoSectionIn.durationPercent,
             gsap.fromTo(sectionOne, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }),
@@ -488,13 +524,6 @@ export function OsrIntroScroll() {
 
           attachScene(
             scrollTrack,
-            phases.whoContentIn.at,
-            phases.whoContentIn.durationPercent,
-            gsap.fromTo(whoWeAreContent, { opacity: 0 }, { opacity: 1, ...SCRUB_DEFAULTS }),
-          );
-
-          attachScene(
-            scrollTrack,
             phases.whoSectionOut.at,
             phases.whoSectionOut.durationPercent,
             gsap.fromTo(sectionOne, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }),
@@ -514,7 +543,12 @@ export function OsrIntroScroll() {
               phases.howLettersMove.durationPercent,
               gsap
                 .timeline({ defaults: { ease: 'none' } })
-                .to(howLetterO, { top: '15%', left: '-12%' }, 0)
+                .fromTo(
+                  howLetterO,
+                  { left: '-5%', bottom: '12%', top: 'auto', right: 'auto' },
+                  { left: '-22%', bottom: '16%', ...SCRUB_DEFAULTS },
+                  0,
+                )
                 .to(howLetterR, { bottom: '0%', right: '30%' }, 0)
                 .to(howLetterS, { right: '15%', top: '0%' }, 0),
             );
@@ -525,7 +559,12 @@ export function OsrIntroScroll() {
               phases.howLettersMove.durationPercent,
               gsap
                 .timeline({ defaults: { ease: 'none' } })
-                .to(howLetterO, { top: '-20%', left: '-8%' }, 0)
+                .fromTo(
+                  howLetterO,
+                  { left: '-4%', bottom: '5%', top: 'auto', right: 'auto' },
+                  { left: '-20%', bottom: '16%', ...SCRUB_DEFAULTS },
+                  0,
+                )
                 .to(howLetterR, { bottom: '-35%', right: '30%' }, 0)
                 .to(howLetterS, { right: '22%', top: '-15%' }, 0),
             );
@@ -572,24 +611,35 @@ export function OsrIntroScroll() {
             sectionAffiliations,
           );
 
+          if (pageIndicator) {
+            attachScene(
+              scrollTrack,
+              phases.metaToAffiliations.at,
+              phases.metaToAffiliations.durationPercent,
+              gsap.fromTo(pageIndicator, { opacity: 1 }, { opacity: 0, ...SCRUB_DEFAULTS }),
+            );
+          }
+
           attachContentScroll(
             phases.affiliationsScroll,
             affiliationsContent,
             affiliationsEndY,
           );
 
-          attachSectionCrossfade(
-            phases.affiliationsToActions,
-            sectionAffiliations,
-            sectionActions,
-          );
-
-          attachContentScroll(
-            phases.actionsScroll,
-            actionsContent,
-            ACTIONS_CONTENT_END_Y,
-            undefined,
-            ACTIONS_CONTENT_START_Y,
+          attachScene(
+            scrollTrack,
+            phases.actionsScroll.at,
+            phases.actionsScroll.durationPercent,
+            gsap
+              .timeline({ defaults: { ease: 'none' } })
+              .fromTo(sectionAffiliations, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0)
+              .fromTo(sectionActions, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0)
+              .fromTo(
+                actionsContent,
+                { y: ACTIONS_CONTENT_START_Y },
+                { y: actionsEndY, ease: 'none', duration: 1 },
+                0,
+              ),
           );
 
           removeTopScrubSyncListener = attachTopScrubSync();
@@ -676,7 +726,15 @@ export function OsrIntroScroll() {
       <IntroScrollNav
         sections={introNavSections}
         activeId={activeNavId}
+        activeProgress={activeNavProgress}
         onSelect={scrollToNavSection}
+      />
+
+      <div
+        data-page-indicator
+        className="pointer-events-none fixed left-[20%] z-[8] h-[45%] w-0.5"
+        style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
+        aria-hidden
       />
 
       {/* Phase 1 — typing hero */}
@@ -758,7 +816,7 @@ export function OsrIntroScroll() {
       >
         <div
           ref={howLetterORef}
-          className={`${letterBase} left-[-5%] top-[20%] md:left-[-4%] md:top-[-10%]`}
+          className={`${letterBase} bottom-[12%] left-[-5%] md:bottom-[5%] md:left-[-4%]`}
           style={{ color: ACCENT_CORAL }}
         >
           O
@@ -883,6 +941,9 @@ export function OsrIntroScroll() {
         sectionStyle={sectionShellStyle}
         sectionRef={sectionActionsRef}
         contentRef={actionsContentRef}
+        onSignUp={() => {
+          void handleSignIn();
+        }}
       />
     </div>
   );

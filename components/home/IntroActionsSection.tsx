@@ -11,6 +11,7 @@ type IntroActionsSectionProps = {
   sectionStyle?: CSSProperties;
   sectionRef: RefObject<HTMLElement | null>;
   contentRef: RefObject<HTMLDivElement | null>;
+  onSignUp: () => void;
 };
 
 export function IntroActionsSection({
@@ -18,6 +19,7 @@ export function IntroActionsSection({
   sectionStyle,
   sectionRef,
   contentRef,
+  onSignUp,
 }: IntroActionsSectionProps) {
   return (
     <section
@@ -30,7 +32,7 @@ export function IntroActionsSection({
       <div className="relative z-[2] h-full w-full overflow-hidden">
         <div
           ref={contentRef}
-          className="will-change-transform flex w-full items-start justify-center px-4 pt-[14vh] sm:px-8 sm:pt-[16vh]"
+          className="will-change-transform flex w-full items-start justify-center px-4 pt-[8vh] sm:px-8 sm:pt-[10vh]"
         >
           <div className="w-full max-w-6xl">
             <div className="text-center">
@@ -52,10 +54,17 @@ export function IntroActionsSection({
                 </p>
                 <h3 className="mt-4 text-2xl font-bold text-black sm:text-3xl">Start your pathway</h3>
                 <p className="mt-4 flex-1 text-lg leading-relaxed text-gray-700 sm:text-xl">
-                  Use <span className="font-semibold text-black">Sign In</span> in the navbar above to
-                  get started, track open source achievements, and work toward hiring-manager-defined
+                  Sign up to track open source achievements and work toward hiring-manager-defined
                   benchmarks.
                 </p>
+                <button
+                  type="button"
+                  onClick={onSignUp}
+                  className="mt-8 inline-flex w-full cursor-pointer items-center justify-center rounded-lg px-6 py-4 text-lg font-semibold text-white transition-colors hover:opacity-90 sm:w-auto"
+                  style={{ backgroundColor: ACCENT_CORAL }}
+                >
+                  Sign up
+                </button>
               </div>
 
               <div className="flex min-h-[280px] flex-col rounded-2xl border border-light-steel-blue/40 bg-white p-8 shadow-sm sm:min-h-[320px] sm:p-10 md:min-h-[360px]">

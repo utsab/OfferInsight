@@ -1,5 +1,6 @@
 import { CriterionDetail } from './CriterionDetail';
 import type { PersonalBarCriterion } from './personalBarTypes';
+import { STATIC_SECTION_SCROLL_MT } from './staticIntroScrollNav';
 
 type StaticPersonalBarSectionProps = {
   sectionId: string;
@@ -19,7 +20,7 @@ export function StaticPersonalBarSection({
   return (
     <section
       id={sectionId}
-      className="relative scroll-mt-[calc(var(--navbar-height)+1rem)] overflow-hidden border-t border-light-steel-blue/30 bg-white py-12 sm:py-16"
+      className={`relative ${STATIC_SECTION_SCROLL_MT} overflow-hidden border-t border-light-steel-blue/30 bg-white py-12 sm:py-16`}
       aria-labelledby={headingId}
     >
       <div

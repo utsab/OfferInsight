@@ -52,10 +52,17 @@ export function getOsrSceneConfig(
 export const PERSONAL_BAR_CONTENT_START_VH = 140;
 export const PERSONAL_BAR_CONTENT_START_Y = `${PERSONAL_BAR_CONTENT_START_VH}vh`;
 
-/** Actions entry: one viewport below (not 140vh). Content scrolls up to y=0. */
-export const ACTIONS_CONTENT_START_VH = 100;
+/** Actions entry: just below the stage — contact rises in as affiliations exits. */
+export const ACTIONS_CONTENT_START_VH = 72;
 export const ACTIONS_CONTENT_START_Y = `${ACTIONS_CONTENT_START_VH}vh`;
-export const ACTIONS_CONTENT_END_Y = '0';
+
+/** Measure contact section content height (same pattern as personal bars). */
+export function measureActionsContentHeight(content: HTMLElement): number {
+  gsap.set(content, { y: 0 });
+  const height = Math.max(content.scrollHeight, content.getBoundingClientRect().height);
+  gsap.set(content, { y: ACTIONS_CONTENT_START_Y });
+  return height;
+}
 
 /** Measure personal-bar content height without transform affecting layout reads. */
 export function measurePersonalBarContentHeight(content: HTMLElement): number {
@@ -83,6 +90,24 @@ function parseNegativeVh(value: string): number {
 
 export function getPhaseEndVh(phase: { at: number; durationPercent: number }): number {
   return phase.at + phase.durationPercent / 100;
+}
+
+/**
+ * Furthest track-relative scroll (below-navbar vh).
+ * Track height uses full window vh; scene math uses viewport below navbar — this closes the gap.
+ */
+export function getScrollTrackBottomRelativeVh(scrollTrackEndVh: number): number {
+  const belowNav = getViewportBelowNavbar();
+  const maxPx = Math.max(0, scrollTrackEndVh * window.innerHeight - window.innerHeight);
+  return maxPx / belowNav;
+}
+
+/** Window scrollY that pins the scroll track to the page bottom. */
+export function getScrollTrackBottomPx(scrollTrack: HTMLElement): number {
+  return Math.max(
+    scrollTrack.offsetTop,
+    scrollTrack.offsetTop + scrollTrack.offsetHeight - window.innerHeight,
+  );
 }
 
 /** Vertical travel (vh) for a content scroll from `startVh` to `endY`. */
@@ -121,7 +146,20 @@ export function getAffiliationsContentEndY(
   viewportHeightPx: number,
 ): string {
   const contentVh = (contentHeightPx / viewportHeightPx) * 100;
-  const endVh = Math.max(20, Math.round(contentVh + 24));
+  const endVh = Math.max(15, Math.round(contentVh + 10));
   return `-${endVh}vh`;
+}
+
+/** Contact section — rest with the block's midpoint on screen, not its top edge. */
+const ACTIONS_CONTENT_MIDPOINT_VH = 40;
+
+export function getActionsContentEndY(
+  contentHeightPx: number,
+  stageHeightPx: number,
+): string {
+  const contentVh = (contentHeightPx / stageHeightPx) * 100;
+  if (contentVh >= 100) return '0';
+  const offsetVh = Math.round(ACTIONS_CONTENT_MIDPOINT_VH - contentVh / 2);
+  return `${Math.max(0, offsetVh)}vh`;
 }
 

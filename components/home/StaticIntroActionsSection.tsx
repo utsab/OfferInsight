@@ -1,4 +1,6 @@
+import { handleSignIn } from '@/components/auth-actions';
 import { HIRING_MANAGER_CALENDLY_URL } from './homeCtas';
+import { STATIC_SECTION_SCROLL_MT } from './staticIntroScrollNav';
 
 const ACCENT_CORAL = '#F57360';
 const ACCENT_TEAL = '#58A4B0';
@@ -7,7 +9,7 @@ export function StaticIntroActionsSection() {
   return (
     <section
       id="intro-actions"
-      className="scroll-mt-[calc(var(--navbar-height)+1rem)] border-t border-light-steel-blue/30 bg-white py-12 sm:py-16"
+      className={`${STATIC_SECTION_SCROLL_MT} border-t border-light-steel-blue/30 bg-white py-12 sm:py-16`}
       aria-labelledby="intro-actions-heading"
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
@@ -30,10 +32,18 @@ export function StaticIntroActionsSection() {
             </p>
             <h3 className="mt-4 text-2xl font-bold text-black sm:text-3xl">Start your pathway</h3>
             <p className="mt-4 flex-1 text-lg leading-relaxed text-gray-700 sm:text-xl">
-              Use <span className="font-semibold text-black">Sign In</span> in the navbar above to
-              get started, track open source achievements, and work toward hiring-manager-defined
+              Sign up to track open source achievements and work toward hiring-manager-defined
               benchmarks.
             </p>
+            <form action={handleSignIn.bind(null, undefined)} className="mt-8">
+              <button
+                type="submit"
+                className="inline-flex w-full cursor-pointer items-center justify-center rounded-lg px-6 py-4 text-lg font-semibold text-white transition-colors hover:opacity-90 sm:w-auto"
+                style={{ backgroundColor: ACCENT_CORAL }}
+              >
+                Sign up
+              </button>
+            </form>
           </div>
 
           <div className="flex min-h-[240px] flex-col rounded-2xl border border-light-steel-blue/40 bg-white p-8 shadow-sm sm:min-h-[280px] sm:p-10">
