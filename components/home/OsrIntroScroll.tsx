@@ -7,12 +7,13 @@ import { useGSAP } from '@gsap/react';
 import { HOME_ASSETS } from './homeAssets';
 import { buildIntroScrollPhases, getOsrScrollHeightVh, getPageIndicatorScrollPhase } from './osrIntroTimeline';
 import {
-  ACTIONS_CONTENT_END_Y,
   ACTIONS_CONTENT_START_Y,
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
   getOsrSceneConfig,
+  getScrollTrackBottomPx,
   getViewportBelowNavbar,
+  measureActionsContentHeight,
   measurePersonalBarContentHeight,
   syncScrollTrackAnimations,
 } from './osrScrollUtils';
@@ -144,6 +145,12 @@ export function OsrIntroScroll() {
   const scrollToNavSection = useCallback((section: IntroNavSection) => {
     const track = scrollTrackRef.current;
     if (!track) return;
+
+    if (section.id === 'contact') {
+      // DOM bottom — matches manual scroll; jumpVh alone stops ~1 viewport short.
+      window.scrollTo({ top: getScrollTrackBottomPx(track), behavior: 'smooth' });
+      return;
+    }
 
     const anchorJump = section.anchorJump;
     if (anchorJump) {
@@ -370,27 +377,26 @@ export function OsrIntroScroll() {
             microsoftContentHeight: measurePersonalBarContentHeight(microsoftPersonalBarContent),
             metaContentHeight: measurePersonalBarContentHeight(metaPersonalBarContent),
             affiliationsContentHeight: measurePersonalBarContentHeight(affiliationsContent),
+            actionsContentHeight: measureActionsContentHeight(actionsContent),
           });
           const {
             whoopEndY: whoopContentEndY,
             microsoftEndY: microsoftContentEndY,
             metaEndY: metaContentEndY,
             affiliationsEndY,
+            actionsEndY,
           } = motion;
 
           scrollTrack.style.height = `${scrollTrackEndVh * 100}vh`;
           setScrollHeightVh(scrollTrackEndVh);
           setIntroNavSections(
-            buildIntroNavSections({
-              whoSectionIn: phases.whoSectionIn,
-              whoContentIn: phases.whoContentIn,
-              howSectionIn: phases.howSectionIn,
-              whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
-              microsoftPersonalBarScroll: phases.microsoftPersonalBarScroll,
-              metaPersonalBarScroll: phases.metaPersonalBarScroll,
-              affiliationsScroll: phases.affiliationsScroll,
-              actionsScroll: phases.actionsScroll,
-            }),
+            buildIntroNavSections(
+              {
+                whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
+                actionsScroll: phases.actionsScroll,
+              },
+              scrollTrackEndVh,
+            ),
           );
           const attachSectionCrossfade = (
             phase: { at: number; durationPercent: number },
@@ -619,18 +625,20 @@ export function OsrIntroScroll() {
             affiliationsEndY,
           );
 
-          attachSectionCrossfade(
-            phases.affiliationsToActions,
-            sectionAffiliations,
-            sectionActions,
-          );
-
-          attachContentScroll(
-            phases.actionsScroll,
-            actionsContent,
-            ACTIONS_CONTENT_END_Y,
-            undefined,
-            ACTIONS_CONTENT_START_Y,
+          attachScene(
+            scrollTrack,
+            phases.actionsScroll.at,
+            phases.actionsScroll.durationPercent,
+            gsap
+              .timeline({ defaults: { ease: 'none' } })
+              .fromTo(sectionAffiliations, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0)
+              .fromTo(sectionActions, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0)
+              .fromTo(
+                actionsContent,
+                { y: ACTIONS_CONTENT_START_Y },
+                { y: actionsEndY, ease: 'none', duration: 1 },
+                0,
+              ),
           );
 
           removeTopScrubSyncListener = attachTopScrubSync();

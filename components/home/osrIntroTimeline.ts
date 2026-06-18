@@ -1,19 +1,19 @@
 /**
  * Homepage scroll phases (viewport-height multiples).
  *
- * Every phase is strictly sequential: each `at` is the end of the previous phase.
+ * **Sequential chain** (`PHASE_ORDER`): each phase `at` is the end of the previous phase.
  * Store only `durationPercent` per phase; `buildIntroScrollPhases` assigns `at`.
  *
- * Pattern for content sections: scroll → crossfade → scroll → crossfade …
- *
- * Parallel phases (same scroll window as another beat, not in PHASE_ORDER):
+ * **Parallel phases** (own scroll window, not in `PHASE_ORDER`):
  * - `whoContentIn` — starts when typing hero is fully gone
- * - page indicator — see getPageIndicatorScrollPhase()
+ * - page indicator — see `getPageIndicatorScrollPhase()`
+ *
+ * Pattern for content sections: scroll → crossfade → scroll → crossfade …
  */
 import {
-  ACTIONS_CONTENT_END_Y,
   ACTIONS_CONTENT_START_VH,
   getAffiliationsContentEndY,
+  getActionsContentEndY,
   getContentScrollTravelVh,
   getMetaContentEndY,
   getPersonalBarContentEndY,
@@ -34,7 +34,7 @@ const OSR_INTRO_PHASE_DURATIONS = {
   whoContentIn: 40,
   whoSectionOut: 40,
   howSectionIn: 30,
-  howLettersMove: 80,
+  howLettersMove: 80, // minimum; resolved to match Who story chapter length
   howToWhoop: 8,
 } as const;
 
@@ -56,7 +56,6 @@ const OSR_CONTENT_PHASE_DURATIONS = {
   metaPersonalBarScroll: 55,
   metaToAffiliations: 32,
   affiliationsScroll: 55,
-  affiliationsToActions: 32,
   actionsScroll: 36,
 } as const;
 
@@ -89,14 +88,25 @@ const PHASE_ORDER = [
   'metaPersonalBarScroll',
   'metaToAffiliations',
   'affiliationsScroll',
-  'affiliationsToActions',
   'actionsScroll',
 ] as const;
 
 type OsrIntroPhaseKey = keyof typeof OSR_INTRO_PHASE_DURATIONS;
 type OsrContentPhaseKey = keyof typeof OSR_CONTENT_PHASE_DURATIONS;
 type OsrSequentialPhaseKey = (typeof PHASE_ORDER)[number];
-export type OsrPhaseKey = OsrSequentialPhaseKey | 'whoContentIn';
+type OsrPhaseKey = OsrSequentialPhaseKey | 'whoContentIn';
+
+/** Fixed overlay beats — Who section visible through `whoSectionOut`. */
+const WHO_STORY_PHASES = ['whoSectionIn', 'whoLettersMove', 'whoSectionOut'] as const satisfies readonly OsrIntroPhaseKey[];
+/** Fixed overlay beats — How section visible through `howToWhoop`. */
+const HOW_STORY_CORE_PHASES = ['howSectionIn', 'howToWhoop'] as const satisfies readonly OsrIntroPhaseKey[];
+
+function getStoryChapterDuration(
+  phaseKeys: readonly OsrIntroPhaseKey[],
+  isMobile: boolean,
+): number {
+  return phaseKeys.reduce((total, key) => total + getIntroPhaseDuration(key, isMobile), 0);
+}
 
 const STAGE_BASE_HEIGHT = 1080;
 const MOBILE_VIEWPORT_HEIGHT = 844;
@@ -106,6 +116,7 @@ const ESTIMATED_CONTENT_HEIGHTS = {
   microsoft: 1100,
   meta: 950,
   affiliations: 500,
+  actions: 680,
 } as const;
 
 type IntroContentMeasurements = {
@@ -115,6 +126,7 @@ type IntroContentMeasurements = {
   microsoftContentHeight: number;
   metaContentHeight: number;
   affiliationsContentHeight: number;
+  actionsContentHeight: number;
 };
 
 type IntroContentMotion = {
@@ -122,6 +134,7 @@ type IntroContentMotion = {
   microsoftEndY: string;
   metaEndY: string;
   affiliationsEndY: string;
+  actionsEndY: string;
 };
 
 function getIntroPhaseDuration(key: OsrIntroPhaseKey, isMobile: boolean): number {
@@ -145,6 +158,7 @@ function estimatedMeasurements(isMobile: boolean): IntroContentMeasurements {
     microsoftContentHeight: ESTIMATED_CONTENT_HEIGHTS.microsoft,
     metaContentHeight: ESTIMATED_CONTENT_HEIGHTS.meta,
     affiliationsContentHeight: ESTIMATED_CONTENT_HEIGHTS.affiliations,
+    actionsContentHeight: ESTIMATED_CONTENT_HEIGHTS.actions,
   };
 }
 
@@ -160,6 +174,10 @@ function resolveContentMotion(measurements: IntroContentMeasurements): IntroCont
     metaEndY: getMetaContentEndY(measurements.metaContentHeight, layoutReferenceHeight),
     affiliationsEndY: getAffiliationsContentEndY(
       measurements.affiliationsContentHeight,
+      layoutReferenceHeight,
+    ),
+    actionsEndY: getActionsContentEndY(
+      measurements.actionsContentHeight,
       layoutReferenceHeight,
     ),
   };
@@ -209,9 +227,15 @@ function resolvePhaseDuration(
     case 'actionsScroll':
       return scrollDurationForEndY(
         ACTIONS_CONTENT_START_VH,
-        ACTIONS_CONTENT_END_Y,
+        motion.actionsEndY,
         getContentPhaseDuration(key, isMobile),
       );
+    case 'howLettersMove': {
+      const whoStoryDuration = getStoryChapterDuration(WHO_STORY_PHASES, isMobile);
+      const howCoreDuration = getStoryChapterDuration(HOW_STORY_CORE_PHASES, isMobile);
+      const minDuration = getIntroPhaseDuration('howLettersMove', isMobile);
+      return Math.max(minDuration, whoStoryDuration - howCoreDuration);
+    }
     default:
       if (key in OSR_INTRO_PHASE_DURATIONS) {
         return getIntroPhaseDuration(key as OsrIntroPhaseKey, isMobile);

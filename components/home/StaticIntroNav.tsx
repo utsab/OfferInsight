@@ -6,13 +6,8 @@ const ACCENT_CORAL = '#F57360';
 
 const STATIC_NAV_LINKS = [
   { id: 'intro', label: 'Intro', href: '#intro-zero' },
-  { id: 'who', label: 'Who', href: '#intro-who-heading' },
-  { id: 'how', label: 'How', href: '#intro-how-heading' },
-  { id: 'whoop', label: 'Personal Bar 1', href: '#whoop-bar-heading' },
-  { id: 'microsoft', label: 'Personal Bar 2', href: '#microsoft-bar-heading' },
-  { id: 'meta', label: 'Personal Bar 3', href: '#meta-bar-heading' },
-  { id: 'affiliations', label: 'Affiliations', href: '#affiliations-heading' },
-  { id: 'actions', label: "What's next", href: '#intro-actions-heading' },
+  { id: 'personal-bars', label: 'Personal Bars', href: '#whoop-bar-heading' },
+  { id: 'contact', label: 'Contact', href: '#intro-actions' },
 ] as const;
 
 export function StaticIntroNav() {

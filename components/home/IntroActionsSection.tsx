@@ -30,7 +30,7 @@ export function IntroActionsSection({
       <div className="relative z-[2] h-full w-full overflow-hidden">
         <div
           ref={contentRef}
-          className="will-change-transform flex w-full items-start justify-center px-4 pt-[14vh] sm:px-8 sm:pt-[16vh]"
+          className="will-change-transform flex w-full items-start justify-center px-4 pt-[8vh] sm:px-8 sm:pt-[10vh]"
         >
           <div className="w-full max-w-6xl">
             <div className="text-center">

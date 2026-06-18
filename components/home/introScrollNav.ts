@@ -1,4 +1,4 @@
-import { getPhaseEndVh } from './osrScrollUtils';
+import { getScrollTrackBottomRelativeVh } from './osrScrollUtils';
 
 /**
  * Left-nav sections for the homepage intro scroll story.
@@ -9,16 +9,18 @@ import { getPhaseEndVh } from './osrScrollUtils';
  * navbar, measured from the top of the scroll track.
  *
  * - `startVh` — scroll position where this nav label becomes active
- * - `jumpVh` — scroll target (intro / who / how, or fallback when anchor is missing)
+ * - `jumpVh` — scroll target when anchor jump is unavailable
  *
  * ## Nav jumps
  *
- * **Scroll-content sections** (personal bars, affiliations, actions): on click,
- * `introScrollJump.ts` searches scroll so the heading sits at
- * `SCROLL_CONTENT_HEADING_TOP_VH` below the navbar.
+ * **Intro** — scroll to top of track.
  *
- * **Fixed sections** (who, how): content does not move with scroll — jump targets a
- * scroll phase instead (`whoContentIn` end for Who, `howSectionIn` + offset for How).
+ * **Personal Bars** — `introScrollJump.ts` aligns the first personal-bar heading
+ * below the navbar.
+ *
+ * **Contact** — scroll to the physical track bottom (`getScrollTrackBottomPx` in
+ * `OsrIntroScroll.tsx`); `jumpVh` on that section is the matching below-navbar vh
+ * for progress-bar math only.
  */
 
 type IntroNavAnchorJump = {
@@ -43,23 +45,12 @@ type IntroNavPhase = {
 
 /** Phase subset needed to resolve nav scroll ranges. */
 type IntroNavBuildPhases = {
-  whoSectionIn: IntroNavPhase;
-  whoContentIn: IntroNavPhase;
-  howSectionIn: IntroNavPhase;
   whoopPersonalBarScroll: IntroNavPhase;
-  microsoftPersonalBarScroll: IntroNavPhase;
-  metaPersonalBarScroll: IntroNavPhase;
-  affiliationsScroll: IntroNavPhase;
   actionsScroll: IntroNavPhase;
 };
 
-/** vh below navbar for scroll-content section headings (personal bars, affiliations, actions). */
+/** vh below navbar for scroll-content section headings (personal bars, contact). */
 const SCROLL_CONTENT_HEADING_TOP_VH = 14;
-
-/** Extra scroll (vh) past phase start for fixed overlay sections. Positive = farther down. */
-const JUMP_OFFSET_VH = {
-  how: 0.6,
-} as const;
 
 function scrollContentAnchorJump(
   anchorId: string,
@@ -74,15 +65,13 @@ function scrollContentAnchorJump(
   };
 }
 
-export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSection[] {
-  const who = phases.whoSectionIn.at;
-  const how = phases.howSectionIn.at;
+export function buildIntroNavSections(
+  phases: IntroNavBuildPhases,
+  scrollTrackEndVh: number,
+): IntroNavSection[] {
   const whoop = phases.whoopPersonalBarScroll.at;
-  const microsoft = phases.microsoftPersonalBarScroll.at;
-  const meta = phases.metaPersonalBarScroll.at;
-  const affiliations = phases.affiliationsScroll.at;
   const actions = phases.actionsScroll.at;
-  const scrollEndVh = getPhaseEndVh(phases.actionsScroll);
+  const trackBottomVh = getScrollTrackBottomRelativeVh(scrollTrackEndVh);
 
   return [
     {
@@ -92,71 +81,17 @@ export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSect
       jumpVh: 0,
     },
     {
-      id: 'who',
-      label: 'Who',
-      startVh: who,
-      jumpVh: getPhaseEndVh(phases.whoContentIn),
-    },
-    {
-      id: 'how',
-      label: 'How',
-      startVh: how,
-      jumpVh: how + JUMP_OFFSET_VH.how,
-    },
-    {
-      id: 'whoop',
-      label: 'Personal Bar 1',
+      id: 'personal-bars',
+      label: 'Personal Bars',
       startVh: whoop,
       jumpVh: whoop,
-      anchorJump: scrollContentAnchorJump(
-        'whoop-bar-heading',
-        whoop,
-        getPhaseEndVh(phases.whoopPersonalBarScroll),
-      ),
+      anchorJump: scrollContentAnchorJump('whoop-bar-heading', whoop, actions),
     },
     {
-      id: 'microsoft',
-      label: 'Personal Bar 2',
-      startVh: microsoft,
-      jumpVh: microsoft,
-      anchorJump: scrollContentAnchorJump(
-        'microsoft-bar-heading',
-        microsoft,
-        getPhaseEndVh(phases.microsoftPersonalBarScroll),
-      ),
-    },
-    {
-      id: 'meta',
-      label: 'Personal Bar 3',
-      startVh: meta,
-      jumpVh: meta,
-      anchorJump: scrollContentAnchorJump(
-        'meta-bar-heading',
-        meta,
-        getPhaseEndVh(phases.metaPersonalBarScroll),
-      ),
-    },
-    {
-      id: 'affiliations',
-      label: 'Affiliations',
-      startVh: affiliations,
-      jumpVh: affiliations,
-      anchorJump: scrollContentAnchorJump(
-        'affiliations-heading',
-        affiliations,
-        getPhaseEndVh(phases.affiliationsScroll),
-      ),
-    },
-    {
-      id: 'actions',
-      label: "What's next",
+      id: 'contact',
+      label: 'Contact',
       startVh: actions,
-      jumpVh: scrollEndVh,
-      anchorJump: scrollContentAnchorJump(
-        'intro-actions-heading',
-        actions,
-        scrollEndVh,
-      ),
+      jumpVh: trackBottomVh,
     },
   ];
 }
@@ -174,11 +109,9 @@ export function getActiveIntroNavId(
 }
 
 function getIntroNavSectionEndVh(sections: IntroNavSection[], index: number): number {
-  const section = sections[index];
-  if (section.anchorJump) return section.anchorJump.scrollMaxVh;
   const next = sections[index + 1];
   if (next) return next.startVh;
-  return section.jumpVh;
+  return sections[index].jumpVh;
 }
 
 /** 0 at section start, 1 at section end — drives the active nav progress bar fill. */
