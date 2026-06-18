@@ -35,7 +35,7 @@ export function StaticIntroActionsSection() {
               Sign up to track open source achievements and work toward hiring-manager-defined
               benchmarks.
             </p>
-            <form action={handleSignIn} className="mt-8">
+            <form action={handleSignIn.bind(null, undefined)} className="mt-8">
               <button
                 type="submit"
                 className="inline-flex w-full cursor-pointer items-center justify-center rounded-lg px-6 py-4 text-lg font-semibold text-white transition-colors hover:opacity-90 sm:w-auto"
