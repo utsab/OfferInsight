@@ -1,64 +1,118 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  STATIC_INTRO_NAV_SECTIONS,
+  getActiveStaticIntroNavId,
+  getStaticIntroNavHeaderOffsetPx,
+  getStaticIntroNavSectionProgress,
+  scrollToStaticIntroNavSection,
+} from './staticIntroScrollNav';
+import { getIntroNavProgressBarTranslateX } from './introScrollNav';
 
 const ACCENT_CORAL = '#F57360';
 
-const STATIC_NAV_LINKS = [
-  { id: 'intro', label: 'Intro', href: '#intro-zero' },
-  { id: 'personal-bars', label: 'Personal Bars', href: '#whoop-bar-heading' },
-  { id: 'contact', label: 'Contact', href: '#intro-actions' },
-] as const;
-
 export function StaticIntroNav() {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuId = useId();
+  const navShellRef = useRef<HTMLDivElement>(null);
+  const [activeId, setActiveId] = useState('intro');
+  const [activeProgress, setActiveProgress] = useState(0);
+
+  const syncNavHeightVariable = useCallback(() => {
+    const height = navShellRef.current?.offsetHeight ?? 52;
+    document.documentElement.style.setProperty('--static-intro-nav-height', `${height}px`);
+  }, []);
+
+  useEffect(() => {
+    syncNavHeightVariable();
+
+    const updateActive = () => {
+      const headerOffsetPx = getStaticIntroNavHeaderOffsetPx();
+      const scrollY = window.scrollY;
+      const nextActiveId = getActiveStaticIntroNavId(
+        STATIC_INTRO_NAV_SECTIONS,
+        scrollY,
+        headerOffsetPx,
+      );
+      setActiveId(nextActiveId);
+      setActiveProgress(
+        getStaticIntroNavSectionProgress(
+          STATIC_INTRO_NAV_SECTIONS,
+          scrollY,
+          nextActiveId,
+          headerOffsetPx,
+        ),
+      );
+    };
+
+    const onViewportChange = () => {
+      syncNavHeightVariable();
+      updateActive();
+    };
+
+    updateActive();
+    window.addEventListener('scroll', updateActive, { passive: true });
+    window.addEventListener('resize', onViewportChange);
+
+    return () => {
+      window.removeEventListener('scroll', updateActive);
+      window.removeEventListener('resize', onViewportChange);
+      document.documentElement.style.removeProperty('--static-intro-nav-height');
+    };
+  }, [syncNavHeightVariable]);
 
   return (
-    <div className="pointer-events-auto fixed left-2 top-[calc(var(--navbar-height)+1rem)] z-[30] sm:left-5">
-      <button
-        type="button"
-        aria-expanded={isOpen}
-        aria-controls={menuId}
-        aria-label={isOpen ? 'Close section navigation' : 'Open section navigation'}
-        onClick={() => setIsOpen((open) => !open)}
-        className="flex h-10 w-10 items-center justify-center rounded-sm border border-gray-200 bg-white/90 shadow-sm backdrop-blur-sm transition-colors hover:border-gray-300 sm:h-11 sm:w-11"
-      >
-        <span className="flex flex-col gap-1" aria-hidden>
-          <span className="block h-0.5 w-5 rounded-full bg-gray-700" />
-          <span className="block h-0.5 w-5 rounded-full bg-gray-700" />
-          <span className="block h-0.5 w-5 rounded-full bg-gray-700" />
-        </span>
-      </button>
+    <div
+      ref={navShellRef}
+      className="pointer-events-none fixed inset-x-0 top-[var(--navbar-height)] z-[30]"
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+1.25rem)]"
+        style={{
+          background:
+            'linear-gradient(to bottom, #ffffff 0%, #ffffff 62%, rgba(255,255,255,0.92) 82%, transparent 100%)',
+        }}
+      />
 
       <nav
-        id={menuId}
         aria-label="Intro sections"
-        aria-hidden={!isOpen}
-        className={`mt-2 flex max-h-[min(70vh,24rem)] flex-col gap-1.5 overflow-hidden rounded-sm border border-gray-200 bg-white/95 p-2 shadow-sm backdrop-blur-sm transition-[max-height,opacity,transform,margin] duration-200 ease-out sm:gap-2.5 sm:p-2.5 ${
-          isOpen
-            ? 'pointer-events-auto max-h-[min(70vh,24rem)] translate-y-0 opacity-100'
-            : 'pointer-events-none max-h-0 -translate-y-1 border-transparent p-0 opacity-0 shadow-none'
-        }`}
+        className="pointer-events-auto relative flex items-stretch justify-center gap-1 px-3 pb-2.5 pt-2 sm:gap-2 sm:px-5 sm:pb-3 sm:pt-2.5"
       >
-        {STATIC_NAV_LINKS.map((link) => (
-          <a
-            key={link.id}
-            href={link.href}
-            tabIndex={isOpen ? 0 : -1}
-            onClick={() => setIsOpen(false)}
-            className="text-[10px] font-medium text-gray-500 transition-colors hover:text-gray-800 sm:text-xs"
-          >
-            {link.label}
-          </a>
-        ))}
-        <p className="mt-1 border-t border-gray-100 pt-2 text-[9px] leading-snug text-gray-400 sm:text-[10px]">
-          Mobile layout —{' '}
-          <span className="font-medium" style={{ color: ACCENT_CORAL }}>
-            scroll
-          </span>{' '}
-          to read each section.
-        </p>
+        {STATIC_INTRO_NAV_SECTIONS.map((section) => {
+          const isActive = section.id === activeId;
+          const barTranslateX = getIntroNavProgressBarTranslateX(isActive ? activeProgress : 0);
+
+          return (
+            <button
+              key={section.id}
+              type="button"
+              aria-current={isActive ? 'true' : undefined}
+              onClick={() => {
+                scrollToStaticIntroNavSection(section, getStaticIntroNavHeaderOffsetPx());
+              }}
+              className={`relative min-w-0 flex-1 overflow-hidden rounded-sm px-1 py-1 text-center sm:px-2 sm:py-1.5 ${
+                isActive
+                  ? 'text-[11px] font-semibold tracking-tight sm:text-sm'
+                  : 'text-[10px] font-medium text-gray-400 hover:text-gray-600 sm:text-xs'
+              }`}
+            >
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 will-change-transform"
+                style={{
+                  backgroundColor: isActive ? `${ACCENT_CORAL}22` : 'transparent',
+                  transform: `translateX(${barTranslateX})`,
+                }}
+              />
+              <span
+                className="relative z-10 block truncate"
+                style={isActive ? { color: ACCENT_CORAL } : undefined}
+              >
+                {section.label}
+              </span>
+            </button>
+          );
+        })}
       </nav>
     </div>
   );

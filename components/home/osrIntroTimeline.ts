@@ -245,7 +245,7 @@ function resolvePhaseDuration(
 }
 
 /** Who copy fades in as soon as the typing hero is fully gone (parallel with whoSectionIn). */
-export function getWhoContentInScrollPhase(
+function getWhoContentInScrollPhase(
   typingFadeOutPhase: OsrScrollPhase,
   isMobile: boolean,
 ): OsrScrollPhase {

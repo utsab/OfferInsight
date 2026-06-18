@@ -1,5 +1,6 @@
 import { handleSignIn } from '@/components/auth-actions';
 import { HIRING_MANAGER_CALENDLY_URL } from './homeCtas';
+import { STATIC_SECTION_SCROLL_MT } from './staticIntroScrollNav';
 
 const ACCENT_CORAL = '#F57360';
 const ACCENT_TEAL = '#58A4B0';
@@ -8,7 +9,7 @@ export function StaticIntroActionsSection() {
   return (
     <section
       id="intro-actions"
-      className="scroll-mt-[calc(var(--navbar-height)+1rem)] border-t border-light-steel-blue/30 bg-white py-12 sm:py-16"
+      className={`${STATIC_SECTION_SCROLL_MT} border-t border-light-steel-blue/30 bg-white py-12 sm:py-16`}
       aria-labelledby="intro-actions-heading"
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">

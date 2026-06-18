@@ -12,6 +12,8 @@ import {
 import { StaticIntroActionsSection } from './StaticIntroActionsSection';
 import { StaticIntroNav } from './StaticIntroNav';
 import { StaticPersonalBarSection } from './StaticPersonalBarSection';
+import { STATIC_SECTION_SCROLL_MT } from './staticIntroScrollNav';
+import { TypingHeroLine } from './TypingHeroLine';
 import { TYPING_DESCRIPTIONS } from './osrScrollUtils';
 import {
   WHOOP_LOGO_PATH,
@@ -24,12 +26,12 @@ const ACCENT_CORAL = '#F57360';
 /** Plain stacked homepage intro for mobile browsers (no scroll-scrub / parallax). */
 export function OsrIntroStatic() {
   return (
-    <article className="relative w-full bg-white">
+    <article className="relative w-full bg-white pt-[var(--static-intro-nav-height,3.25rem)]">
       <StaticIntroNav />
 
       <section
         id="intro-zero"
-        className="scroll-mt-[calc(var(--navbar-height)+1rem)] px-5 py-14 sm:px-8 sm:py-16"
+        className={`${STATIC_SECTION_SCROLL_MT} px-5 py-14 sm:px-8 sm:py-16`}
         aria-label="Introduction"
       >
         <div className="mx-auto w-full max-w-3xl">
@@ -39,20 +41,16 @@ export function OsrIntroStatic() {
           >
             Open Source Resume is
           </p>
-          <p className="mt-4 border-b border-[#F57360] pb-4 text-xl font-semibold leading-snug text-[#F57360] sm:text-2xl">
-            {TYPING_DESCRIPTIONS[0]}
-          </p>
-          <ul className="mt-4 space-y-2 text-sm leading-relaxed text-gray-600 sm:text-base">
-            {TYPING_DESCRIPTIONS.slice(1).map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
+          <TypingHeroLine
+            descriptions={TYPING_DESCRIPTIONS}
+            className="mt-4 min-h-[1.8em] border-b border-[#F57360] pb-4 text-xl font-semibold leading-snug text-[#F57360] sm:text-2xl"
+          />
         </div>
       </section>
 
       <section
         id="intro-one"
-        className="scroll-mt-[calc(var(--navbar-height)+1rem)] border-t border-light-steel-blue/30 px-5 py-12 sm:px-8 sm:py-14"
+        className={`${STATIC_SECTION_SCROLL_MT} border-t border-light-steel-blue/30 px-5 py-12 sm:px-8 sm:py-14`}
         aria-labelledby="intro-who-heading"
       >
         <div className="mx-auto w-full max-w-3xl">
@@ -71,7 +69,7 @@ export function OsrIntroStatic() {
 
       <section
         id="intro-two"
-        className="scroll-mt-[calc(var(--navbar-height)+1rem)] border-t border-light-steel-blue/30 px-5 py-12 sm:px-8 sm:py-14"
+        className={`${STATIC_SECTION_SCROLL_MT} border-t border-light-steel-blue/30 px-5 py-12 sm:px-8 sm:py-14`}
         aria-labelledby="intro-how-heading"
       >
         <div className="mx-auto w-full max-w-3xl">
@@ -114,7 +112,7 @@ export function OsrIntroStatic() {
 
       <section
         id="intro-affiliations"
-        className="scroll-mt-[calc(var(--navbar-height)+1rem)] border-t border-light-steel-blue/30 bg-white py-12 sm:py-16"
+        className={`${STATIC_SECTION_SCROLL_MT} border-t border-light-steel-blue/30 bg-white py-12 sm:py-16`}
         aria-labelledby="affiliations-heading"
       >
         <div className="mx-auto w-full max-w-6xl px-4 text-center sm:px-8">
