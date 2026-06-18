@@ -17,6 +17,7 @@ import {
   measurePersonalBarContentHeight,
   syncScrollTrackAnimations,
 } from './osrScrollUtils';
+import { handleSignIn } from '@/components/auth-actions';
 import { TypingHeroLine } from './TypingHeroLine';
 import { IntroActionsSection } from './IntroActionsSection';
 import { MetaPersonalBarSection } from './MetaPersonalBarSection';
@@ -940,6 +941,9 @@ export function OsrIntroScroll() {
         sectionStyle={sectionShellStyle}
         sectionRef={sectionActionsRef}
         contentRef={actionsContentRef}
+        onSignUp={() => {
+          void handleSignIn();
+        }}
       />
     </div>
   );
