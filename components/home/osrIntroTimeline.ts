@@ -5,6 +5,10 @@
  * Store only `durationPercent` per phase; `buildIntroScrollPhases` assigns `at`.
  *
  * Pattern for content sections: scroll → crossfade → scroll → crossfade …
+ *
+ * Parallel phases (same scroll window as another beat, not in PHASE_ORDER):
+ * - `whoContentIn` — starts when typing hero is fully gone
+ * - page indicator — see getPageIndicatorScrollPhase()
  */
 import {
   ACTIONS_CONTENT_END_Y,
@@ -69,12 +73,11 @@ const OSR_CONTENT_PHASE_DURATIONS_MOBILE: Partial<
   actionsScroll: 36,
 };
 
-/** Scroll story order — must match scene attachment in OsrIntroScroll.tsx. */
+/** Sequential scroll story — must match scene attachment in OsrIntroScroll.tsx. */
 const PHASE_ORDER = [
   'typingFadeOut',
   'whoSectionIn',
   'whoLettersMove',
-  'whoContentIn',
   'whoSectionOut',
   'howSectionIn',
   'howLettersMove',
@@ -92,7 +95,8 @@ const PHASE_ORDER = [
 
 type OsrIntroPhaseKey = keyof typeof OSR_INTRO_PHASE_DURATIONS;
 type OsrContentPhaseKey = keyof typeof OSR_CONTENT_PHASE_DURATIONS;
-type OsrPhaseKey = (typeof PHASE_ORDER)[number];
+type OsrSequentialPhaseKey = (typeof PHASE_ORDER)[number];
+export type OsrPhaseKey = OsrSequentialPhaseKey | 'whoContentIn';
 
 const STAGE_BASE_HEIGHT = 1080;
 const MOBILE_VIEWPORT_HEIGHT = 844;
@@ -173,7 +177,7 @@ function scrollDurationForEndY(
 }
 
 function resolvePhaseDuration(
-  key: OsrPhaseKey,
+  key: OsrSequentialPhaseKey,
   isMobile: boolean,
   motion: IntroContentMotion,
 ): number {
@@ -216,6 +220,25 @@ function resolvePhaseDuration(
   }
 }
 
+/** Who copy fades in as soon as the typing hero is fully gone (parallel with whoSectionIn). */
+export function getWhoContentInScrollPhase(
+  typingFadeOutPhase: OsrScrollPhase,
+  isMobile: boolean,
+): OsrScrollPhase {
+  return {
+    at: getPhaseEndVh(typingFadeOutPhase),
+    durationPercent: getIntroPhaseDuration('whoContentIn', isMobile),
+  };
+}
+
+/** Parallel intro phase — line scrolls through the unified intro story (Intro → How). */
+export function getPageIndicatorScrollPhase(howToWhoopPhase: OsrScrollPhase): OsrScrollPhase {
+  return {
+    at: 0,
+    durationPercent: getPhaseEndVh(howToWhoopPhase) * 100,
+  };
+}
+
 export function buildIntroScrollPhases(
   isMobile: boolean,
   measurements: IntroContentMeasurements,
@@ -233,6 +256,8 @@ export function buildIntroScrollPhases(
     phases[key] = { at, durationPercent };
     at = getPhaseEndVh(phases[key]);
   }
+
+  phases.whoContentIn = getWhoContentInScrollPhase(phases.typingFadeOut, isMobile);
 
   return { phases, motion, scrollTrackEndVh: getPhaseEndVh(phases.actionsScroll) };
 }

@@ -172,3 +172,34 @@ export function getActiveIntroNavId(
   }
   return active;
 }
+
+function getIntroNavSectionEndVh(sections: IntroNavSection[], index: number): number {
+  const section = sections[index];
+  if (section.anchorJump) return section.anchorJump.scrollMaxVh;
+  const next = sections[index + 1];
+  if (next) return next.startVh;
+  return section.jumpVh;
+}
+
+/** 0 at section start, 1 at section end — drives the active nav progress bar fill. */
+export function getIntroNavSectionProgress(
+  sections: IntroNavSection[],
+  relativeScrollVh: number,
+  sectionId: string,
+): number {
+  const index = sections.findIndex((section) => section.id === sectionId);
+  if (index === -1) return 0;
+
+  const section = sections[index];
+  const endVh = getIntroNavSectionEndVh(sections, index);
+  const span = endVh - section.startVh;
+  if (span <= 0) return 1;
+
+  return Math.min(1, Math.max(0, (relativeScrollVh - section.startVh) / span));
+}
+
+/** Gilroy-style bar: hidden off-left at -101%, fully revealed at 0%. */
+export function getIntroNavProgressBarTranslateX(progress: number): string {
+  const hiddenPercent = -101;
+  return `${hiddenPercent + progress * -hiddenPercent}%`;
+}
