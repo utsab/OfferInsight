@@ -1,14 +1,4 @@
 import { HOME_ASSETS } from './homeAssets';
-import {
-  META_LOGO_PATH,
-  META_PERSONAL_BAR_CRITERIA,
-  META_PERSONAL_BAR_TITLE,
-} from './metaPersonalBar';
-import {
-  MICROSOFT_LOGO_PATH,
-  MICROSOFT_PERSONAL_BAR_CRITERIA,
-  MICROSOFT_PERSONAL_BAR_TITLE,
-} from './microsoftPersonalBar';
 import { StaticIntroActionsSection } from './StaticIntroActionsSection';
 import { StaticIntroNav } from './StaticIntroNav';
 import { StaticPersonalBarSection } from './StaticPersonalBarSection';
@@ -92,22 +82,6 @@ export function OsrIntroStatic() {
         title={WHOOP_PERSONAL_BAR_TITLE}
         logoPath={WHOOP_LOGO_PATH}
         criteria={WHOOP_PERSONAL_BAR_CRITERIA}
-      />
-
-      <StaticPersonalBarSection
-        sectionId="intro-microsoft-bar"
-        headingId="microsoft-bar-heading"
-        title={MICROSOFT_PERSONAL_BAR_TITLE}
-        logoPath={MICROSOFT_LOGO_PATH}
-        criteria={MICROSOFT_PERSONAL_BAR_CRITERIA}
-      />
-
-      <StaticPersonalBarSection
-        sectionId="intro-meta-bar"
-        headingId="meta-bar-heading"
-        title={META_PERSONAL_BAR_TITLE}
-        logoPath={META_LOGO_PATH}
-        criteria={META_PERSONAL_BAR_CRITERIA}
       />
 
       <section

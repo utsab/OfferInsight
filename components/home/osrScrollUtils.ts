@@ -137,23 +137,13 @@ export function getContentScrollTravelVh(startVh: number, endY: string): number 
 
 /**
  * Personal-bar scroll rate: one unit of scroll distance (durationPercent)
- * per vh of content travel — keeps Meta → affiliations → actions continuous.
+ * per vh of content travel — keeps affiliations → actions continuous.
  */
 export function getScrollDurationForTravelVh(
   travelVh: number,
   minDurationPercent: number,
 ): number {
   return Math.round(Math.max(minDurationPercent, travelVh));
-}
-
-/** Meta personal bar — shorter tail before affiliations, same scroll rate. */
-export function getMetaContentEndY(
-  contentHeightPx: number,
-  viewportHeightPx: number,
-): string {
-  const contentVh = (contentHeightPx / viewportHeightPx) * 100;
-  const endVh = Math.max(48, Math.round(contentVh + 12));
-  return `-${endVh}vh`;
 }
 
 /** Affiliations logo grid — shorter tail than criteria pages, same scroll rate. */
