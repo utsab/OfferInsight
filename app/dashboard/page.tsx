@@ -15,6 +15,10 @@ import OpenSourceTab from './components/OpenSourceTab';
 import { getApiHeaders } from '@/app/lib/api-helpers';
 import { getFilteredOpenSourceColumns } from './lib/open-source-filter';
 import { buildPartnershipNameMatchSet, normalizePartnerName } from './lib/partnership-name-match';
+import {
+  getPartnershipCriteriaForEntry,
+  isProofOfWorkComplete,
+} from './lib/open-source-proof-of-work';
 import type {
   Application,
   ApplicationStatus,
@@ -852,24 +856,6 @@ const hasSeededMockDataRef = useRef(false);
     300
   );
 
-  const isProofOfWorkComplete = (entry: OpenSourceEntry): boolean => {
-    const proofFields = entry.proofOfCompletion ?? [];
-    if (proofFields.length === 0) return true;
-    const responses = entry.proofResponses ?? {};
-    for (const field of proofFields) {
-      const key = field?.text;
-      if (!key) continue;
-      const val = responses[key];
-      const fieldType = (field?.type ?? '').toLowerCase();
-      if (fieldType === 'checkbox') {
-        if (!val) return false;
-      } else {
-        if (val == null || String(val).trim() === '') return false;
-      }
-    }
-    return true;
-  };
-
   const handleOpenSourceDragEnd = async (event: DragEndEvent) => {
     if (!canEditViewedUser && userIdParam) return;
     const { active, over } = event;
@@ -913,7 +899,12 @@ const hasSeededMockDataRef = useRef(false);
       }
       const movingItem = fromItems[movingIndex];
 
-      if (toCol === 'done' && !isProofOfWorkComplete(movingItem)) {
+      const partnershipCriteria = getPartnershipCriteriaForEntry(
+        movingItem,
+        activePartnershipCriteria,
+        completedPartnerships
+      );
+      if (toCol === 'done' && !isProofOfWorkComplete(movingItem, partnershipCriteria)) {
         setShowProofOfWorkWarning(true);
         setActiveOpenSourceId(null);
         isDraggingOpenSourceRef.current = false;

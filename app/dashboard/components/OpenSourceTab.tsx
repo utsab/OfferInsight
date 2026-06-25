@@ -10,6 +10,7 @@ import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceSt
 import { openSourceStatusToColumn } from './types';
 import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl, ModalFormPrimaryAction } from './shared';
 import typesData from '@/partnerships/types.json';
+import { getEffectiveProofOfCompletionFields } from '../lib/open-source-proof-of-work';
 
 // Debug: set to true to show date created/modified fields in the open source modal
 const ENABLE_DATE_FIELD_EDITING = false;
@@ -246,36 +247,18 @@ function OpenSourceModal({
     });
   };
 
-  // Helper to get effective fields including extras
-  // When in Plan column, exclude extra fields to keep the modal compact (user can still select extras via checkboxes)
-  const getEffectiveFields = () => {
-    let effectiveBabySteps = [...formData.babyStepFields];
-    let effectiveProofOfWork = [...formData.proofOfCompletion];
+  // Plan fields including extras. Extras are hidden in Plan column to keep the modal compact.
+  const getEffectivePlanFields = () => {
     let effectivePlan = [...formData.planFields];
-
-    const includeExtraFields = formData.status !== 'plan';
-    if (formData.criteriaType === 'issue' && includeExtraFields) {
+    if (formData.criteriaType === 'issue' && formData.status !== 'plan') {
       formData.selectedExtras.forEach(extraType => {
         const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
-        if (extraCriteria) {
-          if (extraCriteria.baby_step_column_fields) {
-            effectiveBabySteps = [...effectiveBabySteps, ...extraCriteria.baby_step_column_fields];
-          }
-          if (extraCriteria.proof_of_completion) {
-            effectiveProofOfWork = [...effectiveProofOfWork, ...extraCriteria.proof_of_completion];
-          }
-          if (extraCriteria.plan_column_fields) {
-            effectivePlan = [...effectivePlan, ...extraCriteria.plan_column_fields];
-          }
+        if (extraCriteria?.plan_column_fields) {
+          effectivePlan = [...effectivePlan, ...extraCriteria.plan_column_fields];
         }
       });
     }
-
-    return { 
-      babySteps: effectiveBabySteps, 
-      proofOfWork: effectiveProofOfWork,
-      plan: effectivePlan
-    };
+    return effectivePlan;
   };
 
   // Generic helper: builds named groups from primary fields + matching extra fields.
@@ -309,7 +292,10 @@ function OpenSourceModal({
   const getBabyStepGroups = () => getFieldGroups(formData.babyStepFields, c => c.baby_step_column_fields);
   const getProofOfWorkGroups = () => getFieldGroups(formData.proofOfCompletion, c => c.proof_of_completion);
 
-  const { proofOfWork: effectiveProofOfWork, plan: effectivePlan } = getEffectiveFields();
+  const effectivePlan = useMemo(
+    () => getEffectivePlanFields(),
+    [formData.planFields, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
+  );
   const babyStepGroups = useMemo(
     () => getBabyStepGroups(),
     [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
@@ -317,6 +303,10 @@ function OpenSourceModal({
   const proofOfWorkGroups = useMemo(
     () => getProofOfWorkGroups(),
     [formData.proofOfCompletion, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
+  );
+  const effectiveProofOfWork = useMemo(
+    () => proofOfWorkGroups.flatMap(g => g.fields),
+    [proofOfWorkGroups]
   );
   const proofOfWorkFlat = useMemo(
     () => proofOfWorkGroups.flatMap(g => g.fields.map(req => ({ ...req, groupName: g.name }))),
@@ -448,9 +438,8 @@ function OpenSourceModal({
     }
     
     // Recalculate fields based on current selectedExtras before saving
-    // This ensures fields array includes all extra fields when extras are changed
+    // This ensures response cleanup includes all extra fields when extras are changed
     let effectiveBabySteps = [...formData.babyStepFields];
-    let effectiveProofOfWork = [...formData.proofOfCompletion];
     let effectivePlan = [...formData.planFields];
 
     if (formData.criteriaType === 'issue') {
@@ -460,15 +449,21 @@ function OpenSourceModal({
           if (extraCriteria.baby_step_column_fields) {
             effectiveBabySteps = [...effectiveBabySteps, ...extraCriteria.baby_step_column_fields];
           }
-          if (extraCriteria.proof_of_completion) {
-            effectiveProofOfWork = [...effectiveProofOfWork, ...extraCriteria.proof_of_completion];
-          }
           if (extraCriteria.plan_column_fields) {
             effectivePlan = [...effectivePlan, ...extraCriteria.plan_column_fields];
           }
         }
       });
     }
+
+    const effectiveProofOfWork = getEffectiveProofOfCompletionFields(
+      {
+        criteriaType: formData.criteriaType,
+        selectedExtras: formData.selectedExtras,
+        proofOfCompletion: formData.proofOfCompletion,
+      } as OpenSourceEntry,
+      activePartnershipCriteria
+    );
     
     // Collect all valid field text keys to clean up orphaned responses
     const validPlanKeys = new Set(effectivePlan.map(f => f.text).filter(Boolean));
