@@ -8,7 +8,7 @@ export const TYPING_DESCRIPTIONS = [
   'Your portfolio, verifiable on GitHub',
 ] as const;
 
-function getNavbarHeightPx(): number {
+function getNavbarHeightPxFromCssVar(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue('--navbar-height').trim();
   if (!raw) return 72;
   if (raw.endsWith('rem')) {
@@ -16,6 +16,22 @@ function getNavbarHeightPx(): number {
     return parseFloat(raw) * rootFontSize;
   }
   return parseFloat(raw) || 72;
+}
+
+/** Prefer live navbar measurement — CSS var can drift from rendered height on resize. */
+export function getSiteNavbarHeightPx(): number {
+  if (typeof document !== 'undefined') {
+    const navbar = document.getElementById('site-navbar');
+    if (navbar) {
+      const height = navbar.getBoundingClientRect().height;
+      if (height > 0) return height;
+    }
+  }
+  return getNavbarHeightPxFromCssVar();
+}
+
+function getNavbarHeightPx(): number {
+  return getSiteNavbarHeightPx();
 }
 
 /** Viewport height below the fixed navbar (matches pinned hero start). */

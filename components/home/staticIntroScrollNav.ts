@@ -1,4 +1,4 @@
-import { getViewportOffsetTopPx } from './osrScrollUtils';
+import { getSiteNavbarHeightPx } from './osrScrollUtils';
 
 export type StaticIntroNavSection = {
   id: string;
@@ -33,7 +33,7 @@ export const STATIC_INTRO_NAV_SECTIONS: StaticIntroNavSection[] = [
 ];
 
 export const STATIC_SECTION_SCROLL_MT =
-  'scroll-mt-[calc(var(--navbar-height)+var(--static-intro-nav-height,3.25rem)+0.5rem)]';
+  'scroll-mt-[calc(var(--site-navbar-height,var(--navbar-height))+var(--static-intro-nav-height,3.25rem)+0.5rem)]';
 
 function getElementDocumentTop(id: string): number | null {
   const element = document.getElementById(id);
@@ -47,7 +47,7 @@ export function getStaticIntroNavHeaderOffsetPx(): number {
     .trim();
   const navHeight = raw.endsWith('px') ? parseFloat(raw) : 52;
 
-  return getViewportOffsetTopPx(0) + navHeight;
+  return getSiteNavbarHeightPx() + navHeight;
 }
 
 function getSectionRangeStart(section: StaticIntroNavSection, headerOffsetPx: number): number {
