@@ -8,7 +8,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
-import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl, ModalFormPrimaryAction } from './shared';
+import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl, ModalFormPrimaryAction, ModalOverlay, ModalPanel } from './shared';
 import typesData from '@/partnerships/types.json';
 import { getEffectiveProofOfCompletionFields } from '../lib/open-source-proof-of-work';
 
@@ -540,8 +540,8 @@ function OpenSourceModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0" onClick={(e) => e.stopPropagation()}>
+    <ModalOverlay onClose={onClose}>
+      <ModalPanel size="2xl">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-white">
             {entry ? 'Edit Open Source Criteria' : 'Create New Open Source Criteria'}
@@ -851,8 +851,8 @@ function OpenSourceModal({
             </div>
           </div>
         </form>
-      </div>
-    </div>
+      </ModalPanel>
+    </ModalOverlay>
   );
 }
 
@@ -1505,8 +1505,8 @@ export default function OpenSourceTab({
 
           {/* Switch Partnership Confirmation Modal */}
           {showSwitchConfirmation && !readOnly && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowSwitchConfirmation(false)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => setShowSwitchConfirmation(false)}>
+              <ModalPanel size="md">
                 <h3 className="text-xl font-bold text-white mb-4">Switch Partnership</h3>
                 <p className="text-gray-300 mb-2">
                   Are you sure you want to switch from <span className="font-semibold text-white">{selectedPartnership}</span> to <span className="font-semibold text-white">{tempSelection}</span>?
@@ -1529,14 +1529,14 @@ export default function OpenSourceTab({
                     {isSaving ? 'Switching...' : 'Yes, Switch Partnership'}
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {/* Abandon Partnership Confirmation Modal */}
           {showAbandonConfirmation && !readOnly && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAbandonConfirmation(false)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => setShowAbandonConfirmation(false)}>
+              <ModalPanel size="md">
                 <h3 className="text-xl font-bold text-white mb-4">Abandon Partnership</h3>
                 <p className="text-gray-300 mb-2">
                   Are you sure you want to abandon <span className="font-semibold text-white">{selectedPartnership}</span> for this student?
@@ -1559,14 +1559,14 @@ export default function OpenSourceTab({
                     {isAbandoning ? 'Abandoning...' : 'Yes, Abandon Partnership'}
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {/* Partnership Error Modal */}
           {partnershipError && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPartnershipError(null)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => setPartnershipError(null)}>
+              <ModalPanel size="md">
                 <h3 className="text-xl font-bold text-white mb-4">Partnership Error</h3>
                 <p className="text-amber-400 text-sm mb-6 font-medium">
                   {partnershipError}
@@ -1579,14 +1579,14 @@ export default function OpenSourceTab({
                     OK
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {/* Proof of Work Warning Modal */}
           {showProofOfWorkWarning && setShowProofOfWorkWarning && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowProofOfWorkWarning(false)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => setShowProofOfWorkWarning(false)}>
+              <ModalPanel size="md">
                 <h3 className="text-xl font-bold text-white mb-4">Proof of Work Required</h3>
                 <p className="text-amber-400 text-sm mb-6 font-semibold">
                   Please complete the proof of work fields first!
@@ -1599,14 +1599,14 @@ export default function OpenSourceTab({
                     OK
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {/* Congratulations Modal - All Partnership Criteria Completed */}
           {showCongratsModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => handleCompletePartnership(false)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => handleCompletePartnership(false)}>
+              <ModalPanel size="md">
                 <div className="flex flex-col items-center text-center mb-6">
                   <PartyPopper className="w-16 h-16 text-green-400 mb-4" />
                   <h3 className="text-2xl font-bold text-white mb-2">Congratulations!</h3>
@@ -1633,8 +1633,8 @@ export default function OpenSourceTab({
                     {isCompletingPartnership ? 'Loading...' : 'Yes'}
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {isLoading ? (

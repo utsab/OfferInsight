@@ -1617,7 +1617,7 @@ const hasSeededMockDataRef = useRef(false);
       )}
 
       {/* Main Content */}
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Main Navigation Tabs */}
         <section className="mb-8">
           <div className="flex border-b border-light-steel-blue bg-gray-800 rounded-t-lg overflow-x-auto">
@@ -1815,7 +1815,7 @@ const hasSeededMockDataRef = useRef(false);
             readOnly={!canEditViewedUser && !!userIdParam}
           />
         )}
-    </main>
+    </div>
     </div>
   );
 }
