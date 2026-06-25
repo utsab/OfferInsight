@@ -1,7 +1,6 @@
 import type { PersonalBarCriterion } from './personalBarTypes';
 
-export const META_LOGO_PATH =
-  '/images/home/meta_platforms-logo_brandlogos.net_rqa1r.png';
+export const META_LOGO_PATH = '/images/home/meta-platforms-logo-black.svg';
 
 export const META_PERSONAL_BAR_TITLE =
   'Personal bar of a Hiring Manager for Meta';

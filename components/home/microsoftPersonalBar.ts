@@ -1,7 +1,6 @@
 import type { PersonalBarCriterion } from './personalBarTypes';
 
-export const MICROSOFT_LOGO_PATH =
-  '/images/home/microsoft-logo_brandlogos.net_y0fjb.png';
+export const MICROSOFT_LOGO_PATH = '/images/home/microsoft-logo-black.svg';
 
 export const MICROSOFT_PERSONAL_BAR_TITLE =
   'Personal bar of a Hiring Manager from Microsoft';
