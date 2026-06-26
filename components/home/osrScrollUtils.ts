@@ -51,13 +51,12 @@ export function syncScrollTrackAnimations(scrollTrack: HTMLElement): void {
 export function getOsrSceneConfig(
   offsetVh: number,
   durationPercent: number,
-  scrub: number | false = 0.45,
+  _scrub: number | false = 0.45,
 ) {
   const vh = getViewportBelowNavbar();
   return {
     startPx: Math.round(offsetVh * vh),
     durationPx: Math.round((durationPercent / 100) * vh),
-    scrub,
   };
 }
 

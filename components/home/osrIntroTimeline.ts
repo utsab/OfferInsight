@@ -196,11 +196,33 @@ function getWhoContentInScrollPhase(
   };
 }
 
-/** Parallel intro phase — line scrolls through the unified intro story (Intro → How). */
-export function getPageIndicatorScrollPhase(howSectionOutPhase: OsrScrollPhase): OsrScrollPhase {
+/**
+ * Share of `whoopPersonalBarScroll` used for the agreements → Whoop crossfade.
+ * Must match `duration` values on those tweens in `OsrIntroScroll.tsx`.
+ */
+export const WHOOP_ENTRANCE_CROSSFADE_SHARE = 0.03;
+
+/**
+ * How far into `whoopPersonalBarScroll` the orange page indicator finishes
+ * climbing off-screen. Opacity is never tweened — only `top`. Keep the line at
+ * z-[21] in OsrIntroScroll (above story sections, below Contact) so section
+ * crossfades do not wash over it.
+ */
+export const PAGE_INDICATOR_WHOOP_EXIT_SHARE = 0.15;
+
+/**
+ * Parallel intro phase — orange line climbs Intro → Agreements, exiting partway
+ * into the Whoop personal-bar entrance.
+ */
+export function getPageIndicatorScrollPhase(
+  whoopPersonalBarScrollPhase: OsrScrollPhase,
+): OsrScrollPhase {
+  const exitVh =
+    whoopPersonalBarScrollPhase.at +
+    (whoopPersonalBarScrollPhase.durationPercent / 100) * PAGE_INDICATOR_WHOOP_EXIT_SHARE;
   return {
     at: 0,
-    durationPercent: getPhaseEndVh(howSectionOutPhase) * 100,
+    durationPercent: exitVh * 100,
   };
 }
 

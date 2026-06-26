@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import { buildIntroScrollPhases, getOsrScrollHeightVh, getPageIndicatorScrollPhase } from './osrIntroTimeline';
+import { buildIntroScrollPhases, getOsrScrollHeightVh, getPageIndicatorScrollPhase, WHOOP_ENTRANCE_CROSSFADE_SHARE } from './osrIntroTimeline';
 import {
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
@@ -87,7 +87,7 @@ function applyIntroStartFrame(
   gsap.set(sectionWhoopPersonalBar, { autoAlpha: 0 });
   gsap.set(sectionActions, { autoAlpha: 0 });
   if (pageIndicator) {
-    gsap.set(pageIndicator, { opacity: 1, top: '90%', yPercent: 0 });
+    gsap.set(pageIndicator, { opacity: 1, top: '90%' });
   }
 }
 
@@ -404,7 +404,7 @@ export function OsrIntroScroll() {
             gsap.fromTo(whoWeAreContent, { opacity: 0 }, { opacity: 1, ...SCRUB_DEFAULTS }),
           );
 
-          const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.howSectionOut);
+          const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.whoopPersonalBarScroll);
           if (pageIndicator) {
             attachScene(
               scrollTrack,
@@ -519,9 +519,6 @@ export function OsrIntroScroll() {
               ),
           );
 
-          /** Share of the Whoop scroll window used for agreements → Whoop crossfade. */
-          const whoopEntranceCrossfadeShare = 0.03;
-
           attachScene(
             scrollTrack,
             phases.whoopPersonalBarScroll.at,
@@ -531,13 +528,13 @@ export function OsrIntroScroll() {
               .fromTo(
                 sectionAgreements,
                 { autoAlpha: 1 },
-                { autoAlpha: 0, ...SCRUB_DEFAULTS, duration: whoopEntranceCrossfadeShare },
+                { autoAlpha: 0, ...SCRUB_DEFAULTS, duration: WHOOP_ENTRANCE_CROSSFADE_SHARE },
                 0,
               )
               .fromTo(
                 sectionWhoopPersonalBar,
                 { autoAlpha: 0 },
-                { autoAlpha: 1, ...SCRUB_DEFAULTS, duration: whoopEntranceCrossfadeShare },
+                { autoAlpha: 1, ...SCRUB_DEFAULTS, duration: WHOOP_ENTRANCE_CROSSFADE_SHARE },
                 0,
               )
               .fromTo(
@@ -553,15 +550,6 @@ export function OsrIntroScroll() {
                 0,
               ),
           );
-
-          if (pageIndicator) {
-            attachScene(
-              scrollTrack,
-              phases.actionsScroll.at,
-              phases.actionsScroll.durationPercent,
-              gsap.fromTo(pageIndicator, { opacity: 1 }, { opacity: 0, ...SCRUB_DEFAULTS }),
-            );
-          }
 
           attachSectionCrossfade(phases.actionsScroll, sectionWhoopPersonalBar, sectionActions);
 
@@ -654,7 +642,7 @@ export function OsrIntroScroll() {
 
       <div
         data-page-indicator
-        className="pointer-events-none fixed left-[20%] z-[8] h-[45%] w-0.5"
+        className="pointer-events-none fixed left-[20%] z-[21] h-[45%] w-0.5"
         style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
         aria-hidden
       />
