@@ -30,18 +30,14 @@ export function getSiteNavbarHeightPx(): number {
   return getNavbarHeightPxFromCssVar();
 }
 
-function getNavbarHeightPx(): number {
-  return getSiteNavbarHeightPx();
-}
-
 /** Viewport height below the fixed navbar (matches pinned hero start). */
 export function getViewportBelowNavbar(): number {
-  return Math.max(window.innerHeight - getNavbarHeightPx(), 320);
+  return Math.max(window.innerHeight - getSiteNavbarHeightPx(), 320);
 }
 
 /** Absolute viewport Y for a point `offsetVh` below the navbar. */
 export function getViewportOffsetTopPx(offsetVh: number): number {
-  return getNavbarHeightPx() + (offsetVh / 100) * getViewportBelowNavbar();
+  return getSiteNavbarHeightPx() + (offsetVh / 100) * getViewportBelowNavbar();
 }
 
 /** Keep scrubbed ScrollTrigger timelines aligned with the current scroll position. */
@@ -124,22 +120,16 @@ export function getScrollTrackRelativePx(scrollTrack: HTMLElement): number {
   return Math.max(window.scrollY - getScrollTrackDocumentTopPx(scrollTrack), 0);
 }
 
-/**
- * Window scrollY that pins the scroll track to the page bottom.
- * Pass `scrollTrackEndVh` when known — more reliable than offsetHeight reads.
- */
-export function getScrollTrackBottomPx(
+/** Scroll so `offsetPx` of the track has passed the viewport top. */
+export function scrollToTrackOffsetPx(
   scrollTrack: HTMLElement,
-  scrollTrackEndVh?: number,
-): number {
-  const trackTop = getScrollTrackDocumentTopPx(scrollTrack);
-  if (scrollTrackEndVh != null && scrollTrackEndVh > 0) {
-    return trackTop + getOsrSceneConfig(scrollTrackEndVh, 0, false).startPx;
-  }
-  return Math.max(
-    trackTop,
-    trackTop + scrollTrack.offsetHeight - window.innerHeight,
-  );
+  offsetPx: number,
+  behavior: ScrollBehavior = 'smooth',
+): void {
+  window.scrollTo({
+    top: getScrollTrackDocumentTopPx(scrollTrack) + offsetPx,
+    behavior,
+  });
 }
 
 /** Vertical travel (vh) for a content scroll from `startVh` to `endY`. */

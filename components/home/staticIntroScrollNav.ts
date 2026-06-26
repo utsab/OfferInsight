@@ -57,6 +57,10 @@ function getSectionRangeStart(section: StaticIntroNavSection, headerOffsetPx: nu
   return Math.max(0, top - headerOffsetPx);
 }
 
+function getPageBottomScrollY(): number {
+  return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+}
+
 function getSectionRangeEnd(
   sections: StaticIntroNavSection[],
   index: number,
@@ -64,14 +68,7 @@ function getSectionRangeEnd(
 ): number {
   const next = sections[index + 1];
   if (next) return getSectionRangeStart(next, headerOffsetPx);
-  const contact = sections[sections.length - 1];
-  if (contact?.scrollToPageBottom) {
-    return Math.max(
-      document.documentElement.scrollHeight - window.innerHeight,
-      getSectionRangeStart(contact, headerOffsetPx),
-    );
-  }
-  return document.documentElement.scrollHeight - window.innerHeight;
+  return Math.max(getPageBottomScrollY(), getSectionRangeStart(sections[index], headerOffsetPx));
 }
 
 export function getActiveStaticIntroNavId(
@@ -115,11 +112,7 @@ export function scrollToStaticIntroNavSection(
   headerOffsetPx: number,
 ): void {
   if (section.scrollToPageBottom) {
-    const maxScrollY = Math.max(
-      0,
-      document.documentElement.scrollHeight - window.innerHeight,
-    );
-    window.scrollTo({ top: maxScrollY, behavior: 'smooth' });
+    window.scrollTo({ top: getPageBottomScrollY(), behavior: 'smooth' });
     return;
   }
 

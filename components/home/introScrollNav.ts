@@ -21,15 +21,16 @@ export const INTRO_NAV_MOBILE_NAV_PADDING_CLASS = 'px-3 sm:px-5';
  *
  * ## Nav jumps
  *
- * **Intro** — scroll to top of track.
+ * **Intro** — scroll to page top (`scrollY` 0).
  *
  * **Personal Bar** — `introScrollJump.ts` aligns the first personal-bar heading
  * below the navbar.
  *
- * **Contact** — scroll to the physical track bottom (`getScrollTrackBottomPx` in
- * `OsrIntroScroll.tsx`); `jumpVh` on that section is the matching below-navbar vh
- * for progress-bar math only.
+ * **Contact** — `jumpVh` is the track end (`getPhaseEndVh(actionsScroll)`); same
+ * document-coordinate scroll path as other sections via `scrollToTrackOffsetPx`.
  */
+
+import { getPhaseEndVh } from './osrScrollUtils';
 
 type IntroNavAnchorJump = {
   anchorId: string;
@@ -57,7 +58,7 @@ type IntroNavBuildPhases = {
   actionsScroll: IntroNavPhase;
 };
 
-/** vh below navbar for scroll-content section headings (personal bar, contact). */
+/** vh below navbar for personal-bar heading alignment in anchor jumps. */
 const SCROLL_CONTENT_HEADING_TOP_VH = 14;
 
 function scrollContentAnchorJump(
@@ -73,12 +74,10 @@ function scrollContentAnchorJump(
   };
 }
 
-export function buildIntroNavSections(
-  phases: IntroNavBuildPhases,
-  scrollTrackEndVh: number,
-): IntroNavSection[] {
+export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSection[] {
   const whoop = phases.whoopPersonalBarScroll.at;
   const actions = phases.actionsScroll.at;
+  const trackEndVh = getPhaseEndVh(phases.actionsScroll);
 
   return [
     {
@@ -98,7 +97,7 @@ export function buildIntroNavSections(
       id: 'contact',
       label: 'Contact',
       startVh: actions,
-      jumpVh: scrollTrackEndVh,
+      jumpVh: trackEndVh,
     },
   ];
 }

@@ -9,9 +9,8 @@ import {
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
   getOsrSceneConfig,
-  getScrollTrackBottomPx,
-  getScrollTrackDocumentTopPx,
   getScrollTrackRelativePx,
+  scrollToTrackOffsetPx,
   applyScrollTrackHeight,
   getViewportBelowNavbar,
   measurePersonalBarContentHeight,
@@ -134,15 +133,11 @@ export function OsrIntroScroll() {
     const track = scrollTrackRef.current;
     if (!track) return;
 
-    if (section.id === 'contact') {
-      window.scrollTo({
-        top: getScrollTrackBottomPx(track, section.jumpVh),
-        behavior: 'smooth',
-      });
+    if (section.id === 'intro') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    const trackTop = getScrollTrackDocumentTopPx(track);
     const anchorJump = section.anchorJump;
     if (anchorJump) {
       const anchor = document.getElementById(anchorJump.anchorId);
@@ -154,14 +149,12 @@ export function OsrIntroScroll() {
           anchorJump.scrollMinVh,
           anchorJump.scrollMaxVh,
         );
-        const { startPx } = getOsrSceneConfig(jumpVh, 0, false);
-        window.scrollTo({ top: trackTop + startPx, behavior: 'smooth' });
+        scrollToTrackOffsetPx(track, getOsrSceneConfig(jumpVh, 0, false).startPx);
         return;
       }
     }
 
-    const { startPx } = getOsrSceneConfig(section.jumpVh, 0, false);
-    window.scrollTo({ top: trackTop + startPx, behavior: 'smooth' });
+    scrollToTrackOffsetPx(track, getOsrSceneConfig(section.jumpVh, 0, false).startPx);
   }, []);
 
   useEffect(() => {
@@ -350,13 +343,10 @@ export function OsrIntroScroll() {
           applyScrollTrackHeight(scrollTrack, scrollTrackEndVh);
           setScrollTrackEndVh(scrollTrackEndVh);
           setIntroNavSections(
-            buildIntroNavSections(
-              {
-                whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
-                actionsScroll: phases.actionsScroll,
-              },
-              scrollTrackEndVh,
-            ),
+            buildIntroNavSections({
+              whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
+              actionsScroll: phases.actionsScroll,
+            }),
           );
           const attachSectionCrossfade = (
             phase: { at: number; durationPercent: number },
