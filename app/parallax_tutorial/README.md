@@ -15,7 +15,7 @@ Small, in-repo walkthrough of the homepage intro scroll (`components/home/OsrInt
 
 - Section shell stays **fixed** in the viewport.
 - Inner content moves **`y`** upward as the user scrolls (e.g. start at `140vh`, end at a negative `vh`).
-- Reference: `attachContentScroll()` in `components/home/OsrIntroScroll.tsx`.
+- Reference: Whoop personal-bar timeline in `components/home/OsrIntroScroll.tsx` (`whoopPersonalBarScroll` scene).
 - Related timing/travel helpers: `components/home/osrScrollUtils.ts`, `components/home/osrIntroTimeline.ts`.
 
 When implementing Step 3, add `step3/page.tsx` and register it in `ParallaxTutorialNav.tsx` and the index page.
@@ -26,5 +26,5 @@ When implementing Step 3, add `step3/page.tsx` and register it in `ParallaxTutor
 |---------------|----------------|
 | Scroll track height | `scrollTrackRef`, `buildIntroScrollPhases()` |
 | Section crossfade | `attachSectionCrossfade()` |
-| Inner content scroll | `attachContentScroll()` |
+| Inner content scroll | Whoop `whoopPersonalBarScroll` timeline in `OsrIntroScroll.tsx` |
 | Phase timings | `osrIntroTimeline.ts` → `buildIntroScrollPhases()` |

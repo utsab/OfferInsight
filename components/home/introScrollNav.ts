@@ -1,5 +1,3 @@
-import { getScrollTrackBottomRelativeVh } from './osrScrollUtils';
-
 /**
  * Jump nav pill sizing — tweak these to taste.
  *
@@ -81,7 +79,6 @@ export function buildIntroNavSections(
 ): IntroNavSection[] {
   const whoop = phases.whoopPersonalBarScroll.at;
   const actions = phases.actionsScroll.at;
-  const trackBottomVh = getScrollTrackBottomRelativeVh(scrollTrackEndVh);
 
   return [
     {
@@ -101,7 +98,7 @@ export function buildIntroNavSections(
       id: 'contact',
       label: 'Contact',
       startVh: actions,
-      jumpVh: trackBottomVh,
+      jumpVh: scrollTrackEndVh,
     },
   ];
 }

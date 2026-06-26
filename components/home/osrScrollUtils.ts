@@ -68,18 +68,6 @@ export function getOsrSceneConfig(
 export const PERSONAL_BAR_CONTENT_START_VH = 140;
 export const PERSONAL_BAR_CONTENT_START_Y = `${PERSONAL_BAR_CONTENT_START_VH}vh`;
 
-/** Actions entry: just below the stage — contact rises in as the personal bar exits. */
-export const ACTIONS_CONTENT_START_VH = 72;
-export const ACTIONS_CONTENT_START_Y = `${ACTIONS_CONTENT_START_VH}vh`;
-
-/** Measure contact section content height (same pattern as the personal bar). */
-export function measureActionsContentHeight(content: HTMLElement): number {
-  gsap.set(content, { y: 0 });
-  const height = Math.max(content.scrollHeight, content.getBoundingClientRect().height);
-  gsap.set(content, { y: ACTIONS_CONTENT_START_Y });
-  return height;
-}
-
 /** Measure personal-bar content height without transform affecting layout reads. */
 export function measurePersonalBarContentHeight(content: HTMLElement): number {
   gsap.set(content, { y: 0 });
@@ -109,13 +97,21 @@ export function getPhaseEndVh(phase: { at: number; durationPercent: number }): n
 }
 
 /**
- * Furthest track-relative scroll (below-navbar vh).
- * Track height uses full window vh; scene math uses viewport below navbar — this closes the gap.
+ * Scroll track height in px — phase positions use below-navbar vh, so total
+ * scrollable distance is `scrollTrackEndVh * belowNav`, plus one viewport to
+ * reach the first phase.
  */
-export function getScrollTrackBottomRelativeVh(scrollTrackEndVh: number): number {
-  const belowNav = getViewportBelowNavbar();
-  const maxPx = Math.max(0, scrollTrackEndVh * window.innerHeight - window.innerHeight);
-  return maxPx / belowNav;
+export function getScrollTrackHeightPx(scrollTrackEndVh: number): number {
+  if (typeof window === 'undefined') return 0;
+  return Math.round(window.innerHeight + scrollTrackEndVh * getViewportBelowNavbar());
+}
+
+/** Client-only — sets scroll track height from phase end (below-navbar vh). */
+export function applyScrollTrackHeight(
+  track: HTMLElement,
+  scrollTrackEndVh: number,
+): void {
+  track.style.height = `${getScrollTrackHeightPx(scrollTrackEndVh)}px`;
 }
 
 /** Window scrollY that pins the scroll track to the page bottom. */
@@ -136,8 +132,7 @@ export function getContentScrollTravelVh(startVh: number, endY: string): number 
 }
 
 /**
- * Personal-bar scroll rate: one unit of scroll distance (durationPercent)
- * per vh of content travel — keeps personal bar → actions continuous.
+ * Scroll distance (durationPercent) for content that travels `travelVh` below-navbar units.
  */
 export function getScrollDurationForTravelVh(
   travelVh: number,
@@ -145,17 +140,3 @@ export function getScrollDurationForTravelVh(
 ): number {
   return Math.round(Math.max(minDurationPercent, travelVh));
 }
-
-/** Contact section — rest with the block's midpoint on screen, not its top edge. */
-const ACTIONS_CONTENT_MIDPOINT_VH = 40;
-
-export function getActionsContentEndY(
-  contentHeightPx: number,
-  stageHeightPx: number,
-): string {
-  const contentVh = (contentHeightPx / stageHeightPx) * 100;
-  if (contentVh >= 100) return '0';
-  const offsetVh = Math.round(ACTIONS_CONTENT_MIDPOINT_VH - contentVh / 2);
-  return `${Math.max(0, offsetVh)}vh`;
-}
-

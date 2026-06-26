@@ -6,13 +6,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { buildIntroScrollPhases, getOsrScrollHeightVh, getPageIndicatorScrollPhase } from './osrIntroTimeline';
 import {
-  ACTIONS_CONTENT_START_Y,
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
   getOsrSceneConfig,
   getScrollTrackBottomPx,
+  applyScrollTrackHeight,
   getViewportBelowNavbar,
-  measureActionsContentHeight,
   measurePersonalBarContentHeight,
   syncScrollTrackAnimations,
 } from './osrScrollUtils';
@@ -106,7 +105,7 @@ function getScaleBucket(width: number) {
 export function OsrIntroScroll() {
   const introRootRef = useRef<HTMLDivElement>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
-  const [scrollHeightVh, setScrollHeightVh] = useState(() => getOsrScrollHeightVh(false));
+  const [scrollTrackEndVh, setScrollTrackEndVh] = useState(() => getOsrScrollHeightVh(false));
   const [stageScale, setStageScale] = useState(1);
   const [introNavSections, setIntroNavSections] = useState<IntroNavSection[]>([]);
   const [activeNavId, setActiveNavId] = useState('intro');
@@ -127,7 +126,6 @@ export function OsrIntroScroll() {
   const whoopPersonalBarBgLogoRef = useRef<HTMLDivElement>(null);
   const whoopPersonalBarContentRef = useRef<HTMLDivElement>(null);
   const sectionActionsRef = useRef<HTMLElement>(null);
-  const actionsContentRef = useRef<HTMLDivElement>(null);
   const lastViewportModeRef = useRef<{ compact: boolean; scaleBucket: number } | null>(null);
 
   const scrollToNavSection = useCallback((section: IntroNavSection) => {
@@ -182,6 +180,19 @@ export function OsrIntroScroll() {
       ScrollTrigger.removeEventListener('refresh', updateActive);
     };
   }, [introNavSections]);
+
+  useEffect(() => {
+    const track = scrollTrackRef.current;
+    if (!track || scrollTrackEndVh <= 0) return;
+
+    const syncTrackHeight = () => {
+      applyScrollTrackHeight(track, scrollTrackEndVh);
+    };
+
+    syncTrackHeight();
+    window.addEventListener('resize', syncTrackHeight);
+    return () => window.removeEventListener('resize', syncTrackHeight);
+  }, [scrollTrackEndVh]);
 
   useEffect(() => {
     const previousOverscroll = document.documentElement.style.overscrollBehaviorY;
@@ -257,7 +268,6 @@ export function OsrIntroScroll() {
       const whoopPersonalBarBgLogo = whoopPersonalBarBgLogoRef.current;
       const whoopPersonalBarContent = whoopPersonalBarContentRef.current;
       const sectionActions = sectionActionsRef.current;
-      const actionsContent = actionsContentRef.current;
 
       if (
         !introRoot ||
@@ -276,8 +286,7 @@ export function OsrIntroScroll() {
         !sectionWhoopPersonalBar ||
         !whoopPersonalBarBgLogo ||
         !whoopPersonalBarContent ||
-        !sectionActions ||
-        !actionsContent
+        !sectionActions
       ) {
         return undefined;
       }
@@ -302,7 +311,6 @@ export function OsrIntroScroll() {
         gsap.set(whoopPersonalBarBgLogo, { opacity: 0.5 });
         gsap.set(whoopPersonalBarContent, { y: 0 });
         gsap.set(sectionActions, { opacity: 1 });
-        gsap.set(actionsContent, { y: 0 });
         if (pageIndicator) gsap.set(pageIndicator, { opacity: 0 });
         return;
       }
@@ -327,19 +335,15 @@ export function OsrIntroScroll() {
           );
           gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
           gsap.set(whoopPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-          gsap.set(actionsContent, { y: ACTIONS_CONTENT_START_Y });
           const viewportHeight = getViewportBelowNavbar();
-          const layoutReferenceHeight = isCompactMode ? viewportHeight : STAGE_BASE_HEIGHT;
           const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(isCompactMode, {
             viewportHeight,
-            layoutReferenceHeight,
             whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
-            actionsContentHeight: measureActionsContentHeight(actionsContent),
           });
-          const { whoopEndY: whoopContentEndY, actionsEndY } = motion;
+          const { whoopEndY: whoopContentEndY } = motion;
 
-          scrollTrack.style.height = `${scrollTrackEndVh * 100}vh`;
-          setScrollHeightVh(scrollTrackEndVh);
+          applyScrollTrackHeight(scrollTrack, scrollTrackEndVh);
+          setScrollTrackEndVh(scrollTrackEndVh);
           setIntroNavSections(
             buildIntroNavSections(
               {
@@ -364,31 +368,6 @@ export function OsrIntroScroll() {
                 .fromTo(toSection, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0),
               isCompactMode ? 0.2 : 0.45,
             );
-          };
-          const attachContentScroll = (
-            phase: { at: number; durationPercent: number },
-            content: HTMLElement,
-            contentY: string,
-            bgLogo?: HTMLElement,
-            contentStartY: string = PERSONAL_BAR_CONTENT_START_Y,
-          ) => {
-            const timeline = gsap
-              .timeline({ defaults: { ease: 'none' } })
-              .fromTo(
-                content,
-                { y: contentStartY },
-                { y: contentY, ease: 'none', duration: 1 },
-                0,
-              );
-            if (bgLogo) {
-              timeline.fromTo(
-                bgLogo,
-                { opacity: 0, scale: 0.88 },
-                { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
-                0,
-              );
-            }
-            attachScene(scrollTrack, phase.at, phase.durationPercent, timeline);
           };
           /** Re-sync scrub progress at scroll top without overriding tween values. */
           const attachTopScrubSync = () => {
@@ -430,7 +409,7 @@ export function OsrIntroScroll() {
             gsap.fromTo(whoWeAreContent, { opacity: 0 }, { opacity: 1, ...SCRUB_DEFAULTS }),
           );
 
-          const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.howToAgreements);
+          const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.howSectionOut);
           if (pageIndicator) {
             attachScene(
               scrollTrack,
@@ -520,15 +499,64 @@ export function OsrIntroScroll() {
             );
           }
 
-          attachSectionCrossfade(phases.howToAgreements, sectionTwo, sectionAgreements);
+          attachScene(
+            scrollTrack,
+            phases.howSectionOut.at,
+            phases.howSectionOut.durationPercent,
+            gsap.fromTo(sectionTwo, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }),
+          );
 
-          attachSectionCrossfade(phases.agreementsToWhoop, sectionAgreements, sectionWhoopPersonalBar);
+          attachScene(
+            scrollTrack,
+            phases.agreementsFadeIn.at,
+            phases.agreementsFadeIn.durationPercent,
+            gsap
+              .timeline({ defaults: { ease: 'none' } })
+              .fromTo(
+                sectionAgreements,
+                { autoAlpha: 0 },
+                { autoAlpha: 0.5, ...SCRUB_DEFAULTS, duration: 0.5 },
+              )
+              .fromTo(
+                sectionAgreements,
+                { autoAlpha: 0.5 },
+                { autoAlpha: 1, ...SCRUB_DEFAULTS, duration: 0.5 },
+              ),
+          );
 
-          attachContentScroll(
-            phases.whoopPersonalBarScroll,
-            whoopPersonalBarContent,
-            whoopContentEndY,
-            whoopPersonalBarBgLogo,
+          /** Share of the Whoop scroll window used for agreements → Whoop crossfade. */
+          const whoopEntranceCrossfadeShare = 0.03;
+
+          attachScene(
+            scrollTrack,
+            phases.whoopPersonalBarScroll.at,
+            phases.whoopPersonalBarScroll.durationPercent,
+            gsap
+              .timeline({ defaults: { ease: 'none' } })
+              .fromTo(
+                sectionAgreements,
+                { autoAlpha: 1 },
+                { autoAlpha: 0, ...SCRUB_DEFAULTS, duration: whoopEntranceCrossfadeShare },
+                0,
+              )
+              .fromTo(
+                sectionWhoopPersonalBar,
+                { autoAlpha: 0 },
+                { autoAlpha: 1, ...SCRUB_DEFAULTS, duration: whoopEntranceCrossfadeShare },
+                0,
+              )
+              .fromTo(
+                whoopPersonalBarContent,
+                { y: PERSONAL_BAR_CONTENT_START_Y },
+                { y: whoopContentEndY, ease: 'none', duration: 1 },
+                0,
+              )
+              .fromTo(
+                whoopPersonalBarBgLogo,
+                { opacity: 0, scale: 0.88 },
+                { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
+                0,
+              ),
           );
 
           if (pageIndicator) {
@@ -540,21 +568,7 @@ export function OsrIntroScroll() {
             );
           }
 
-          attachScene(
-            scrollTrack,
-            phases.actionsScroll.at,
-            phases.actionsScroll.durationPercent,
-            gsap
-              .timeline({ defaults: { ease: 'none' } })
-              .fromTo(sectionWhoopPersonalBar, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0)
-              .fromTo(sectionActions, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0)
-              .fromTo(
-                actionsContent,
-                { y: ACTIONS_CONTENT_START_Y },
-                { y: actionsEndY, ease: 'none', duration: 1 },
-                0,
-              ),
-          );
+          attachSectionCrossfade(phases.actionsScroll, sectionWhoopPersonalBar, sectionActions);
 
           removeTopScrubSyncListener = attachTopScrubSync();
           scheduleLayoutSync();
@@ -626,7 +640,6 @@ export function OsrIntroScroll() {
       <div
         ref={scrollTrackRef}
         className="relative w-full"
-        style={{ height: `${scrollHeightVh * 100}vh` }}
         aria-hidden
       />
 
@@ -788,7 +801,6 @@ export function OsrIntroScroll() {
         sectionShell={actionsSectionShell}
         sectionStyle={sectionShellStyle}
         sectionRef={sectionActionsRef}
-        contentRef={actionsContentRef}
         onSignUp={() => {
           void handleSignIn();
         }}
