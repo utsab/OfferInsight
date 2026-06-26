@@ -2,17 +2,24 @@
 
 import { handleSignIn, handleSignOut } from "./auth-actions"
 import { Button } from "./ui/button"
+import { useNavbarTheme } from "./navbar-shell"
 
 export function SignIn({
   provider,
   ...props
 }: { provider?: string } & React.ComponentPropsWithRef<typeof Button>) {
+  const isLightNavbar = useNavbarTheme() === 'light';
+
   return (
     <form
       action={handleSignIn.bind(null, provider)}
     >
       <Button 
-        className="bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-6 py-2 text-sm sm:text-base rounded-lg font-semibold transition-colors whitespace-nowrap"
+        className={
+          isLightNavbar
+            ? 'bg-accent-teal hover:opacity-90 text-white px-3 sm:px-6 py-2 text-sm sm:text-base rounded-lg font-semibold transition-colors whitespace-nowrap'
+            : 'bg-electric-blue hover:bg-blue-600 text-white px-3 sm:px-6 py-2 text-sm sm:text-base rounded-lg font-semibold transition-colors whitespace-nowrap'
+        }
         {...props}
       >
         Sign In

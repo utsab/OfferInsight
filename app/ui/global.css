@@ -9,6 +9,7 @@
   --color-blue-600: #2F6FEB;
   --color-midnight-blue: #003366;
   --color-electric-blue: #007ACC;
+  --color-accent-teal: #58A4B0;
   --color-light-steel-blue: #b0c4de;
   
   /* Gray scale - Tailwind 4 defaults, but defining explicitly for consistency */

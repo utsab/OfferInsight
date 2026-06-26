@@ -23,7 +23,7 @@ export function DashboardNavButton({
       onClick={() =>
         router.push(instructor ? '/instructor/dashboard' : getUserDashboardPath(onboardingProgress))
       }
-      className="rounded-lg bg-electric-blue px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-600 whitespace-nowrap sm:px-5 sm:text-base"
+      className="rounded-lg bg-accent-teal px-3 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 whitespace-nowrap sm:px-5 sm:text-base"
     >
       Go to Dashboard
     </button>
