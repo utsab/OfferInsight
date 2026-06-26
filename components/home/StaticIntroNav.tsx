@@ -8,7 +8,7 @@ import {
   getStaticIntroNavSectionProgress,
   scrollToStaticIntroNavSection,
 } from './staticIntroScrollNav';
-import { getIntroNavProgressBarTranslateX } from './introScrollNav';
+import { getIntroNavProgressBarTranslateX, INTRO_NAV_MOBILE_NAV_PADDING_CLASS } from './introScrollNav';
 import { getSiteNavbarHeightPx } from './osrScrollUtils';
 
 const ACCENT_CORAL = '#F57360';
@@ -104,7 +104,7 @@ export function StaticIntroNav() {
 
       <nav
         aria-label="Intro sections"
-        className="pointer-events-auto relative flex items-stretch justify-center gap-1 px-3 pb-2.5 pt-2 sm:gap-2 sm:px-5 sm:pb-3 sm:pt-2.5"
+        className={`pointer-events-auto relative flex items-stretch justify-center gap-1 pb-2.5 pt-2 sm:gap-2 sm:pb-3 sm:pt-2.5 ${INTRO_NAV_MOBILE_NAV_PADDING_CLASS}`}
       >
         {STATIC_INTRO_NAV_SECTIONS.map((section) => {
           const isActive = section.id === activeId;

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   getIntroNavProgressBarTranslateX,
+  INTRO_NAV_DESKTOP_ITEM_WIDTH_CLASS,
   type IntroNavSection,
 } from './introScrollNav';
 import { getSiteNavbarHeightPx } from './osrScrollUtils';
@@ -107,7 +108,7 @@ export function IntroScrollNav({
               type="button"
               aria-current={isActive ? 'true' : undefined}
               onClick={() => onSelect(section)}
-              className={`relative overflow-hidden rounded-sm px-1 py-0.5 text-left sm:px-1.5 sm:py-1 ${
+              className={`relative overflow-hidden rounded-sm px-1 py-0.5 text-left sm:px-1.5 sm:py-1 ${INTRO_NAV_DESKTOP_ITEM_WIDTH_CLASS} ${
                 isActive
                   ? 'text-xs font-semibold tracking-tight sm:text-base md:text-lg'
                   : 'text-[9px] font-medium text-gray-400 hover:text-gray-600 sm:text-[10px] md:text-xs'
