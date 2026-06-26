@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 229.5 46.6"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="Motorola-black.svg"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="10.527233"
+     inkscape:cx="114.7975"
+     inkscape:cy="23.320468"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <title
+     id="title1">Motorola logo</title>
+  <path
+     d="M528.57,518.86h.91v4.37h-.91a9.09,9.09,0,0,1-9.1-9.1V495.07h4.37v5.7h5.64v4.37h-5.64v9a4.74,4.74,0,0,0,4.73,4.73m52.91.42a7.28,7.28,0,1,1,7.28-7.28,7.3,7.3,0,0,1-7.28,7.28m0-18.93A11.65,11.65,0,1,0,593.13,512a11.65,11.65,0,0,0-11.65-11.65m33.62,18.93a7.28,7.28,0,1,1,7.28-7.28,7.3,7.3,0,0,1-7.28,7.28m0-18.93a11.65,11.65,0,1,0,0,23.3,11.5,11.5,0,0,0,7.46-2.73v2.31h4.19V512a11.69,11.69,0,0,0-11.65-11.65m-48.79.42h2.06v4.37h-2.06a4.74,4.74,0,0,0-4.73,4.73v13.35h-4.37V509.88a9.09,9.09,0,0,1,9.1-9.1m29.73-5.7h4.37v28.58H596ZM490.34,509.39v13.84H486V509.39a4.73,4.73,0,0,0-9.47,0v13.84h-4.37V509.39a4.73,4.73,0,0,0-9.47,0v13.84H458.3V509.39a9.09,9.09,0,0,1,9.1-9.1,8.86,8.86,0,0,1,6.92,3.22,9.25,9.25,0,0,1,6.92-3.22,9.13,9.13,0,0,1,9.1,9.1M505,519.28a7.28,7.28,0,1,1,7.28-7.28,7.3,7.3,0,0,1-7.28,7.28m0-18.93A11.65,11.65,0,1,0,516.55,512,11.67,11.67,0,0,0,505,500.35m37.62,18.93a7.28,7.28,0,1,1,7.28-7.28,7.3,7.3,0,0,1-7.28,7.28m0-18.93A11.65,11.65,0,1,0,554.23,512a11.65,11.65,0,0,0-11.65-11.65M435.24,523c-2.12-6.86-4.79-11-7.89-11-2.49,0-4.85,2.79-6.74,7.65-1.94-4.85-4.25-7.65-6.8-7.65-3,0-5.76,4.19-7.89,11h-1.58l9.28-28.52,6.92,21.36,6.92-21.36,9.28,28.58h-1.52ZM420.55,488.7a23.3,23.3,0,1,0,23.3,23.3,23.31,23.31,0,0,0-23.3-23.3"
+     transform="translate(-397.25 -488.7)"
+     style="fill:#000000"
+     id="path1" />
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Motorola logo</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>

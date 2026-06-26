@@ -1,5 +1,6 @@
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
+  scrollToTrackOffsetPx,
   getViewportBelowNavbar,
   getViewportOffsetTopPx,
   syncScrollTrackAnimations,
@@ -10,7 +11,7 @@ function snapScrollTrackToRelativePx(
   scrollTrack: HTMLElement,
   relativePx: number,
 ): void {
-  window.scrollTo(0, scrollTrack.offsetTop + relativePx);
+  scrollToTrackOffsetPx(scrollTrack, relativePx, 'auto');
   ScrollTrigger.update();
   syncScrollTrackAnimations(scrollTrack);
 }

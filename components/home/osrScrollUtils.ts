@@ -8,7 +8,7 @@ export const TYPING_DESCRIPTIONS = [
   'Your portfolio, verifiable on GitHub',
 ] as const;
 
-function getNavbarHeightPx(): number {
+function getNavbarHeightPxFromCssVar(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue('--navbar-height').trim();
   if (!raw) return 72;
   if (raw.endsWith('rem')) {
@@ -18,14 +18,26 @@ function getNavbarHeightPx(): number {
   return parseFloat(raw) || 72;
 }
 
+/** Prefer live navbar measurement — CSS var can drift from rendered height on resize. */
+export function getSiteNavbarHeightPx(): number {
+  if (typeof document !== 'undefined') {
+    const navbar = document.getElementById('site-navbar');
+    if (navbar) {
+      const height = navbar.getBoundingClientRect().height;
+      if (height > 0) return height;
+    }
+  }
+  return getNavbarHeightPxFromCssVar();
+}
+
 /** Viewport height below the fixed navbar (matches pinned hero start). */
 export function getViewportBelowNavbar(): number {
-  return Math.max(window.innerHeight - getNavbarHeightPx(), 320);
+  return Math.max(window.innerHeight - getSiteNavbarHeightPx(), 320);
 }
 
 /** Absolute viewport Y for a point `offsetVh` below the navbar. */
 export function getViewportOffsetTopPx(offsetVh: number): number {
-  return getNavbarHeightPx() + (offsetVh / 100) * getViewportBelowNavbar();
+  return getSiteNavbarHeightPx() + (offsetVh / 100) * getViewportBelowNavbar();
 }
 
 /** Keep scrubbed ScrollTrigger timelines aligned with the current scroll position. */
@@ -51,18 +63,6 @@ export function getOsrSceneConfig(
 
 export const PERSONAL_BAR_CONTENT_START_VH = 140;
 export const PERSONAL_BAR_CONTENT_START_Y = `${PERSONAL_BAR_CONTENT_START_VH}vh`;
-
-/** Actions entry: just below the stage — contact rises in as affiliations exits. */
-export const ACTIONS_CONTENT_START_VH = 72;
-export const ACTIONS_CONTENT_START_Y = `${ACTIONS_CONTENT_START_VH}vh`;
-
-/** Measure contact section content height (same pattern as personal bars). */
-export function measureActionsContentHeight(content: HTMLElement): number {
-  gsap.set(content, { y: 0 });
-  const height = Math.max(content.scrollHeight, content.getBoundingClientRect().height);
-  gsap.set(content, { y: ACTIONS_CONTENT_START_Y });
-  return height;
-}
 
 /** Measure personal-bar content height without transform affecting layout reads. */
 export function measurePersonalBarContentHeight(content: HTMLElement): number {
@@ -93,21 +93,43 @@ export function getPhaseEndVh(phase: { at: number; durationPercent: number }): n
 }
 
 /**
- * Furthest track-relative scroll (below-navbar vh).
- * Track height uses full window vh; scene math uses viewport below navbar — this closes the gap.
+ * Scroll track height in px — phase positions use below-navbar vh, so total
+ * scrollable distance is `scrollTrackEndVh * belowNav`, plus one viewport to
+ * reach the first phase.
  */
-export function getScrollTrackBottomRelativeVh(scrollTrackEndVh: number): number {
-  const belowNav = getViewportBelowNavbar();
-  const maxPx = Math.max(0, scrollTrackEndVh * window.innerHeight - window.innerHeight);
-  return maxPx / belowNav;
+export function getScrollTrackHeightPx(scrollTrackEndVh: number): number {
+  if (typeof window === 'undefined') return 0;
+  return Math.round(window.innerHeight + scrollTrackEndVh * getViewportBelowNavbar());
 }
 
-/** Window scrollY that pins the scroll track to the page bottom. */
-export function getScrollTrackBottomPx(scrollTrack: HTMLElement): number {
-  return Math.max(
-    scrollTrack.offsetTop,
-    scrollTrack.offsetTop + scrollTrack.offsetHeight - window.innerHeight,
-  );
+/** Client-only — sets scroll track height from phase end (below-navbar vh). */
+export function applyScrollTrackHeight(
+  track: HTMLElement,
+  scrollTrackEndVh: number,
+): void {
+  track.style.height = `${getScrollTrackHeightPx(scrollTrackEndVh)}px`;
+}
+
+/** Document Y of the scroll track top (offsetTop is 0 vs intro root — use this for scrollTo). */
+export function getScrollTrackDocumentTopPx(scrollTrack: HTMLElement): number {
+  return scrollTrack.getBoundingClientRect().top + window.scrollY;
+}
+
+/** Pixels scrolled into the track from its top. */
+export function getScrollTrackRelativePx(scrollTrack: HTMLElement): number {
+  return Math.max(window.scrollY - getScrollTrackDocumentTopPx(scrollTrack), 0);
+}
+
+/** Scroll so `offsetPx` of the track has passed the viewport top. */
+export function scrollToTrackOffsetPx(
+  scrollTrack: HTMLElement,
+  offsetPx: number,
+  behavior: ScrollBehavior = 'smooth',
+): void {
+  window.scrollTo({
+    top: getScrollTrackDocumentTopPx(scrollTrack) + offsetPx,
+    behavior,
+  });
 }
 
 /** Vertical travel (vh) for a content scroll from `startVh` to `endY`. */
@@ -120,8 +142,7 @@ export function getContentScrollTravelVh(startVh: number, endY: string): number 
 }
 
 /**
- * Personal-bar scroll rate: one unit of scroll distance (durationPercent)
- * per vh of content travel — keeps Meta → affiliations → actions continuous.
+ * Scroll distance (durationPercent) for content that travels `travelVh` below-navbar units.
  */
 export function getScrollDurationForTravelVh(
   travelVh: number,
@@ -129,37 +150,3 @@ export function getScrollDurationForTravelVh(
 ): number {
   return Math.round(Math.max(minDurationPercent, travelVh));
 }
-
-/** Meta personal bar — shorter tail before affiliations, same scroll rate. */
-export function getMetaContentEndY(
-  contentHeightPx: number,
-  viewportHeightPx: number,
-): string {
-  const contentVh = (contentHeightPx / viewportHeightPx) * 100;
-  const endVh = Math.max(48, Math.round(contentVh + 12));
-  return `-${endVh}vh`;
-}
-
-/** Affiliations logo grid — shorter tail than criteria pages, same scroll rate. */
-export function getAffiliationsContentEndY(
-  contentHeightPx: number,
-  viewportHeightPx: number,
-): string {
-  const contentVh = (contentHeightPx / viewportHeightPx) * 100;
-  const endVh = Math.max(15, Math.round(contentVh + 10));
-  return `-${endVh}vh`;
-}
-
-/** Contact section — rest with the block's midpoint on screen, not its top edge. */
-const ACTIONS_CONTENT_MIDPOINT_VH = 40;
-
-export function getActionsContentEndY(
-  contentHeightPx: number,
-  stageHeightPx: number,
-): string {
-  const contentVh = (contentHeightPx / stageHeightPx) * 100;
-  if (contentVh >= 100) return '0';
-  const offsetVh = Math.round(ACTIONS_CONTENT_MIDPOINT_VH - contentVh / 2);
-  return `${Math.max(0, offsetVh)}vh`;
-}
-

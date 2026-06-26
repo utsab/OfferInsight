@@ -9,13 +9,14 @@
  * - page indicator — see `getPageIndicatorScrollPhase()`
  *
  * Pattern for content sections: scroll → crossfade → scroll → crossfade …
+ *
+ * Agreements beat: How fades out fully (`howSectionOut`), then agreements fade
+ * 0 → 0.5 → 1 (`agreementsFadeIn`), hold at full opacity (`agreementsMarquee`),
+ * then fade out as Whoop personal bar begins (`whoopPersonalBarScroll`).
+ * Contact fades in after Whoop (`actionsScroll` crossfade only — no content scroll).
  */
 import {
-  ACTIONS_CONTENT_START_VH,
-  getAffiliationsContentEndY,
-  getActionsContentEndY,
   getContentScrollTravelVh,
-  getMetaContentEndY,
   getPersonalBarContentEndY,
   getPhaseEndVh,
   getScrollDurationForTravelVh,
@@ -35,7 +36,7 @@ const OSR_INTRO_PHASE_DURATIONS = {
   whoSectionOut: 40,
   howSectionIn: 30,
   howLettersMove: 80, // minimum; resolved to match Who story chapter length
-  howToWhoop: 8,
+  howSectionOut: 40,
 } as const;
 
 const OSR_INTRO_PHASE_DURATIONS_MOBILE: Partial<
@@ -45,31 +46,22 @@ const OSR_INTRO_PHASE_DURATIONS_MOBILE: Partial<
   whoSectionIn: 20,
   whoLettersMove: 30,
   whoContentIn: 20,
-  howToWhoop: 6,
+  howSectionOut: 20,
 };
 
 const OSR_CONTENT_PHASE_DURATIONS = {
+  agreementsFadeIn: 40,
+  agreementsMarquee: 0, // resolved in `resolvePhaseDuration` (half Who-chapter hold)
   whoopPersonalBarScroll: 400,
-  whoopToMicrosoft: 32,
-  microsoftPersonalBarScroll: 420,
-  microsoftToMeta: 32,
-  metaPersonalBarScroll: 55,
-  metaToAffiliations: 32,
-  affiliationsScroll: 55,
-  actionsScroll: 36,
+  actionsScroll: 8,
 } as const;
 
 const OSR_CONTENT_PHASE_DURATIONS_MOBILE: Partial<
   Record<keyof typeof OSR_CONTENT_PHASE_DURATIONS, number>
 > = {
+  agreementsFadeIn: 20,
   whoopPersonalBarScroll: 430,
-  whoopToMicrosoft: 34,
-  microsoftPersonalBarScroll: 450,
-  microsoftToMeta: 34,
-  metaPersonalBarScroll: 45,
-  metaToAffiliations: 34,
-  affiliationsScroll: 45,
-  actionsScroll: 36,
+  actionsScroll: 6,
 };
 
 /** Sequential scroll story — must match scene attachment in OsrIntroScroll.tsx. */
@@ -80,14 +72,10 @@ const PHASE_ORDER = [
   'whoSectionOut',
   'howSectionIn',
   'howLettersMove',
-  'howToWhoop',
+  'howSectionOut',
+  'agreementsFadeIn',
+  'agreementsMarquee',
   'whoopPersonalBarScroll',
-  'whoopToMicrosoft',
-  'microsoftPersonalBarScroll',
-  'microsoftToMeta',
-  'metaPersonalBarScroll',
-  'metaToAffiliations',
-  'affiliationsScroll',
   'actionsScroll',
 ] as const;
 
@@ -98,8 +86,8 @@ type OsrPhaseKey = OsrSequentialPhaseKey | 'whoContentIn';
 
 /** Fixed overlay beats — Who section visible through `whoSectionOut`. */
 const WHO_STORY_PHASES = ['whoSectionIn', 'whoLettersMove', 'whoSectionOut'] as const satisfies readonly OsrIntroPhaseKey[];
-/** Fixed overlay beats — How section visible through `howToWhoop`. */
-const HOW_STORY_CORE_PHASES = ['howSectionIn', 'howToWhoop'] as const satisfies readonly OsrIntroPhaseKey[];
+/** Fixed overlay beats — How section visible through `howSectionOut`. */
+const HOW_STORY_CORE_PHASES = ['howSectionIn', 'howSectionOut'] as const satisfies readonly OsrIntroPhaseKey[];
 
 function getStoryChapterDuration(
   phaseKeys: readonly OsrIntroPhaseKey[],
@@ -113,29 +101,20 @@ const MOBILE_VIEWPORT_HEIGHT = 844;
 
 const ESTIMATED_CONTENT_HEIGHTS = {
   whoop: 900,
-  microsoft: 1100,
-  meta: 950,
-  affiliations: 500,
-  actions: 680,
 } as const;
 
 type IntroContentMeasurements = {
   viewportHeight: number;
-  layoutReferenceHeight: number;
   whoopContentHeight: number;
-  microsoftContentHeight: number;
-  metaContentHeight: number;
-  affiliationsContentHeight: number;
-  actionsContentHeight: number;
 };
 
 type IntroContentMotion = {
   whoopEndY: string;
-  microsoftEndY: string;
-  metaEndY: string;
-  affiliationsEndY: string;
-  actionsEndY: string;
 };
+
+function getAgreementsStoryDuration(isMobile: boolean): number {
+  return getStoryChapterDuration(WHO_STORY_PHASES, isMobile);
+}
 
 function getIntroPhaseDuration(key: OsrIntroPhaseKey, isMobile: boolean): number {
   const mobile = OSR_INTRO_PHASE_DURATIONS_MOBILE[key];
@@ -153,33 +132,13 @@ function estimatedMeasurements(isMobile: boolean): IntroContentMeasurements {
   const viewport = isMobile ? MOBILE_VIEWPORT_HEIGHT : STAGE_BASE_HEIGHT;
   return {
     viewportHeight: viewport,
-    layoutReferenceHeight: viewport,
     whoopContentHeight: ESTIMATED_CONTENT_HEIGHTS.whoop,
-    microsoftContentHeight: ESTIMATED_CONTENT_HEIGHTS.microsoft,
-    metaContentHeight: ESTIMATED_CONTENT_HEIGHTS.meta,
-    affiliationsContentHeight: ESTIMATED_CONTENT_HEIGHTS.affiliations,
-    actionsContentHeight: ESTIMATED_CONTENT_HEIGHTS.actions,
   };
 }
 
 function resolveContentMotion(measurements: IntroContentMeasurements): IntroContentMotion {
-  const { viewportHeight, layoutReferenceHeight } = measurements;
   return {
-    whoopEndY: getPersonalBarContentEndY(measurements.whoopContentHeight, viewportHeight, 135),
-    microsoftEndY: getPersonalBarContentEndY(
-      measurements.microsoftContentHeight,
-      viewportHeight,
-      185,
-    ),
-    metaEndY: getMetaContentEndY(measurements.metaContentHeight, layoutReferenceHeight),
-    affiliationsEndY: getAffiliationsContentEndY(
-      measurements.affiliationsContentHeight,
-      layoutReferenceHeight,
-    ),
-    actionsEndY: getActionsContentEndY(
-      measurements.actionsContentHeight,
-      layoutReferenceHeight,
-    ),
+    whoopEndY: getPersonalBarContentEndY(measurements.whoopContentHeight, measurements.viewportHeight, 135),
   };
 }
 
@@ -206,36 +165,18 @@ function resolvePhaseDuration(
         motion.whoopEndY,
         getContentPhaseDuration(key, isMobile),
       );
-    case 'microsoftPersonalBarScroll':
-      return scrollDurationForEndY(
-        PERSONAL_BAR_CONTENT_START_VH,
-        motion.microsoftEndY,
-        getContentPhaseDuration(key, isMobile),
-      );
-    case 'metaPersonalBarScroll':
-      return scrollDurationForEndY(
-        PERSONAL_BAR_CONTENT_START_VH,
-        motion.metaEndY,
-        getContentPhaseDuration(key, isMobile),
-      );
-    case 'affiliationsScroll':
-      return scrollDurationForEndY(
-        PERSONAL_BAR_CONTENT_START_VH,
-        motion.affiliationsEndY,
-        getContentPhaseDuration(key, isMobile),
-      );
-    case 'actionsScroll':
-      return scrollDurationForEndY(
-        ACTIONS_CONTENT_START_VH,
-        motion.actionsEndY,
-        getContentPhaseDuration(key, isMobile),
-      );
     case 'howLettersMove': {
       const whoStoryDuration = getStoryChapterDuration(WHO_STORY_PHASES, isMobile);
       const howCoreDuration = getStoryChapterDuration(HOW_STORY_CORE_PHASES, isMobile);
       const minDuration = getIntroPhaseDuration('howLettersMove', isMobile);
       return Math.max(minDuration, whoStoryDuration - howCoreDuration);
     }
+    case 'agreementsMarquee':
+      return (
+        (getAgreementsStoryDuration(isMobile) -
+          getContentPhaseDuration('agreementsFadeIn', isMobile)) /
+        2
+      );
     default:
       if (key in OSR_INTRO_PHASE_DURATIONS) {
         return getIntroPhaseDuration(key as OsrIntroPhaseKey, isMobile);
@@ -256,10 +197,10 @@ function getWhoContentInScrollPhase(
 }
 
 /** Parallel intro phase — line scrolls through the unified intro story (Intro → How). */
-export function getPageIndicatorScrollPhase(howToWhoopPhase: OsrScrollPhase): OsrScrollPhase {
+export function getPageIndicatorScrollPhase(howSectionOutPhase: OsrScrollPhase): OsrScrollPhase {
   return {
     at: 0,
-    durationPercent: getPhaseEndVh(howToWhoopPhase) * 100,
+    durationPercent: getPhaseEndVh(howSectionOutPhase) * 100,
   };
 }
 

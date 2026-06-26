@@ -1,14 +1,4 @@
-import { HOME_ASSETS } from './homeAssets';
-import {
-  META_LOGO_PATH,
-  META_PERSONAL_BAR_CRITERIA,
-  META_PERSONAL_BAR_TITLE,
-} from './metaPersonalBar';
-import {
-  MICROSOFT_LOGO_PATH,
-  MICROSOFT_PERSONAL_BAR_CRITERIA,
-  MICROSOFT_PERSONAL_BAR_TITLE,
-} from './microsoftPersonalBar';
+import { AgreementsSectionContent } from './LogoMarquee';
 import { StaticIntroActionsSection } from './StaticIntroActionsSection';
 import { StaticIntroNav } from './StaticIntroNav';
 import { StaticPersonalBarSection } from './StaticPersonalBarSection';
@@ -86,6 +76,16 @@ export function OsrIntroStatic() {
         </div>
       </section>
 
+      <section
+        id="intro-agreements"
+        className={`${STATIC_SECTION_SCROLL_MT} border-t border-light-steel-blue/30 bg-white px-5 py-12 sm:px-8 sm:py-14`}
+        aria-labelledby="intro-agreements-heading"
+      >
+        <AgreementsSectionContent
+          titleClassName="mx-auto max-w-4xl text-center text-xl font-bold leading-snug tracking-tight text-black sm:text-2xl"
+        />
+      </section>
+
       <StaticPersonalBarSection
         sectionId="intro-whoop-bar"
         headingId="whoop-bar-heading"
@@ -93,63 +93,6 @@ export function OsrIntroStatic() {
         logoPath={WHOOP_LOGO_PATH}
         criteria={WHOOP_PERSONAL_BAR_CRITERIA}
       />
-
-      <StaticPersonalBarSection
-        sectionId="intro-microsoft-bar"
-        headingId="microsoft-bar-heading"
-        title={MICROSOFT_PERSONAL_BAR_TITLE}
-        logoPath={MICROSOFT_LOGO_PATH}
-        criteria={MICROSOFT_PERSONAL_BAR_CRITERIA}
-      />
-
-      <StaticPersonalBarSection
-        sectionId="intro-meta-bar"
-        headingId="meta-bar-heading"
-        title={META_PERSONAL_BAR_TITLE}
-        logoPath={META_LOGO_PATH}
-        criteria={META_PERSONAL_BAR_CRITERIA}
-      />
-
-      <section
-        id="intro-affiliations"
-        className={`${STATIC_SECTION_SCROLL_MT} border-t border-light-steel-blue/30 bg-white py-12 sm:py-16`}
-        aria-labelledby="affiliations-heading"
-      >
-        <div className="mx-auto w-full max-w-6xl px-4 text-center sm:px-8">
-          <h2
-            id="affiliations-heading"
-            className="text-3xl font-bold tracking-tight text-black sm:text-4xl"
-          >
-            Hiring Manager Affiliations
-          </h2>
-          <p className="mx-auto mt-4 max-w-5xl text-base leading-relaxed text-gray-800 sm:text-lg">
-            Participating managers at these companies commit to interview candidates who meet their
-            defined open-source benchmarks.
-          </p>
-          <p className="mx-auto mt-2 max-w-4xl text-sm text-gray-600 sm:text-base">
-            Standards are manager-defined and do not represent official company policy.
-          </p>
-
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-            {HOME_ASSETS.affiliations.map((logo) => (
-              <div
-                key={logo.path}
-                className="flex h-[78px] items-center justify-center rounded-xl border border-light-steel-blue/35 bg-white p-3 shadow-sm sm:h-[92px] sm:p-4"
-              >
-                <img
-                  src={logo.path}
-                  alt={`${logo.label} logo`}
-                  className="max-h-full max-w-full origin-center object-contain"
-                  style={{ transform: `scale(${logo.scale})` }}
-                />
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 text-lg font-semibold italic tracking-wide text-gray-800 sm:text-xl">
-            and more...
-          </p>
-        </div>
-      </section>
 
       <StaticIntroActionsSection />
     </article>

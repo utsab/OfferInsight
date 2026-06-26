@@ -1,6 +1,6 @@
 import type { PersonalBarCriterion } from './personalBarTypes';
 
-export const WHOOP_LOGO_PATH = '/images/home/whoop-logo_brandlogos.net_l0f1l.png';
+export const WHOOP_LOGO_PATH = '/images/home/WHOOP-logo.svg';
 
 export const WHOOP_PERSONAL_BAR_TITLE =
   'Personal bar of a Hiring Manager from Whoop';

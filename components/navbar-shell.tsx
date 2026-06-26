@@ -33,11 +33,12 @@ export function NavbarShell({ children }: NavbarShellProps) {
         <Link href="/" className="flex min-w-0 flex-shrink-0 items-center space-x-2 sm:space-x-3">
           <LineChart className="flex-shrink-0 text-xl text-electric-blue sm:text-2xl" />
           <h1
-            className={`truncate text-lg font-bold sm:text-2xl ${
+            className={`text-lg font-bold sm:truncate sm:text-2xl ${
               isHomePage ? 'text-gray-900' : 'text-white'
             }`}
           >
-            OpenSourceResumeBook
+            <span className="sm:hidden">OSR</span>
+            <span className="hidden sm:inline">OpenSourceResumeBook</span>
           </h1>
         </Link>
         <div className="user-button-container flex-shrink-0">{children}</div>

@@ -1,4 +1,12 @@
-import { getScrollTrackBottomRelativeVh } from './osrScrollUtils';
+/**
+ * Jump nav pill sizing — tweak these to taste.
+ *
+ * Desktop (`IntroScrollNav.tsx`): every label + progress bar uses the same width.
+ * Mobile (`StaticIntroNav.tsx`): row buttons share width equally via flex; adjust
+ * horizontal padding on the nav shell if the row feels too tight or too wide.
+ */
+export const INTRO_NAV_DESKTOP_ITEM_WIDTH_CLASS = 'w-[8.25rem] sm:w-[9rem] md:w-[9.5rem]';
+export const INTRO_NAV_MOBILE_NAV_PADDING_CLASS = 'px-3 sm:px-5';
 
 /**
  * Left-nav sections for the homepage intro scroll story.
@@ -13,15 +21,16 @@ import { getScrollTrackBottomRelativeVh } from './osrScrollUtils';
  *
  * ## Nav jumps
  *
- * **Intro** — scroll to top of track.
+ * **Intro** — scroll to page top (`scrollY` 0).
  *
- * **Personal Bars** — `introScrollJump.ts` aligns the first personal-bar heading
+ * **Personal Bar** — `introScrollJump.ts` aligns the first personal-bar heading
  * below the navbar.
  *
- * **Contact** — scroll to the physical track bottom (`getScrollTrackBottomPx` in
- * `OsrIntroScroll.tsx`); `jumpVh` on that section is the matching below-navbar vh
- * for progress-bar math only.
+ * **Contact** — `jumpVh` is the track end (`getPhaseEndVh(actionsScroll)`); same
+ * document-coordinate scroll path as other sections via `scrollToTrackOffsetPx`.
  */
+
+import { getPhaseEndVh } from './osrScrollUtils';
 
 type IntroNavAnchorJump = {
   anchorId: string;
@@ -49,7 +58,7 @@ type IntroNavBuildPhases = {
   actionsScroll: IntroNavPhase;
 };
 
-/** vh below navbar for scroll-content section headings (personal bars, contact). */
+/** vh below navbar for personal-bar heading alignment in anchor jumps. */
 const SCROLL_CONTENT_HEADING_TOP_VH = 14;
 
 function scrollContentAnchorJump(
@@ -65,13 +74,10 @@ function scrollContentAnchorJump(
   };
 }
 
-export function buildIntroNavSections(
-  phases: IntroNavBuildPhases,
-  scrollTrackEndVh: number,
-): IntroNavSection[] {
+export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSection[] {
   const whoop = phases.whoopPersonalBarScroll.at;
   const actions = phases.actionsScroll.at;
-  const trackBottomVh = getScrollTrackBottomRelativeVh(scrollTrackEndVh);
+  const trackEndVh = getPhaseEndVh(phases.actionsScroll);
 
   return [
     {
@@ -81,8 +87,8 @@ export function buildIntroNavSections(
       jumpVh: 0,
     },
     {
-      id: 'personal-bars',
-      label: 'Personal Bars',
+      id: 'personal-bar',
+      label: 'Personal Bar',
       startVh: whoop,
       jumpVh: whoop,
       anchorJump: scrollContentAnchorJump('whoop-bar-heading', whoop, actions),
@@ -91,7 +97,7 @@ export function buildIntroNavSections(
       id: 'contact',
       label: 'Contact',
       startVh: actions,
-      jumpVh: trackBottomVh,
+      jumpVh: trackEndVh,
     },
   ];
 }

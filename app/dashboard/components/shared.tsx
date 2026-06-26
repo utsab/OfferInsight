@@ -4,6 +4,57 @@ import { Plus, Lock, X } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import React, { useState, useEffect } from 'react';
 
+type ModalPanelSize = 'md' | '2xl' | '3xl';
+
+const MODAL_PANEL_MAX_WIDTH: Record<ModalPanelSize, string> = {
+  md: 'max-w-md',
+  '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+};
+
+/** Full-screen backdrop above the fixed navbar; content starts below --navbar-height. */
+export function ModalOverlay({
+  onClose,
+  children,
+  backdropClassName = 'bg-black/50',
+}: {
+  onClose: () => void;
+  children: React.ReactNode;
+  backdropClassName?: string;
+}) {
+  return (
+    <div
+      className={`fixed inset-0 z-[120] flex items-start justify-center px-4 pt-[calc(var(--navbar-height)+1rem)] pb-4 ${backdropClassName}`}
+      onClick={onClose}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function ModalPanel({
+  children,
+  size = '2xl',
+  scrollable,
+}: {
+  children: React.ReactNode;
+  size?: ModalPanelSize;
+  scrollable?: boolean;
+}) {
+  const isScrollable = scrollable ?? size !== 'md';
+
+  return (
+    <div
+      className={`w-full rounded-lg border border-light-steel-blue bg-gray-800 p-4 sm:p-6 ${MODAL_PANEL_MAX_WIDTH[size]} ${
+        isScrollable ? 'max-h-[calc(100dvh-var(--navbar-height)-2rem)] overflow-y-auto' : ''
+      }`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </div>
+  );
+}
+
 // Delete Confirmation Modal
 export function DeleteModal({ 
   onConfirm, 
@@ -13,8 +64,8 @@ export function DeleteModal({
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onCancel}>
-      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+    <ModalOverlay onClose={onCancel}>
+      <ModalPanel size="md">
         <h3 className="text-xl font-bold text-white mb-4">Delete Item</h3>
         <p className="text-gray-300 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
         <div className="flex justify-end gap-3">
@@ -31,8 +82,8 @@ export function DeleteModal({
             Delete
           </button>
         </div>
-      </div>
-    </div>
+      </ModalPanel>
+    </ModalOverlay>
   );
 }
 
@@ -193,10 +244,7 @@ export function VideoModal({ videoUrl, isOpen, onClose }: { videoUrl: string; is
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
-      onClick={onClose}
-    >
+    <ModalOverlay onClose={onClose} backdropClassName="bg-black/80">
       <div
         className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -216,7 +264,7 @@ export function VideoModal({ videoUrl, isOpen, onClose }: { videoUrl: string; is
           title="YouTube video player"
         />
       </div>
-    </div>
+    </ModalOverlay>
   );
 }
 

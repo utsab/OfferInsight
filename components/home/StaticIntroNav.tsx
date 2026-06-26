@@ -8,22 +8,43 @@ import {
   getStaticIntroNavSectionProgress,
   scrollToStaticIntroNavSection,
 } from './staticIntroScrollNav';
-import { getIntroNavProgressBarTranslateX } from './introScrollNav';
+import { getIntroNavProgressBarTranslateX, INTRO_NAV_MOBILE_NAV_PADDING_CLASS } from './introScrollNav';
+import { getSiteNavbarHeightPx } from './osrScrollUtils';
 
 const ACCENT_CORAL = '#F57360';
+/** Bleed above the nav strip to cover subpixel gaps below the site navbar. */
+const BACKDROP_BLEED_TOP_PX = 12;
 
 export function StaticIntroNav() {
   const navShellRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState('intro');
   const [activeProgress, setActiveProgress] = useState(0);
+  const [navbarTopPx, setNavbarTopPx] = useState<number | null>(null);
 
   const syncNavHeightVariable = useCallback(() => {
     const height = navShellRef.current?.offsetHeight ?? 52;
     document.documentElement.style.setProperty('--static-intro-nav-height', `${height}px`);
   }, []);
 
+  const syncNavbarTop = useCallback(() => {
+    const height = Math.ceil(getSiteNavbarHeightPx());
+    setNavbarTopPx(height);
+    document.documentElement.style.setProperty('--site-navbar-height', `${height}px`);
+  }, []);
+
   useEffect(() => {
+    syncNavbarTop();
     syncNavHeightVariable();
+
+    const navbar = document.getElementById('site-navbar');
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' && navbar
+        ? new ResizeObserver(() => {
+            syncNavbarTop();
+            syncNavHeightVariable();
+          })
+        : null;
+    resizeObserver?.observe(navbar!);
 
     const updateActive = () => {
       const headerOffsetPx = getStaticIntroNavHeaderOffsetPx();
@@ -45,6 +66,7 @@ export function StaticIntroNav() {
     };
 
     const onViewportChange = () => {
+      syncNavbarTop();
       syncNavHeightVariable();
       updateActive();
     };
@@ -54,29 +76,35 @@ export function StaticIntroNav() {
     window.addEventListener('resize', onViewportChange);
 
     return () => {
+      resizeObserver?.disconnect();
       window.removeEventListener('scroll', updateActive);
       window.removeEventListener('resize', onViewportChange);
       document.documentElement.style.removeProperty('--static-intro-nav-height');
+      document.documentElement.style.removeProperty('--site-navbar-height');
     };
-  }, [syncNavHeightVariable]);
+  }, [syncNavHeightVariable, syncNavbarTop]);
 
   return (
     <div
       ref={navShellRef}
-      className="pointer-events-none fixed inset-x-0 top-[var(--navbar-height)] z-[30]"
+      className={`pointer-events-none fixed inset-x-0 z-[30] ${
+        navbarTopPx == null ? 'top-[var(--navbar-height)]' : ''
+      }`}
+      style={navbarTopPx != null ? { top: `${navbarTopPx}px` } : undefined}
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+1.25rem)]"
+        className="pointer-events-none absolute inset-x-0 bottom-0"
         style={{
+          top: `-${BACKDROP_BLEED_TOP_PX}px`,
           background:
-            'linear-gradient(to bottom, #ffffff 0%, #ffffff 62%, rgba(255,255,255,0.92) 82%, transparent 100%)',
+            'linear-gradient(to bottom, #ffffff 0%, #ffffff 72%, rgba(255,255,255,0.95) 88%, transparent 100%)',
         }}
       />
 
       <nav
         aria-label="Intro sections"
-        className="pointer-events-auto relative flex items-stretch justify-center gap-1 px-3 pb-2.5 pt-2 sm:gap-2 sm:px-5 sm:pb-3 sm:pt-2.5"
+        className={`pointer-events-auto relative flex items-stretch justify-center gap-1 pb-2.5 pt-2 sm:gap-2 sm:pb-3 sm:pt-2.5 ${INTRO_NAV_MOBILE_NAV_PADDING_CLASS}`}
       >
         {STATIC_INTRO_NAV_SECTIONS.map((section) => {
           const isActive = section.id === activeId;

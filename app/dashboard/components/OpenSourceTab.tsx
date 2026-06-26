@@ -8,8 +8,9 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import type { OpenSourceEntry, OpenSourceColumnId, BoardTimeFilter, OpenSourceStatus } from './types';
 import { openSourceStatusToColumn } from './types';
-import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl, ModalFormPrimaryAction } from './shared';
+import { DroppableColumn, formatModalDate, toLocalDateString, LockTooltip, normalizeUrl, ModalFormPrimaryAction, ModalOverlay, ModalPanel } from './shared';
 import typesData from '@/partnerships/types.json';
+import { getEffectiveProofOfCompletionFields } from '../lib/open-source-proof-of-work';
 
 // Debug: set to true to show date created/modified fields in the open source modal
 const ENABLE_DATE_FIELD_EDITING = false;
@@ -246,36 +247,18 @@ function OpenSourceModal({
     });
   };
 
-  // Helper to get effective fields including extras
-  // When in Plan column, exclude extra fields to keep the modal compact (user can still select extras via checkboxes)
-  const getEffectiveFields = () => {
-    let effectiveBabySteps = [...formData.babyStepFields];
-    let effectiveProofOfWork = [...formData.proofOfCompletion];
+  // Plan fields including extras. Extras are hidden in Plan column to keep the modal compact.
+  const getEffectivePlanFields = () => {
     let effectivePlan = [...formData.planFields];
-
-    const includeExtraFields = formData.status !== 'plan';
-    if (formData.criteriaType === 'issue' && includeExtraFields) {
+    if (formData.criteriaType === 'issue' && formData.status !== 'plan') {
       formData.selectedExtras.forEach(extraType => {
         const extraCriteria = activePartnershipCriteria.find(c => c.type === extraType);
-        if (extraCriteria) {
-          if (extraCriteria.baby_step_column_fields) {
-            effectiveBabySteps = [...effectiveBabySteps, ...extraCriteria.baby_step_column_fields];
-          }
-          if (extraCriteria.proof_of_completion) {
-            effectiveProofOfWork = [...effectiveProofOfWork, ...extraCriteria.proof_of_completion];
-          }
-          if (extraCriteria.plan_column_fields) {
-            effectivePlan = [...effectivePlan, ...extraCriteria.plan_column_fields];
-          }
+        if (extraCriteria?.plan_column_fields) {
+          effectivePlan = [...effectivePlan, ...extraCriteria.plan_column_fields];
         }
       });
     }
-
-    return { 
-      babySteps: effectiveBabySteps, 
-      proofOfWork: effectiveProofOfWork,
-      plan: effectivePlan
-    };
+    return effectivePlan;
   };
 
   // Generic helper: builds named groups from primary fields + matching extra fields.
@@ -309,7 +292,10 @@ function OpenSourceModal({
   const getBabyStepGroups = () => getFieldGroups(formData.babyStepFields, c => c.baby_step_column_fields);
   const getProofOfWorkGroups = () => getFieldGroups(formData.proofOfCompletion, c => c.proof_of_completion);
 
-  const { proofOfWork: effectiveProofOfWork, plan: effectivePlan } = getEffectiveFields();
+  const effectivePlan = useMemo(
+    () => getEffectivePlanFields(),
+    [formData.planFields, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
+  );
   const babyStepGroups = useMemo(
     () => getBabyStepGroups(),
     [formData.babyStepFields, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
@@ -317,6 +303,10 @@ function OpenSourceModal({
   const proofOfWorkGroups = useMemo(
     () => getProofOfWorkGroups(),
     [formData.proofOfCompletion, formData.criteriaType, formData.selectedExtras, formData.status, activePartnershipCriteria]
+  );
+  const effectiveProofOfWork = useMemo(
+    () => proofOfWorkGroups.flatMap(g => g.fields),
+    [proofOfWorkGroups]
   );
   const proofOfWorkFlat = useMemo(
     () => proofOfWorkGroups.flatMap(g => g.fields.map(req => ({ ...req, groupName: g.name }))),
@@ -448,9 +438,8 @@ function OpenSourceModal({
     }
     
     // Recalculate fields based on current selectedExtras before saving
-    // This ensures fields array includes all extra fields when extras are changed
+    // This ensures response cleanup includes all extra fields when extras are changed
     let effectiveBabySteps = [...formData.babyStepFields];
-    let effectiveProofOfWork = [...formData.proofOfCompletion];
     let effectivePlan = [...formData.planFields];
 
     if (formData.criteriaType === 'issue') {
@@ -460,15 +449,21 @@ function OpenSourceModal({
           if (extraCriteria.baby_step_column_fields) {
             effectiveBabySteps = [...effectiveBabySteps, ...extraCriteria.baby_step_column_fields];
           }
-          if (extraCriteria.proof_of_completion) {
-            effectiveProofOfWork = [...effectiveProofOfWork, ...extraCriteria.proof_of_completion];
-          }
           if (extraCriteria.plan_column_fields) {
             effectivePlan = [...effectivePlan, ...extraCriteria.plan_column_fields];
           }
         }
       });
     }
+
+    const effectiveProofOfWork = getEffectiveProofOfCompletionFields(
+      {
+        criteriaType: formData.criteriaType,
+        selectedExtras: formData.selectedExtras,
+        proofOfCompletion: formData.proofOfCompletion,
+      } as OpenSourceEntry,
+      activePartnershipCriteria
+    );
     
     // Collect all valid field text keys to clean up orphaned responses
     const validPlanKeys = new Set(effectivePlan.map(f => f.text).filter(Boolean));
@@ -545,8 +540,8 @@ function OpenSourceModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0" onClick={(e) => e.stopPropagation()}>
+    <ModalOverlay onClose={onClose}>
+      <ModalPanel size="2xl">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-white">
             {entry ? 'Edit Open Source Criteria' : 'Create New Open Source Criteria'}
@@ -856,8 +851,8 @@ function OpenSourceModal({
             </div>
           </div>
         </form>
-      </div>
-    </div>
+      </ModalPanel>
+    </ModalOverlay>
   );
 }
 
@@ -1510,8 +1505,8 @@ export default function OpenSourceTab({
 
           {/* Switch Partnership Confirmation Modal */}
           {showSwitchConfirmation && !readOnly && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowSwitchConfirmation(false)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => setShowSwitchConfirmation(false)}>
+              <ModalPanel size="md">
                 <h3 className="text-xl font-bold text-white mb-4">Switch Partnership</h3>
                 <p className="text-gray-300 mb-2">
                   Are you sure you want to switch from <span className="font-semibold text-white">{selectedPartnership}</span> to <span className="font-semibold text-white">{tempSelection}</span>?
@@ -1534,14 +1529,14 @@ export default function OpenSourceTab({
                     {isSaving ? 'Switching...' : 'Yes, Switch Partnership'}
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {/* Abandon Partnership Confirmation Modal */}
           {showAbandonConfirmation && !readOnly && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAbandonConfirmation(false)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => setShowAbandonConfirmation(false)}>
+              <ModalPanel size="md">
                 <h3 className="text-xl font-bold text-white mb-4">Abandon Partnership</h3>
                 <p className="text-gray-300 mb-2">
                   Are you sure you want to abandon <span className="font-semibold text-white">{selectedPartnership}</span> for this student?
@@ -1564,14 +1559,14 @@ export default function OpenSourceTab({
                     {isAbandoning ? 'Abandoning...' : 'Yes, Abandon Partnership'}
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {/* Partnership Error Modal */}
           {partnershipError && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPartnershipError(null)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => setPartnershipError(null)}>
+              <ModalPanel size="md">
                 <h3 className="text-xl font-bold text-white mb-4">Partnership Error</h3>
                 <p className="text-amber-400 text-sm mb-6 font-medium">
                   {partnershipError}
@@ -1584,14 +1579,14 @@ export default function OpenSourceTab({
                     OK
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {/* Proof of Work Warning Modal */}
           {showProofOfWorkWarning && setShowProofOfWorkWarning && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowProofOfWorkWarning(false)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => setShowProofOfWorkWarning(false)}>
+              <ModalPanel size="md">
                 <h3 className="text-xl font-bold text-white mb-4">Proof of Work Required</h3>
                 <p className="text-amber-400 text-sm mb-6 font-semibold">
                   Please complete the proof of work fields first!
@@ -1604,14 +1599,14 @@ export default function OpenSourceTab({
                     OK
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {/* Congratulations Modal - All Partnership Criteria Completed */}
           {showCongratsModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => handleCompletePartnership(false)}>
-              <div className="bg-gray-800 border border-light-steel-blue rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <ModalOverlay onClose={() => handleCompletePartnership(false)}>
+              <ModalPanel size="md">
                 <div className="flex flex-col items-center text-center mb-6">
                   <PartyPopper className="w-16 h-16 text-green-400 mb-4" />
                   <h3 className="text-2xl font-bold text-white mb-2">Congratulations!</h3>
@@ -1638,8 +1633,8 @@ export default function OpenSourceTab({
                     {isCompletingPartnership ? 'Loading...' : 'Yes'}
                   </button>
                 </div>
-              </div>
-            </div>
+              </ModalPanel>
+            </ModalOverlay>
           )}
 
           {isLoading ? (

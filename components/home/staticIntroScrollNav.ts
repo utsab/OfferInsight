@@ -1,4 +1,4 @@
-import { getViewportOffsetTopPx } from './osrScrollUtils';
+import { getSiteNavbarHeightPx } from './osrScrollUtils';
 
 export type StaticIntroNavSection = {
   id: string;
@@ -18,8 +18,8 @@ export const STATIC_INTRO_NAV_SECTIONS: StaticIntroNavSection[] = [
     startElementId: 'intro-zero',
   },
   {
-    id: 'personal-bars',
-    label: 'Personal Bars',
+    id: 'personal-bar',
+    label: 'Personal Bar',
     scrollTargetId: 'whoop-bar-heading',
     startElementId: 'intro-whoop-bar',
   },
@@ -33,7 +33,7 @@ export const STATIC_INTRO_NAV_SECTIONS: StaticIntroNavSection[] = [
 ];
 
 export const STATIC_SECTION_SCROLL_MT =
-  'scroll-mt-[calc(var(--navbar-height)+var(--static-intro-nav-height,3.25rem)+0.5rem)]';
+  'scroll-mt-[calc(var(--site-navbar-height,var(--navbar-height))+var(--static-intro-nav-height,3.25rem)+0.5rem)]';
 
 function getElementDocumentTop(id: string): number | null {
   const element = document.getElementById(id);
@@ -47,7 +47,7 @@ export function getStaticIntroNavHeaderOffsetPx(): number {
     .trim();
   const navHeight = raw.endsWith('px') ? parseFloat(raw) : 52;
 
-  return getViewportOffsetTopPx(0) + navHeight;
+  return getSiteNavbarHeightPx() + navHeight;
 }
 
 function getSectionRangeStart(section: StaticIntroNavSection, headerOffsetPx: number): number {
@@ -57,6 +57,10 @@ function getSectionRangeStart(section: StaticIntroNavSection, headerOffsetPx: nu
   return Math.max(0, top - headerOffsetPx);
 }
 
+function getPageBottomScrollY(): number {
+  return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+}
+
 function getSectionRangeEnd(
   sections: StaticIntroNavSection[],
   index: number,
@@ -64,14 +68,7 @@ function getSectionRangeEnd(
 ): number {
   const next = sections[index + 1];
   if (next) return getSectionRangeStart(next, headerOffsetPx);
-  const contact = sections[sections.length - 1];
-  if (contact?.scrollToPageBottom) {
-    return Math.max(
-      document.documentElement.scrollHeight - window.innerHeight,
-      getSectionRangeStart(contact, headerOffsetPx),
-    );
-  }
-  return document.documentElement.scrollHeight - window.innerHeight;
+  return Math.max(getPageBottomScrollY(), getSectionRangeStart(sections[index], headerOffsetPx));
 }
 
 export function getActiveStaticIntroNavId(
@@ -115,10 +112,7 @@ export function scrollToStaticIntroNavSection(
   headerOffsetPx: number,
 ): void {
   if (section.scrollToPageBottom) {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth',
-    });
+    window.scrollTo({ top: getPageBottomScrollY(), behavior: 'smooth' });
     return;
   }
 
