@@ -72,7 +72,7 @@ export const PERSONAL_BAR_CONTENT_START_Y = `${PERSONAL_BAR_CONTENT_START_VH}vh`
 export const ACTIONS_CONTENT_START_VH = 72;
 export const ACTIONS_CONTENT_START_Y = `${ACTIONS_CONTENT_START_VH}vh`;
 
-/** Measure contact section content height (same pattern as personal bars). */
+/** Measure contact section content height (same pattern as the personal bar). */
 export function measureActionsContentHeight(content: HTMLElement): number {
   gsap.set(content, { y: 0 });
   const height = Math.max(content.scrollHeight, content.getBoundingClientRect().height);

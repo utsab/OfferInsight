@@ -10,7 +10,7 @@ type LogoMarqueeProps = {
 };
 
 export function LogoMarquee({ className }: LogoMarqueeProps) {
-  const logos = HOME_ASSETS.affiliations;
+  const logos = HOME_ASSETS.agreementLogos;
   const marqueeLogos = [...logos, ...logos];
 
   return (
@@ -34,7 +34,6 @@ export function LogoMarquee({ className }: LogoMarqueeProps) {
               src={logo.path}
               alt={`${logo.label} logo`}
               className="max-h-full max-w-full object-contain"
-              style={{ transform: `scale(${logo.scale})` }}
               draggable={false}
             />
           </div>
