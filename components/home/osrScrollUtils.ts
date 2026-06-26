@@ -114,11 +114,31 @@ export function applyScrollTrackHeight(
   track.style.height = `${getScrollTrackHeightPx(scrollTrackEndVh)}px`;
 }
 
-/** Window scrollY that pins the scroll track to the page bottom. */
-export function getScrollTrackBottomPx(scrollTrack: HTMLElement): number {
+/** Document Y of the scroll track top (offsetTop is 0 vs intro root — use this for scrollTo). */
+export function getScrollTrackDocumentTopPx(scrollTrack: HTMLElement): number {
+  return scrollTrack.getBoundingClientRect().top + window.scrollY;
+}
+
+/** Pixels scrolled into the track from its top. */
+export function getScrollTrackRelativePx(scrollTrack: HTMLElement): number {
+  return Math.max(window.scrollY - getScrollTrackDocumentTopPx(scrollTrack), 0);
+}
+
+/**
+ * Window scrollY that pins the scroll track to the page bottom.
+ * Pass `scrollTrackEndVh` when known — more reliable than offsetHeight reads.
+ */
+export function getScrollTrackBottomPx(
+  scrollTrack: HTMLElement,
+  scrollTrackEndVh?: number,
+): number {
+  const trackTop = getScrollTrackDocumentTopPx(scrollTrack);
+  if (scrollTrackEndVh != null && scrollTrackEndVh > 0) {
+    return trackTop + getOsrSceneConfig(scrollTrackEndVh, 0, false).startPx;
+  }
   return Math.max(
-    scrollTrack.offsetTop,
-    scrollTrack.offsetTop + scrollTrack.offsetHeight - window.innerHeight,
+    trackTop,
+    trackTop + scrollTrack.offsetHeight - window.innerHeight,
   );
 }
 

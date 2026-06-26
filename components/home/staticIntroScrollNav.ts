@@ -115,10 +115,11 @@ export function scrollToStaticIntroNavSection(
   headerOffsetPx: number,
 ): void {
   if (section.scrollToPageBottom) {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth',
-    });
+    const maxScrollY = Math.max(
+      0,
+      document.documentElement.scrollHeight - window.innerHeight,
+    );
+    window.scrollTo({ top: maxScrollY, behavior: 'smooth' });
     return;
   }
 

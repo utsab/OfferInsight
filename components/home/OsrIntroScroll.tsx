@@ -10,6 +10,8 @@ import {
   TYPING_DESCRIPTIONS,
   getOsrSceneConfig,
   getScrollTrackBottomPx,
+  getScrollTrackDocumentTopPx,
+  getScrollTrackRelativePx,
   applyScrollTrackHeight,
   getViewportBelowNavbar,
   measurePersonalBarContentHeight,
@@ -133,11 +135,14 @@ export function OsrIntroScroll() {
     if (!track) return;
 
     if (section.id === 'contact') {
-      // DOM bottom — matches manual scroll; jumpVh alone stops ~1 viewport short.
-      window.scrollTo({ top: getScrollTrackBottomPx(track), behavior: 'smooth' });
+      window.scrollTo({
+        top: getScrollTrackBottomPx(track, section.jumpVh),
+        behavior: 'smooth',
+      });
       return;
     }
 
+    const trackTop = getScrollTrackDocumentTopPx(track);
     const anchorJump = section.anchorJump;
     if (anchorJump) {
       const anchor = document.getElementById(anchorJump.anchorId);
@@ -150,13 +155,13 @@ export function OsrIntroScroll() {
           anchorJump.scrollMaxVh,
         );
         const { startPx } = getOsrSceneConfig(jumpVh, 0, false);
-        window.scrollTo({ top: track.offsetTop + startPx, behavior: 'smooth' });
+        window.scrollTo({ top: trackTop + startPx, behavior: 'smooth' });
         return;
       }
     }
 
     const { startPx } = getOsrSceneConfig(section.jumpVh, 0, false);
-    window.scrollTo({ top: track.offsetTop + startPx, behavior: 'smooth' });
+    window.scrollTo({ top: trackTop + startPx, behavior: 'smooth' });
   }, []);
 
   useEffect(() => {
@@ -165,7 +170,7 @@ export function OsrIntroScroll() {
 
     const updateActive = () => {
       const vh = getViewportBelowNavbar();
-      const relativePx = Math.max(window.scrollY - track.offsetTop, 0);
+      const relativePx = getScrollTrackRelativePx(track);
       const relativeVh = relativePx / vh;
       const activeId = getActiveIntroNavId(introNavSections, relativeVh);
       setActiveNavId(activeId);
@@ -372,7 +377,7 @@ export function OsrIntroScroll() {
           /** Re-sync scrub progress at scroll top without overriding tween values. */
           const attachTopScrubSync = () => {
             const syncScrubToScroll = () => {
-              const relativeScroll = Math.max(window.scrollY - scrollTrack.offsetTop, 0);
+              const relativeScroll = getScrollTrackRelativePx(scrollTrack);
               if (relativeScroll > 1) return;
               syncScrollTrackAnimations(scrollTrack);
             };
