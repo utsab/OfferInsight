@@ -18,8 +18,8 @@ export const STATIC_INTRO_NAV_SECTIONS: StaticIntroNavSection[] = [
     startElementId: 'intro-zero',
   },
   {
-    id: 'personal-bars',
-    label: 'Personal Bars',
+    id: 'personal-bar',
+    label: 'Personal Bar',
     scrollTargetId: 'whoop-bar-heading',
     startElementId: 'intro-whoop-bar',
   },

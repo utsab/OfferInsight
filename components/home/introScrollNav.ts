@@ -15,7 +15,7 @@ import { getScrollTrackBottomRelativeVh } from './osrScrollUtils';
  *
  * **Intro** — scroll to top of track.
  *
- * **Personal Bars** — `introScrollJump.ts` aligns the first personal-bar heading
+ * **Personal Bar** — `introScrollJump.ts` aligns the first personal-bar heading
  * below the navbar.
  *
  * **Contact** — scroll to the physical track bottom (`getScrollTrackBottomPx` in
@@ -49,7 +49,7 @@ type IntroNavBuildPhases = {
   actionsScroll: IntroNavPhase;
 };
 
-/** vh below navbar for scroll-content section headings (personal bars, contact). */
+/** vh below navbar for scroll-content section headings (personal bar, contact). */
 const SCROLL_CONTENT_HEADING_TOP_VH = 14;
 
 function scrollContentAnchorJump(
@@ -81,8 +81,8 @@ export function buildIntroNavSections(
       jumpVh: 0,
     },
     {
-      id: 'personal-bars',
-      label: 'Personal Bars',
+      id: 'personal-bar',
+      label: 'Personal Bar',
       startVh: whoop,
       jumpVh: whoop,
       anchorJump: scrollContentAnchorJump('whoop-bar-heading', whoop, actions),

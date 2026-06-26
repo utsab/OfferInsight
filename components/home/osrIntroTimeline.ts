@@ -12,7 +12,6 @@
  */
 import {
   ACTIONS_CONTENT_START_VH,
-  getAffiliationsContentEndY,
   getActionsContentEndY,
   getContentScrollTravelVh,
   getPersonalBarContentEndY,
@@ -34,7 +33,7 @@ const OSR_INTRO_PHASE_DURATIONS = {
   whoSectionOut: 40,
   howSectionIn: 30,
   howLettersMove: 80, // minimum; resolved to match Who story chapter length
-  howToWhoop: 8,
+  howToAgreements: 8,
 } as const;
 
 const OSR_INTRO_PHASE_DURATIONS_MOBILE: Partial<
@@ -44,22 +43,22 @@ const OSR_INTRO_PHASE_DURATIONS_MOBILE: Partial<
   whoSectionIn: 20,
   whoLettersMove: 30,
   whoContentIn: 20,
-  howToWhoop: 6,
+  howToAgreements: 6,
 };
 
 const OSR_CONTENT_PHASE_DURATIONS = {
+  agreementsMarquee: 55,
+  agreementsToWhoop: 8,
   whoopPersonalBarScroll: 400,
-  whoopToAffiliations: 32,
-  affiliationsScroll: 55,
   actionsScroll: 36,
 } as const;
 
 const OSR_CONTENT_PHASE_DURATIONS_MOBILE: Partial<
   Record<keyof typeof OSR_CONTENT_PHASE_DURATIONS, number>
 > = {
+  agreementsMarquee: 45,
+  agreementsToWhoop: 6,
   whoopPersonalBarScroll: 430,
-  whoopToAffiliations: 34,
-  affiliationsScroll: 45,
   actionsScroll: 36,
 };
 
@@ -71,10 +70,10 @@ const PHASE_ORDER = [
   'whoSectionOut',
   'howSectionIn',
   'howLettersMove',
-  'howToWhoop',
+  'howToAgreements',
+  'agreementsMarquee',
+  'agreementsToWhoop',
   'whoopPersonalBarScroll',
-  'whoopToAffiliations',
-  'affiliationsScroll',
   'actionsScroll',
 ] as const;
 
@@ -85,8 +84,8 @@ type OsrPhaseKey = OsrSequentialPhaseKey | 'whoContentIn';
 
 /** Fixed overlay beats — Who section visible through `whoSectionOut`. */
 const WHO_STORY_PHASES = ['whoSectionIn', 'whoLettersMove', 'whoSectionOut'] as const satisfies readonly OsrIntroPhaseKey[];
-/** Fixed overlay beats — How section visible through `howToWhoop`. */
-const HOW_STORY_CORE_PHASES = ['howSectionIn', 'howToWhoop'] as const satisfies readonly OsrIntroPhaseKey[];
+/** Fixed overlay beats — How section visible through `howToAgreements`. */
+const HOW_STORY_CORE_PHASES = ['howSectionIn', 'howToAgreements'] as const satisfies readonly OsrIntroPhaseKey[];
 
 function getStoryChapterDuration(
   phaseKeys: readonly OsrIntroPhaseKey[],
@@ -100,7 +99,6 @@ const MOBILE_VIEWPORT_HEIGHT = 844;
 
 const ESTIMATED_CONTENT_HEIGHTS = {
   whoop: 900,
-  affiliations: 500,
   actions: 680,
 } as const;
 
@@ -108,13 +106,11 @@ type IntroContentMeasurements = {
   viewportHeight: number;
   layoutReferenceHeight: number;
   whoopContentHeight: number;
-  affiliationsContentHeight: number;
   actionsContentHeight: number;
 };
 
 type IntroContentMotion = {
   whoopEndY: string;
-  affiliationsEndY: string;
   actionsEndY: string;
 };
 
@@ -136,7 +132,6 @@ function estimatedMeasurements(isMobile: boolean): IntroContentMeasurements {
     viewportHeight: viewport,
     layoutReferenceHeight: viewport,
     whoopContentHeight: ESTIMATED_CONTENT_HEIGHTS.whoop,
-    affiliationsContentHeight: ESTIMATED_CONTENT_HEIGHTS.affiliations,
     actionsContentHeight: ESTIMATED_CONTENT_HEIGHTS.actions,
   };
 }
@@ -145,10 +140,6 @@ function resolveContentMotion(measurements: IntroContentMeasurements): IntroCont
   const { viewportHeight, layoutReferenceHeight } = measurements;
   return {
     whoopEndY: getPersonalBarContentEndY(measurements.whoopContentHeight, viewportHeight, 135),
-    affiliationsEndY: getAffiliationsContentEndY(
-      measurements.affiliationsContentHeight,
-      layoutReferenceHeight,
-    ),
     actionsEndY: getActionsContentEndY(
       measurements.actionsContentHeight,
       layoutReferenceHeight,
@@ -177,12 +168,6 @@ function resolvePhaseDuration(
       return scrollDurationForEndY(
         PERSONAL_BAR_CONTENT_START_VH,
         motion.whoopEndY,
-        getContentPhaseDuration(key, isMobile),
-      );
-    case 'affiliationsScroll':
-      return scrollDurationForEndY(
-        PERSONAL_BAR_CONTENT_START_VH,
-        motion.affiliationsEndY,
         getContentPhaseDuration(key, isMobile),
       );
     case 'actionsScroll':
@@ -217,10 +202,10 @@ function getWhoContentInScrollPhase(
 }
 
 /** Parallel intro phase — line scrolls through the unified intro story (Intro → How). */
-export function getPageIndicatorScrollPhase(howToWhoopPhase: OsrScrollPhase): OsrScrollPhase {
+export function getPageIndicatorScrollPhase(howToAgreementsPhase: OsrScrollPhase): OsrScrollPhase {
   return {
     at: 0,
-    durationPercent: getPhaseEndVh(howToWhoopPhase) * 100,
+    durationPercent: getPhaseEndVh(howToAgreementsPhase) * 100,
   };
 }
 

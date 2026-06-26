@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import { HOME_ASSETS } from './homeAssets';
 import { buildIntroScrollPhases, getOsrScrollHeightVh, getPageIndicatorScrollPhase } from './osrIntroTimeline';
 import {
   ACTIONS_CONTENT_START_Y,
@@ -20,6 +19,7 @@ import {
 import { handleSignIn } from '@/components/auth-actions';
 import { TypingHeroLine } from './TypingHeroLine';
 import { IntroActionsSection } from './IntroActionsSection';
+import { IntroAgreementsSection } from './IntroAgreementsSection';
 import { WhoopPersonalBarSection } from './WhoopPersonalBarSection';
 import { IntroScrollNav } from './IntroScrollNav';
 import { computeScrollVhForAnchorTarget } from './introScrollJump';
@@ -74,8 +74,8 @@ function applyIntroStartFrame(
   sectionOne: HTMLElement,
   sectionTwo: HTMLElement,
   whoWeAreContent: HTMLElement,
+  sectionAgreements: HTMLElement,
   sectionWhoopPersonalBar: HTMLElement,
-  sectionAffiliations: HTMLElement,
   sectionActions: HTMLElement,
   pageIndicator?: HTMLElement | null,
 ) {
@@ -83,8 +83,8 @@ function applyIntroStartFrame(
   gsap.set(sectionOne, { autoAlpha: 0 });
   gsap.set(sectionTwo, { autoAlpha: 0 });
   gsap.set(whoWeAreContent, { opacity: 0 });
+  gsap.set(sectionAgreements, { autoAlpha: 0 });
   gsap.set(sectionWhoopPersonalBar, { autoAlpha: 0 });
-  gsap.set(sectionAffiliations, { autoAlpha: 0 });
   gsap.set(sectionActions, { autoAlpha: 0 });
   if (pageIndicator) {
     gsap.set(pageIndicator, { opacity: 1, top: '90%', yPercent: 0 });
@@ -115,6 +115,7 @@ export function OsrIntroScroll() {
   const sectionZeroRef = useRef<HTMLElement>(null);
   const sectionOneRef = useRef<HTMLElement>(null);
   const sectionTwoRef = useRef<HTMLElement>(null);
+  const sectionAgreementsRef = useRef<HTMLElement>(null);
   const whoWeAreContentRef = useRef<HTMLDivElement>(null);
   const whoLetterORef = useRef<HTMLDivElement>(null);
   const whoLetterSRef = useRef<HTMLDivElement>(null);
@@ -125,8 +126,6 @@ export function OsrIntroScroll() {
   const sectionWhoopPersonalBarRef = useRef<HTMLElement>(null);
   const whoopPersonalBarBgLogoRef = useRef<HTMLDivElement>(null);
   const whoopPersonalBarContentRef = useRef<HTMLDivElement>(null);
-  const sectionAffiliationsRef = useRef<HTMLElement>(null);
-  const affiliationsContentRef = useRef<HTMLDivElement>(null);
   const sectionActionsRef = useRef<HTMLElement>(null);
   const actionsContentRef = useRef<HTMLDivElement>(null);
   const lastViewportModeRef = useRef<{ compact: boolean; scaleBucket: number } | null>(null);
@@ -246,6 +245,7 @@ export function OsrIntroScroll() {
       const sectionZero = sectionZeroRef.current;
       const sectionOne = sectionOneRef.current;
       const sectionTwo = sectionTwoRef.current;
+      const sectionAgreements = sectionAgreementsRef.current;
       const whoWeAreContent = whoWeAreContentRef.current;
       const whoLetterO = whoLetterORef.current;
       const whoLetterS = whoLetterSRef.current;
@@ -256,8 +256,6 @@ export function OsrIntroScroll() {
       const sectionWhoopPersonalBar = sectionWhoopPersonalBarRef.current;
       const whoopPersonalBarBgLogo = whoopPersonalBarBgLogoRef.current;
       const whoopPersonalBarContent = whoopPersonalBarContentRef.current;
-      const sectionAffiliations = sectionAffiliationsRef.current;
-      const affiliationsContent = affiliationsContentRef.current;
       const sectionActions = sectionActionsRef.current;
       const actionsContent = actionsContentRef.current;
 
@@ -267,6 +265,7 @@ export function OsrIntroScroll() {
         !sectionZero ||
         !sectionOne ||
         !sectionTwo ||
+        !sectionAgreements ||
         !whoWeAreContent ||
         !whoLetterO ||
         !whoLetterS ||
@@ -277,8 +276,6 @@ export function OsrIntroScroll() {
         !sectionWhoopPersonalBar ||
         !whoopPersonalBarBgLogo ||
         !whoopPersonalBarContent ||
-        !sectionAffiliations ||
-        !affiliationsContent ||
         !sectionActions ||
         !actionsContent
       ) {
@@ -300,11 +297,10 @@ export function OsrIntroScroll() {
         gsap.set(sectionOne, { opacity: 1 });
         gsap.set(whoWeAreContent, { opacity: 1 });
         gsap.set(sectionTwo, { opacity: 0 });
-        gsap.set(sectionWhoopPersonalBar, { opacity: 1 });
+        gsap.set(sectionAgreements, { opacity: 1 });
+        gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
         gsap.set(whoopPersonalBarBgLogo, { opacity: 0.5 });
         gsap.set(whoopPersonalBarContent, { y: 0 });
-        gsap.set(sectionAffiliations, { opacity: 0 });
-        gsap.set(affiliationsContent, { y: 0 });
         gsap.set(sectionActions, { opacity: 1 });
         gsap.set(actionsContent, { y: 0 });
         if (pageIndicator) gsap.set(pageIndicator, { opacity: 0 });
@@ -324,14 +320,13 @@ export function OsrIntroScroll() {
             sectionOne,
             sectionTwo,
             whoWeAreContent,
+            sectionAgreements,
             sectionWhoopPersonalBar,
-            sectionAffiliations,
             sectionActions,
             pageIndicator,
           );
           gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
           gsap.set(whoopPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-          gsap.set(affiliationsContent, { y: PERSONAL_BAR_CONTENT_START_Y });
           gsap.set(actionsContent, { y: ACTIONS_CONTENT_START_Y });
           const viewportHeight = getViewportBelowNavbar();
           const layoutReferenceHeight = isCompactMode ? viewportHeight : STAGE_BASE_HEIGHT;
@@ -339,14 +334,9 @@ export function OsrIntroScroll() {
             viewportHeight,
             layoutReferenceHeight,
             whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
-            affiliationsContentHeight: measurePersonalBarContentHeight(affiliationsContent),
             actionsContentHeight: measureActionsContentHeight(actionsContent),
           });
-          const {
-            whoopEndY: whoopContentEndY,
-            affiliationsEndY,
-            actionsEndY,
-          } = motion;
+          const { whoopEndY: whoopContentEndY, actionsEndY } = motion;
 
           scrollTrack.style.height = `${scrollTrackEndVh * 100}vh`;
           setScrollHeightVh(scrollTrackEndVh);
@@ -440,7 +430,7 @@ export function OsrIntroScroll() {
             gsap.fromTo(whoWeAreContent, { opacity: 0 }, { opacity: 1, ...SCRUB_DEFAULTS }),
           );
 
-          const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.howToWhoop);
+          const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.howToAgreements);
           if (pageIndicator) {
             attachScene(
               scrollTrack,
@@ -530,7 +520,9 @@ export function OsrIntroScroll() {
             );
           }
 
-          attachSectionCrossfade(phases.howToWhoop, sectionTwo, sectionWhoopPersonalBar);
+          attachSectionCrossfade(phases.howToAgreements, sectionTwo, sectionAgreements);
+
+          attachSectionCrossfade(phases.agreementsToWhoop, sectionAgreements, sectionWhoopPersonalBar);
 
           attachContentScroll(
             phases.whoopPersonalBarScroll,
@@ -539,26 +531,14 @@ export function OsrIntroScroll() {
             whoopPersonalBarBgLogo,
           );
 
-          attachSectionCrossfade(
-            phases.whoopToAffiliations,
-            sectionWhoopPersonalBar,
-            sectionAffiliations,
-          );
-
           if (pageIndicator) {
             attachScene(
               scrollTrack,
-              phases.whoopToAffiliations.at,
-              phases.whoopToAffiliations.durationPercent,
+              phases.actionsScroll.at,
+              phases.actionsScroll.durationPercent,
               gsap.fromTo(pageIndicator, { opacity: 1 }, { opacity: 0, ...SCRUB_DEFAULTS }),
             );
           }
-
-          attachContentScroll(
-            phases.affiliationsScroll,
-            affiliationsContent,
-            affiliationsEndY,
-          );
 
           attachScene(
             scrollTrack,
@@ -566,7 +546,7 @@ export function OsrIntroScroll() {
             phases.actionsScroll.durationPercent,
             gsap
               .timeline({ defaults: { ease: 'none' } })
-              .fromTo(sectionAffiliations, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0)
+              .fromTo(sectionWhoopPersonalBar, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0)
               .fromTo(sectionActions, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0)
               .fromTo(
                 actionsContent,
@@ -784,6 +764,14 @@ export function OsrIntroScroll() {
         </div>
       </section>
 
+      {/* Phase 4 — personal bar agreements marquee */}
+      <IntroAgreementsSection
+        sectionShell={sectionShell}
+        sectionStyle={sectionShellStyle}
+        sectionRef={sectionAgreementsRef}
+      />
+
+      {/* Phase 5 — Whoop personal bar */}
       <WhoopPersonalBarSection
         sectionShell={sectionShell}
         sectionStyle={sectionShellStyle}
@@ -795,59 +783,7 @@ export function OsrIntroScroll() {
         }}
       />
 
-      {/* Phase 5 — hiring manager affiliations */}
-      <section
-        ref={sectionAffiliationsRef}
-        id="intro-affiliations"
-        className={`${sectionShell} z-[21] overflow-hidden bg-white opacity-0`}
-        style={sectionShellStyle}
-        aria-labelledby="affiliations-heading"
-      >
-        <div className="relative z-[2] h-full w-full overflow-hidden">
-          <div
-            ref={affiliationsContentRef}
-            className="will-change-transform flex w-full items-center justify-center px-4 pt-[8vh] sm:px-8"
-          >
-            <div className="w-full max-w-6xl text-center">
-              <h2
-                id="affiliations-heading"
-                className="mb-4 text-3xl font-bold tracking-tight text-black sm:text-4xl md:text-5xl"
-              >
-                Hiring Manager Affiliations
-              </h2>
-              <p className="mx-auto mb-3 max-w-5xl text-base leading-relaxed text-gray-800 sm:text-lg md:text-xl">
-                Participating managers at these companies commit to interview candidates who meet their
-                defined open-source benchmarks.
-              </p>
-              <p className="mx-auto mb-9 max-w-4xl text-sm text-gray-600 sm:text-base">
-                Standards are manager-defined and do not represent official company policy.
-              </p>
-
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:gap-5">
-                {HOME_ASSETS.affiliations.map((logo) => (
-                  <div
-                    key={logo.path}
-                    className="flex h-[78px] items-center justify-center rounded-xl border border-light-steel-blue/35 bg-white/95 p-3 shadow-lg sm:h-[92px] sm:p-4"
-                  >
-                    <img
-                      src={logo.path}
-                      alt={`${logo.label} logo`}
-                      className="max-h-full max-w-full origin-center object-contain"
-                      style={{
-                        transform: `scale(${logo.scale})`,
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-              <p className="mt-6 text-xl font-semibold italic tracking-wide text-gray-800 sm:mt-7 sm:text-2xl">
-                and more...
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
+      {/* Phase 6 — contact / what's next */}
       <IntroActionsSection
         sectionShell={actionsSectionShell}
         sectionStyle={sectionShellStyle}

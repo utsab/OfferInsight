@@ -11,7 +11,7 @@ Small, in-repo walkthrough of the homepage intro scroll (`components/home/OsrInt
 
 ## Step 3 (planned)
 
-**Inner content scroll** — same pattern as personal bars on the homepage:
+**Inner content scroll** — same pattern as personal bar on the homepage:
 
 - Section shell stays **fixed** in the viewport.
 - Inner content moves **`y`** upward as the user scrolls (e.g. start at `140vh`, end at a negative `vh`).

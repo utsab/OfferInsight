@@ -68,7 +68,7 @@ export function getOsrSceneConfig(
 export const PERSONAL_BAR_CONTENT_START_VH = 140;
 export const PERSONAL_BAR_CONTENT_START_Y = `${PERSONAL_BAR_CONTENT_START_VH}vh`;
 
-/** Actions entry: just below the stage — contact rises in as affiliations exits. */
+/** Actions entry: just below the stage — contact rises in as the personal bar exits. */
 export const ACTIONS_CONTENT_START_VH = 72;
 export const ACTIONS_CONTENT_START_Y = `${ACTIONS_CONTENT_START_VH}vh`;
 
@@ -137,23 +137,13 @@ export function getContentScrollTravelVh(startVh: number, endY: string): number 
 
 /**
  * Personal-bar scroll rate: one unit of scroll distance (durationPercent)
- * per vh of content travel — keeps affiliations → actions continuous.
+ * per vh of content travel — keeps personal bar → actions continuous.
  */
 export function getScrollDurationForTravelVh(
   travelVh: number,
   minDurationPercent: number,
 ): number {
   return Math.round(Math.max(minDurationPercent, travelVh));
-}
-
-/** Affiliations logo grid — shorter tail than criteria pages, same scroll rate. */
-export function getAffiliationsContentEndY(
-  contentHeightPx: number,
-  viewportHeightPx: number,
-): string {
-  const contentVh = (contentHeightPx / viewportHeightPx) * 100;
-  const endVh = Math.max(15, Math.round(contentVh + 10));
-  return `-${endVh}vh`;
 }
 
 /** Contact section — rest with the block's midpoint on screen, not its top edge. */
