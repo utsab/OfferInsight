@@ -290,6 +290,15 @@ export function OsrIntroScroll() {
       }
 
       const pageIndicator = introRoot.querySelector<HTMLElement>('[data-page-indicator]');
+      const whoopPersonalBarIIIPanel = sectionWhoopPersonalBar.querySelector<HTMLElement>(
+        '[data-personal-bar-iii-panel]',
+      );
+      const whoopPersonalBarIIIPanelBg = sectionWhoopPersonalBar.querySelector<HTMLElement>(
+        '[data-personal-bar-iii-panel-bg]',
+      );
+      const whoopPersonalBarIIICards = Array.from(
+        sectionWhoopPersonalBar.querySelectorAll<HTMLElement>('[data-personal-bar-iii-card]'),
+      );
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -308,6 +317,11 @@ export function OsrIntroScroll() {
         gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
         gsap.set(whoopPersonalBarBgLogo, { opacity: 0.5 });
         gsap.set(whoopPersonalBarContent, { y: 0 });
+        if (whoopPersonalBarIIIPanel) gsap.set(whoopPersonalBarIIIPanel, { y: 0 });
+        if (whoopPersonalBarIIIPanelBg) gsap.set(whoopPersonalBarIIIPanelBg, { y: 0 });
+        if (whoopPersonalBarIIICards.length > 0) {
+          gsap.set(whoopPersonalBarIIICards, { opacity: 1, x: 0 });
+        }
         gsap.set(sectionActions, { opacity: 1 });
         if (pageIndicator) gsap.set(pageIndicator, { opacity: 0 });
         return;
@@ -333,6 +347,15 @@ export function OsrIntroScroll() {
           );
           gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
           gsap.set(whoopPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
+          if (whoopPersonalBarIIIPanel) {
+            gsap.set(whoopPersonalBarIIIPanel, { y: 0 });
+          }
+          if (whoopPersonalBarIIIPanelBg) {
+            gsap.set(whoopPersonalBarIIIPanelBg, { y: '-6%' });
+          }
+          if (whoopPersonalBarIIICards.length > 0) {
+            gsap.set(whoopPersonalBarIIICards, { autoAlpha: 0, xPercent: -70, x: -80 });
+          }
           const viewportHeight = getViewportBelowNavbar();
           const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(isCompactMode, {
             viewportHeight,
@@ -519,36 +542,70 @@ export function OsrIntroScroll() {
               ),
           );
 
+          const whoopPersonalBarTimeline = gsap
+            .timeline({ defaults: { ease: 'none' } })
+            .fromTo(
+              sectionAgreements,
+              { autoAlpha: 1 },
+              { autoAlpha: 0, ...SCRUB_DEFAULTS, duration: WHOOP_ENTRANCE_CROSSFADE_SHARE },
+              0,
+            )
+            .fromTo(
+              sectionWhoopPersonalBar,
+              { autoAlpha: 0 },
+              { autoAlpha: 1, ...SCRUB_DEFAULTS, duration: WHOOP_ENTRANCE_CROSSFADE_SHARE },
+              0,
+            )
+            .fromTo(
+              whoopPersonalBarContent,
+              { y: PERSONAL_BAR_CONTENT_START_Y },
+              { y: whoopContentEndY, ease: 'none', duration: 1 },
+              0,
+            )
+            .fromTo(
+              whoopPersonalBarBgLogo,
+              { opacity: 0, scale: 0.88 },
+              { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
+              0,
+            );
+
+          if (whoopPersonalBarIIIPanelBg) {
+            whoopPersonalBarTimeline.to(
+              whoopPersonalBarIIIPanelBg,
+              { y: '6%', ease: 'none', duration: 0.35 },
+              0.06,
+            );
+          }
+
+          if (whoopPersonalBarIIICards.length > 0) {
+            whoopPersonalBarTimeline.to(
+              whoopPersonalBarIIICards,
+              {
+                autoAlpha: 1,
+                xPercent: 0,
+                x: 0,
+                ease: 'power2.out',
+                stagger: 0.08,
+                duration: 0.28,
+              },
+              0.08,
+            );
+
+            whoopPersonalBarTimeline.set(
+              whoopPersonalBarIIICards,
+              {
+                autoAlpha: 1,
+                stagger: 0.08,
+              },
+              0.27,
+            );
+          }
+
           attachScene(
             scrollTrack,
             phases.whoopPersonalBarScroll.at,
             phases.whoopPersonalBarScroll.durationPercent,
-            gsap
-              .timeline({ defaults: { ease: 'none' } })
-              .fromTo(
-                sectionAgreements,
-                { autoAlpha: 1 },
-                { autoAlpha: 0, ...SCRUB_DEFAULTS, duration: WHOOP_ENTRANCE_CROSSFADE_SHARE },
-                0,
-              )
-              .fromTo(
-                sectionWhoopPersonalBar,
-                { autoAlpha: 0 },
-                { autoAlpha: 1, ...SCRUB_DEFAULTS, duration: WHOOP_ENTRANCE_CROSSFADE_SHARE },
-                0,
-              )
-              .fromTo(
-                whoopPersonalBarContent,
-                { y: PERSONAL_BAR_CONTENT_START_Y },
-                { y: whoopContentEndY, ease: 'none', duration: 1 },
-                0,
-              )
-              .fromTo(
-                whoopPersonalBarBgLogo,
-                { opacity: 0, scale: 0.88 },
-                { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
-                0,
-              ),
+            whoopPersonalBarTimeline,
           );
 
           attachSectionCrossfade(phases.actionsScroll, sectionWhoopPersonalBar, sectionActions);

@@ -46,10 +46,32 @@ export function PersonalBarSectionIII({
           ref={refs.content}
           className="will-change-transform mx-auto grid w-full max-w-7xl gap-8 px-5 py-[8vh] sm:px-8 md:px-10 lg:grid-cols-[minmax(260px,0.78fr)_minmax(0,1.22fr)] lg:gap-12 lg:px-14"
         >
-          <aside className="border-b border-light-steel-blue/45 pb-8 text-right lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
+          <aside
+            data-personal-bar-iii-panel
+            className="relative z-20 p-6 text-right shadow-[6px_0_20px_rgba(15,23,42,0.15)] sm:p-8 lg:p-10"
+          >
+            <span
+              data-personal-bar-measure-ignore
+              className="pointer-events-none absolute -right-3 left-0 -inset-y-80"
+              style={{
+                background:
+                  'linear-gradient(to bottom, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.18) 18%, rgba(15, 23, 42, 0.18) 82%, rgba(15, 23, 42, 0))',
+                filter: 'blur(12px)',
+              }}
+              aria-hidden
+            />
+            <span
+              data-personal-bar-iii-panel-bg
+              data-personal-bar-measure-ignore
+              className="absolute inset-x-0 -inset-y-80"
+              style={{
+                background: `linear-gradient(to bottom, rgba(245, 115, 96, 0), ${ACCENT_CORAL} 18%, ${ACCENT_CORAL} 82%, rgba(245, 115, 96, 0))`,
+              }}
+              aria-hidden
+            />
             <h2
               id={headingId}
-              className="text-right text-3xl font-bold leading-tight text-black sm:text-4xl md:text-5xl lg:text-6xl"
+              className="relative text-right text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl lg:text-6xl"
             >
               {title.heading}
             </h2>
@@ -61,10 +83,14 @@ export function PersonalBarSectionIII({
 
             <div
               ref={refs.bgLogo}
-              className="mt-8 flex min-h-32 w-full items-center justify-end bg-white p-0 lg:mt-12 lg:min-h-44"
+              className="relative mt-8 flex min-h-32 w-full items-center justify-end p-0 lg:mt-12 lg:min-h-44"
               aria-hidden={logoAlt === ''}
             >
-              <img src={logoPath} alt={logoAlt} className="max-h-28 w-auto max-w-full object-contain lg:max-h-36" />
+              <img
+                src={logoPath}
+                alt={logoAlt}
+                className="max-h-28 w-auto max-w-full object-contain [filter:invert(1)_brightness(2)] lg:max-h-36"
+              />
             </div>
           </aside>
 
@@ -75,7 +101,8 @@ export function PersonalBarSectionIII({
               return (
                 <article
                   key={criterion.id}
-                  className="h-[260px] rounded-2xl border border-light-steel-blue/40 bg-white shadow-sm lg:h-[280px]"
+                  data-personal-bar-iii-card
+                  className="h-[260px] rounded-2xl border border-light-steel-blue/40 bg-white shadow-[6px_0_18px_rgba(15,23,42,0.09)] lg:h-[280px]"
                 >
                   <div className="grid h-full gap-0 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
                     <div className="min-h-0 border-b border-light-steel-blue/35 p-5 sm:p-6 md:border-b-0 md:border-r">
@@ -98,7 +125,7 @@ export function PersonalBarSectionIII({
                         Evidence
                       </p>
                       <div className="max-h-[172px] overflow-y-auto pr-1 lg:max-h-[192px]">
-                        <CriterionDetail detail={criterion.detail} />
+                        <CriterionDetail detail={criterion.detail} density="compact" />
                       </div>
                     </div>
                   </div>
