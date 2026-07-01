@@ -15,7 +15,6 @@ type PersonalBarSectionIIIProps = {
   refs: PersonalBarRefs;
   zIndexClass?: string;
   sectionStyle?: CSSProperties;
-  compactLayout?: boolean;
 };
 
 const ACCENT_CORAL = '#F57360';
@@ -47,7 +46,6 @@ export function PersonalBarSectionIII({
           className="will-change-transform mx-auto grid w-full max-w-7xl gap-8 px-5 py-[8vh] sm:px-8 md:px-10 lg:grid-cols-[minmax(260px,0.78fr)_minmax(0,1.22fr)] lg:gap-12 lg:px-14"
         >
           <aside
-            data-personal-bar-iii-panel
             className="relative z-20 p-6 text-right shadow-[6px_0_20px_rgba(15,23,42,0.15)] sm:p-8 lg:p-10"
           >
             <span

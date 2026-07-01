@@ -1,7 +1,6 @@
 import { AgreementsSectionContent } from './LogoMarquee';
 import { StaticIntroActionsSection } from './StaticIntroActionsSection';
 import { StaticIntroNav } from './StaticIntroNav';
-import { StaticPersonalBarSection } from './StaticPersonalBarSection';
 import { StaticPersonalBarSectionIII } from './StaticPersonalBarSection-III';
 import { STATIC_SECTION_SCROLL_MT } from './staticIntroScrollNav';
 import { TypingHeroLine } from './TypingHeroLine';

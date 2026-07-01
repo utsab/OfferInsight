@@ -290,9 +290,6 @@ export function OsrIntroScroll() {
       }
 
       const pageIndicator = introRoot.querySelector<HTMLElement>('[data-page-indicator]');
-      const whoopPersonalBarIIIPanel = sectionWhoopPersonalBar.querySelector<HTMLElement>(
-        '[data-personal-bar-iii-panel]',
-      );
       const whoopPersonalBarIIIPanelBg = sectionWhoopPersonalBar.querySelector<HTMLElement>(
         '[data-personal-bar-iii-panel-bg]',
       );
@@ -317,7 +314,6 @@ export function OsrIntroScroll() {
         gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
         gsap.set(whoopPersonalBarBgLogo, { opacity: 0.5 });
         gsap.set(whoopPersonalBarContent, { y: 0 });
-        if (whoopPersonalBarIIIPanel) gsap.set(whoopPersonalBarIIIPanel, { y: 0 });
         if (whoopPersonalBarIIIPanelBg) gsap.set(whoopPersonalBarIIIPanelBg, { y: 0 });
         if (whoopPersonalBarIIICards.length > 0) {
           gsap.set(whoopPersonalBarIIICards, { opacity: 1, x: 0 });
@@ -347,9 +343,6 @@ export function OsrIntroScroll() {
           );
           gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
           gsap.set(whoopPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
-          if (whoopPersonalBarIIIPanel) {
-            gsap.set(whoopPersonalBarIIIPanel, { y: 0 });
-          }
           if (whoopPersonalBarIIIPanelBg) {
             gsap.set(whoopPersonalBarIIIPanelBg, { y: '-6%' });
           }
@@ -590,15 +583,6 @@ export function OsrIntroScroll() {
               },
               0.08,
             );
-
-            whoopPersonalBarTimeline.set(
-              whoopPersonalBarIIICards,
-              {
-                autoAlpha: 1,
-                stagger: 0.08,
-              },
-              0.27,
-            );
           }
 
           attachScene(
@@ -828,7 +812,6 @@ export function OsrIntroScroll() {
       <WhoopPersonalBarSection
         sectionShell={sectionShell}
         sectionStyle={sectionShellStyle}
-        compactLayout={!useFixedStage}
         refs={{
           section: sectionWhoopPersonalBarRef,
           bgLogo: whoopPersonalBarBgLogoRef,
