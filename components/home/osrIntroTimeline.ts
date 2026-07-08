@@ -19,7 +19,6 @@ import {
   getContentScrollTravelVh,
   getPersonalBarContentEndY,
   getPhaseEndVh,
-  getScrollDurationForTravelVh,
   PERSONAL_BAR_CONTENT_START_VH,
 } from './osrScrollUtils';
 
@@ -29,13 +28,21 @@ type OsrScrollPhase = {
 };
 
 const OSR_INTRO_PHASE_DURATIONS = {
+  // Direct knob: change value to change timing.
   typingFadeOut: 40,
+  // Direct knob.
   whoSectionIn: 50,
+  // Derived by default (see `resolvePhaseDuration`) unless override is set.
   whoLettersMove: 170,
+  // Direct knob (parallel phase).
   whoContentIn: 40,
+  // Direct knob.
   whoSectionOut: 40,
+  // Direct knob.
   howSectionIn: 30,
+  // Derived by default (min floor) unless override is set.
   howLettersMove: 80, // minimum; resolved to match Who story chapter length
+  // Direct knob.
   howSectionOut: 40,
 } as const;
 
@@ -50,9 +57,11 @@ const OSR_INTRO_PHASE_DURATIONS_MOBILE: Partial<
 };
 
 const OSR_CONTENT_PHASE_DURATIONS = {
+  // Direct knob.
   agreementsFadeIn: 40,
+  // Derived by default unless override is set.
   agreementsMarquee: 0, // resolved in `resolvePhaseDuration` (half Who-chapter hold)
-  whoopPersonalBarScroll: 400,
+  // `whoopPersonalBarScroll` is derived from measured travel unless override is set.
   actionsScroll: 8,
 } as const;
 
@@ -60,9 +69,24 @@ const OSR_CONTENT_PHASE_DURATIONS_MOBILE: Partial<
   Record<keyof typeof OSR_CONTENT_PHASE_DURATIONS, number>
 > = {
   agreementsFadeIn: 20,
-  whoopPersonalBarScroll: 430,
   actionsScroll: 6,
 };
+/**
+ * Optional overrides for derived phase durations.
+ * Set to a number to force that durationPercent directly.
+ * Keep `null` to use the computed/derived behavior.
+ */
+const PHASE_DURATION_OVERRIDES = {
+  howLettersMove: null as number | null,
+  agreementsMarquee: null as number | null,
+  whoopPersonalBarScroll: null as number | null,
+};
+/**
+ * Whoop timing is derived from measured content travel (see `getWhoopScrollDuration`)
+ * so Contact can appear as soon as Whoop content clears the viewport.
+ */
+const WHOOP_END_MIN_VH = 90;
+const WHOOP_END_PADDING_VH = 0;
 
 /** Sequential scroll story — must match scene attachment in OsrIntroScroll.tsx. */
 const PHASE_ORDER = [
@@ -138,19 +162,18 @@ function estimatedMeasurements(isMobile: boolean): IntroContentMeasurements {
 
 function resolveContentMotion(measurements: IntroContentMeasurements): IntroContentMotion {
   return {
-    whoopEndY: getPersonalBarContentEndY(measurements.whoopContentHeight, measurements.viewportHeight, 135),
+    whoopEndY: getPersonalBarContentEndY(
+      measurements.whoopContentHeight,
+      measurements.viewportHeight,
+      WHOOP_END_MIN_VH,
+      WHOOP_END_PADDING_VH,
+    ),
   };
 }
 
-function scrollDurationForEndY(
-  startVh: number,
-  endY: string,
-  minDurationPercent: number,
-): number {
-  return getScrollDurationForTravelVh(
-    getContentScrollTravelVh(startVh, endY),
-    minDurationPercent,
-  );
+function getWhoopScrollDuration(motion: IntroContentMotion): number {
+  const travelVh = getContentScrollTravelVh(PERSONAL_BAR_CONTENT_START_VH, motion.whoopEndY);
+  return Math.max(1, Math.round(Math.max(0, travelVh)));
 }
 
 function resolvePhaseDuration(
@@ -160,18 +183,23 @@ function resolvePhaseDuration(
 ): number {
   switch (key) {
     case 'whoopPersonalBarScroll':
-      return scrollDurationForEndY(
-        PERSONAL_BAR_CONTENT_START_VH,
-        motion.whoopEndY,
-        getContentPhaseDuration(key, isMobile),
-      );
+      if (PHASE_DURATION_OVERRIDES.whoopPersonalBarScroll !== null) {
+        return PHASE_DURATION_OVERRIDES.whoopPersonalBarScroll;
+      }
+      return getWhoopScrollDuration(motion);
     case 'howLettersMove': {
+      if (PHASE_DURATION_OVERRIDES.howLettersMove !== null) {
+        return PHASE_DURATION_OVERRIDES.howLettersMove;
+      }
       const whoStoryDuration = getStoryChapterDuration(WHO_STORY_PHASES, isMobile);
       const howCoreDuration = getStoryChapterDuration(HOW_STORY_CORE_PHASES, isMobile);
       const minDuration = getIntroPhaseDuration('howLettersMove', isMobile);
       return Math.max(minDuration, whoStoryDuration - howCoreDuration);
     }
     case 'agreementsMarquee':
+      if (PHASE_DURATION_OVERRIDES.agreementsMarquee !== null) {
+        return PHASE_DURATION_OVERRIDES.agreementsMarquee;
+      }
       return (
         (getAgreementsStoryDuration(isMobile) -
           getContentPhaseDuration('agreementsFadeIn', isMobile)) /

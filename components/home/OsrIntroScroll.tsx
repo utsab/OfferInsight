@@ -36,32 +36,234 @@ ScrollTrigger.config({ ignoreMobileResize: true });
 const ACCENT_CORAL = '#F57360';
 const ACCENT_TEAL = '#58A4B0';
 
-function attachScene(
-  trigger: Element,
-  offsetVh: number,
-  durationPercent: number,
-  animation: gsap.core.Animation,
-  scrub: number | false = 0.45,
-) {
-  const isScrubbed = typeof scrub === 'number';
-  ScrollTrigger.create({
-    trigger,
-    start: () => {
-      const { startPx } = getOsrSceneConfig(offsetVh, durationPercent, scrub);
-      return `top+=${startPx} top`;
-    },
-    end: () => {
-      const { startPx, durationPx } = getOsrSceneConfig(offsetVh, durationPercent, scrub);
-      return `top+=${startPx + durationPx} top`;
-    },
-    scrub: isScrubbed ? scrub : false,
-    toggleActions: isScrubbed ? undefined : 'play none none reverse',
-    animation,
-    invalidateOnRefresh: true,
-  });
+function phaseEndVh(phase: { at: number; durationPercent: number }): number {
+  return phase.at + phase.durationPercent / 100;
 }
 
-const SCRUB_DEFAULTS = { ease: 'none' as const, immediateRender: false };
+function createPrimaryMasterTimeline(params: {
+  phases: {
+    typingFadeOut: { at: number; durationPercent: number };
+    whoContentIn: { at: number; durationPercent: number };
+    whoSectionIn: { at: number; durationPercent: number };
+    whoLettersMove: { at: number; durationPercent: number };
+    whoSectionOut: { at: number; durationPercent: number };
+    howSectionIn: { at: number; durationPercent: number };
+    howLettersMove: { at: number; durationPercent: number };
+    howSectionOut: { at: number; durationPercent: number };
+    agreementsFadeIn: { at: number; durationPercent: number };
+    whoopPersonalBarScroll: { at: number; durationPercent: number };
+    actionsScroll: { at: number; durationPercent: number };
+  };
+  sections: {
+    sectionZero: HTMLElement;
+    sectionOne: HTMLElement;
+    sectionTwo: HTMLElement;
+    whoWeAreContent: HTMLElement;
+    whoLetterO: HTMLElement;
+    whoLetterS: HTMLElement;
+    whoLetterR: HTMLElement;
+    howLetterO: HTMLElement;
+    howLetterS: HTMLElement;
+    howLetterR: HTMLElement;
+    sectionAgreements: HTMLElement;
+    sectionWhoopPersonalBar: HTMLElement;
+    whoopPersonalBarBgLogo: HTMLElement;
+    whoopPersonalBarContent: HTMLElement;
+    sectionActions: HTMLElement;
+  };
+  whoopContentEndY: string;
+  pageIndicator: HTMLElement | null;
+  scrollTrack: HTMLElement;
+  scrollTrackEndVh: number;
+  isCompactMode: boolean;
+}) {
+  // Single source of truth for scroll-driven visuals:
+  // all primary fades/crossfades and phase motion are authored here,
+  // then scrubbed by one ScrollTrigger.
+  const { phases, sections, whoopContentEndY, pageIndicator, scrollTrack, scrollTrackEndVh, isCompactMode } = params;
+  const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.whoopPersonalBarScroll);
+  const whoopCrossfadeDurationVh =
+    (phases.whoopPersonalBarScroll.durationPercent / 100) * WHOOP_ENTRANCE_CROSSFADE_SHARE;
+  const whoopCrossfadeStartVh = phases.whoopPersonalBarScroll.at;
+  const actionsCrossfadeDurationVh = phases.actionsScroll.durationPercent / 100;
+
+  const primaryTimeline = gsap.timeline({ defaults: { ease: 'none' } });
+
+  primaryTimeline.fromTo(
+    sections.sectionZero,
+    { autoAlpha: 1 },
+    { autoAlpha: 0, duration: phases.typingFadeOut.durationPercent / 100, immediateRender: false },
+    phases.typingFadeOut.at,
+  );
+
+  primaryTimeline.fromTo(
+    sections.sectionOne,
+    { autoAlpha: 0 },
+    { autoAlpha: 1, duration: phases.whoSectionIn.durationPercent / 100, immediateRender: false },
+    phases.whoSectionIn.at,
+  );
+  primaryTimeline.fromTo(
+    sections.whoWeAreContent,
+    { opacity: 0 },
+    { opacity: 1, duration: phases.whoContentIn.durationPercent / 100, immediateRender: false },
+    phases.whoContentIn.at,
+  );
+  primaryTimeline
+    .to(
+      sections.whoLetterO,
+      isCompactMode
+        ? { x: '-38vw', y: '-24vh', xPercent: -50, duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false }
+        : { x: '-34vw', y: '-30vh', xPercent: -50, duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false },
+      phases.whoLettersMove.at,
+    )
+    .to(
+      sections.whoLetterS,
+      isCompactMode
+        ? { x: '54vw', y: '28vh', duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false }
+        : { x: '46vw', y: '32vh', duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false },
+      phases.whoLettersMove.at,
+    )
+    .to(
+      sections.whoLetterR,
+      isCompactMode
+        ? { right: '-32%', bottom: '92%', duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false }
+        : { right: '-28%', bottom: '94%', duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false },
+      phases.whoLettersMove.at,
+    );
+  primaryTimeline.fromTo(
+    sections.sectionOne,
+    { autoAlpha: 1 },
+    { autoAlpha: 0, duration: phases.whoSectionOut.durationPercent / 100, immediateRender: false },
+    phases.whoSectionOut.at,
+  );
+
+  primaryTimeline.fromTo(
+    sections.sectionTwo,
+    { autoAlpha: 0 },
+    { autoAlpha: 1, duration: phases.howSectionIn.durationPercent / 100, immediateRender: false },
+    phases.howSectionIn.at,
+  );
+  if (isCompactMode) {
+    primaryTimeline
+      .fromTo(
+        sections.howLetterO,
+        { left: '-5%', bottom: '12%', top: 'auto', right: 'auto' },
+        { left: '-22%', bottom: '16%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
+        phases.howLettersMove.at,
+      )
+      .to(
+        sections.howLetterR,
+        { bottom: '0%', right: '30%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
+        phases.howLettersMove.at,
+      )
+      .to(
+        sections.howLetterS,
+        { right: '15%', top: '0%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
+        phases.howLettersMove.at,
+      );
+  } else {
+    primaryTimeline
+      .fromTo(
+        sections.howLetterO,
+        { left: '-4%', bottom: '5%', top: 'auto', right: 'auto' },
+        { left: '-20%', bottom: '16%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
+        phases.howLettersMove.at,
+      )
+      .to(
+        sections.howLetterR,
+        { bottom: '-35%', right: '30%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
+        phases.howLettersMove.at,
+      )
+      .to(
+        sections.howLetterS,
+        { right: '22%', top: '-15%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
+        phases.howLettersMove.at,
+      );
+  }
+  primaryTimeline.fromTo(
+    sections.sectionTwo,
+    { autoAlpha: 1 },
+    { autoAlpha: 0, duration: phases.howSectionOut.durationPercent / 100, immediateRender: false },
+    phases.howSectionOut.at,
+  );
+
+  primaryTimeline.fromTo(
+    sections.sectionAgreements,
+    { autoAlpha: 0 },
+    { autoAlpha: 0.5, duration: (phases.agreementsFadeIn.durationPercent / 100) * 0.5, immediateRender: false },
+    phases.agreementsFadeIn.at,
+  );
+  primaryTimeline.to(
+    sections.sectionAgreements,
+    { autoAlpha: 1, duration: (phases.agreementsFadeIn.durationPercent / 100) * 0.5, immediateRender: false },
+    phases.agreementsFadeIn.at + (phases.agreementsFadeIn.durationPercent / 100) * 0.5,
+  );
+
+  primaryTimeline.fromTo(
+    sections.sectionAgreements,
+    { autoAlpha: 1 },
+    { autoAlpha: 0, duration: whoopCrossfadeDurationVh, immediateRender: false },
+    whoopCrossfadeStartVh,
+  );
+  primaryTimeline.fromTo(
+    sections.sectionWhoopPersonalBar,
+    { autoAlpha: 0 },
+    { autoAlpha: 1, duration: whoopCrossfadeDurationVh, immediateRender: false },
+    whoopCrossfadeStartVh,
+  );
+  primaryTimeline.fromTo(
+    sections.whoopPersonalBarContent,
+    { y: PERSONAL_BAR_CONTENT_START_Y },
+    { y: whoopContentEndY, duration: phases.whoopPersonalBarScroll.durationPercent / 100, immediateRender: false },
+    phases.whoopPersonalBarScroll.at,
+  );
+  primaryTimeline.fromTo(
+    sections.whoopPersonalBarBgLogo,
+    { opacity: 0, scale: 0.88 },
+    {
+      opacity: 1,
+      scale: 1,
+      duration: (phases.whoopPersonalBarScroll.durationPercent / 100) * 0.55,
+      immediateRender: false,
+    },
+    phases.whoopPersonalBarScroll.at,
+  );
+
+  primaryTimeline.fromTo(
+    sections.sectionWhoopPersonalBar,
+    { autoAlpha: 1 },
+    { autoAlpha: 0, duration: actionsCrossfadeDurationVh, immediateRender: false },
+    phases.actionsScroll.at,
+  );
+  primaryTimeline.fromTo(
+    sections.sectionActions,
+    { autoAlpha: 0 },
+    { autoAlpha: 1, duration: actionsCrossfadeDurationVh, immediateRender: false },
+    phases.actionsScroll.at,
+  );
+
+  if (pageIndicator) {
+    primaryTimeline.fromTo(
+      pageIndicator,
+      { top: '90%' },
+      { top: '-50%', duration: pageIndicatorScroll.durationPercent / 100, immediateRender: false },
+      pageIndicatorScroll.at,
+    );
+    primaryTimeline.set(pageIndicator, { opacity: 0 }, phaseEndVh(pageIndicatorScroll));
+  }
+
+  ScrollTrigger.create({
+    trigger: scrollTrack,
+    start: 'top top',
+    end: () => {
+      const { startPx } = getOsrSceneConfig(scrollTrackEndVh, 0, false);
+      return `top+=${startPx} top`;
+    },
+    scrub: isCompactMode ? 0.2 : 0.45,
+    invalidateOnRefresh: true,
+    animation: primaryTimeline,
+  });
+}
 
 const COMPACT_MODE_WIDTH_THRESHOLD_PX = 1278;
 const STAGE_BASE_WIDTH = 1920;
@@ -292,10 +494,14 @@ export function OsrIntroScroll() {
       const pageIndicator = introRoot.querySelector<HTMLElement>('[data-page-indicator]');
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let pendingLayoutSyncRaf: number | null = null;
 
       const scheduleLayoutSync = () => {
-        requestAnimationFrame(() => {
+        if (pendingLayoutSyncRaf !== null) return;
+        pendingLayoutSyncRaf = requestAnimationFrame(() => {
+          pendingLayoutSyncRaf = null;
           ScrollTrigger.refresh(true);
+          syncScrollTrackAnimations(scrollTrack);
         });
       };
 
@@ -313,7 +519,6 @@ export function OsrIntroScroll() {
         return;
       }
 
-      let removeTopScrubSyncListener: (() => void) | undefined;
       const ctx = gsap.context(() => {
         const buildScenes = (isCompactMode: boolean) => {
           const resetWhoLetterStartFrame = () => {
@@ -348,218 +553,49 @@ export function OsrIntroScroll() {
               actionsScroll: phases.actionsScroll,
             }),
           );
-          const attachSectionCrossfade = (
-            phase: { at: number; durationPercent: number },
-            fromSection: HTMLElement,
-            toSection: HTMLElement,
-          ) => {
-            attachScene(
-              scrollTrack,
-              phase.at,
-              phase.durationPercent,
-              gsap
-                .timeline({ defaults: { ease: 'none' } })
-                .fromTo(fromSection, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }, 0)
-                .fromTo(toSection, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }, 0),
-              isCompactMode ? 0.2 : 0.45,
-            );
-          };
-          /** Re-sync scrub progress at scroll top without overriding tween values. */
-          const attachTopScrubSync = () => {
-            const syncScrubToScroll = () => {
-              const relativeScroll = getScrollTrackRelativePx(scrollTrack);
-              if (relativeScroll > 1) return;
-              syncScrollTrackAnimations(scrollTrack);
-            };
-
-            ScrollTrigger.create({
-              trigger: scrollTrack,
-              start: 'top top',
-              end: 'top+=1 top',
-              invalidateOnRefresh: true,
-              onEnterBack: syncScrubToScroll,
-              onUpdate: (self) => {
-                if (self.isActive) syncScrubToScroll();
-              },
-            });
-
-            ScrollTrigger.addEventListener('scrollEnd', syncScrubToScroll);
-
-            return () => {
-              ScrollTrigger.removeEventListener('scrollEnd', syncScrubToScroll);
-            };
-          };
-
-          attachScene(
-            scrollTrack,
-            phases.typingFadeOut.at,
-            phases.typingFadeOut.durationPercent,
-            gsap.fromTo(sectionZero, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }),
-          );
-
-          attachScene(
-            scrollTrack,
-            phases.whoContentIn.at,
-            phases.whoContentIn.durationPercent,
-            gsap.fromTo(whoWeAreContent, { opacity: 0 }, { opacity: 1, ...SCRUB_DEFAULTS }),
-          );
-
-          const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.whoopPersonalBarScroll);
-          if (pageIndicator) {
-            attachScene(
-              scrollTrack,
-              pageIndicatorScroll.at,
-              pageIndicatorScroll.durationPercent,
-              gsap.fromTo(pageIndicator, { top: '90%' }, { top: '-50%', ...SCRUB_DEFAULTS }),
-            );
-          }
-
-          attachScene(
-            scrollTrack,
-            phases.whoSectionIn.at,
-            phases.whoSectionIn.durationPercent,
-            gsap.fromTo(sectionOne, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }),
-          );
-
           resetWhoLetterStartFrame();
-
-          const whoLetterExit = isCompactMode
-            ? {
-                O: { x: '-38vw', y: '-24vh', xPercent: -50 },
-                S: { x: '54vw', y: '28vh' },
-                R: { right: '-32%', bottom: '92%' },
-              }
-            : {
-                O: { x: '-34vw', y: '-30vh', xPercent: -50 },
-                S: { x: '46vw', y: '32vh' },
-                R: { right: '-28%', bottom: '94%' },
-              };
-
-          attachScene(
+          createPrimaryMasterTimeline({
+            phases: {
+              typingFadeOut: phases.typingFadeOut,
+              whoContentIn: phases.whoContentIn,
+              whoSectionIn: phases.whoSectionIn,
+              whoLettersMove: phases.whoLettersMove,
+              whoSectionOut: phases.whoSectionOut,
+              howSectionIn: phases.howSectionIn,
+              howLettersMove: phases.howLettersMove,
+              howSectionOut: phases.howSectionOut,
+              agreementsFadeIn: phases.agreementsFadeIn,
+              whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
+              actionsScroll: phases.actionsScroll,
+            },
+            sections: {
+              sectionZero,
+              sectionOne,
+              sectionTwo,
+              whoWeAreContent,
+              whoLetterO,
+              whoLetterS,
+              whoLetterR,
+              howLetterO,
+              howLetterS,
+              howLetterR,
+              sectionAgreements,
+              sectionWhoopPersonalBar,
+              whoopPersonalBarBgLogo,
+              whoopPersonalBarContent,
+              sectionActions,
+            },
+            whoopContentEndY,
+            pageIndicator: pageIndicator ?? null,
             scrollTrack,
-            phases.whoLettersMove.at,
-            phases.whoLettersMove.durationPercent,
-            gsap
-              .timeline({ defaults: { ease: 'none' } })
-              .to(whoLetterO, whoLetterExit.O, 0)
-              .to(whoLetterS, whoLetterExit.S, 0)
-              .to(whoLetterR, whoLetterExit.R, 0),
-          );
-
-          attachScene(
-            scrollTrack,
-            phases.whoSectionOut.at,
-            phases.whoSectionOut.durationPercent,
-            gsap.fromTo(sectionOne, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }),
-          );
-
-          attachScene(
-            scrollTrack,
-            phases.howSectionIn.at,
-            phases.howSectionIn.durationPercent,
-            gsap.fromTo(sectionTwo, { autoAlpha: 0 }, { autoAlpha: 1, ...SCRUB_DEFAULTS }),
-          );
-
-          if (isCompactMode) {
-            attachScene(
-              scrollTrack,
-              phases.howLettersMove.at,
-              phases.howLettersMove.durationPercent,
-              gsap
-                .timeline({ defaults: { ease: 'none' } })
-                .fromTo(
-                  howLetterO,
-                  { left: '-5%', bottom: '12%', top: 'auto', right: 'auto' },
-                  { left: '-22%', bottom: '16%', ...SCRUB_DEFAULTS },
-                  0,
-                )
-                .to(howLetterR, { bottom: '0%', right: '30%' }, 0)
-                .to(howLetterS, { right: '15%', top: '0%' }, 0),
-            );
-          } else {
-            attachScene(
-              scrollTrack,
-              phases.howLettersMove.at,
-              phases.howLettersMove.durationPercent,
-              gsap
-                .timeline({ defaults: { ease: 'none' } })
-                .fromTo(
-                  howLetterO,
-                  { left: '-4%', bottom: '5%', top: 'auto', right: 'auto' },
-                  { left: '-20%', bottom: '16%', ...SCRUB_DEFAULTS },
-                  0,
-                )
-                .to(howLetterR, { bottom: '-35%', right: '30%' }, 0)
-                .to(howLetterS, { right: '22%', top: '-15%' }, 0),
-            );
-          }
-
-          attachScene(
-            scrollTrack,
-            phases.howSectionOut.at,
-            phases.howSectionOut.durationPercent,
-            gsap.fromTo(sectionTwo, { autoAlpha: 1 }, { autoAlpha: 0, ...SCRUB_DEFAULTS }),
-          );
-
-          attachScene(
-            scrollTrack,
-            phases.agreementsFadeIn.at,
-            phases.agreementsFadeIn.durationPercent,
-            gsap
-              .timeline({ defaults: { ease: 'none' } })
-              .fromTo(
-                sectionAgreements,
-                { autoAlpha: 0 },
-                { autoAlpha: 0.5, ...SCRUB_DEFAULTS, duration: 0.5 },
-              )
-              .fromTo(
-                sectionAgreements,
-                { autoAlpha: 0.5 },
-                { autoAlpha: 1, ...SCRUB_DEFAULTS, duration: 0.5 },
-              ),
-          );
-
-          attachScene(
-            scrollTrack,
-            phases.whoopPersonalBarScroll.at,
-            phases.whoopPersonalBarScroll.durationPercent,
-            gsap
-              .timeline({ defaults: { ease: 'none' } })
-              .fromTo(
-                sectionAgreements,
-                { autoAlpha: 1 },
-                { autoAlpha: 0, ...SCRUB_DEFAULTS, duration: WHOOP_ENTRANCE_CROSSFADE_SHARE },
-                0,
-              )
-              .fromTo(
-                sectionWhoopPersonalBar,
-                { autoAlpha: 0 },
-                { autoAlpha: 1, ...SCRUB_DEFAULTS, duration: WHOOP_ENTRANCE_CROSSFADE_SHARE },
-                0,
-              )
-              .fromTo(
-                whoopPersonalBarContent,
-                { y: PERSONAL_BAR_CONTENT_START_Y },
-                { y: whoopContentEndY, ease: 'none', duration: 1 },
-                0,
-              )
-              .fromTo(
-                whoopPersonalBarBgLogo,
-                { opacity: 0, scale: 0.88 },
-                { opacity: 1, scale: 1, ease: 'none', duration: 0.55 },
-                0,
-              ),
-          );
-
-          attachSectionCrossfade(phases.actionsScroll, sectionWhoopPersonalBar, sectionActions);
-
-          removeTopScrubSyncListener = attachTopScrubSync();
+            scrollTrackEndVh,
+            isCompactMode,
+          });
           scheduleLayoutSync();
         };
         buildScenes(isCompactViewport);
       }, introRoot);
 
-      window.scrollTo(0, 0);
       scheduleLayoutSync();
       window.addEventListener('load', scheduleLayoutSync);
       document.fonts?.ready.then(scheduleLayoutSync);
@@ -584,10 +620,13 @@ export function OsrIntroScroll() {
         if (previousScrollRestoration !== null) {
           window.history.scrollRestoration = previousScrollRestoration;
         }
+        if (pendingLayoutSyncRaf !== null) {
+          cancelAnimationFrame(pendingLayoutSyncRaf);
+          pendingLayoutSyncRaf = null;
+        }
         window.removeEventListener('load', scheduleLayoutSync);
         window.removeEventListener('resize', onWindowResize);
         if (resizeTimer) clearTimeout(resizeTimer);
-        removeTopScrubSyncListener?.();
         ctx.revert();
         ScrollTrigger.clearScrollMemory();
       };

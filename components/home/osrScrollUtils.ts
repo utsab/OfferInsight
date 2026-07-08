@@ -76,9 +76,10 @@ export function getPersonalBarContentEndY(
   contentHeightPx: number,
   viewportHeightPx: number,
   minEndVh: number,
+  endPaddingVh = 55,
 ): string {
   const contentVh = (contentHeightPx / viewportHeightPx) * 100;
-  const endVh = Math.max(minEndVh, Math.round(contentVh + 55));
+  const endVh = Math.max(minEndVh, Math.round(contentVh + endPaddingVh));
   return `-${endVh}vh`;
 }
 
@@ -140,12 +141,3 @@ export function getContentScrollTravelVh(startVh: number, endY: string): number 
   return startVh - (Number.isFinite(endVh) ? endVh : 0);
 }
 
-/**
- * Scroll distance (durationPercent) for content that travels `travelVh` below-navbar units.
- */
-export function getScrollDurationForTravelVh(
-  travelVh: number,
-  minDurationPercent: number,
-): number {
-  return Math.round(Math.max(minDurationPercent, travelVh));
-}
