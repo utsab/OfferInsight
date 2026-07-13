@@ -72,6 +72,8 @@ function createPrimaryMasterTimeline(params: {
     sectionActions: HTMLElement;
   };
   whoopContentEndY: string;
+  whoopPersonalBarIIIPanelBg: HTMLElement | null;
+  whoopPersonalBarIIICards: HTMLElement[];
   pageIndicator: HTMLElement | null;
   scrollTrack: HTMLElement;
   scrollTrackEndVh: number;
@@ -80,10 +82,20 @@ function createPrimaryMasterTimeline(params: {
   // Single source of truth for scroll-driven visuals:
   // all primary fades/crossfades and phase motion are authored here,
   // then scrubbed by one ScrollTrigger.
-  const { phases, sections, whoopContentEndY, pageIndicator, scrollTrack, scrollTrackEndVh, isCompactMode } = params;
+  const {
+    phases,
+    sections,
+    whoopContentEndY,
+    whoopPersonalBarIIIPanelBg,
+    whoopPersonalBarIIICards,
+    pageIndicator,
+    scrollTrack,
+    scrollTrackEndVh,
+    isCompactMode,
+  } = params;
   const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.whoopPersonalBarScroll);
-  const whoopCrossfadeDurationVh =
-    (phases.whoopPersonalBarScroll.durationPercent / 100) * WHOOP_ENTRANCE_CROSSFADE_SHARE;
+  const whoopPhaseDurationVh = phases.whoopPersonalBarScroll.durationPercent / 100;
+  const whoopCrossfadeDurationVh = whoopPhaseDurationVh * WHOOP_ENTRANCE_CROSSFADE_SHARE;
   const whoopCrossfadeStartVh = phases.whoopPersonalBarScroll.at;
   const actionsCrossfadeDurationVh = phases.actionsScroll.durationPercent / 100;
 
@@ -214,7 +226,7 @@ function createPrimaryMasterTimeline(params: {
   primaryTimeline.fromTo(
     sections.whoopPersonalBarContent,
     { y: PERSONAL_BAR_CONTENT_START_Y },
-    { y: whoopContentEndY, duration: phases.whoopPersonalBarScroll.durationPercent / 100, immediateRender: false },
+    { y: whoopContentEndY, duration: whoopPhaseDurationVh, immediateRender: false },
     phases.whoopPersonalBarScroll.at,
   );
   primaryTimeline.fromTo(
@@ -223,11 +235,33 @@ function createPrimaryMasterTimeline(params: {
     {
       opacity: 1,
       scale: 1,
-      duration: (phases.whoopPersonalBarScroll.durationPercent / 100) * 0.55,
+      duration: whoopPhaseDurationVh * 0.55,
       immediateRender: false,
     },
     phases.whoopPersonalBarScroll.at,
   );
+  if (whoopPersonalBarIIIPanelBg) {
+    primaryTimeline.to(
+      whoopPersonalBarIIIPanelBg,
+      { y: '6%', ease: 'none', duration: whoopPhaseDurationVh * 0.35, immediateRender: false },
+      phases.whoopPersonalBarScroll.at + whoopPhaseDurationVh * 0.06,
+    );
+  }
+  if (whoopPersonalBarIIICards.length > 0) {
+    primaryTimeline.to(
+      whoopPersonalBarIIICards,
+      {
+        autoAlpha: 1,
+        xPercent: 0,
+        x: 0,
+        ease: 'power2.out',
+        stagger: 0.08,
+        duration: whoopPhaseDurationVh * 0.28,
+        immediateRender: false,
+      },
+      phases.whoopPersonalBarScroll.at + whoopPhaseDurationVh * 0.08,
+    );
+  }
 
   primaryTimeline.fromTo(
     sections.sectionWhoopPersonalBar,
@@ -492,6 +526,12 @@ export function OsrIntroScroll() {
       }
 
       const pageIndicator = introRoot.querySelector<HTMLElement>('[data-page-indicator]');
+      const whoopPersonalBarIIIPanelBg = sectionWhoopPersonalBar.querySelector<HTMLElement>(
+        '[data-personal-bar-iii-panel-bg]',
+      );
+      const whoopPersonalBarIIICards = Array.from(
+        sectionWhoopPersonalBar.querySelectorAll<HTMLElement>('[data-personal-bar-iii-card]'),
+      );
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       let pendingLayoutSyncRaf: number | null = null;
@@ -514,6 +554,10 @@ export function OsrIntroScroll() {
         gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
         gsap.set(whoopPersonalBarBgLogo, { opacity: 0.5 });
         gsap.set(whoopPersonalBarContent, { y: 0 });
+        if (whoopPersonalBarIIIPanelBg) gsap.set(whoopPersonalBarIIIPanelBg, { y: 0 });
+        if (whoopPersonalBarIIICards.length > 0) {
+          gsap.set(whoopPersonalBarIIICards, { opacity: 1, x: 0 });
+        }
         gsap.set(sectionActions, { opacity: 1 });
         if (pageIndicator) gsap.set(pageIndicator, { opacity: 0 });
         return;
@@ -538,6 +582,12 @@ export function OsrIntroScroll() {
           );
           gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
           gsap.set(whoopPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
+          if (whoopPersonalBarIIIPanelBg) {
+            gsap.set(whoopPersonalBarIIIPanelBg, { y: '-6%' });
+          }
+          if (whoopPersonalBarIIICards.length > 0) {
+            gsap.set(whoopPersonalBarIIICards, { autoAlpha: 0, xPercent: -70, x: -80 });
+          }
           const viewportHeight = getViewportBelowNavbar();
           const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(isCompactMode, {
             viewportHeight,
@@ -586,6 +636,8 @@ export function OsrIntroScroll() {
               sectionActions,
             },
             whoopContentEndY,
+            whoopPersonalBarIIIPanelBg,
+            whoopPersonalBarIIICards,
             pageIndicator: pageIndicator ?? null,
             scrollTrack,
             scrollTrackEndVh,
@@ -810,7 +862,6 @@ export function OsrIntroScroll() {
       <WhoopPersonalBarSection
         sectionShell={sectionShell}
         sectionStyle={sectionShellStyle}
-        compactLayout={!useFixedStage}
         refs={{
           section: sectionWhoopPersonalBarRef,
           bgLogo: whoopPersonalBarBgLogoRef,

@@ -65,8 +65,19 @@ export const PERSONAL_BAR_CONTENT_START_Y = `${PERSONAL_BAR_CONTENT_START_VH}vh`
 
 /** Measure personal-bar content height without transform affecting layout reads. */
 export function measurePersonalBarContentHeight(content: HTMLElement): number {
+  const ignoredElements = Array.from(
+    content.querySelectorAll<HTMLElement>('[data-personal-bar-measure-ignore]'),
+  );
+  const previousDisplays = ignoredElements.map((element) => element.style.display);
+
   gsap.set(content, { y: 0 });
+  ignoredElements.forEach((element) => {
+    element.style.display = 'none';
+  });
   const height = content.scrollHeight;
+  ignoredElements.forEach((element, index) => {
+    element.style.display = previousDisplays[index] ?? '';
+  });
   gsap.set(content, { y: PERSONAL_BAR_CONTENT_START_Y });
   return height;
 }

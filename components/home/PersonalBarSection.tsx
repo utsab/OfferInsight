@@ -2,13 +2,13 @@
 
 import type { CSSProperties } from 'react';
 import { CriterionDetail } from './CriterionDetail';
-import type { PersonalBarCriterion, PersonalBarRefs } from './personalBarTypes';
+import type { PersonalBarCriterion, PersonalBarRefs, PersonalBarTitle } from './personalBarTypes';
 
 type PersonalBarSectionProps = {
   sectionShell: string;
   sectionId: string;
   headingId: string;
-  title: string;
+  title: PersonalBarTitle;
   logoPath: string;
   logoAlt?: string;
   criteria: readonly PersonalBarCriterion[];
@@ -57,11 +57,16 @@ export function PersonalBarSection({
           ref={refs.content}
           className="will-change-transform w-full px-5 pt-[8vh] sm:px-8 md:px-10 lg:px-14 xl:px-16"
         >
+          {title.subheading ? (
+            <p className="text-center text-sm font-bold uppercase tracking-widest text-gray-600 sm:text-base">
+              {title.subheading}
+            </p>
+          ) : null}
           <h2
             id={headingId}
-            className="text-center text-2xl font-bold leading-tight tracking-tight text-black sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl"
+            className={`${title.subheading ? 'mt-3 ' : ''}text-center text-2xl font-bold leading-tight tracking-tight text-black sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl`}
           >
-            {title}
+            {title.heading}
           </h2>
 
           <div className="min-h-[22vh] sm:min-h-[28vh] md:min-h-[34vh] lg:min-h-[40vh]" aria-hidden />
@@ -77,9 +82,16 @@ export function PersonalBarSection({
                       : 'md:grid-cols-2 md:gap-x-[clamp(2.5rem,10vw,11rem)] md:gap-y-6 lg:gap-x-[clamp(3.5rem,14vw,16rem)] xl:gap-x-[clamp(4rem,16vw,20rem)]'
                   }`}
                 >
-                  <p className="text-left text-lg font-bold leading-snug text-black sm:text-xl md:text-2xl lg:text-3xl">
-                    {criterion.label}
-                  </p>
+                  <div className="text-left">
+                    <p className="text-lg font-bold leading-snug text-black sm:text-xl md:text-2xl lg:text-3xl">
+                      {criterion.heading}
+                    </p>
+                    {criterion.subheading ? (
+                      <p className="mt-2 text-base font-semibold leading-snug text-gray-600 sm:text-lg md:text-xl">
+                        {criterion.subheading}
+                      </p>
+                    ) : null}
+                  </div>
                   <CriterionDetail detail={criterion.detail} />
                 </div>
               </div>

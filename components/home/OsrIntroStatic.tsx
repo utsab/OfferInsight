@@ -1,7 +1,7 @@
 import { AgreementsSectionContent } from './LogoMarquee';
 import { StaticIntroActionsSection } from './StaticIntroActionsSection';
 import { StaticIntroNav } from './StaticIntroNav';
-import { StaticPersonalBarSection } from './StaticPersonalBarSection';
+import { StaticPersonalBarSectionIII } from './StaticPersonalBarSection-III';
 import { STATIC_SECTION_SCROLL_MT } from './staticIntroScrollNav';
 import { TypingHeroLine } from './TypingHeroLine';
 import { TYPING_DESCRIPTIONS } from './osrScrollUtils';
@@ -86,7 +86,7 @@ export function OsrIntroStatic() {
         />
       </section>
 
-      <StaticPersonalBarSection
+      <StaticPersonalBarSectionIII
         sectionId="intro-whoop-bar"
         headingId="whoop-bar-heading"
         title={WHOOP_PERSONAL_BAR_TITLE}

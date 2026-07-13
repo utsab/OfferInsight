@@ -1,11 +1,11 @@
 import { CriterionDetail } from './CriterionDetail';
-import type { PersonalBarCriterion } from './personalBarTypes';
+import type { PersonalBarCriterion, PersonalBarTitle } from './personalBarTypes';
 import { STATIC_SECTION_SCROLL_MT } from './staticIntroScrollNav';
 
 type StaticPersonalBarSectionProps = {
   sectionId: string;
   headingId: string;
-  title: string;
+  title: PersonalBarTitle;
   logoPath: string;
   criteria: readonly PersonalBarCriterion[];
 };
@@ -36,11 +36,16 @@ export function StaticPersonalBarSection({
       </div>
 
       <div className="relative z-[1] mx-auto w-full max-w-6xl px-5 sm:px-8">
+        {title.subheading ? (
+          <p className="text-center text-sm font-bold uppercase tracking-widest text-gray-600 sm:text-base">
+            {title.subheading}
+          </p>
+        ) : null}
         <h2
           id={headingId}
-          className="text-center text-2xl font-bold leading-tight tracking-tight text-black sm:text-3xl md:text-4xl"
+          className={`${title.subheading ? 'mt-3 ' : ''}text-center text-2xl font-bold leading-tight tracking-tight text-black sm:text-3xl md:text-4xl`}
         >
-          {title}
+          {title.heading}
         </h2>
 
         <div className="mt-10 space-y-12 sm:mt-12 sm:space-y-14">
@@ -48,9 +53,16 @@ export function StaticPersonalBarSection({
             <div key={criterion.id} className="pt-2">
               <hr className="mb-8 border-0 border-t border-light-steel-blue/45 sm:mb-10" />
               <div className="grid gap-5">
-                <p className="text-left text-lg font-bold leading-snug text-black sm:text-xl md:text-2xl">
-                  {criterion.label}
-                </p>
+                <div className="text-left">
+                  <p className="text-lg font-bold leading-snug text-black sm:text-xl md:text-2xl">
+                    {criterion.heading}
+                  </p>
+                  {criterion.subheading ? (
+                    <p className="mt-2 text-base font-semibold leading-snug text-gray-600 sm:text-lg">
+                      {criterion.subheading}
+                    </p>
+                  ) : null}
+                </div>
                 <CriterionDetail detail={criterion.detail} />
               </div>
             </div>
