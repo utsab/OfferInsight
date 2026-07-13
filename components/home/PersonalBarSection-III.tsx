@@ -52,8 +52,7 @@ export function PersonalBarSectionIII({
               data-personal-bar-measure-ignore
               className="pointer-events-none absolute -right-3 left-0 -inset-y-80"
               style={{
-                background:
-                  'linear-gradient(to bottom, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.18) 18%, rgba(15, 23, 42, 0.18) 82%, rgba(15, 23, 42, 0))',
+                background: 'rgba(15, 23, 42, 0.18)',
                 filter: 'blur(12px)',
               }}
               aria-hidden
@@ -62,9 +61,7 @@ export function PersonalBarSectionIII({
               data-personal-bar-iii-panel-bg
               data-personal-bar-measure-ignore
               className="absolute inset-x-0 -inset-y-80"
-              style={{
-                background: `linear-gradient(to bottom, rgba(245, 115, 96, 0), ${ACCENT_CORAL} 18%, ${ACCENT_CORAL} 82%, rgba(245, 115, 96, 0))`,
-              }}
+              style={{ backgroundColor: ACCENT_CORAL }}
               aria-hidden
             />
             <h2
