@@ -54,15 +54,9 @@ export function syncScrollTrackAnimations(scrollTrack: HTMLElement): void {
   });
 }
 
-export function getOsrSceneConfig(
-  offsetVh: number,
-  durationPercent: number,
-  _scrub: number | false = 0.45,
-) {
-  const vh = getViewportBelowNavbar();
+export function getOsrSceneConfig(offsetVh: number) {
   return {
-    startPx: Math.round(offsetVh * vh),
-    durationPx: Math.round((durationPercent / 100) * vh),
+    startPx: Math.round(offsetVh * getViewportBelowNavbar()),
   };
 }
 

@@ -226,7 +226,7 @@ export function PersonalBarSectionIII({
                           Evidence
                         </p>
                         <div className="max-h-[172px] overflow-y-auto pr-1 lg:max-h-[192px]">
-                          <CriterionDetail detail={criterion.detail} density="compact" />
+                          <CriterionDetail detail={criterion.detail} />
                         </div>
                       </div>
                     </div>

@@ -9,6 +9,7 @@ import {
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
   getOsrSceneConfig,
+  getPhaseEndVh,
   getScrollTrackRelativePx,
   scrollToTrackOffsetPx,
   applyScrollTrackHeight,
@@ -36,10 +37,6 @@ ScrollTrigger.config({ ignoreMobileResize: true });
 
 const ACCENT_CORAL = '#F57360';
 const ACCENT_TEAL = '#58A4B0';
-
-function phaseEndVh(phase: { at: number; durationPercent: number }): number {
-  return phase.at + phase.durationPercent / 100;
-}
 
 /**
  * Keep a scrubbed property covered for `[at, until)`.
@@ -86,8 +83,8 @@ function attachCompactWipeHandoff(
 }
 
 /**
- * Compact product timeline: every chapter is fade-out → (brief white) → fade-in.
- * No letter travel, no multi-layer overlap fades.
+ * Compact product timeline: sequential chapter fades with brief white wipes,
+ * plus lighter letter travel and Whoop card settle.
  */
 function createCompactMasterTimeline(params: {
   phases: {
@@ -145,25 +142,25 @@ function createCompactMasterTimeline(params: {
 
   const typingAt = phases.typingFadeOut.at;
   const typingDur = phases.typingFadeOut.durationPercent / 100;
-  const typingEnd = phaseEndVh(phases.typingFadeOut);
+  const typingEnd = getPhaseEndVh(phases.typingFadeOut);
 
   const whoInAt = typingEnd;
   const whoInDur = phases.whoSectionIn.durationPercent / 100;
   const whoInEnd = whoInAt + whoInDur;
   const whoOutAt = phases.whoSectionOut.at;
   const whoOutDur = phases.whoSectionOut.durationPercent / 100;
-  const whoOutEnd = phaseEndVh(phases.whoSectionOut);
+  const whoOutEnd = getPhaseEndVh(phases.whoSectionOut);
 
   const howInAt = phases.howSectionIn.at;
   const howInDur = phases.howSectionIn.durationPercent / 100;
-  const howInEnd = phaseEndVh(phases.howSectionIn);
+  const howInEnd = getPhaseEndVh(phases.howSectionIn);
   const howOutAt = phases.howSectionOut.at;
   const howOutDur = phases.howSectionOut.durationPercent / 100;
-  const howOutEnd = phaseEndVh(phases.howSectionOut);
+  const howOutEnd = getPhaseEndVh(phases.howSectionOut);
 
   const agreementsInAt = phases.agreementsFadeIn.at;
   const agreementsInDur = phases.agreementsFadeIn.durationPercent / 100;
-  const agreementsInEnd = phaseEndVh(phases.agreementsFadeIn);
+  const agreementsInEnd = getPhaseEndVh(phases.agreementsFadeIn);
   const whoopPhaseDur = phases.whoopPersonalBarScroll.durationPercent / 100;
   // Keep whoop entrance readable on phones (phase share can be tiny).
   const whoopHandoffDur = Math.max(whoopPhaseDur * WHOOP_ENTRANCE_CROSSFADE_SHARE, 0.2);
@@ -452,7 +449,7 @@ function createCompactMasterTimeline(params: {
     trigger: scrollTrack,
     start: 'top top',
     end: () => {
-      const { startPx } = getOsrSceneConfig(scrollTrackEndVh, 0, false);
+      const { startPx } = getOsrSceneConfig(scrollTrackEndVh);
       return `top+=${startPx} top`;
     },
     scrub: true,
@@ -472,7 +469,6 @@ function createPrimaryMasterTimeline(params: {
     howLettersMove: { at: number; durationPercent: number };
     howSectionOut: { at: number; durationPercent: number };
     agreementsFadeIn: { at: number; durationPercent: number };
-    agreementsMarquee: { at: number; durationPercent: number };
     whoopPersonalBarScroll: { at: number; durationPercent: number };
     actionsScroll: { at: number; durationPercent: number };
   };
@@ -529,10 +525,10 @@ function createPrimaryMasterTimeline(params: {
 
   const primaryTimeline = gsap.timeline({ defaults: { ease: 'none' } });
   const timelineEndVh = scrollTrackEndVh;
-  const whoOutEndVh = phaseEndVh(phases.whoSectionOut);
-  const howInEndVh = phaseEndVh(phases.howSectionIn);
-  const howOutEndVh = phaseEndVh(phases.howSectionOut);
-  const agreementsFadeEndVh = phaseEndVh(phases.agreementsFadeIn);
+  const whoOutEndVh = getPhaseEndVh(phases.whoSectionOut);
+  const howInEndVh = getPhaseEndVh(phases.howSectionIn);
+  const howOutEndVh = getPhaseEndVh(phases.howSectionOut);
+  const agreementsFadeEndVh = getPhaseEndVh(phases.agreementsFadeIn);
 
   if (isCompactMode) {
     createCompactMasterTimeline({
@@ -550,7 +546,7 @@ function createPrimaryMasterTimeline(params: {
   }
 
   // Desktop: sequential fades + letter choreography.
-  const typingEndVh = phaseEndVh(phases.typingFadeOut);
+  const typingEndVh = getPhaseEndVh(phases.typingFadeOut);
   const typingWhoOverlapVh = 0.08;
   const typingFadeEndVh = typingEndVh + typingWhoOverlapVh;
   const whoInAt = Math.max(0, phases.whoSectionIn.at - typingWhoOverlapVh);
@@ -768,9 +764,7 @@ function createPrimaryMasterTimeline(params: {
     const cardStaggerShare = useEarlyWhoopCardEntrance ? 0.035 : 0.04;
     const cardEntranceAt =
       phases.whoopPersonalBarScroll.at + whoopPhaseDurationVh * cardEntranceShare;
-    const cardFrom = useEarlyWhoopCardEntrance
-      ? { opacity: 0, xPercent: -70, x: -80 }
-      : { opacity: 0, xPercent: -70, x: -80 };
+    const cardFrom = { opacity: 0, xPercent: -70, x: -80 };
     holdTween(
       primaryTimeline,
       whoopPersonalBarIIICards,
@@ -828,14 +822,14 @@ function createPrimaryMasterTimeline(params: {
       { top: '-50%', duration: pageIndicatorScroll.durationPercent / 100, immediateRender: false },
       pageIndicatorScroll.at,
     );
-    primaryTimeline.set(pageIndicator, { opacity: 0 }, phaseEndVh(pageIndicatorScroll));
+    primaryTimeline.set(pageIndicator, { opacity: 0 }, getPhaseEndVh(pageIndicatorScroll));
   }
 
   ScrollTrigger.create({
     trigger: scrollTrack,
     start: 'top top',
     end: () => {
-      const { startPx } = getOsrSceneConfig(scrollTrackEndVh, 0, false);
+      const { startPx } = getOsrSceneConfig(scrollTrackEndVh);
       return `top+=${startPx} top`;
     },
     scrub: 0.45,
@@ -933,12 +927,12 @@ export function OsrIntroScroll() {
           anchorJump.scrollMinVh,
           anchorJump.scrollMaxVh,
         );
-        scrollToTrackOffsetPx(track, getOsrSceneConfig(jumpVh, 0, false).startPx);
+        scrollToTrackOffsetPx(track, getOsrSceneConfig(jumpVh).startPx);
         return;
       }
     }
 
-    scrollToTrackOffsetPx(track, getOsrSceneConfig(section.jumpVh, 0, false).startPx);
+    scrollToTrackOffsetPx(track, getOsrSceneConfig(section.jumpVh).startPx);
   }, []);
 
   useEffect(() => {
@@ -1004,12 +998,10 @@ export function OsrIntroScroll() {
         return;
       }
 
-      // Desktop: continuous 1920×1080 stage scale (no width-bucket reloads).
-      // Prefer outerWidth for physical window chrome; fall back to layout width.
-      const scaleWidth = Math.max(window.outerWidth, width);
+      // Desktop: continuous 1920×1080 stage scale from layout CSS width.
       setStageScale(
         Math.max(
-          (scaleWidth - STAGE_WIDTH_OFFSET_PX) / (STAGE_BASE_WIDTH - STAGE_WIDTH_OFFSET_PX),
+          (width - STAGE_WIDTH_OFFSET_PX) / (STAGE_BASE_WIDTH - STAGE_WIDTH_OFFSET_PX),
           0.3334,
         ),
       );
@@ -1022,8 +1014,7 @@ export function OsrIntroScroll() {
     };
   }, []);
 
-  // After continuous desktop scale changes, snap the master timeline to scroll
-  // (buckets used to hide this with a full reload).
+  // After continuous desktop scale changes, snap the master timeline to scroll.
   useEffect(() => {
     if (skipNextStageScaleSyncRef.current) {
       skipNextStageScaleSyncRef.current = false;
@@ -1206,7 +1197,6 @@ export function OsrIntroScroll() {
               howLettersMove: phases.howLettersMove,
               howSectionOut: phases.howSectionOut,
               agreementsFadeIn: phases.agreementsFadeIn,
-              agreementsMarquee: phases.agreementsMarquee,
               whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
               actionsScroll: phases.actionsScroll,
             },
@@ -1347,20 +1337,22 @@ export function OsrIntroScroll() {
       />
 
       {/* Compact Typing→Who wipe: solid white covering all story layers for one viewport of scroll. */}
-      <div
-        data-compact-empty-beat
-        className="pointer-events-none fixed inset-x-0 top-[var(--navbar-height)] bottom-0 z-[90] bg-white opacity-0"
-        aria-hidden
-      />
+      {isCompactViewport ? (
+        <div
+          data-compact-empty-beat
+          className="pointer-events-none fixed inset-x-0 top-[var(--navbar-height)] bottom-0 z-[90] bg-white opacity-0"
+          aria-hidden
+        />
+      ) : null}
 
-      <div
-        data-page-indicator
-        className={`pointer-events-none fixed left-[20%] z-[21] h-[45%] w-0.5 ${
-          isCompactViewport ? 'hidden' : ''
-        }`}
-        style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
-        aria-hidden
-      />
+      {!isCompactViewport ? (
+        <div
+          data-page-indicator
+          className="pointer-events-none fixed left-[20%] z-[21] h-[45%] w-0.5"
+          style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
+          aria-hidden
+        />
+      ) : null}
 
       {/* Phase 1 — typing hero */}
       <section
@@ -1496,6 +1488,7 @@ export function OsrIntroScroll() {
         sectionShell={sectionShell}
         sectionStyle={sectionShellStyle}
         sectionRef={sectionAgreementsRef}
+        compactLayout={isCompactViewport}
       />
 
       {/* Phase 5 — Whoop personal bar */}

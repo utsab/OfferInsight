@@ -2,8 +2,8 @@
  * Jump nav pill sizing — tweak these to taste.
  *
  * Desktop (`IntroScrollNav.tsx`): every label + progress bar uses the same width.
- * Mobile (`StaticIntroNav.tsx`): row buttons share width equally via flex; adjust
- * horizontal padding on the nav shell if the row feels too tight or too wide.
+ * Compact (`IntroScrollNav` + `compactLayout`): top row; buttons share width via flex.
+ * Adjust `INTRO_NAV_MOBILE_NAV_PADDING_CLASS` if the row feels too tight or too wide.
  */
 export const INTRO_NAV_DESKTOP_ITEM_WIDTH_CLASS = 'w-[8.25rem] sm:w-[9rem] md:w-[9.5rem]';
 export const INTRO_NAV_MOBILE_NAV_PADDING_CLASS = 'px-3 sm:px-5';

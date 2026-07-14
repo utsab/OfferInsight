@@ -89,7 +89,6 @@ const PHASE_DURATION_OVERRIDES = {
  * so Contact can appear as soon as Whoop content clears the viewport.
  */
 const WHOOP_END_MIN_VH = 90;
-const WHOOP_END_PADDING_VH = 0;
 
 /** Sequential scroll story — must match scene attachment in OsrIntroScroll.tsx. */
 const PHASE_ORDER = [
@@ -169,7 +168,7 @@ function resolveContentMotion(measurements: IntroContentMeasurements): IntroCont
       measurements.whoopContentHeight,
       measurements.viewportHeight,
       WHOOP_END_MIN_VH,
-      WHOOP_END_PADDING_VH,
+      0,
     ),
   };
 }

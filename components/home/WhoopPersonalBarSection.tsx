@@ -32,7 +32,6 @@ export function WhoopPersonalBarSection({
       criteria={WHOOP_PERSONAL_BAR_CRITERIA}
       refs={refs}
       sectionStyle={sectionStyle}
-      zIndexClass="z-20"
       compactLayout={compactLayout}
     />
   );
