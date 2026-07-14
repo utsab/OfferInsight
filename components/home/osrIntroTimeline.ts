@@ -49,11 +49,14 @@ const OSR_INTRO_PHASE_DURATIONS = {
 const OSR_INTRO_PHASE_DURATIONS_MOBILE: Partial<
   Record<keyof typeof OSR_INTRO_PHASE_DURATIONS, number>
 > = {
-  typingFadeOut: 20,
-  whoSectionIn: 20,
-  whoLettersMove: 30,
-  whoContentIn: 20,
-  howSectionOut: 20,
+  typingFadeOut: 30,
+  whoSectionIn: 40,
+  // Keep letters+copy on screen long enough to read (desktop is 170).
+  whoLettersMove: 100,
+  whoContentIn: 40,
+  whoSectionOut: 40,
+  howSectionIn: 35,
+  howSectionOut: 35,
 };
 
 const OSR_CONTENT_PHASE_DURATIONS = {

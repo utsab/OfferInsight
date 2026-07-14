@@ -13,12 +13,14 @@ type WhoopPersonalBarSectionProps = {
   sectionShell: string;
   refs: PersonalBarRefs;
   sectionStyle?: CSSProperties;
+  compactLayout?: boolean;
 };
 
 export function WhoopPersonalBarSection({
   sectionShell,
   refs,
   sectionStyle,
+  compactLayout = false,
 }: WhoopPersonalBarSectionProps) {
   return (
     <PersonalBarSectionIII
@@ -31,6 +33,7 @@ export function WhoopPersonalBarSection({
       refs={refs}
       sectionStyle={sectionStyle}
       zIndexClass="z-20"
+      compactLayout={compactLayout}
     />
   );
 }

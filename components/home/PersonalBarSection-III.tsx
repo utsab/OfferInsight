@@ -15,6 +15,8 @@ type PersonalBarSectionIIIProps = {
   refs: PersonalBarRefs;
   zIndexClass?: string;
   sectionStyle?: CSSProperties;
+  /** Full compact band (<1278): denser type, auto-height cards, tighter chrome. */
+  compactLayout?: boolean;
 };
 
 const ACCENT_CORAL = '#F57360';
@@ -31,6 +33,7 @@ export function PersonalBarSectionIII({
   refs,
   zIndexClass = 'z-20',
   sectionStyle,
+  compactLayout = false,
 }: PersonalBarSectionIIIProps) {
   return (
     <section
@@ -43,10 +46,18 @@ export function PersonalBarSectionIII({
       <div className="relative z-[2] h-full w-full overflow-hidden">
         <div
           ref={refs.content}
-          className="will-change-transform mx-auto grid w-full max-w-7xl gap-8 px-5 py-[8vh] sm:px-8 md:px-10 lg:grid-cols-[minmax(260px,0.78fr)_minmax(0,1.22fr)] lg:gap-12 lg:px-14"
+          className={
+            compactLayout
+              ? 'will-change-transform mx-auto grid w-full max-w-7xl gap-4 px-4 pb-8 pt-12'
+              : 'will-change-transform mx-auto grid w-full max-w-7xl gap-8 px-5 py-[8vh] sm:px-8 md:px-10 lg:grid-cols-[minmax(260px,0.78fr)_minmax(0,1.22fr)] lg:gap-12 lg:px-14'
+          }
         >
           <aside
-            className="relative z-20 p-6 text-right shadow-[6px_0_20px_rgba(15,23,42,0.15)] sm:p-8 lg:p-10"
+            className={
+              compactLayout
+                ? 'relative z-20 p-4 text-right shadow-[6px_0_20px_rgba(15,23,42,0.15)]'
+                : 'relative z-20 p-6 text-right shadow-[6px_0_20px_rgba(15,23,42,0.15)] sm:p-8 lg:p-10'
+            }
           >
             <span
               data-personal-bar-measure-ignore
@@ -71,30 +82,48 @@ export function PersonalBarSectionIII({
             />
             <h2
               id={headingId}
-              className="relative text-right text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl lg:text-6xl"
+              className={
+                compactLayout
+                  ? 'relative text-right text-2xl font-bold leading-tight text-white'
+                  : 'relative text-right text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl lg:text-6xl'
+              }
             >
               {title.heading}
             </h2>
             {title.subheading ? (
-              <p className="relative mt-4 text-sm font-bold uppercase tracking-widest text-white/80 sm:text-base">
+              <p
+                className={
+                  compactLayout
+                    ? 'relative mt-2 text-xs font-bold uppercase tracking-widest text-white/80'
+                    : 'relative mt-4 text-sm font-bold uppercase tracking-widest text-white/80 sm:text-base'
+                }
+              >
                 {title.subheading}
               </p>
             ) : null}
 
             <div
               ref={refs.bgLogo}
-              className="relative mt-8 flex min-h-32 w-full items-center justify-end p-0 lg:mt-12 lg:min-h-44"
+              className={
+                compactLayout
+                  ? 'relative mt-4 flex min-h-20 w-full items-center justify-end p-0'
+                  : 'relative mt-8 flex min-h-32 w-full items-center justify-end p-0 lg:mt-12 lg:min-h-44'
+              }
               aria-hidden={logoAlt === ''}
             >
               <img
                 src={logoPath}
                 alt={logoAlt}
-                className="max-h-28 w-auto max-w-full object-contain [filter:invert(1)_brightness(2)] lg:max-h-36"
+                className={
+                  compactLayout
+                    ? 'max-h-16 w-auto max-w-full object-contain [filter:invert(1)_brightness(2)]'
+                    : 'max-h-28 w-auto max-w-full object-contain [filter:invert(1)_brightness(2)] lg:max-h-36'
+                }
               />
             </div>
           </aside>
 
-          <div className="space-y-6 lg:space-y-8">
+          <div className={compactLayout ? 'space-y-4' : 'space-y-6 lg:space-y-8'}>
             {criteria.map((criterion, index) => {
               const accent = index % 2 === 0 ? ACCENT_CORAL : ACCENT_TEAL;
 
@@ -102,29 +131,75 @@ export function PersonalBarSectionIII({
                 <article
                   key={criterion.id}
                   data-personal-bar-iii-card
-                  className="h-[260px] rounded-2xl border border-light-steel-blue/40 bg-white shadow-[6px_0_18px_rgba(15,23,42,0.09)] lg:h-[280px]"
+                  className={
+                    compactLayout
+                      ? 'rounded-xl border border-light-steel-blue/40 bg-white shadow-[6px_0_18px_rgba(15,23,42,0.09)]'
+                      : 'h-[260px] rounded-2xl border border-light-steel-blue/40 bg-white shadow-[6px_0_18px_rgba(15,23,42,0.09)] lg:h-[280px]'
+                  }
                 >
-                  <div className="grid h-full gap-0 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-                    <div className="min-h-0 border-b border-light-steel-blue/35 p-5 sm:p-6 md:border-b-0 md:border-r">
-                      <span className="mb-5 block h-1.5 w-16 rounded-full" style={{ backgroundColor: accent }} aria-hidden />
-                      <h3 className="text-xl font-bold leading-snug text-black sm:text-2xl md:text-3xl">
+                  <div
+                    className={
+                      compactLayout
+                        ? 'grid gap-0'
+                        : 'grid h-full gap-0 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]'
+                    }
+                  >
+                    <div
+                      className={
+                        compactLayout
+                          ? 'border-b border-light-steel-blue/35 p-4'
+                          : 'min-h-0 border-b border-light-steel-blue/35 p-5 sm:p-6 md:border-b-0 md:border-r'
+                      }
+                    >
+                      <span
+                        className={
+                          compactLayout
+                            ? 'mb-3 block h-1 w-12 rounded-full'
+                            : 'mb-5 block h-1.5 w-16 rounded-full'
+                        }
+                        style={{ backgroundColor: accent }}
+                        aria-hidden
+                      />
+                      <h3
+                        className={
+                          compactLayout
+                            ? 'text-lg font-bold leading-snug text-black'
+                            : 'text-xl font-bold leading-snug text-black sm:text-2xl md:text-3xl'
+                        }
+                      >
                         {criterion.heading}
                       </h3>
                       {criterion.subheading ? (
-                        <p className="mt-3 text-base font-semibold leading-snug text-gray-600 sm:text-lg md:text-xl">
+                        <p
+                          className={
+                            compactLayout
+                              ? 'mt-2 text-sm font-semibold leading-snug text-gray-600'
+                              : 'mt-3 text-base font-semibold leading-snug text-gray-600 sm:text-lg md:text-xl'
+                          }
+                        >
                           {criterion.subheading}
                         </p>
                       ) : null}
                     </div>
 
-                    <div className="min-h-0 p-5 sm:p-6">
+                    <div className={compactLayout ? 'p-4' : 'min-h-0 p-5 sm:p-6'}>
                       <p
-                        className="mb-3 text-xs font-bold uppercase tracking-widest"
+                        className={
+                          compactLayout
+                            ? 'mb-2 text-[11px] font-bold uppercase tracking-widest'
+                            : 'mb-3 text-xs font-bold uppercase tracking-widest'
+                        }
                         style={{ color: accent }}
                       >
                         Evidence
                       </p>
-                      <div className="max-h-[172px] overflow-y-auto pr-1 lg:max-h-[192px]">
+                      <div
+                        className={
+                          compactLayout
+                            ? 'max-h-[140px] overflow-y-auto pr-1'
+                            : 'max-h-[172px] overflow-y-auto pr-1 lg:max-h-[192px]'
+                        }
+                      >
                         <CriterionDetail detail={criterion.detail} density="compact" />
                       </div>
                     </div>
