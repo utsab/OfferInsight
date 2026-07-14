@@ -15,6 +15,7 @@ import {
   getViewportBelowNavbar,
   measurePersonalBarContentHeight,
   syncScrollTrackAnimations,
+  preserveScrollTrackProgress,
 } from './osrScrollUtils';
 import { handleSignIn } from '@/components/auth-actions';
 import { TypingHeroLine } from './TypingHeroLine';
@@ -312,7 +313,9 @@ function createPrimaryMasterTimeline(params: {
       return `top+=${startPx} top`;
     },
     scrub: isCompactMode ? 0.2 : 0.45,
-    invalidateOnRefresh: true,
+    // Master timeline uses authored fromTo/to values — invalidateOnRefresh would
+    // re-record starts from mid-scroll computed styles and cause phase overlap on resize.
+    invalidateOnRefresh: false,
     animation: primaryTimeline,
   });
 }
@@ -321,7 +324,6 @@ const COMPACT_MODE_WIDTH_THRESHOLD_PX = 1278;
 const STAGE_BASE_WIDTH = 1920;
 const STAGE_BASE_HEIGHT = 1080;
 const STAGE_WIDTH_OFFSET_PX = 2;
-const SCALE_BUCKET_MIN_WIDTHS = [638, 852, 1278, 1918, 2558, 3838] as const;
 /** Wider desktop still crops Whoop cards sooner — use earlier slide-in at/below this width. */
 const EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX = 1918;
 
@@ -351,14 +353,6 @@ function readIsCompactViewport(width: number) {
   return width < COMPACT_MODE_WIDTH_THRESHOLD_PX;
 }
 
-function getScaleBucket(width: number) {
-  let bucket = 0;
-  for (let i = 0; i < SCALE_BUCKET_MIN_WIDTHS.length; i += 1) {
-    if (width >= SCALE_BUCKET_MIN_WIDTHS[i]) bucket = i;
-  }
-  return bucket;
-}
-
 export function OsrIntroScroll() {
   const introRootRef = useRef<HTMLDivElement>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
@@ -383,7 +377,9 @@ export function OsrIntroScroll() {
   const whoopPersonalBarBgLogoRef = useRef<HTMLDivElement>(null);
   const whoopPersonalBarContentRef = useRef<HTMLDivElement>(null);
   const sectionActionsRef = useRef<HTMLElement>(null);
-  const lastViewportModeRef = useRef<{ compact: boolean; scaleBucket: number } | null>(null);
+  const lastCompactViewportRef = useRef<boolean | null>(null);
+  const scheduleLayoutSyncRef = useRef<(() => void) | null>(null);
+  const skipNextStageScaleSyncRef = useRef(true);
 
   const scrollToNavSection = useCallback((section: IntroNavSection) => {
     const track = scrollTrackRef.current;
@@ -440,7 +436,10 @@ export function OsrIntroScroll() {
     if (!track || scrollTrackEndVh <= 0) return;
 
     const syncTrackHeight = () => {
-      applyScrollTrackHeight(track, scrollTrackEndVh);
+      preserveScrollTrackProgress(track, () => {
+        applyScrollTrackHeight(track, scrollTrackEndVh);
+      });
+      syncScrollTrackAnimations(track);
     };
 
     syncTrackHeight();
@@ -457,43 +456,48 @@ export function OsrIntroScroll() {
   }, []);
 
   useEffect(() => {
-    let reloadTimer: ReturnType<typeof setTimeout> | undefined;
     const computeViewportMode = () => {
       const width = window.outerWidth;
       const isCompact = readIsCompactViewport(width);
-      const scaleBucket = getScaleBucket(width);
 
-      const last = lastViewportModeRef.current;
-      if (last) {
-        const crossedModeThreshold = last.compact !== isCompact;
-        const crossedScaleThreshold = !isCompact && !last.compact && last.scaleBucket !== scaleBucket;
-        if (crossedModeThreshold || crossedScaleThreshold) {
-          if (reloadTimer) clearTimeout(reloadTimer);
-          reloadTimer = setTimeout(() => {
-            window.scrollTo(0, 0);
-            window.location.reload();
-          }, 60);
-          return;
-        }
+      // Compact ↔ desktop rebuilds scenes via useGSAP deps; reset scroll for a clean handoff.
+      if (lastCompactViewportRef.current !== null && lastCompactViewportRef.current !== isCompact) {
+        window.scrollTo(0, 0);
       }
+      lastCompactViewportRef.current = isCompact;
 
-      lastViewportModeRef.current = { compact: isCompact, scaleBucket };
       setIsCompactViewport(isCompact);
       if (isCompact) {
         setStageScale(1);
         return;
       }
 
-      setStageScale(Math.max((width - STAGE_WIDTH_OFFSET_PX) / (STAGE_BASE_WIDTH - STAGE_WIDTH_OFFSET_PX), 0.3334));
+      // Desktop: continuous 1920×1080 stage scale (no width-bucket reloads).
+      setStageScale(
+        Math.max((width - STAGE_WIDTH_OFFSET_PX) / (STAGE_BASE_WIDTH - STAGE_WIDTH_OFFSET_PX), 0.3334),
+      );
     };
 
     computeViewportMode();
     window.addEventListener('resize', computeViewportMode);
     return () => {
       window.removeEventListener('resize', computeViewportMode);
-      if (reloadTimer) clearTimeout(reloadTimer);
     };
   }, []);
+
+  // After continuous desktop scale changes, snap the master timeline to scroll
+  // (buckets used to hide this with a full reload).
+  useEffect(() => {
+    if (skipNextStageScaleSyncRef.current) {
+      skipNextStageScaleSyncRef.current = false;
+      return;
+    }
+    if (isCompactViewport) return;
+    const timer = setTimeout(() => {
+      scheduleLayoutSyncRef.current?.();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [stageScale, isCompactViewport]);
 
   useGSAP(
     () => {
@@ -555,15 +559,26 @@ export function OsrIntroScroll() {
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       let pendingLayoutSyncRaf: number | null = null;
+      let layoutScrollTrackEndVh = 0;
 
       const scheduleLayoutSync = () => {
         if (pendingLayoutSyncRaf !== null) return;
         pendingLayoutSyncRaf = requestAnimationFrame(() => {
           pendingLayoutSyncRaf = null;
-          ScrollTrigger.refresh(true);
-          syncScrollTrackAnimations(scrollTrack);
+          preserveScrollTrackProgress(scrollTrack, () => {
+            if (layoutScrollTrackEndVh > 0) {
+              applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
+            }
+            ScrollTrigger.refresh(true);
+          });
+          // Second frame: snap scrubbed master timeline after geometry settles.
+          requestAnimationFrame(() => {
+            ScrollTrigger.update();
+            syncScrollTrackAnimations(scrollTrack);
+          });
         });
       };
+      scheduleLayoutSyncRef.current = scheduleLayoutSync;
 
       if (reducedMotion) {
         gsap.set(sectionZero, { opacity: 0 });
@@ -616,6 +631,7 @@ export function OsrIntroScroll() {
           const { whoopEndY: whoopContentEndY } = motion;
 
           applyScrollTrackHeight(scrollTrack, scrollTrackEndVh);
+          layoutScrollTrackEndVh = scrollTrackEndVh;
           setScrollTrackEndVh(scrollTrackEndVh);
           setIntroNavSections(
             buildIntroNavSections({
@@ -684,6 +700,14 @@ export function OsrIntroScroll() {
         // while scrolling; avoid refreshing triggers unless width actually changes.
         if (isCompactViewport && !widthChanged) return;
 
+        // Live snap while dragging the window; debounced refresh for pin/end geometry.
+        preserveScrollTrackProgress(scrollTrack, () => {
+          if (layoutScrollTrackEndVh > 0) {
+            applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
+          }
+        });
+        syncScrollTrackAnimations(scrollTrack);
+
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(scheduleLayoutSync, 120);
       };
@@ -697,6 +721,7 @@ export function OsrIntroScroll() {
           cancelAnimationFrame(pendingLayoutSyncRaf);
           pendingLayoutSyncRaf = null;
         }
+        scheduleLayoutSyncRef.current = null;
         window.removeEventListener('load', scheduleLayoutSync);
         window.removeEventListener('resize', onWindowResize);
         if (resizeTimer) clearTimeout(resizeTimer);

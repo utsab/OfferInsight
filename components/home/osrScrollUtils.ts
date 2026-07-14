@@ -44,6 +44,12 @@ export function getViewportOffsetTopPx(offsetVh: number): number {
 export function syncScrollTrackAnimations(scrollTrack: HTMLElement): void {
   ScrollTrigger.getAll().forEach((st) => {
     if (st.trigger !== scrollTrack || !st.animation) return;
+    // Kill scrub catch-up lag so layers don't briefly show the wrong phase after
+    // refresh/resize (progress jumped, animation still easing toward it).
+    const scrubTween = typeof st.getTween === 'function' ? st.getTween() : null;
+    if (scrubTween) {
+      scrubTween.progress(1);
+    }
     st.animation.progress(st.progress);
   });
 }
@@ -129,6 +135,23 @@ export function getScrollTrackDocumentTopPx(scrollTrack: HTMLElement): number {
 /** Pixels scrolled into the track from its top. */
 export function getScrollTrackRelativePx(scrollTrack: HTMLElement): number {
   return Math.max(window.scrollY - getScrollTrackDocumentTopPx(scrollTrack), 0);
+}
+
+/**
+ * Keep story progress stable across layout/track-height changes (e.g. resize).
+ * Without this, same scrollY maps to a different phase after the track reflows.
+ */
+export function preserveScrollTrackProgress(
+  scrollTrack: HTMLElement,
+  updateLayout: () => void,
+): void {
+  const beforeHeight = Math.max(scrollTrack.offsetHeight, 1);
+  const progress = Math.min(1, getScrollTrackRelativePx(scrollTrack) / beforeHeight);
+
+  updateLayout();
+
+  const afterHeight = Math.max(scrollTrack.offsetHeight, 1);
+  scrollToTrackOffsetPx(scrollTrack, progress * afterHeight, 'auto');
 }
 
 /** Scroll so `offsetPx` of the track has passed the viewport top. */
