@@ -78,6 +78,7 @@ function createPrimaryMasterTimeline(params: {
   scrollTrack: HTMLElement;
   scrollTrackEndVh: number;
   isCompactMode: boolean;
+  useEarlyWhoopCardEntrance: boolean;
 }) {
   // Single source of truth for scroll-driven visuals:
   // all primary fades/crossfades and phase motion are authored here,
@@ -92,6 +93,7 @@ function createPrimaryMasterTimeline(params: {
     scrollTrack,
     scrollTrackEndVh,
     isCompactMode,
+    useEarlyWhoopCardEntrance,
   } = params;
   const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.whoopPersonalBarScroll);
   const whoopPhaseDurationVh = phases.whoopPersonalBarScroll.durationPercent / 100;
@@ -241,25 +243,41 @@ function createPrimaryMasterTimeline(params: {
     phases.whoopPersonalBarScroll.at,
   );
   if (whoopPersonalBarIIIPanelBg) {
-    primaryTimeline.to(
+    // Run for most of Whoop (not just the first ~41%) so the soft bottom
+    // stays tracked while content scrolls and Contact crossfades.
+    primaryTimeline.fromTo(
       whoopPersonalBarIIIPanelBg,
-      { y: '6%', ease: 'none', duration: whoopPhaseDurationVh * 0.35, immediateRender: false },
+      { y: '-6%' },
+      { y: '6%', ease: 'none', duration: whoopPhaseDurationVh * 0.88, immediateRender: false },
       phases.whoopPersonalBarScroll.at + whoopPhaseDurationVh * 0.06,
     );
   }
   if (whoopPersonalBarIIICards.length > 0) {
-    primaryTimeline.to(
+    // Phase shares: content starts ~140vh below the fold. At ≤1918 cards enter the
+    // viewport sooner, so slide earlier; above that keep the later mid-window timing.
+    const cardEntranceShare = useEarlyWhoopCardEntrance ? 0.16 : 0.28;
+    const cardDurationShare = useEarlyWhoopCardEntrance ? 0.18 : 0.2;
+    const cardStaggerShare = useEarlyWhoopCardEntrance ? 0.035 : 0.04;
+    const cardEntranceAt =
+      phases.whoopPersonalBarScroll.at + whoopPhaseDurationVh * cardEntranceShare;
+    primaryTimeline.set(
       whoopPersonalBarIIICards,
+      { autoAlpha: 0, xPercent: -70, x: -80 },
+      phases.whoopPersonalBarScroll.at,
+    );
+    primaryTimeline.fromTo(
+      whoopPersonalBarIIICards,
+      { autoAlpha: 0, xPercent: -70, x: -80 },
       {
         autoAlpha: 1,
         xPercent: 0,
         x: 0,
         ease: 'power2.out',
-        stagger: 0.08,
-        duration: whoopPhaseDurationVh * 0.28,
+        stagger: whoopPhaseDurationVh * cardStaggerShare,
+        duration: whoopPhaseDurationVh * cardDurationShare,
         immediateRender: false,
       },
-      phases.whoopPersonalBarScroll.at + whoopPhaseDurationVh * 0.08,
+      cardEntranceAt,
     );
   }
 
@@ -304,6 +322,8 @@ const STAGE_BASE_WIDTH = 1920;
 const STAGE_BASE_HEIGHT = 1080;
 const STAGE_WIDTH_OFFSET_PX = 2;
 const SCALE_BUCKET_MIN_WIDTHS = [638, 852, 1278, 1918, 2558, 3838] as const;
+/** Wider desktop still crops Whoop cards sooner — use earlier slide-in at/below this width. */
+const EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX = 1918;
 
 function applyIntroStartFrame(
   sectionZero: HTMLElement,
@@ -642,6 +662,7 @@ export function OsrIntroScroll() {
             scrollTrack,
             scrollTrackEndVh,
             isCompactMode,
+            useEarlyWhoopCardEntrance: window.outerWidth <= EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX,
           });
           scheduleLayoutSync();
         };
