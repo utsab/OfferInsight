@@ -390,14 +390,25 @@ function createCompactMasterTimeline(params: {
     );
   }
   if (whoopPersonalBarIIICards.length > 0) {
-    const cardEntranceAt = whoopVisibleAt + whoopPhaseDur * 0.08;
-    holdTween(timeline, whoopPersonalBarIIICards, { opacity: 0 }, whoopInAt, cardEntranceAt);
-    timeline.to(
+    // Start left of center, fade in, then scrub toward centered as Whoop scrolls.
+    const cardEntranceAt = whoopVisibleAt + whoopPhaseDur * 0.06;
+    const cardSettleDur = Math.max(whoopPhaseDur * 0.55, 0.18);
+    holdTween(
+      timeline,
       whoopPersonalBarIIICards,
+      { opacity: 0, xPercent: -22, x: -28 },
+      whoopInAt,
+      cardEntranceAt,
+    );
+    timeline.fromTo(
+      whoopPersonalBarIIICards,
+      { opacity: 0, xPercent: -22, x: -28 },
       {
         opacity: 1,
-        duration: whoopPhaseDur * 0.12,
-        stagger: whoopPhaseDur * 0.03,
+        xPercent: 0,
+        x: 0,
+        duration: cardSettleDur,
+        stagger: whoopPhaseDur * 0.1,
         ease: 'power2.out',
         immediateRender: false,
       },
@@ -1157,7 +1168,7 @@ export function OsrIntroScroll() {
             gsap.set(
               whoopPersonalBarIIICards,
               compactMode
-                ? { opacity: 0, xPercent: -18, x: -24 }
+                ? { opacity: 0, xPercent: -22, x: -28 }
                 : { opacity: 0, xPercent: -70, x: -80 },
             );
           }
