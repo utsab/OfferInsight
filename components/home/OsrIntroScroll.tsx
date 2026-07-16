@@ -863,6 +863,11 @@ const STAGE_BASE_HEIGHT = 1080;
 const STAGE_WIDTH_OFFSET_PX = 2;
 /** Wider desktop still crops Whoop cards sooner — use earlier slide-in at/below this width. */
 const EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX = 1918;
+/**
+ * Compact top jump nav — flip to `true` to show it again.
+ * Desktop left-rail nav is unaffected either way.
+ */
+const ENABLE_COMPACT_INTRO_JUMP_NAV = false;
 
 function applyIntroStartFrame(
   sectionZero: HTMLElement,
@@ -1363,13 +1368,15 @@ export function OsrIntroScroll() {
         aria-hidden
       />
 
-      <IntroScrollNav
-        sections={introNavSections}
-        activeId={activeNavId}
-        activeProgress={activeNavProgress}
-        onSelect={scrollToNavSection}
-        compactLayout={isCompactViewport}
-      />
+      {(!isCompactViewport || ENABLE_COMPACT_INTRO_JUMP_NAV) && (
+        <IntroScrollNav
+          sections={introNavSections}
+          activeId={activeNavId}
+          activeProgress={activeNavProgress}
+          onSelect={scrollToNavSection}
+          compactLayout={isCompactViewport}
+        />
+      )}
 
       {/* Compact Typing→Who wipe: solid white covering all story layers for one viewport of scroll. */}
       {isCompactViewport ? (
