@@ -1,8 +1,15 @@
 import type { PersonalBarCriterion } from './personalBarTypes';
 
-export function CriterionDetail({ detail }: { detail: PersonalBarCriterion['detail'] }) {
+type CriterionDetailProps = {
+  detail: PersonalBarCriterion['detail'];
+  density?: 'default' | 'compact';
+};
+
+export function CriterionDetail({ detail, density = 'default' }: CriterionDetailProps) {
   const detailClass =
-    'text-left text-base leading-relaxed text-gray-800 sm:text-lg md:text-xl lg:text-2xl';
+    density === 'compact'
+      ? 'text-left text-sm leading-relaxed text-gray-800 sm:text-base md:text-base lg:text-lg'
+      : 'text-left text-base leading-relaxed text-gray-800 sm:text-lg md:text-xl lg:text-2xl';
 
   if (typeof detail === 'string') {
     return <p className={detailClass}>{detail}</p>;

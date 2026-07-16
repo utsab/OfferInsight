@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
@@ -9,12 +9,14 @@ import {
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
   getOsrSceneConfig,
+  getPhaseEndVh,
   getScrollTrackRelativePx,
   scrollToTrackOffsetPx,
   applyScrollTrackHeight,
   getViewportBelowNavbar,
   measurePersonalBarContentHeight,
   syncScrollTrackAnimations,
+  preserveScrollTrackProgress,
 } from './osrScrollUtils';
 import { handleSignIn } from '@/components/auth-actions';
 import { TypingHeroLine } from './TypingHeroLine';
@@ -36,8 +38,435 @@ ScrollTrigger.config({ ignoreMobileResize: true });
 const ACCENT_CORAL = '#F57360';
 const ACCENT_TEAL = '#58A4B0';
 
-function phaseEndVh(phase: { at: number; durationPercent: number }): number {
-  return phase.at + phase.durationPercent / 100;
+/**
+ * Keep a scrubbed property covered for `[at, until)`.
+ * Must use fromTo(same→same): `.to({ opacity: 0 })` while the layer is still at 1
+ * interpolates 1→0 over the whole duration (looks like a blend), not a hold.
+ */
+function holdTween(
+  timeline: gsap.core.Timeline,
+  target: gsap.TweenTarget,
+  vars: gsap.TweenVars,
+  at: number,
+  until: number,
+) {
+  const duration = until - at;
+  if (duration <= 0) return;
+  timeline.fromTo(target, vars, { ...vars, duration, immediateRender: false }, at);
+}
+
+/**
+ * Compact chapter handoff wipe: rises with outgoing fade, clears with incoming fade.
+ * Kiss at outEnd === inAt — brief white when scrolling slowly.
+ */
+function attachCompactWipeHandoff(
+  timeline: gsap.core.Timeline,
+  wipe: HTMLElement | null,
+  outAt: number,
+  outDurationVh: number,
+  inAt: number,
+  inDurationVh: number,
+  holdZeroUntil: number,
+) {
+  if (!wipe) return;
+  timeline.to(
+    wipe,
+    { opacity: 1, duration: outDurationVh, immediateRender: false },
+    outAt,
+  );
+  timeline.to(
+    wipe,
+    { opacity: 0, duration: inDurationVh, immediateRender: false },
+    inAt,
+  );
+  holdTween(timeline, wipe, { opacity: 0 }, inAt + inDurationVh, holdZeroUntil);
+}
+
+/**
+ * Compact product timeline: sequential chapter fades with brief white wipes,
+ * plus lighter letter travel and Whoop card settle.
+ */
+function createCompactMasterTimeline(params: {
+  phases: {
+    typingFadeOut: { at: number; durationPercent: number };
+    whoSectionIn: { at: number; durationPercent: number };
+    whoLettersMove: { at: number; durationPercent: number };
+    whoSectionOut: { at: number; durationPercent: number };
+    howSectionIn: { at: number; durationPercent: number };
+    howLettersMove: { at: number; durationPercent: number };
+    howSectionOut: { at: number; durationPercent: number };
+    agreementsFadeIn: { at: number; durationPercent: number };
+    whoopPersonalBarScroll: { at: number; durationPercent: number };
+    actionsScroll: { at: number; durationPercent: number };
+  };
+  sections: {
+    sectionZero: HTMLElement;
+    sectionOne: HTMLElement;
+    sectionTwo: HTMLElement;
+    whoWeAreContent: HTMLElement;
+    whoLetterO: HTMLElement;
+    whoLetterS: HTMLElement;
+    whoLetterR: HTMLElement;
+    howLetterO: HTMLElement;
+    howLetterS: HTMLElement;
+    howLetterR: HTMLElement;
+    sectionAgreements: HTMLElement;
+    sectionWhoopPersonalBar: HTMLElement;
+    whoopPersonalBarBgLogo: HTMLElement;
+    whoopPersonalBarContent: HTMLElement;
+    sectionActions: HTMLElement;
+  };
+  whoopContentEndY: string;
+  whoopPersonalBarIIIPanelBg: HTMLElement | null;
+  whoopPersonalBarIIICards: HTMLElement[];
+  emptyBeatOverlay: HTMLElement | null;
+  agreementsScrollLine: HTMLElement | null;
+  scrollTrack: HTMLElement;
+  scrollTrackEndVh: number;
+}) {
+  const {
+    phases,
+    sections,
+    whoopContentEndY,
+    whoopPersonalBarIIIPanelBg,
+    whoopPersonalBarIIICards,
+    emptyBeatOverlay,
+    agreementsScrollLine,
+    scrollTrack,
+    scrollTrackEndVh,
+  } = params;
+
+  const timeline = gsap.timeline({ defaults: { ease: 'none' } });
+  const timelineEndVh = scrollTrackEndVh;
+  const wipe = emptyBeatOverlay;
+
+  const typingAt = phases.typingFadeOut.at;
+  const typingDur = phases.typingFadeOut.durationPercent / 100;
+  const typingEnd = getPhaseEndVh(phases.typingFadeOut);
+
+  const whoInAt = typingEnd;
+  const whoInDur = phases.whoSectionIn.durationPercent / 100;
+  const whoInEnd = whoInAt + whoInDur;
+  const whoOutAt = phases.whoSectionOut.at;
+  const whoOutDur = phases.whoSectionOut.durationPercent / 100;
+  const whoOutEnd = getPhaseEndVh(phases.whoSectionOut);
+
+  const howInAt = phases.howSectionIn.at;
+  const howInDur = phases.howSectionIn.durationPercent / 100;
+  const howInEnd = getPhaseEndVh(phases.howSectionIn);
+  const howOutAt = phases.howSectionOut.at;
+  const howOutDur = phases.howSectionOut.durationPercent / 100;
+  const howOutEnd = getPhaseEndVh(phases.howSectionOut);
+
+  const agreementsInAt = phases.agreementsFadeIn.at;
+  const agreementsInDur = phases.agreementsFadeIn.durationPercent / 100;
+  const agreementsInEnd = getPhaseEndVh(phases.agreementsFadeIn);
+  const whoopPhaseDur = phases.whoopPersonalBarScroll.durationPercent / 100;
+  // Keep whoop entrance readable on phones (phase share can be tiny).
+  const whoopHandoffDur = Math.max(whoopPhaseDur * WHOOP_ENTRANCE_CROSSFADE_SHARE, 0.2);
+  const whoopInAt = phases.whoopPersonalBarScroll.at;
+  const whoopInEnd = whoopInAt + whoopHandoffDur;
+  const actionsAt = phases.actionsScroll.at;
+  const actionsDur = Math.max(phases.actionsScroll.durationPercent / 100, 0.12);
+  const actionsEnd = actionsAt + actionsDur;
+
+  // --- Wipe idle before first handoff ---
+  if (wipe) {
+    holdTween(timeline, wipe, { opacity: 0 }, 0, typingAt);
+  }
+
+  // --- Typing ---
+  holdTween(timeline, sections.sectionZero, { opacity: 1 }, 0, typingAt);
+  timeline.to(
+    sections.sectionZero,
+    { opacity: 0, duration: typingDur, immediateRender: false },
+    typingAt,
+  );
+  holdTween(timeline, sections.sectionZero, { opacity: 0 }, typingEnd, timelineEndVh);
+
+  // --- Who (section + copy together; letters fly during whoLettersMove) ---
+  holdTween(timeline, sections.sectionOne, { opacity: 0 }, 0, whoInAt);
+  holdTween(timeline, sections.whoWeAreContent, { opacity: 0 }, 0, whoInAt);
+  attachCompactWipeHandoff(timeline, wipe, typingAt, typingDur, whoInAt, whoInDur, whoOutAt);
+  timeline.to(
+    sections.sectionOne,
+    { opacity: 1, duration: whoInDur, immediateRender: false },
+    whoInAt,
+  );
+  timeline.to(
+    sections.whoWeAreContent,
+    { opacity: 1, duration: whoInDur, immediateRender: false },
+    whoInAt,
+  );
+  holdTween(timeline, sections.sectionOne, { opacity: 1 }, whoInEnd, whoOutAt);
+  holdTween(timeline, sections.whoWeAreContent, { opacity: 1 }, whoInEnd, whoOutAt);
+
+  const whoLettersDur = phases.whoLettersMove.durationPercent / 100;
+  // Prefer x/y fromTo over CSS inset `.to()` — inset channels can stick after reverse scrub.
+  timeline
+    .fromTo(
+      sections.whoLetterO,
+      { x: 0, y: 0, xPercent: -50 },
+      {
+        x: '-28vw',
+        y: '-18vh',
+        xPercent: -50,
+        duration: whoLettersDur,
+        immediateRender: false,
+      },
+      phases.whoLettersMove.at,
+    )
+    .fromTo(
+      sections.whoLetterS,
+      { x: 0, y: 0 },
+      { x: '36vw', y: '18vh', duration: whoLettersDur, immediateRender: false },
+      phases.whoLettersMove.at,
+    )
+    .fromTo(
+      sections.whoLetterR,
+      { x: 0, y: 0 },
+      // ~45° up-and-right (off the right edge; not left).
+      { x: '42vw', y: '-28vh', duration: whoLettersDur, immediateRender: false },
+      phases.whoLettersMove.at,
+    );
+
+  timeline.to(
+    sections.sectionOne,
+    { opacity: 0, duration: whoOutDur, immediateRender: false },
+    whoOutAt,
+  );
+  timeline.to(
+    sections.whoWeAreContent,
+    { opacity: 0, duration: whoOutDur, immediateRender: false },
+    whoOutAt,
+  );
+  holdTween(timeline, sections.sectionOne, { opacity: 0 }, whoOutEnd, timelineEndVh);
+  holdTween(timeline, sections.whoWeAreContent, { opacity: 0 }, whoOutEnd, timelineEndVh);
+
+  // --- How (letters travel during howLettersMove) ---
+  holdTween(timeline, sections.sectionTwo, { opacity: 0 }, 0, howInAt);
+  attachCompactWipeHandoff(timeline, wipe, whoOutAt, whoOutDur, howInAt, howInDur, howOutAt);
+  timeline.to(
+    sections.sectionTwo,
+    { opacity: 1, duration: howInDur, immediateRender: false },
+    howInAt,
+  );
+  holdTween(timeline, sections.sectionTwo, { opacity: 1 }, howInEnd, howOutAt);
+
+  const howLettersDur = phases.howLettersMove.durationPercent / 100;
+  // Use transforms (not left/bottom/top): inset fromTo loses the vertical channel after
+  // scrubbing backward and then forward again.
+  timeline
+    .fromTo(
+      sections.howLetterO,
+      { x: 0, y: 0 },
+      { x: '-16vw', y: '-18vh', duration: howLettersDur, immediateRender: false },
+      phases.howLettersMove.at,
+    )
+    .fromTo(
+      sections.howLetterR,
+      { x: 0, y: 0 },
+      { x: '-10vw', y: '8vh', duration: howLettersDur, immediateRender: false },
+      phases.howLettersMove.at,
+    )
+    .fromTo(
+      sections.howLetterS,
+      { x: 0, y: 0 },
+      { x: '14vw', y: '-6vh', duration: howLettersDur, immediateRender: false },
+      phases.howLettersMove.at,
+    );
+
+  timeline.to(
+    sections.sectionTwo,
+    { opacity: 0, duration: howOutDur, immediateRender: false },
+    howOutAt,
+  );
+  holdTween(timeline, sections.sectionTwo, { opacity: 0 }, howOutEnd, timelineEndVh);
+
+  // --- Agreements ---
+  holdTween(timeline, sections.sectionAgreements, { opacity: 0 }, 0, agreementsInAt);
+  attachCompactWipeHandoff(
+    timeline,
+    wipe,
+    howOutAt,
+    howOutDur,
+    agreementsInAt,
+    agreementsInDur,
+    whoopInAt,
+  );
+  timeline.to(
+    sections.sectionAgreements,
+    { opacity: 1, duration: agreementsInDur, immediateRender: false },
+    agreementsInAt,
+  );
+  holdTween(timeline, sections.sectionAgreements, { opacity: 1 }, agreementsInEnd, whoopInAt);
+  timeline.to(
+    sections.sectionAgreements,
+    { opacity: 0, duration: whoopHandoffDur, immediateRender: false },
+    whoopInAt,
+  );
+  holdTween(
+    timeline,
+    sections.sectionAgreements,
+    { opacity: 0 },
+    whoopInEnd,
+    timelineEndVh,
+  );
+
+  // Orange scroll cue: starts above the agreements copy and climbs upward only
+  // (never down through the text) while agreements stays on screen.
+  if (agreementsScrollLine) {
+    // Climb across fade-in + marquee hold so travel feels slower.
+    const climbAt = agreementsInAt;
+    const climbDur = Math.max(whoopInAt - climbAt, 0.01);
+    holdTween(timeline, agreementsScrollLine, { opacity: 0, y: 0 }, 0, agreementsInAt);
+    timeline.to(
+      agreementsScrollLine,
+      { opacity: 1, duration: agreementsInDur, immediateRender: false },
+      agreementsInAt,
+    );
+    timeline.fromTo(
+      agreementsScrollLine,
+      { y: 0 },
+      { y: '-28vh', duration: climbDur, immediateRender: false, ease: 'none' },
+      climbAt,
+    );
+    timeline.to(
+      agreementsScrollLine,
+      { opacity: 0, duration: whoopHandoffDur, immediateRender: false },
+      whoopInAt,
+    );
+    holdTween(
+      timeline,
+      agreementsScrollLine,
+      { opacity: 0, y: '-28vh' },
+      whoopInAt + whoopHandoffDur,
+      timelineEndVh,
+    );
+  }
+
+  // --- Whoop: agreements fully out, then Whoop fades in (same recipe as Typing→Who) ---
+  holdTween(timeline, sections.sectionWhoopPersonalBar, { opacity: 0 }, 0, whoopInAt);
+  const whoopVisibleAt = whoopInAt + whoopHandoffDur;
+  attachCompactWipeHandoff(
+    timeline,
+    wipe,
+    whoopInAt,
+    whoopHandoffDur,
+    whoopVisibleAt,
+    whoopHandoffDur,
+    actionsAt,
+  );
+  timeline.to(
+    sections.sectionWhoopPersonalBar,
+    { opacity: 1, duration: whoopHandoffDur, immediateRender: false },
+    whoopVisibleAt,
+  );
+  holdTween(
+    timeline,
+    sections.sectionWhoopPersonalBar,
+    { opacity: 1 },
+    whoopVisibleAt + whoopHandoffDur,
+    actionsAt,
+  );
+
+  timeline.fromTo(
+    sections.whoopPersonalBarContent,
+    { y: PERSONAL_BAR_CONTENT_START_Y },
+    { y: whoopContentEndY, duration: whoopPhaseDur, immediateRender: false },
+    whoopInAt,
+  );
+  timeline.fromTo(
+    sections.whoopPersonalBarBgLogo,
+    { opacity: 0, scale: 0.88 },
+    {
+      opacity: 1,
+      scale: 1,
+      duration: whoopPhaseDur * 0.55,
+      immediateRender: false,
+    },
+    whoopVisibleAt,
+  );
+  if (whoopPersonalBarIIIPanelBg) {
+    timeline.fromTo(
+      whoopPersonalBarIIIPanelBg,
+      { y: '-6%' },
+      { y: '6%', ease: 'none', duration: whoopPhaseDur * 0.88, immediateRender: false },
+      whoopInAt + whoopPhaseDur * 0.06,
+    );
+  }
+  if (whoopPersonalBarIIICards.length > 0) {
+    // Start left of center, fade in, then scrub toward centered as Whoop scrolls.
+    const cardEntranceAt = whoopVisibleAt + whoopPhaseDur * 0.06;
+    const cardSettleDur = Math.max(whoopPhaseDur * 0.55, 0.18);
+    holdTween(
+      timeline,
+      whoopPersonalBarIIICards,
+      { opacity: 0, xPercent: -22, x: -28 },
+      whoopInAt,
+      cardEntranceAt,
+    );
+    timeline.fromTo(
+      whoopPersonalBarIIICards,
+      { opacity: 0, xPercent: -22, x: -28 },
+      {
+        opacity: 1,
+        xPercent: 0,
+        x: 0,
+        duration: cardSettleDur,
+        stagger: whoopPhaseDur * 0.1,
+        ease: 'power2.out',
+        immediateRender: false,
+      },
+      cardEntranceAt,
+    );
+  }
+
+  timeline.to(
+    sections.sectionWhoopPersonalBar,
+    { opacity: 0, duration: actionsDur, immediateRender: false },
+    actionsAt,
+  );
+  holdTween(timeline, sections.sectionWhoopPersonalBar, { opacity: 0 }, actionsEnd, timelineEndVh);
+
+  // --- Contact: Whoop fully out, then Contact fades in ---
+  holdTween(timeline, sections.sectionActions, { opacity: 0 }, 0, actionsAt);
+  timeline.set(sections.sectionActions, { pointerEvents: 'none' }, 0);
+  const contactVisibleAt = actionsAt + actionsDur;
+  attachCompactWipeHandoff(
+    timeline,
+    wipe,
+    actionsAt,
+    actionsDur,
+    contactVisibleAt,
+    actionsDur,
+    timelineEndVh,
+  );
+  timeline.set(sections.sectionActions, { pointerEvents: 'auto' }, contactVisibleAt);
+  timeline.to(
+    sections.sectionActions,
+    { opacity: 1, duration: actionsDur, immediateRender: false },
+    contactVisibleAt,
+  );
+  holdTween(
+    timeline,
+    sections.sectionActions,
+    { opacity: 1 },
+    contactVisibleAt + actionsDur,
+    timelineEndVh,
+  );
+
+  ScrollTrigger.create({
+    trigger: scrollTrack,
+    start: 'top top',
+    end: () => {
+      const { startPx } = getOsrSceneConfig(scrollTrackEndVh);
+      return `top+=${startPx} top`;
+    },
+    scrub: true,
+    invalidateOnRefresh: false,
+    animation: timeline,
+  });
 }
 
 function createPrimaryMasterTimeline(params: {
@@ -72,149 +501,255 @@ function createPrimaryMasterTimeline(params: {
     sectionActions: HTMLElement;
   };
   whoopContentEndY: string;
+  whoopPersonalBarIIIPanelBg: HTMLElement | null;
+  whoopPersonalBarIIICards: HTMLElement[];
   pageIndicator: HTMLElement | null;
+  emptyBeatOverlay: HTMLElement | null;
+  agreementsScrollLine: HTMLElement | null;
   scrollTrack: HTMLElement;
   scrollTrackEndVh: number;
   isCompactMode: boolean;
+  useEarlyWhoopCardEntrance: boolean;
 }) {
   // Single source of truth for scroll-driven visuals:
   // all primary fades/crossfades and phase motion are authored here,
   // then scrubbed by one ScrollTrigger.
-  const { phases, sections, whoopContentEndY, pageIndicator, scrollTrack, scrollTrackEndVh, isCompactMode } = params;
+  const {
+    phases,
+    sections,
+    whoopContentEndY,
+    whoopPersonalBarIIIPanelBg,
+    whoopPersonalBarIIICards,
+    pageIndicator,
+    emptyBeatOverlay,
+    agreementsScrollLine,
+    scrollTrack,
+    scrollTrackEndVh,
+    isCompactMode,
+    useEarlyWhoopCardEntrance,
+  } = params;
+
+  if (isCompactMode) {
+    createCompactMasterTimeline({
+      phases,
+      sections,
+      whoopContentEndY,
+      whoopPersonalBarIIIPanelBg,
+      whoopPersonalBarIIICards,
+      emptyBeatOverlay,
+      agreementsScrollLine,
+      scrollTrack,
+      scrollTrackEndVh,
+    });
+    return;
+  }
+
+  // Desktop: sequential fades + letter choreography.
   const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.whoopPersonalBarScroll);
-  const whoopCrossfadeDurationVh =
-    (phases.whoopPersonalBarScroll.durationPercent / 100) * WHOOP_ENTRANCE_CROSSFADE_SHARE;
+  const whoopPhaseDurationVh = phases.whoopPersonalBarScroll.durationPercent / 100;
+  const whoopCrossfadeDurationVh = whoopPhaseDurationVh * WHOOP_ENTRANCE_CROSSFADE_SHARE;
   const whoopCrossfadeStartVh = phases.whoopPersonalBarScroll.at;
   const actionsCrossfadeDurationVh = phases.actionsScroll.durationPercent / 100;
 
   const primaryTimeline = gsap.timeline({ defaults: { ease: 'none' } });
+  const timelineEndVh = scrollTrackEndVh;
+  const whoOutEndVh = getPhaseEndVh(phases.whoSectionOut);
+  const howInEndVh = getPhaseEndVh(phases.howSectionIn);
+  const howOutEndVh = getPhaseEndVh(phases.howSectionOut);
+  const agreementsFadeEndVh = getPhaseEndVh(phases.agreementsFadeIn);
+  const typingEndVh = getPhaseEndVh(phases.typingFadeOut);
+  const typingWhoOverlapVh = 0.08;
+  const typingFadeEndVh = typingEndVh + typingWhoOverlapVh;
+  const whoInAt = Math.max(0, phases.whoSectionIn.at - typingWhoOverlapVh);
+  const whoInDurationVh =
+    phases.whoSectionIn.durationPercent / 100 + (phases.whoSectionIn.at - whoInAt);
 
-  primaryTimeline.fromTo(
+  holdTween(primaryTimeline, sections.sectionZero, { opacity: 1 }, 0, phases.typingFadeOut.at);
+  primaryTimeline.to(
     sections.sectionZero,
-    { autoAlpha: 1 },
-    { autoAlpha: 0, duration: phases.typingFadeOut.durationPercent / 100, immediateRender: false },
+    {
+      opacity: 0,
+      duration: typingFadeEndVh - phases.typingFadeOut.at,
+      immediateRender: false,
+    },
     phases.typingFadeOut.at,
   );
+  holdTween(primaryTimeline, sections.sectionZero, { opacity: 0 }, typingFadeEndVh, timelineEndVh);
 
-  primaryTimeline.fromTo(
+  holdTween(primaryTimeline, sections.sectionOne, { opacity: 0 }, 0, whoInAt);
+  primaryTimeline.to(
     sections.sectionOne,
-    { autoAlpha: 0 },
-    { autoAlpha: 1, duration: phases.whoSectionIn.durationPercent / 100, immediateRender: false },
-    phases.whoSectionIn.at,
+    { opacity: 1, duration: whoInDurationVh, immediateRender: false },
+    whoInAt,
   );
-  primaryTimeline.fromTo(
-    sections.whoWeAreContent,
-    { opacity: 0 },
-    { opacity: 1, duration: phases.whoContentIn.durationPercent / 100, immediateRender: false },
-    phases.whoContentIn.at,
-  );
-  primaryTimeline
-    .to(
-      sections.whoLetterO,
-      isCompactMode
-        ? { x: '-38vw', y: '-24vh', xPercent: -50, duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false }
-        : { x: '-34vw', y: '-30vh', xPercent: -50, duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false },
-      phases.whoLettersMove.at,
-    )
-    .to(
-      sections.whoLetterS,
-      isCompactMode
-        ? { x: '54vw', y: '28vh', duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false }
-        : { x: '46vw', y: '32vh', duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false },
-      phases.whoLettersMove.at,
-    )
-    .to(
-      sections.whoLetterR,
-      isCompactMode
-        ? { right: '-32%', bottom: '92%', duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false }
-        : { right: '-28%', bottom: '94%', duration: phases.whoLettersMove.durationPercent / 100, immediateRender: false },
-      phases.whoLettersMove.at,
-    );
-  primaryTimeline.fromTo(
+  holdTween(
+    primaryTimeline,
     sections.sectionOne,
-    { autoAlpha: 1 },
-    { autoAlpha: 0, duration: phases.whoSectionOut.durationPercent / 100, immediateRender: false },
+    { opacity: 1 },
+    whoInAt + whoInDurationVh,
     phases.whoSectionOut.at,
   );
+  primaryTimeline.to(
+    sections.sectionOne,
+    { opacity: 0, duration: phases.whoSectionOut.durationPercent / 100, immediateRender: false },
+    phases.whoSectionOut.at,
+  );
+  holdTween(primaryTimeline, sections.sectionOne, { opacity: 0 }, whoOutEndVh, timelineEndVh);
 
-  primaryTimeline.fromTo(
+  holdTween(primaryTimeline, sections.whoWeAreContent, { opacity: 0 }, 0, whoInAt);
+  primaryTimeline.to(
+    sections.whoWeAreContent,
+    {
+      opacity: 1,
+      duration: phases.whoContentIn.durationPercent / 100 + (phases.whoContentIn.at - whoInAt),
+      immediateRender: false,
+    },
+    whoInAt,
+  );
+  holdTween(
+    primaryTimeline,
+    sections.whoWeAreContent,
+    { opacity: 1 },
+    whoInAt + phases.whoContentIn.durationPercent / 100 + (phases.whoContentIn.at - whoInAt),
+    whoOutEndVh,
+  );
+  holdTween(primaryTimeline, sections.whoWeAreContent, { opacity: 0 }, whoOutEndVh, timelineEndVh);
+
+  primaryTimeline
+    .fromTo(
+      sections.whoLetterO,
+      { x: 0, y: 0, xPercent: -50 },
+      {
+        x: '-34vw',
+        y: '-30vh',
+        xPercent: -50,
+        duration: phases.whoLettersMove.durationPercent / 100,
+        immediateRender: false,
+      },
+      phases.whoLettersMove.at,
+    )
+    .fromTo(
+      sections.whoLetterS,
+      { x: 0, y: 0 },
+      {
+        x: '46vw',
+        y: '32vh',
+        duration: phases.whoLettersMove.durationPercent / 100,
+        immediateRender: false,
+      },
+      phases.whoLettersMove.at,
+    )
+    .fromTo(
+      sections.whoLetterR,
+      { x: 0, y: 0 },
+      {
+        x: '22vw',
+        y: '-72vh',
+        duration: phases.whoLettersMove.durationPercent / 100,
+        immediateRender: false,
+      },
+      phases.whoLettersMove.at,
+    );
+
+  // --- How section ---
+  holdTween(primaryTimeline, sections.sectionTwo, { opacity: 0 }, 0, phases.howSectionIn.at);
+  primaryTimeline.to(
     sections.sectionTwo,
-    { autoAlpha: 0 },
-    { autoAlpha: 1, duration: phases.howSectionIn.durationPercent / 100, immediateRender: false },
+    { opacity: 1, duration: phases.howSectionIn.durationPercent / 100, immediateRender: false },
     phases.howSectionIn.at,
   );
-  if (isCompactMode) {
-    primaryTimeline
-      .fromTo(
-        sections.howLetterO,
-        { left: '-5%', bottom: '12%', top: 'auto', right: 'auto' },
-        { left: '-22%', bottom: '16%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
-        phases.howLettersMove.at,
-      )
-      .to(
-        sections.howLetterR,
-        { bottom: '0%', right: '30%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
-        phases.howLettersMove.at,
-      )
-      .to(
-        sections.howLetterS,
-        { right: '15%', top: '0%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
-        phases.howLettersMove.at,
-      );
-  } else {
-    primaryTimeline
-      .fromTo(
-        sections.howLetterO,
-        { left: '-4%', bottom: '5%', top: 'auto', right: 'auto' },
-        { left: '-20%', bottom: '16%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
-        phases.howLettersMove.at,
-      )
-      .to(
-        sections.howLetterR,
-        { bottom: '-35%', right: '30%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
-        phases.howLettersMove.at,
-      )
-      .to(
-        sections.howLetterS,
-        { right: '22%', top: '-15%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
-        phases.howLettersMove.at,
-      );
-  }
-  primaryTimeline.fromTo(
+  holdTween(primaryTimeline, sections.sectionTwo, { opacity: 1 }, howInEndVh, phases.howSectionOut.at);
+  const howLettersDurDesktop = phases.howLettersMove.durationPercent / 100;
+  primaryTimeline
+    .fromTo(
+      sections.howLetterO,
+      { x: 0, y: 0 },
+      { x: '-16vw', y: '-11vh', duration: howLettersDurDesktop, immediateRender: false },
+      phases.howLettersMove.at,
+    )
+    .fromTo(
+      sections.howLetterR,
+      { x: 0, y: 0 },
+      { x: '-18vw', y: '30vh', duration: howLettersDurDesktop, immediateRender: false },
+      phases.howLettersMove.at,
+    )
+    .fromTo(
+      sections.howLetterS,
+      { x: 0, y: 0 },
+      { x: '8vw', y: '-12vh', duration: howLettersDurDesktop, immediateRender: false },
+      phases.howLettersMove.at,
+    );
+  primaryTimeline.to(
     sections.sectionTwo,
-    { autoAlpha: 1 },
-    { autoAlpha: 0, duration: phases.howSectionOut.durationPercent / 100, immediateRender: false },
+    { opacity: 0, duration: phases.howSectionOut.durationPercent / 100, immediateRender: false },
     phases.howSectionOut.at,
   );
+  holdTween(primaryTimeline, sections.sectionTwo, { opacity: 0 }, howOutEndVh, timelineEndVh);
 
-  primaryTimeline.fromTo(
+  // --- Agreements ---
+  holdTween(primaryTimeline, sections.sectionAgreements, { opacity: 0 }, 0, phases.agreementsFadeIn.at);
+  primaryTimeline.to(
     sections.sectionAgreements,
-    { autoAlpha: 0 },
-    { autoAlpha: 0.5, duration: (phases.agreementsFadeIn.durationPercent / 100) * 0.5, immediateRender: false },
+    {
+      opacity: 0.5,
+      duration: (phases.agreementsFadeIn.durationPercent / 100) * 0.5,
+      immediateRender: false,
+    },
     phases.agreementsFadeIn.at,
   );
   primaryTimeline.to(
     sections.sectionAgreements,
-    { autoAlpha: 1, duration: (phases.agreementsFadeIn.durationPercent / 100) * 0.5, immediateRender: false },
+    {
+      opacity: 1,
+      duration: (phases.agreementsFadeIn.durationPercent / 100) * 0.5,
+      immediateRender: false,
+    },
     phases.agreementsFadeIn.at + (phases.agreementsFadeIn.durationPercent / 100) * 0.5,
   );
-
-  primaryTimeline.fromTo(
+  holdTween(
+    primaryTimeline,
     sections.sectionAgreements,
-    { autoAlpha: 1 },
-    { autoAlpha: 0, duration: whoopCrossfadeDurationVh, immediateRender: false },
+    { opacity: 1 },
+    agreementsFadeEndVh,
     whoopCrossfadeStartVh,
   );
-  primaryTimeline.fromTo(
-    sections.sectionWhoopPersonalBar,
-    { autoAlpha: 0 },
-    { autoAlpha: 1, duration: whoopCrossfadeDurationVh, immediateRender: false },
+  primaryTimeline.to(
+    sections.sectionAgreements,
+    { opacity: 0, duration: whoopCrossfadeDurationVh, immediateRender: false },
     whoopCrossfadeStartVh,
+  );
+  holdTween(
+    primaryTimeline,
+    sections.sectionAgreements,
+    { opacity: 0 },
+    whoopCrossfadeStartVh + whoopCrossfadeDurationVh,
+    timelineEndVh,
+  );
+
+  // --- Whoop ---
+  holdTween(
+    primaryTimeline,
+    sections.sectionWhoopPersonalBar,
+    { opacity: 0 },
+    0,
+    whoopCrossfadeStartVh,
+  );
+  primaryTimeline.to(
+    sections.sectionWhoopPersonalBar,
+    { opacity: 1, duration: whoopCrossfadeDurationVh, immediateRender: false },
+    whoopCrossfadeStartVh,
+  );
+  holdTween(
+    primaryTimeline,
+    sections.sectionWhoopPersonalBar,
+    { opacity: 1 },
+    whoopCrossfadeStartVh + whoopCrossfadeDurationVh,
+    phases.actionsScroll.at,
   );
   primaryTimeline.fromTo(
     sections.whoopPersonalBarContent,
     { y: PERSONAL_BAR_CONTENT_START_Y },
-    { y: whoopContentEndY, duration: phases.whoopPersonalBarScroll.durationPercent / 100, immediateRender: false },
+    { y: whoopContentEndY, duration: whoopPhaseDurationVh, immediateRender: false },
     phases.whoopPersonalBarScroll.at,
   );
   primaryTimeline.fromTo(
@@ -223,44 +758,105 @@ function createPrimaryMasterTimeline(params: {
     {
       opacity: 1,
       scale: 1,
-      duration: (phases.whoopPersonalBarScroll.durationPercent / 100) * 0.55,
+      duration: whoopPhaseDurationVh * 0.55,
       immediateRender: false,
     },
     phases.whoopPersonalBarScroll.at,
   );
+  if (whoopPersonalBarIIIPanelBg) {
+    // Run for most of Whoop (not just the first ~41%) so the soft bottom
+    // stays tracked while content scrolls and Contact crossfades.
+    primaryTimeline.fromTo(
+      whoopPersonalBarIIIPanelBg,
+      { y: '-6%' },
+      { y: '6%', ease: 'none', duration: whoopPhaseDurationVh * 0.88, immediateRender: false },
+      phases.whoopPersonalBarScroll.at + whoopPhaseDurationVh * 0.06,
+    );
+  }
+  if (whoopPersonalBarIIICards.length > 0) {
+    // Phase shares: content starts ~140vh below the fold. At ≤1918 cards enter the
+    // viewport sooner, so slide earlier; above that keep the later mid-window timing.
+    const cardEntranceShare = useEarlyWhoopCardEntrance ? 0.16 : 0.28;
+    const cardDurationShare = useEarlyWhoopCardEntrance ? 0.18 : 0.2;
+    const cardStaggerShare = useEarlyWhoopCardEntrance ? 0.035 : 0.04;
+    const cardEntranceAt =
+      phases.whoopPersonalBarScroll.at + whoopPhaseDurationVh * cardEntranceShare;
+    const cardFrom = { opacity: 0, xPercent: -70, x: -80 };
+    holdTween(
+      primaryTimeline,
+      whoopPersonalBarIIICards,
+      cardFrom,
+      phases.whoopPersonalBarScroll.at,
+      cardEntranceAt,
+    );
+    primaryTimeline.fromTo(
+      whoopPersonalBarIIICards,
+      cardFrom,
+      {
+        opacity: 1,
+        xPercent: 0,
+        x: 0,
+        ease: 'power2.out',
+        stagger: whoopPhaseDurationVh * cardStaggerShare,
+        duration: whoopPhaseDurationVh * cardDurationShare,
+        immediateRender: false,
+      },
+      cardEntranceAt,
+    );
+  }
 
-  primaryTimeline.fromTo(
+  primaryTimeline.to(
     sections.sectionWhoopPersonalBar,
-    { autoAlpha: 1 },
-    { autoAlpha: 0, duration: actionsCrossfadeDurationVh, immediateRender: false },
+    { opacity: 0, duration: actionsCrossfadeDurationVh, immediateRender: false },
     phases.actionsScroll.at,
   );
-  primaryTimeline.fromTo(
+  holdTween(
+    primaryTimeline,
+    sections.sectionWhoopPersonalBar,
+    { opacity: 0 },
+    phases.actionsScroll.at + actionsCrossfadeDurationVh,
+    timelineEndVh,
+  );
+
+  // --- Contact ---
+  holdTween(primaryTimeline, sections.sectionActions, { opacity: 0 }, 0, phases.actionsScroll.at);
+  primaryTimeline.set(sections.sectionActions, { pointerEvents: 'none' }, 0);
+  primaryTimeline.set(sections.sectionActions, { pointerEvents: 'auto' }, phases.actionsScroll.at);
+  primaryTimeline.to(
     sections.sectionActions,
-    { autoAlpha: 0 },
-    { autoAlpha: 1, duration: actionsCrossfadeDurationVh, immediateRender: false },
+    { opacity: 1, duration: actionsCrossfadeDurationVh, immediateRender: false },
     phases.actionsScroll.at,
+  );
+  holdTween(
+    primaryTimeline,
+    sections.sectionActions,
+    { opacity: 1 },
+    phases.actionsScroll.at + actionsCrossfadeDurationVh,
+    timelineEndVh,
   );
 
   if (pageIndicator) {
+    // Animate y (not top): inset `top` has the same reverse-scrub failure mode as left/bottom.
     primaryTimeline.fromTo(
       pageIndicator,
-      { top: '90%' },
-      { top: '-50%', duration: pageIndicatorScroll.durationPercent / 100, immediateRender: false },
+      { y: 0 },
+      { y: '-140vh', duration: pageIndicatorScroll.durationPercent / 100, immediateRender: false },
       pageIndicatorScroll.at,
     );
-    primaryTimeline.set(pageIndicator, { opacity: 0 }, phaseEndVh(pageIndicatorScroll));
+    primaryTimeline.set(pageIndicator, { opacity: 0 }, getPhaseEndVh(pageIndicatorScroll));
   }
 
   ScrollTrigger.create({
     trigger: scrollTrack,
     start: 'top top',
     end: () => {
-      const { startPx } = getOsrSceneConfig(scrollTrackEndVh, 0, false);
+      const { startPx } = getOsrSceneConfig(scrollTrackEndVh);
       return `top+=${startPx} top`;
     },
-    scrub: isCompactMode ? 0.2 : 0.45,
-    invalidateOnRefresh: true,
+    scrub: 0.45,
+    // Master timeline uses authored fromTo/to values — invalidateOnRefresh would
+    // re-record starts from mid-scroll computed styles and cause phase overlap on resize.
+    invalidateOnRefresh: false,
     animation: primaryTimeline,
   });
 }
@@ -269,7 +865,13 @@ const COMPACT_MODE_WIDTH_THRESHOLD_PX = 1278;
 const STAGE_BASE_WIDTH = 1920;
 const STAGE_BASE_HEIGHT = 1080;
 const STAGE_WIDTH_OFFSET_PX = 2;
-const SCALE_BUCKET_MIN_WIDTHS = [638, 852, 1278, 1918, 2558, 3838] as const;
+/** Wider desktop still crops Whoop cards sooner — use earlier slide-in at/below this width. */
+const EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX = 1918;
+/**
+ * Compact top jump nav — flip to `true` to show it again.
+ * Desktop left-rail nav is unaffected either way.
+ */
+const ENABLE_COMPACT_INTRO_JUMP_NAV = false;
 
 function applyIntroStartFrame(
   sectionZero: HTMLElement,
@@ -281,15 +883,15 @@ function applyIntroStartFrame(
   sectionActions: HTMLElement,
   pageIndicator?: HTMLElement | null,
 ) {
-  gsap.set(sectionZero, { autoAlpha: 1 });
-  gsap.set(sectionOne, { autoAlpha: 0 });
-  gsap.set(sectionTwo, { autoAlpha: 0 });
+  gsap.set(sectionZero, { opacity: 1 });
+  gsap.set(sectionOne, { opacity: 0 });
+  gsap.set(sectionTwo, { opacity: 0 });
   gsap.set(whoWeAreContent, { opacity: 0 });
-  gsap.set(sectionAgreements, { autoAlpha: 0 });
-  gsap.set(sectionWhoopPersonalBar, { autoAlpha: 0 });
-  gsap.set(sectionActions, { autoAlpha: 0 });
+  gsap.set(sectionAgreements, { opacity: 0 });
+  gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
+  gsap.set(sectionActions, { opacity: 0, pointerEvents: 'none' });
   if (pageIndicator) {
-    gsap.set(pageIndicator, { opacity: 1, top: '90%' });
+    gsap.set(pageIndicator, { opacity: 1, top: '90%', y: 0 });
   }
 }
 
@@ -297,12 +899,10 @@ function readIsCompactViewport(width: number) {
   return width < COMPACT_MODE_WIDTH_THRESHOLD_PX;
 }
 
-function getScaleBucket(width: number) {
-  let bucket = 0;
-  for (let i = 0; i < SCALE_BUCKET_MIN_WIDTHS.length; i += 1) {
-    if (width >= SCALE_BUCKET_MIN_WIDTHS[i]) bucket = i;
-  }
-  return bucket;
+/** Layout CSS width — DevTools device mode spoofs this. */
+function getLayoutViewportWidthPx(): number {
+  if (typeof window === 'undefined') return COMPACT_MODE_WIDTH_THRESHOLD_PX;
+  return Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
 }
 
 export function OsrIntroScroll() {
@@ -329,7 +929,10 @@ export function OsrIntroScroll() {
   const whoopPersonalBarBgLogoRef = useRef<HTMLDivElement>(null);
   const whoopPersonalBarContentRef = useRef<HTMLDivElement>(null);
   const sectionActionsRef = useRef<HTMLElement>(null);
-  const lastViewportModeRef = useRef<{ compact: boolean; scaleBucket: number } | null>(null);
+  const lastCompactViewportRef = useRef<boolean | null>(null);
+  const scheduleLayoutSyncRef = useRef<(() => void) | null>(null);
+  const skipNextStageScaleSyncRef = useRef(true);
+  const showIntroJumpNav = !isCompactViewport || ENABLE_COMPACT_INTRO_JUMP_NAV;
 
   const scrollToNavSection = useCallback((section: IntroNavSection) => {
     const track = scrollTrackRef.current;
@@ -351,15 +954,16 @@ export function OsrIntroScroll() {
           anchorJump.scrollMinVh,
           anchorJump.scrollMaxVh,
         );
-        scrollToTrackOffsetPx(track, getOsrSceneConfig(jumpVh, 0, false).startPx);
+        scrollToTrackOffsetPx(track, getOsrSceneConfig(jumpVh).startPx);
         return;
       }
     }
 
-    scrollToTrackOffsetPx(track, getOsrSceneConfig(section.jumpVh, 0, false).startPx);
+    scrollToTrackOffsetPx(track, getOsrSceneConfig(section.jumpVh).startPx);
   }, []);
 
   useEffect(() => {
+    if (!showIntroJumpNav) return;
     const track = scrollTrackRef.current;
     if (!track || introNavSections.length === 0) return;
 
@@ -379,19 +983,12 @@ export function OsrIntroScroll() {
       window.removeEventListener('scroll', updateActive);
       ScrollTrigger.removeEventListener('refresh', updateActive);
     };
-  }, [introNavSections]);
+  }, [introNavSections, showIntroJumpNav]);
 
   useEffect(() => {
     const track = scrollTrackRef.current;
     if (!track || scrollTrackEndVh <= 0) return;
-
-    const syncTrackHeight = () => {
-      applyScrollTrackHeight(track, scrollTrackEndVh);
-    };
-
-    syncTrackHeight();
-    window.addEventListener('resize', syncTrackHeight);
-    return () => window.removeEventListener('resize', syncTrackHeight);
+    applyScrollTrackHeight(track, scrollTrackEndVh);
   }, [scrollTrackEndVh]);
 
   useEffect(() => {
@@ -402,52 +999,69 @@ export function OsrIntroScroll() {
     };
   }, []);
 
-  useEffect(() => {
-    let reloadTimer: ReturnType<typeof setTimeout> | undefined;
-    const computeViewportMode = () => {
-      const width = window.outerWidth;
-      const isCompact = readIsCompactViewport(width);
-      const scaleBucket = getScaleBucket(width);
-
-      const last = lastViewportModeRef.current;
-      if (last) {
-        const crossedModeThreshold = last.compact !== isCompact;
-        const crossedScaleThreshold = !isCompact && !last.compact && last.scaleBucket !== scaleBucket;
-        if (crossedModeThreshold || crossedScaleThreshold) {
-          if (reloadTimer) clearTimeout(reloadTimer);
-          reloadTimer = setTimeout(() => {
-            window.scrollTo(0, 0);
-            window.location.reload();
-          }, 60);
-          return;
-        }
+  // Manual restoration must live for the whole intro mount. Putting it inside useGSAP
+  // restores `auto` on compact↔desktop rebuilds and lets the browser reapply mid-page scroll.
+  useLayoutEffect(() => {
+    const previous =
+      'scrollRestoration' in window.history ? window.history.scrollRestoration : null;
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    ScrollTrigger.clearScrollMemory();
+    window.scrollTo(0, 0);
+    return () => {
+      if (previous !== null) {
+        window.history.scrollRestoration = previous;
       }
+    };
+  }, []);
 
-      lastViewportModeRef.current = { compact: isCompact, scaleBucket };
+  useLayoutEffect(() => {
+    const computeViewportMode = () => {
+      const width = getLayoutViewportWidthPx();
+      const isCompact = readIsCompactViewport(width);
+
+      if (lastCompactViewportRef.current === null || lastCompactViewportRef.current !== isCompact) {
+        window.scrollTo(0, 0);
+      }
+      lastCompactViewportRef.current = isCompact;
+
       setIsCompactViewport(isCompact);
       if (isCompact) {
         setStageScale(1);
         return;
       }
 
-      setStageScale(Math.max((width - STAGE_WIDTH_OFFSET_PX) / (STAGE_BASE_WIDTH - STAGE_WIDTH_OFFSET_PX), 0.3334));
+      setStageScale(
+        Math.max(
+          (width - STAGE_WIDTH_OFFSET_PX) / (STAGE_BASE_WIDTH - STAGE_WIDTH_OFFSET_PX),
+          0.3334,
+        ),
+      );
     };
 
     computeViewportMode();
     window.addEventListener('resize', computeViewportMode);
     return () => {
       window.removeEventListener('resize', computeViewportMode);
-      if (reloadTimer) clearTimeout(reloadTimer);
     };
   }, []);
 
+  // After continuous desktop scale changes, snap the master timeline to scroll.
+  useEffect(() => {
+    if (skipNextStageScaleSyncRef.current) {
+      skipNextStageScaleSyncRef.current = false;
+      return;
+    }
+    if (isCompactViewport) return;
+    const timer = setTimeout(() => {
+      scheduleLayoutSyncRef.current?.();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [stageScale, isCompactViewport]);
+
   useGSAP(
     () => {
-      const previousScrollRestoration =
-        'scrollRestoration' in window.history ? window.history.scrollRestoration : null;
-      if ('scrollRestoration' in window.history) {
-        window.history.scrollRestoration = 'manual';
-      }
       ScrollTrigger.clearScrollMemory();
       window.scrollTo(0, 0);
 
@@ -492,18 +1106,38 @@ export function OsrIntroScroll() {
       }
 
       const pageIndicator = introRoot.querySelector<HTMLElement>('[data-page-indicator]');
+      const emptyBeatOverlay = introRoot.querySelector<HTMLElement>('[data-compact-empty-beat]');
+      const agreementsScrollLine = introRoot.querySelector<HTMLElement>(
+        '[data-agreements-scroll-line]',
+      );
+      const whoopPersonalBarIIIPanelBg = sectionWhoopPersonalBar.querySelector<HTMLElement>(
+        '[data-personal-bar-iii-panel-bg]',
+      );
+      const whoopPersonalBarIIICards = Array.from(
+        sectionWhoopPersonalBar.querySelectorAll<HTMLElement>('[data-personal-bar-iii-card]'),
+      );
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       let pendingLayoutSyncRaf: number | null = null;
+      let layoutScrollTrackEndVh = 0;
 
       const scheduleLayoutSync = () => {
         if (pendingLayoutSyncRaf !== null) return;
         pendingLayoutSyncRaf = requestAnimationFrame(() => {
           pendingLayoutSyncRaf = null;
-          ScrollTrigger.refresh(true);
-          syncScrollTrackAnimations(scrollTrack);
+          preserveScrollTrackProgress(scrollTrack, () => {
+            if (layoutScrollTrackEndVh > 0) {
+              applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
+            }
+            ScrollTrigger.refresh(true);
+          });
+          requestAnimationFrame(() => {
+            ScrollTrigger.update();
+            syncScrollTrackAnimations(scrollTrack);
+          });
         });
       };
+      scheduleLayoutSyncRef.current = scheduleLayoutSync;
 
       if (reducedMotion) {
         gsap.set(sectionZero, { opacity: 0 });
@@ -514,17 +1148,31 @@ export function OsrIntroScroll() {
         gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
         gsap.set(whoopPersonalBarBgLogo, { opacity: 0.5 });
         gsap.set(whoopPersonalBarContent, { y: 0 });
-        gsap.set(sectionActions, { opacity: 1 });
+        if (whoopPersonalBarIIIPanelBg) gsap.set(whoopPersonalBarIIIPanelBg, { y: 0 });
+        if (whoopPersonalBarIIICards.length > 0) {
+          gsap.set(whoopPersonalBarIIICards, { opacity: 1, x: 0 });
+        }
+        gsap.set(sectionActions, { opacity: 1, pointerEvents: 'auto' });
         if (pageIndicator) gsap.set(pageIndicator, { opacity: 0 });
         return;
       }
 
       const ctx = gsap.context(() => {
         const buildScenes = (isCompactMode: boolean) => {
+          // Prefer live layout width so DevTools/phone never keep a stale desktop timeline.
+          const liveCompact = readIsCompactViewport(getLayoutViewportWidthPx());
+          const compactMode = liveCompact || isCompactMode;
           const resetWhoLetterStartFrame = () => {
             gsap.set(whoLetterO, { left: '50%', xPercent: -50, x: 0, y: 0 });
             gsap.set(whoLetterS, { x: 0, y: 0 });
-            gsap.set(whoLetterR, { x: 0, y: 0 });
+            gsap.set(whoLetterR, { x: 0, y: 0, clearProps: 'left,right,top,bottom' });
+          };
+          const resetHowLetterStartFrame = () => {
+            gsap.set([howLetterO, howLetterS, howLetterR], {
+              x: 0,
+              y: 0,
+              clearProps: 'left,right,top,bottom',
+            });
           };
           applyIntroStartFrame(
             sectionZero,
@@ -538,14 +1186,34 @@ export function OsrIntroScroll() {
           );
           gsap.set(whoopPersonalBarBgLogo, { opacity: 0, scale: 0.88 });
           gsap.set(whoopPersonalBarContent, { y: PERSONAL_BAR_CONTENT_START_Y });
+          if (whoopPersonalBarIIIPanelBg) {
+            gsap.set(whoopPersonalBarIIIPanelBg, { y: '-6%' });
+          }
+          if (whoopPersonalBarIIICards.length > 0) {
+            gsap.set(
+              whoopPersonalBarIIICards,
+              compactMode
+                ? { opacity: 0, xPercent: -22, x: -28 }
+                : { opacity: 0, xPercent: -70, x: -80 },
+            );
+          }
+          if (emptyBeatOverlay) {
+            gsap.set(emptyBeatOverlay, { opacity: 0 });
+          }
+          if (agreementsScrollLine) {
+            gsap.set(agreementsScrollLine, { opacity: 0, y: 0 });
+          }
           const viewportHeight = getViewportBelowNavbar();
-          const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(isCompactMode, {
+          const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(compactMode, {
             viewportHeight,
             whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
           });
           const { whoopEndY: whoopContentEndY } = motion;
 
+          // Apply track height directly (do not preserve progress — that re-locks browser-
+          // restored mid-page offsets after hard refresh).
           applyScrollTrackHeight(scrollTrack, scrollTrackEndVh);
+          layoutScrollTrackEndVh = scrollTrackEndVh;
           setScrollTrackEndVh(scrollTrackEndVh);
           setIntroNavSections(
             buildIntroNavSections({
@@ -554,6 +1222,7 @@ export function OsrIntroScroll() {
             }),
           );
           resetWhoLetterStartFrame();
+          resetHowLetterStartFrame();
           createPrimaryMasterTimeline({
             phases: {
               typingFadeOut: phases.typingFadeOut,
@@ -586,30 +1255,50 @@ export function OsrIntroScroll() {
               sectionActions,
             },
             whoopContentEndY,
+            whoopPersonalBarIIIPanelBg,
+            whoopPersonalBarIIICards,
             pageIndicator: pageIndicator ?? null,
+            emptyBeatOverlay,
+            agreementsScrollLine,
             scrollTrack,
             scrollTrackEndVh,
-            isCompactMode,
+            isCompactMode: compactMode,
+            useEarlyWhoopCardEntrance: getLayoutViewportWidthPx() <= EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX,
           });
-          scheduleLayoutSync();
+          window.scrollTo(0, 0);
+          syncScrollTrackAnimations(scrollTrack);
         };
         buildScenes(isCompactViewport);
       }, introRoot);
 
       scheduleLayoutSync();
-      window.addEventListener('load', scheduleLayoutSync);
       document.fonts?.ready.then(scheduleLayoutSync);
 
+      // bfcache restores can ignore manual scrollRestoration; reset only then.
+      const onPageShow = (event: PageTransitionEvent) => {
+        if (!event.persisted) return;
+        window.scrollTo(0, 0);
+        syncScrollTrackAnimations(scrollTrack);
+      };
+      window.addEventListener('pageshow', onPageShow);
+
       let resizeTimer: ReturnType<typeof setTimeout> | undefined;
-      let lastOuterWidth = window.outerWidth;
+      let lastLayoutWidth = getLayoutViewportWidthPx();
       const onWindowResize = () => {
-        const nextOuterWidth = window.outerWidth;
-        const widthChanged = nextOuterWidth !== lastOuterWidth;
-        lastOuterWidth = nextOuterWidth;
+        const nextLayoutWidth = getLayoutViewportWidthPx();
+        const widthChanged = nextLayoutWidth !== lastLayoutWidth;
+        lastLayoutWidth = nextLayoutWidth;
 
         // On mobile/compact view, browser chrome show/hide can fire frequent resize events
-        // while scrolling; avoid refreshing triggers unless width actually changes.
+        // while scrolling; avoid refreshing triggers unless layout width actually changes.
         if (isCompactViewport && !widthChanged) return;
+
+        preserveScrollTrackProgress(scrollTrack, () => {
+          if (layoutScrollTrackEndVh > 0) {
+            applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
+          }
+        });
+        syncScrollTrackAnimations(scrollTrack);
 
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(scheduleLayoutSync, 120);
@@ -617,14 +1306,12 @@ export function OsrIntroScroll() {
       window.addEventListener('resize', onWindowResize);
 
       return () => {
-        if (previousScrollRestoration !== null) {
-          window.history.scrollRestoration = previousScrollRestoration;
-        }
         if (pendingLayoutSyncRaf !== null) {
           cancelAnimationFrame(pendingLayoutSyncRaf);
           pendingLayoutSyncRaf = null;
         }
-        window.removeEventListener('load', scheduleLayoutSync);
+        scheduleLayoutSyncRef.current = null;
+        window.removeEventListener('pageshow', onPageShow);
         window.removeEventListener('resize', onWindowResize);
         if (resizeTimer) clearTimeout(resizeTimer);
         ctx.revert();
@@ -639,7 +1326,9 @@ export function OsrIntroScroll() {
     ? 'fixed left-1/2 flex items-center justify-center overflow-hidden bg-transparent'
     : 'fixed left-0 right-0 top-[var(--navbar-height)] flex h-[calc(100dvh-var(--navbar-height))] items-center justify-center overflow-hidden bg-transparent';
   const sectionShell = `${sectionShellCommon} pointer-events-none z-10`;
-  const actionsSectionShell = `${sectionShellCommon} pointer-events-auto z-[22]`;
+  // pointer-events stay none until Contact fades in (GSAP toggles auto) — otherwise
+  // invisible What's next buttons sit above every phase and steal clicks.
+  const actionsSectionShell = `${sectionShellCommon} pointer-events-none z-[22]`;
   const stageBackdropClass = useFixedStage
     ? 'pointer-events-none fixed left-1/2 z-[6] bg-white'
     : 'pointer-events-none fixed left-0 right-0 top-[var(--navbar-height)] z-[6] h-[calc(100dvh-var(--navbar-height))] bg-white';
@@ -653,8 +1342,18 @@ export function OsrIntroScroll() {
       } as const)
     : undefined;
 
-  const letterBase =
-    'pointer-events-none absolute select-none font-bold leading-none font-[Montserrat,sans-serif] text-[clamp(5rem,22vw,14rem)] md:text-[clamp(7rem,22em,22rem)]';
+  const letterBase = isCompactViewport
+    ? 'pointer-events-none absolute select-none font-bold leading-none font-[Montserrat,sans-serif] text-[clamp(8.5rem,42vw,18rem)]'
+    : 'pointer-events-none absolute select-none font-bold leading-none font-[Montserrat,sans-serif] text-[clamp(5rem,22vw,14rem)] md:text-[clamp(7rem,22em,22rem)]';
+  const storyCopyClass = isCompactViewport
+    ? 'mt-4 text-base leading-relaxed text-gray-800'
+    : 'mt-5 text-lg leading-relaxed text-gray-800 md:text-4xl';
+  const storyContentWidthClass = isCompactViewport
+    ? 'relative z-[2] w-[88%] max-w-3xl pt-10'
+    : 'relative z-[2] w-[75%] max-w-3xl md:w-1/2';
+  const heroContentWidthClass = isCompactViewport
+    ? 'w-[88%] max-w-4xl pt-10'
+    : 'w-[75%] max-w-4xl md:w-1/2';
 
   return (
     <div ref={introRootRef} className="relative w-full bg-white">
@@ -672,19 +1371,33 @@ export function OsrIntroScroll() {
         aria-hidden
       />
 
-      <IntroScrollNav
-        sections={introNavSections}
-        activeId={activeNavId}
-        activeProgress={activeNavProgress}
-        onSelect={scrollToNavSection}
-      />
+      {showIntroJumpNav && (
+        <IntroScrollNav
+          sections={introNavSections}
+          activeId={activeNavId}
+          activeProgress={activeNavProgress}
+          onSelect={scrollToNavSection}
+          compactLayout={isCompactViewport}
+        />
+      )}
 
-      <div
-        data-page-indicator
-        className="pointer-events-none fixed left-[20%] z-[21] h-[45%] w-0.5"
-        style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
-        aria-hidden
-      />
+      {/* Compact Typing→Who wipe: solid white covering all story layers for one viewport of scroll. */}
+      {isCompactViewport ? (
+        <div
+          data-compact-empty-beat
+          className="pointer-events-none fixed inset-x-0 top-[var(--navbar-height)] bottom-0 z-[90] bg-white opacity-0"
+          aria-hidden
+        />
+      ) : null}
+
+      {!isCompactViewport ? (
+        <div
+          data-page-indicator
+          className="pointer-events-none fixed left-[20%] z-[21] h-[45%] w-0.5"
+          style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
+          aria-hidden
+        />
+      ) : null}
 
       {/* Phase 1 — typing hero */}
       <section
@@ -694,16 +1407,24 @@ export function OsrIntroScroll() {
         style={sectionShellStyle}
         aria-label="Introduction"
       >
-        <div className="w-[75%] max-w-4xl md:w-1/2">
+        <div className={heroContentWidthClass}>
           <p
-            className="text-sm font-semibold uppercase tracking-wide md:text-xl"
+            className={
+              isCompactViewport
+                ? 'text-sm font-semibold uppercase tracking-wide'
+                : 'text-sm font-semibold uppercase tracking-wide md:text-xl'
+            }
             style={{ color: ACCENT_CORAL }}
           >
             Open Source Resume is{' '}
           </p>
           <TypingHeroLine
             descriptions={TYPING_DESCRIPTIONS}
-            className="mt-5 min-h-[1.8em] border-b border-[#F57360] pb-5 text-xl font-semibold text-[#F57360] md:text-4xl"
+            className={
+              isCompactViewport
+                ? 'mt-4 min-h-[1.8em] border-b border-[#F57360] pb-4 text-lg font-semibold text-[#F57360]'
+                : 'mt-5 min-h-[1.8em] border-b border-[#F57360] pb-5 text-xl font-semibold text-[#F57360] md:text-4xl'
+            }
           />
         </div>
       </section>
@@ -740,15 +1461,19 @@ export function OsrIntroScroll() {
 
         <div
           ref={whoWeAreContentRef}
-          className="relative z-[2] w-[75%] max-w-3xl opacity-0 md:w-1/2"
+          className={`${storyContentWidthClass} opacity-0`}
         >
           <h2
             id="intro-who-heading"
-            className="text-sm font-extrabold uppercase tracking-wide text-black md:text-xl"
+            className={
+              isCompactViewport
+                ? 'text-sm font-extrabold uppercase tracking-wide text-black'
+                : 'text-sm font-extrabold uppercase tracking-wide text-black md:text-xl'
+            }
           >
             Who we are
           </h2>
-          <p className="mt-5 text-lg leading-relaxed text-gray-800 md:text-4xl">
+          <p className={storyCopyClass}>
             We are a pathway for entry-level SWEs to become valuable contributors to the tech
             industry by making deep contributions to open source.
           </p>
@@ -785,14 +1510,18 @@ export function OsrIntroScroll() {
           R
         </div>
 
-        <div className="relative z-[2] w-[75%] max-w-3xl md:w-1/2">
+        <div className={storyContentWidthClass}>
           <h2
             id="intro-how-heading"
-            className="text-sm font-extrabold uppercase tracking-wide text-black md:text-xl"
+            className={
+              isCompactViewport
+                ? 'text-sm font-extrabold uppercase tracking-wide text-black'
+                : 'text-sm font-extrabold uppercase tracking-wide text-black md:text-xl'
+            }
           >
             How it works
           </h2>
-          <p className="mt-5 text-lg leading-relaxed text-gray-800 md:text-4xl">
+          <p className={storyCopyClass}>
             SWE Hiring Managers define their dream candidate in terms of measurable open source
             achievements. Their personal bar becomes an actionable pathway for junior devs.
           </p>
@@ -804,13 +1533,14 @@ export function OsrIntroScroll() {
         sectionShell={sectionShell}
         sectionStyle={sectionShellStyle}
         sectionRef={sectionAgreementsRef}
+        compactLayout={isCompactViewport}
       />
 
       {/* Phase 5 — Whoop personal bar */}
       <WhoopPersonalBarSection
         sectionShell={sectionShell}
         sectionStyle={sectionShellStyle}
-        compactLayout={!useFixedStage}
+        compactLayout={isCompactViewport}
         refs={{
           section: sectionWhoopPersonalBarRef,
           bgLogo: whoopPersonalBarBgLogoRef,
@@ -823,6 +1553,7 @@ export function OsrIntroScroll() {
         sectionShell={actionsSectionShell}
         sectionStyle={sectionShellStyle}
         sectionRef={sectionActionsRef}
+        compactLayout={isCompactViewport}
         onSignUp={() => {
           void handleSignIn();
         }}

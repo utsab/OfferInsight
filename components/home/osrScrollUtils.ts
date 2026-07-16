@@ -44,19 +44,19 @@ export function getViewportOffsetTopPx(offsetVh: number): number {
 export function syncScrollTrackAnimations(scrollTrack: HTMLElement): void {
   ScrollTrigger.getAll().forEach((st) => {
     if (st.trigger !== scrollTrack || !st.animation) return;
+    // Kill scrub catch-up lag so layers don't briefly show the wrong phase after
+    // refresh/resize (progress jumped, animation still easing toward it).
+    const scrubTween = typeof st.getTween === 'function' ? st.getTween() : null;
+    if (scrubTween) {
+      scrubTween.progress(1);
+    }
     st.animation.progress(st.progress);
   });
 }
 
-export function getOsrSceneConfig(
-  offsetVh: number,
-  durationPercent: number,
-  _scrub: number | false = 0.45,
-) {
-  const vh = getViewportBelowNavbar();
+export function getOsrSceneConfig(offsetVh: number) {
   return {
-    startPx: Math.round(offsetVh * vh),
-    durationPx: Math.round((durationPercent / 100) * vh),
+    startPx: Math.round(offsetVh * getViewportBelowNavbar()),
   };
 }
 
@@ -65,8 +65,19 @@ export const PERSONAL_BAR_CONTENT_START_Y = `${PERSONAL_BAR_CONTENT_START_VH}vh`
 
 /** Measure personal-bar content height without transform affecting layout reads. */
 export function measurePersonalBarContentHeight(content: HTMLElement): number {
+  const ignoredElements = Array.from(
+    content.querySelectorAll<HTMLElement>('[data-personal-bar-measure-ignore]'),
+  );
+  const previousDisplays = ignoredElements.map((element) => element.style.display);
+
   gsap.set(content, { y: 0 });
+  ignoredElements.forEach((element) => {
+    element.style.display = 'none';
+  });
   const height = content.scrollHeight;
+  ignoredElements.forEach((element, index) => {
+    element.style.display = previousDisplays[index] ?? '';
+  });
   gsap.set(content, { y: PERSONAL_BAR_CONTENT_START_Y });
   return height;
 }
@@ -118,6 +129,23 @@ export function getScrollTrackDocumentTopPx(scrollTrack: HTMLElement): number {
 /** Pixels scrolled into the track from its top. */
 export function getScrollTrackRelativePx(scrollTrack: HTMLElement): number {
   return Math.max(window.scrollY - getScrollTrackDocumentTopPx(scrollTrack), 0);
+}
+
+/**
+ * Keep story progress stable across layout/track-height changes (e.g. resize).
+ * Without this, same scrollY maps to a different phase after the track reflows.
+ */
+export function preserveScrollTrackProgress(
+  scrollTrack: HTMLElement,
+  updateLayout: () => void,
+): void {
+  const beforeHeight = Math.max(scrollTrack.offsetHeight, 1);
+  const progress = Math.min(1, getScrollTrackRelativePx(scrollTrack) / beforeHeight);
+
+  updateLayout();
+
+  const afterHeight = Math.max(scrollTrack.offsetHeight, 1);
+  scrollToTrackOffsetPx(scrollTrack, progress * afterHeight, 'auto');
 }
 
 /** Scroll so `offsetPx` of the track has passed the viewport top. */

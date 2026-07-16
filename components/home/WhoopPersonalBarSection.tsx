@@ -1,6 +1,6 @@
 'use client';
 
-import { PersonalBarSection } from './PersonalBarSection';
+import { PersonalBarSectionIII } from './PersonalBarSection-III';
 import type { CSSProperties } from 'react';
 import type { PersonalBarRefs } from './personalBarTypes';
 import {
@@ -20,10 +20,10 @@ export function WhoopPersonalBarSection({
   sectionShell,
   refs,
   sectionStyle,
-  compactLayout,
+  compactLayout = false,
 }: WhoopPersonalBarSectionProps) {
   return (
-    <PersonalBarSection
+    <PersonalBarSectionIII
       sectionShell={sectionShell}
       sectionId="intro-whoop-bar"
       headingId="whoop-bar-heading"
@@ -33,7 +33,6 @@ export function WhoopPersonalBarSection({
       refs={refs}
       sectionStyle={sectionStyle}
       compactLayout={compactLayout}
-      zIndexClass="z-20"
     />
   );
 }

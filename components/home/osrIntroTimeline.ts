@@ -49,11 +49,14 @@ const OSR_INTRO_PHASE_DURATIONS = {
 const OSR_INTRO_PHASE_DURATIONS_MOBILE: Partial<
   Record<keyof typeof OSR_INTRO_PHASE_DURATIONS, number>
 > = {
-  typingFadeOut: 20,
-  whoSectionIn: 20,
-  whoLettersMove: 30,
-  whoContentIn: 20,
-  howSectionOut: 20,
+  typingFadeOut: 30,
+  whoSectionIn: 40,
+  // Keep letters+copy on screen long enough to read (desktop is 170).
+  whoLettersMove: 100,
+  whoContentIn: 40,
+  whoSectionOut: 40,
+  howSectionIn: 35,
+  howSectionOut: 35,
 };
 
 const OSR_CONTENT_PHASE_DURATIONS = {
@@ -86,7 +89,6 @@ const PHASE_DURATION_OVERRIDES = {
  * so Contact can appear as soon as Whoop content clears the viewport.
  */
 const WHOOP_END_MIN_VH = 90;
-const WHOOP_END_PADDING_VH = 0;
 
 /** Sequential scroll story — must match scene attachment in OsrIntroScroll.tsx. */
 const PHASE_ORDER = [
@@ -166,7 +168,7 @@ function resolveContentMotion(measurements: IntroContentMeasurements): IntroCont
       measurements.whoopContentHeight,
       measurements.viewportHeight,
       WHOOP_END_MIN_VH,
-      WHOOP_END_PADDING_VH,
+      0,
     ),
   };
 }
