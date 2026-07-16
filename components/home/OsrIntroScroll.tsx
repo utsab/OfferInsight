@@ -202,9 +202,11 @@ function createCompactMasterTimeline(params: {
   holdTween(timeline, sections.whoWeAreContent, { opacity: 1 }, whoInEnd, whoOutAt);
 
   const whoLettersDur = phases.whoLettersMove.durationPercent / 100;
+  // Prefer x/y fromTo over CSS inset `.to()` — inset channels can stick after reverse scrub.
   timeline
-    .to(
+    .fromTo(
       sections.whoLetterO,
+      { x: 0, y: 0, xPercent: -50 },
       {
         x: '-28vw',
         y: '-18vh',
@@ -214,14 +216,17 @@ function createCompactMasterTimeline(params: {
       },
       phases.whoLettersMove.at,
     )
-    .to(
+    .fromTo(
       sections.whoLetterS,
+      { x: 0, y: 0 },
       { x: '36vw', y: '18vh', duration: whoLettersDur, immediateRender: false },
       phases.whoLettersMove.at,
     )
-    .to(
+    .fromTo(
       sections.whoLetterR,
-      { right: '-18%', bottom: '78%', duration: whoLettersDur, immediateRender: false },
+      { x: 0, y: 0 },
+      // ~45° up-and-right (off the right edge; not left).
+      { x: '42vw', y: '-28vh', duration: whoLettersDur, immediateRender: false },
       phases.whoLettersMove.at,
     );
 
@@ -249,21 +254,25 @@ function createCompactMasterTimeline(params: {
   holdTween(timeline, sections.sectionTwo, { opacity: 1 }, howInEnd, howOutAt);
 
   const howLettersDur = phases.howLettersMove.durationPercent / 100;
+  // Use transforms (not left/bottom/top): inset fromTo loses the vertical channel after
+  // scrubbing backward and then forward again.
   timeline
     .fromTo(
       sections.howLetterO,
-      { left: '-5%', bottom: '12%', top: 'auto', right: 'auto' },
-      { left: '-14%', bottom: '14%', duration: howLettersDur, immediateRender: false },
+      { x: 0, y: 0 },
+      { x: '-16vw', y: '-18vh', duration: howLettersDur, immediateRender: false },
       phases.howLettersMove.at,
     )
-    .to(
+    .fromTo(
       sections.howLetterR,
-      { bottom: '4%', right: '22%', duration: howLettersDur, immediateRender: false },
+      { x: 0, y: 0 },
+      { x: '-10vw', y: '8vh', duration: howLettersDur, immediateRender: false },
       phases.howLettersMove.at,
     )
-    .to(
+    .fromTo(
       sections.howLetterS,
-      { right: '12%', top: '4%', duration: howLettersDur, immediateRender: false },
+      { x: 0, y: 0 },
+      { x: '14vw', y: '-6vh', duration: howLettersDur, immediateRender: false },
       phases.howLettersMove.at,
     );
 
@@ -605,8 +614,9 @@ function createPrimaryMasterTimeline(params: {
   holdTween(primaryTimeline, sections.whoWeAreContent, { opacity: 0 }, whoOutEndVh, timelineEndVh);
 
   primaryTimeline
-    .to(
+    .fromTo(
       sections.whoLetterO,
+      { x: 0, y: 0, xPercent: -50 },
       {
         x: '-34vw',
         y: '-30vh',
@@ -616,8 +626,9 @@ function createPrimaryMasterTimeline(params: {
       },
       phases.whoLettersMove.at,
     )
-    .to(
+    .fromTo(
       sections.whoLetterS,
+      { x: 0, y: 0 },
       {
         x: '46vw',
         y: '32vh',
@@ -626,11 +637,12 @@ function createPrimaryMasterTimeline(params: {
       },
       phases.whoLettersMove.at,
     )
-    .to(
+    .fromTo(
       sections.whoLetterR,
+      { x: 0, y: 0 },
       {
-        right: '-28%',
-        bottom: '94%',
+        x: '22vw',
+        y: '-72vh',
         duration: phases.whoLettersMove.durationPercent / 100,
         immediateRender: false,
       },
@@ -645,21 +657,24 @@ function createPrimaryMasterTimeline(params: {
     phases.howSectionIn.at,
   );
   holdTween(primaryTimeline, sections.sectionTwo, { opacity: 1 }, howInEndVh, phases.howSectionOut.at);
+  const howLettersDurDesktop = phases.howLettersMove.durationPercent / 100;
   primaryTimeline
     .fromTo(
       sections.howLetterO,
-      { left: '-4%', bottom: '5%', top: 'auto', right: 'auto' },
-      { left: '-20%', bottom: '16%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
+      { x: 0, y: 0 },
+      { x: '-16vw', y: '-11vh', duration: howLettersDurDesktop, immediateRender: false },
       phases.howLettersMove.at,
     )
-    .to(
+    .fromTo(
       sections.howLetterR,
-      { bottom: '-35%', right: '30%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
+      { x: 0, y: 0 },
+      { x: '-18vw', y: '30vh', duration: howLettersDurDesktop, immediateRender: false },
       phases.howLettersMove.at,
     )
-    .to(
+    .fromTo(
       sections.howLetterS,
-      { right: '22%', top: '-15%', duration: phases.howLettersMove.durationPercent / 100, immediateRender: false },
+      { x: 0, y: 0 },
+      { x: '8vw', y: '-12vh', duration: howLettersDurDesktop, immediateRender: false },
       phases.howLettersMove.at,
     );
   primaryTimeline.to(
@@ -772,8 +787,9 @@ function createPrimaryMasterTimeline(params: {
       phases.whoopPersonalBarScroll.at,
       cardEntranceAt,
     );
-    primaryTimeline.to(
+    primaryTimeline.fromTo(
       whoopPersonalBarIIICards,
+      cardFrom,
       {
         opacity: 1,
         xPercent: 0,
@@ -816,10 +832,11 @@ function createPrimaryMasterTimeline(params: {
   );
 
   if (pageIndicator) {
+    // Animate y (not top): inset `top` has the same reverse-scrub failure mode as left/bottom.
     primaryTimeline.fromTo(
       pageIndicator,
-      { top: '90%' },
-      { top: '-50%', duration: pageIndicatorScroll.durationPercent / 100, immediateRender: false },
+      { y: 0 },
+      { y: '-140vh', duration: pageIndicatorScroll.durationPercent / 100, immediateRender: false },
       pageIndicatorScroll.at,
     );
     primaryTimeline.set(pageIndicator, { opacity: 0 }, getPhaseEndVh(pageIndicatorScroll));
@@ -865,7 +882,7 @@ function applyIntroStartFrame(
   gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
   gsap.set(sectionActions, { opacity: 0 });
   if (pageIndicator) {
-    gsap.set(pageIndicator, { opacity: 1, top: '90%' });
+    gsap.set(pageIndicator, { opacity: 1, top: '90%', y: 0 });
   }
 }
 
@@ -960,17 +977,7 @@ export function OsrIntroScroll() {
   useEffect(() => {
     const track = scrollTrackRef.current;
     if (!track || scrollTrackEndVh <= 0) return;
-
-    const syncTrackHeight = () => {
-      preserveScrollTrackProgress(track, () => {
-        applyScrollTrackHeight(track, scrollTrackEndVh);
-      });
-      syncScrollTrackAnimations(track);
-    };
-
-    syncTrackHeight();
-    window.addEventListener('resize', syncTrackHeight);
-    return () => window.removeEventListener('resize', syncTrackHeight);
+    applyScrollTrackHeight(track, scrollTrackEndVh);
   }, [scrollTrackEndVh]);
 
   useEffect(() => {
@@ -981,13 +988,29 @@ export function OsrIntroScroll() {
     };
   }, []);
 
+  // Manual restoration must live for the whole intro mount. Putting it inside useGSAP
+  // restores `auto` on compact↔desktop rebuilds and lets the browser reapply mid-page scroll.
+  useLayoutEffect(() => {
+    const previous =
+      'scrollRestoration' in window.history ? window.history.scrollRestoration : null;
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    ScrollTrigger.clearScrollMemory();
+    window.scrollTo(0, 0);
+    return () => {
+      if (previous !== null) {
+        window.history.scrollRestoration = previous;
+      }
+    };
+  }, []);
+
   useLayoutEffect(() => {
     const computeViewportMode = () => {
       const width = getLayoutViewportWidthPx();
       const isCompact = readIsCompactViewport(width);
 
-      // Compact ↔ desktop rebuilds scenes via useGSAP deps; reset scroll for a clean handoff.
-      if (lastCompactViewportRef.current !== null && lastCompactViewportRef.current !== isCompact) {
+      if (lastCompactViewportRef.current === null || lastCompactViewportRef.current !== isCompact) {
         window.scrollTo(0, 0);
       }
       lastCompactViewportRef.current = isCompact;
@@ -998,7 +1021,6 @@ export function OsrIntroScroll() {
         return;
       }
 
-      // Desktop: continuous 1920×1080 stage scale from layout CSS width.
       setStageScale(
         Math.max(
           (width - STAGE_WIDTH_OFFSET_PX) / (STAGE_BASE_WIDTH - STAGE_WIDTH_OFFSET_PX),
@@ -1029,11 +1051,6 @@ export function OsrIntroScroll() {
 
   useGSAP(
     () => {
-      const previousScrollRestoration =
-        'scrollRestoration' in window.history ? window.history.scrollRestoration : null;
-      if ('scrollRestoration' in window.history) {
-        window.history.scrollRestoration = 'manual';
-      }
       ScrollTrigger.clearScrollMemory();
       window.scrollTo(0, 0);
 
@@ -1103,7 +1120,6 @@ export function OsrIntroScroll() {
             }
             ScrollTrigger.refresh(true);
           });
-          // Second frame: snap scrubbed master timeline after geometry settles.
           requestAnimationFrame(() => {
             ScrollTrigger.update();
             syncScrollTrackAnimations(scrollTrack);
@@ -1138,7 +1154,19 @@ export function OsrIntroScroll() {
           const resetWhoLetterStartFrame = () => {
             gsap.set(whoLetterO, { left: '50%', xPercent: -50, x: 0, y: 0 });
             gsap.set(whoLetterS, { x: 0, y: 0 });
-            gsap.set(whoLetterR, { x: 0, y: 0 });
+            gsap.set(whoLetterR, {
+              x: 0,
+              y: 0,
+              clearProps: 'left,right,top,bottom',
+            });
+          };
+          const resetHowLetterStartFrame = () => {
+            // Clear any prior inset tweens; How travel uses x/y only.
+            gsap.set([howLetterO, howLetterS, howLetterR], {
+              x: 0,
+              y: 0,
+              clearProps: 'left,right,top,bottom',
+            });
           };
           applyIntroStartFrame(
             sectionZero,
@@ -1176,6 +1204,8 @@ export function OsrIntroScroll() {
           });
           const { whoopEndY: whoopContentEndY } = motion;
 
+          // Apply track height directly (do not preserve progress — that re-locks browser-
+          // restored mid-page offsets after hard refresh).
           applyScrollTrackHeight(scrollTrack, scrollTrackEndVh);
           layoutScrollTrackEndVh = scrollTrackEndVh;
           setScrollTrackEndVh(scrollTrackEndVh);
@@ -1186,6 +1216,7 @@ export function OsrIntroScroll() {
             }),
           );
           resetWhoLetterStartFrame();
+          resetHowLetterStartFrame();
           createPrimaryMasterTimeline({
             phases: {
               typingFadeOut: phases.typingFadeOut,
@@ -1228,14 +1259,22 @@ export function OsrIntroScroll() {
             isCompactMode: compactMode,
             useEarlyWhoopCardEntrance: getLayoutViewportWidthPx() <= EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX,
           });
-          scheduleLayoutSync();
+          window.scrollTo(0, 0);
+          syncScrollTrackAnimations(scrollTrack);
         };
         buildScenes(isCompactViewport);
       }, introRoot);
 
       scheduleLayoutSync();
-      window.addEventListener('load', scheduleLayoutSync);
       document.fonts?.ready.then(scheduleLayoutSync);
+
+      // bfcache restores can ignore manual scrollRestoration; reset only then.
+      const onPageShow = (event: PageTransitionEvent) => {
+        if (!event.persisted) return;
+        window.scrollTo(0, 0);
+        syncScrollTrackAnimations(scrollTrack);
+      };
+      window.addEventListener('pageshow', onPageShow);
 
       let resizeTimer: ReturnType<typeof setTimeout> | undefined;
       let lastLayoutWidth = getLayoutViewportWidthPx();
@@ -1248,7 +1287,6 @@ export function OsrIntroScroll() {
         // while scrolling; avoid refreshing triggers unless layout width actually changes.
         if (isCompactViewport && !widthChanged) return;
 
-        // Live snap while dragging the window; debounced refresh for pin/end geometry.
         preserveScrollTrackProgress(scrollTrack, () => {
           if (layoutScrollTrackEndVh > 0) {
             applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
@@ -1262,15 +1300,12 @@ export function OsrIntroScroll() {
       window.addEventListener('resize', onWindowResize);
 
       return () => {
-        if (previousScrollRestoration !== null) {
-          window.history.scrollRestoration = previousScrollRestoration;
-        }
         if (pendingLayoutSyncRaf !== null) {
           cancelAnimationFrame(pendingLayoutSyncRaf);
           pendingLayoutSyncRaf = null;
         }
         scheduleLayoutSyncRef.current = null;
-        window.removeEventListener('load', scheduleLayoutSync);
+        window.removeEventListener('pageshow', onPageShow);
         window.removeEventListener('resize', onWindowResize);
         if (resizeTimer) clearTimeout(resizeTimer);
         ctx.revert();
@@ -1300,7 +1335,7 @@ export function OsrIntroScroll() {
     : undefined;
 
   const letterBase = isCompactViewport
-    ? 'pointer-events-none absolute select-none font-bold leading-none font-[Montserrat,sans-serif] text-[clamp(3.25rem,16vw,7rem)]'
+    ? 'pointer-events-none absolute select-none font-bold leading-none font-[Montserrat,sans-serif] text-[clamp(8.5rem,42vw,18rem)]'
     : 'pointer-events-none absolute select-none font-bold leading-none font-[Montserrat,sans-serif] text-[clamp(5rem,22vw,14rem)] md:text-[clamp(7rem,22em,22rem)]';
   const storyCopyClass = isCompactViewport
     ? 'mt-4 text-base leading-relaxed text-gray-800'
