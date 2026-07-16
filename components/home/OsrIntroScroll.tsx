@@ -431,6 +431,7 @@ function createCompactMasterTimeline(params: {
 
   // --- Contact: Whoop fully out, then Contact fades in ---
   holdTween(timeline, sections.sectionActions, { opacity: 0 }, 0, actionsAt);
+  timeline.set(sections.sectionActions, { pointerEvents: 'none' }, 0);
   const contactVisibleAt = actionsAt + actionsDur;
   attachCompactWipeHandoff(
     timeline,
@@ -441,6 +442,7 @@ function createCompactMasterTimeline(params: {
     actionsDur,
     timelineEndVh,
   );
+  timeline.set(sections.sectionActions, { pointerEvents: 'auto' }, contactVisibleAt);
   timeline.to(
     sections.sectionActions,
     { opacity: 1, duration: actionsDur, immediateRender: false },
@@ -526,18 +528,6 @@ function createPrimaryMasterTimeline(params: {
     isCompactMode,
     useEarlyWhoopCardEntrance,
   } = params;
-  const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.whoopPersonalBarScroll);
-  const whoopPhaseDurationVh = phases.whoopPersonalBarScroll.durationPercent / 100;
-  const whoopCrossfadeDurationVh = whoopPhaseDurationVh * WHOOP_ENTRANCE_CROSSFADE_SHARE;
-  const whoopCrossfadeStartVh = phases.whoopPersonalBarScroll.at;
-  const actionsCrossfadeDurationVh = phases.actionsScroll.durationPercent / 100;
-
-  const primaryTimeline = gsap.timeline({ defaults: { ease: 'none' } });
-  const timelineEndVh = scrollTrackEndVh;
-  const whoOutEndVh = getPhaseEndVh(phases.whoSectionOut);
-  const howInEndVh = getPhaseEndVh(phases.howSectionIn);
-  const howOutEndVh = getPhaseEndVh(phases.howSectionOut);
-  const agreementsFadeEndVh = getPhaseEndVh(phases.agreementsFadeIn);
 
   if (isCompactMode) {
     createCompactMasterTimeline({
@@ -555,6 +545,18 @@ function createPrimaryMasterTimeline(params: {
   }
 
   // Desktop: sequential fades + letter choreography.
+  const pageIndicatorScroll = getPageIndicatorScrollPhase(phases.whoopPersonalBarScroll);
+  const whoopPhaseDurationVh = phases.whoopPersonalBarScroll.durationPercent / 100;
+  const whoopCrossfadeDurationVh = whoopPhaseDurationVh * WHOOP_ENTRANCE_CROSSFADE_SHARE;
+  const whoopCrossfadeStartVh = phases.whoopPersonalBarScroll.at;
+  const actionsCrossfadeDurationVh = phases.actionsScroll.durationPercent / 100;
+
+  const primaryTimeline = gsap.timeline({ defaults: { ease: 'none' } });
+  const timelineEndVh = scrollTrackEndVh;
+  const whoOutEndVh = getPhaseEndVh(phases.whoSectionOut);
+  const howInEndVh = getPhaseEndVh(phases.howSectionIn);
+  const howOutEndVh = getPhaseEndVh(phases.howSectionOut);
+  const agreementsFadeEndVh = getPhaseEndVh(phases.agreementsFadeIn);
   const typingEndVh = getPhaseEndVh(phases.typingFadeOut);
   const typingWhoOverlapVh = 0.08;
   const typingFadeEndVh = typingEndVh + typingWhoOverlapVh;
@@ -818,6 +820,8 @@ function createPrimaryMasterTimeline(params: {
 
   // --- Contact ---
   holdTween(primaryTimeline, sections.sectionActions, { opacity: 0 }, 0, phases.actionsScroll.at);
+  primaryTimeline.set(sections.sectionActions, { pointerEvents: 'none' }, 0);
+  primaryTimeline.set(sections.sectionActions, { pointerEvents: 'auto' }, phases.actionsScroll.at);
   primaryTimeline.to(
     sections.sectionActions,
     { opacity: 1, duration: actionsCrossfadeDurationVh, immediateRender: false },
@@ -885,7 +889,7 @@ function applyIntroStartFrame(
   gsap.set(whoWeAreContent, { opacity: 0 });
   gsap.set(sectionAgreements, { opacity: 0 });
   gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
-  gsap.set(sectionActions, { opacity: 0 });
+  gsap.set(sectionActions, { opacity: 0, pointerEvents: 'none' });
   if (pageIndicator) {
     gsap.set(pageIndicator, { opacity: 1, top: '90%', y: 0 });
   }
@@ -895,7 +899,7 @@ function readIsCompactViewport(width: number) {
   return width < COMPACT_MODE_WIDTH_THRESHOLD_PX;
 }
 
-/** Layout CSS width — DevTools device mode spoofs this; `outerWidth` often stays desktop. */
+/** Layout CSS width — DevTools device mode spoofs this. */
 function getLayoutViewportWidthPx(): number {
   if (typeof window === 'undefined') return COMPACT_MODE_WIDTH_THRESHOLD_PX;
   return Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
@@ -928,6 +932,7 @@ export function OsrIntroScroll() {
   const lastCompactViewportRef = useRef<boolean | null>(null);
   const scheduleLayoutSyncRef = useRef<(() => void) | null>(null);
   const skipNextStageScaleSyncRef = useRef(true);
+  const showIntroJumpNav = !isCompactViewport || ENABLE_COMPACT_INTRO_JUMP_NAV;
 
   const scrollToNavSection = useCallback((section: IntroNavSection) => {
     const track = scrollTrackRef.current;
@@ -958,6 +963,7 @@ export function OsrIntroScroll() {
   }, []);
 
   useEffect(() => {
+    if (!showIntroJumpNav) return;
     const track = scrollTrackRef.current;
     if (!track || introNavSections.length === 0) return;
 
@@ -977,7 +983,7 @@ export function OsrIntroScroll() {
       window.removeEventListener('scroll', updateActive);
       ScrollTrigger.removeEventListener('refresh', updateActive);
     };
-  }, [introNavSections]);
+  }, [introNavSections, showIntroJumpNav]);
 
   useEffect(() => {
     const track = scrollTrackRef.current;
@@ -1146,7 +1152,7 @@ export function OsrIntroScroll() {
         if (whoopPersonalBarIIICards.length > 0) {
           gsap.set(whoopPersonalBarIIICards, { opacity: 1, x: 0 });
         }
-        gsap.set(sectionActions, { opacity: 1 });
+        gsap.set(sectionActions, { opacity: 1, pointerEvents: 'auto' });
         if (pageIndicator) gsap.set(pageIndicator, { opacity: 0 });
         return;
       }
@@ -1159,14 +1165,9 @@ export function OsrIntroScroll() {
           const resetWhoLetterStartFrame = () => {
             gsap.set(whoLetterO, { left: '50%', xPercent: -50, x: 0, y: 0 });
             gsap.set(whoLetterS, { x: 0, y: 0 });
-            gsap.set(whoLetterR, {
-              x: 0,
-              y: 0,
-              clearProps: 'left,right,top,bottom',
-            });
+            gsap.set(whoLetterR, { x: 0, y: 0, clearProps: 'left,right,top,bottom' });
           };
           const resetHowLetterStartFrame = () => {
-            // Clear any prior inset tweens; How travel uses x/y only.
             gsap.set([howLetterO, howLetterS, howLetterR], {
               x: 0,
               y: 0,
@@ -1325,7 +1326,9 @@ export function OsrIntroScroll() {
     ? 'fixed left-1/2 flex items-center justify-center overflow-hidden bg-transparent'
     : 'fixed left-0 right-0 top-[var(--navbar-height)] flex h-[calc(100dvh-var(--navbar-height))] items-center justify-center overflow-hidden bg-transparent';
   const sectionShell = `${sectionShellCommon} pointer-events-none z-10`;
-  const actionsSectionShell = `${sectionShellCommon} pointer-events-auto z-[22]`;
+  // pointer-events stay none until Contact fades in (GSAP toggles auto) — otherwise
+  // invisible What's next buttons sit above every phase and steal clicks.
+  const actionsSectionShell = `${sectionShellCommon} pointer-events-none z-[22]`;
   const stageBackdropClass = useFixedStage
     ? 'pointer-events-none fixed left-1/2 z-[6] bg-white'
     : 'pointer-events-none fixed left-0 right-0 top-[var(--navbar-height)] z-[6] h-[calc(100dvh-var(--navbar-height))] bg-white';
@@ -1368,7 +1371,7 @@ export function OsrIntroScroll() {
         aria-hidden
       />
 
-      {(!isCompactViewport || ENABLE_COMPACT_INTRO_JUMP_NAV) && (
+      {showIntroJumpNav && (
         <IntroScrollNav
           sections={introNavSections}
           activeId={activeNavId}

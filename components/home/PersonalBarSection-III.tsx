@@ -13,7 +13,6 @@ type PersonalBarSectionIIIProps = {
   logoAlt?: string;
   criteria: readonly PersonalBarCriterion[];
   refs: PersonalBarRefs;
-  zIndexClass?: string;
   sectionStyle?: CSSProperties;
   /** Full compact band (<1278): denser type, auto-height cards, tighter chrome. */
   compactLayout?: boolean;
@@ -31,7 +30,6 @@ export function PersonalBarSectionIII({
   logoAlt = '',
   criteria,
   refs,
-  zIndexClass = 'z-20',
   sectionStyle,
   compactLayout = false,
 }: PersonalBarSectionIIIProps) {
@@ -39,7 +37,7 @@ export function PersonalBarSectionIII({
     <section
       ref={refs.section}
       id={sectionId}
-      className={`${sectionShell} ${zIndexClass} overflow-hidden bg-white opacity-0`}
+      className={`${sectionShell} z-20 overflow-hidden bg-white opacity-0`}
       aria-labelledby={headingId}
       style={sectionStyle}
     >
