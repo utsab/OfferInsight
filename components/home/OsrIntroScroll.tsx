@@ -1001,19 +1001,14 @@ export function OsrIntroScroll() {
 
   // Manual restoration must live for the whole intro mount. Putting it inside useGSAP
   // restores `auto` on compact↔desktop rebuilds and lets the browser reapply mid-page scroll.
+  // Do not restore `auto` on unmount either — React Strict Mode teardown briefly flips it
+  // back and the browser can re-lock a mid-page offset before remount sets manual again.
   useLayoutEffect(() => {
-    const previous =
-      'scrollRestoration' in window.history ? window.history.scrollRestoration : null;
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
     ScrollTrigger.clearScrollMemory();
     window.scrollTo(0, 0);
-    return () => {
-      if (previous !== null) {
-        window.history.scrollRestoration = previous;
-      }
-    };
   }, []);
 
   useLayoutEffect(() => {
@@ -1120,18 +1115,37 @@ export function OsrIntroScroll() {
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       let pendingLayoutSyncRaf: number | null = null;
       let layoutScrollTrackEndVh = 0;
+      let layoutSyncCancelled = false;
+      // Hard refresh / first paint: never preserve progress until the initial reset wave
+      // finishes. Browser restoration can land mid-page between scrollTo(0,0) and layout sync.
+      let forceResetScroll = true;
 
       const scheduleLayoutSync = () => {
         if (pendingLayoutSyncRaf !== null) return;
         pendingLayoutSyncRaf = requestAnimationFrame(() => {
           pendingLayoutSyncRaf = null;
-          preserveScrollTrackProgress(scrollTrack, () => {
+          if (layoutSyncCancelled) return;
+
+          const resetScroll = forceResetScroll;
+          const applyLayout = () => {
             if (layoutScrollTrackEndVh > 0) {
               applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
             }
             ScrollTrigger.refresh(true);
-          });
+          };
+
+          if (resetScroll) {
+            applyLayout();
+            window.scrollTo(0, 0);
+          } else {
+            preserveScrollTrackProgress(scrollTrack, applyLayout);
+          }
+
           requestAnimationFrame(() => {
+            if (layoutSyncCancelled) return;
+            if (resetScroll) {
+              window.scrollTo(0, 0);
+            }
             ScrollTrigger.update();
             syncScrollTrackAnimations(scrollTrack);
           });
@@ -1154,7 +1168,11 @@ export function OsrIntroScroll() {
         }
         gsap.set(sectionActions, { opacity: 1, pointerEvents: 'auto' });
         if (pageIndicator) gsap.set(pageIndicator, { opacity: 0 });
-        return;
+        forceResetScroll = false;
+        return () => {
+          layoutSyncCancelled = true;
+          scheduleLayoutSyncRef.current = null;
+        };
       }
 
       const ctx = gsap.context(() => {
@@ -1272,13 +1290,32 @@ export function OsrIntroScroll() {
       }, introRoot);
 
       scheduleLayoutSync();
-      document.fonts?.ready.then(scheduleLayoutSync);
+      const endInitialScrollReset = () => {
+        // Wait until after any queued reset syncs flush before preserving progress.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!layoutSyncCancelled) forceResetScroll = false;
+          });
+        });
+      };
+      if (document.fonts?.ready) {
+        void document.fonts.ready.then(() => {
+          if (layoutSyncCancelled) return;
+          scheduleLayoutSync();
+          endInitialScrollReset();
+        });
+      } else {
+        endInitialScrollReset();
+      }
 
       // bfcache restores can ignore manual scrollRestoration; reset only then.
       const onPageShow = (event: PageTransitionEvent) => {
         if (!event.persisted) return;
+        forceResetScroll = true;
         window.scrollTo(0, 0);
         syncScrollTrackAnimations(scrollTrack);
+        scheduleLayoutSync();
+        endInitialScrollReset();
       };
       window.addEventListener('pageshow', onPageShow);
 
@@ -1306,6 +1343,7 @@ export function OsrIntroScroll() {
       window.addEventListener('resize', onWindowResize);
 
       return () => {
+        layoutSyncCancelled = true;
         if (pendingLayoutSyncRaf !== null) {
           cancelAnimationFrame(pendingLayoutSyncRaf);
           pendingLayoutSyncRaf = null;
