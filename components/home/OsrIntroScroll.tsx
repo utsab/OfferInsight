@@ -1018,6 +1018,9 @@ export function OsrIntroScroll() {
 
       if (lastCompactViewportRef.current === null || lastCompactViewportRef.current !== isCompact) {
         window.scrollTo(0, 0);
+        // Mode remount rebuilds the master timeline — skip the stageScale preserve sync
+        // that would otherwise remap mid-story progress onto new phase timings.
+        skipNextStageScaleSyncRef.current = true;
       }
       lastCompactViewportRef.current = isCompact;
 
@@ -1116,8 +1119,9 @@ export function OsrIntroScroll() {
       let pendingLayoutSyncRaf: number | null = null;
       let layoutScrollTrackEndVh = 0;
       let layoutSyncCancelled = false;
-      // Hard refresh / first paint: never preserve progress until the initial reset wave
-      // finishes. Browser restoration can land mid-page between scrollTo(0,0) and layout sync.
+      // Never preserve progress until the initial reset wave finishes. Browser restoration
+      // (and compact↔desktop remounts that jump to top) can land mid-page between
+      // scrollTo(0,0) and the first layout sync.
       let forceResetScroll = true;
 
       const scheduleLayoutSync = () => {
@@ -1192,6 +1196,29 @@ export function OsrIntroScroll() {
               clearProps: 'left,right,top,bottom',
             });
           };
+
+          const viewportHeight = getViewportBelowNavbar();
+          const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(compactMode, {
+            viewportHeight,
+            whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
+          });
+          const { whoopEndY: whoopContentEndY } = motion;
+
+          // Settle track height + scroll at progress 0 before start frames / ScrollTrigger
+          // create — otherwise ST initializes mid-page and scrub snaps layers twice.
+          applyScrollTrackHeight(scrollTrack, scrollTrackEndVh);
+          layoutScrollTrackEndVh = scrollTrackEndVh;
+          setScrollTrackEndVh(scrollTrackEndVh);
+          setIntroNavSections(
+            buildIntroNavSections({
+              whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
+              actionsScroll: phases.actionsScroll,
+            }),
+          );
+          ScrollTrigger.clearScrollMemory();
+          window.scrollTo(0, 0);
+          ScrollTrigger.update();
+
           applyIntroStartFrame(
             sectionZero,
             sectionOne,
@@ -1221,24 +1248,6 @@ export function OsrIntroScroll() {
           if (agreementsScrollLine) {
             gsap.set(agreementsScrollLine, { opacity: 0, y: 0 });
           }
-          const viewportHeight = getViewportBelowNavbar();
-          const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(compactMode, {
-            viewportHeight,
-            whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
-          });
-          const { whoopEndY: whoopContentEndY } = motion;
-
-          // Apply track height directly (do not preserve progress — that re-locks browser-
-          // restored mid-page offsets after hard refresh).
-          applyScrollTrackHeight(scrollTrack, scrollTrackEndVh);
-          layoutScrollTrackEndVh = scrollTrackEndVh;
-          setScrollTrackEndVh(scrollTrackEndVh);
-          setIntroNavSections(
-            buildIntroNavSections({
-              whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
-              actionsScroll: phases.actionsScroll,
-            }),
-          );
           resetWhoLetterStartFrame();
           resetHowLetterStartFrame();
           createPrimaryMasterTimeline({
@@ -1330,6 +1339,13 @@ export function OsrIntroScroll() {
         // while scrolling; avoid refreshing triggers unless layout width actually changes.
         if (isCompactViewport && !widthChanged) return;
 
+        // Crossing the compact threshold remounts GSAP with different phase timings —
+        // preserving progress against the dying timeline scrubs letters/copy haywire.
+        if (readIsCompactViewport(nextLayoutWidth) !== isCompactViewport) {
+          window.scrollTo(0, 0);
+          return;
+        }
+
         preserveScrollTrackProgress(scrollTrack, () => {
           if (layoutScrollTrackEndVh > 0) {
             applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
@@ -1356,7 +1372,7 @@ export function OsrIntroScroll() {
         ScrollTrigger.clearScrollMemory();
       };
     },
-    { scope: introRootRef, dependencies: [isCompactViewport] },
+    { scope: introRootRef, dependencies: [isCompactViewport], revertOnUpdate: true },
   );
 
   const useFixedStage = !isCompactViewport;
