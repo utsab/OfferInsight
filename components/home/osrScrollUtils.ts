@@ -2,10 +2,12 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 export const TYPING_DESCRIPTIONS = [
-  'A pathway for entry-level SWEs',
-  'Measurable open source achievements',
-  'Hiring-manager-defined benchmarks',
-  'Your portfolio, verifiable on GitHub',
+  'A recruitment pipeline for open source talent',
+  'Unmeasurable qualities made measurable',
+  'A pathway for junior talent to become senior',
+  'Unfakeable verified achievements in open source',
+  'Your dream candidate with open source receipts',
+  'Personal bars of 20+ SWE\'s / Hiring Managers',
 ] as const;
 
 function getNavbarHeightPxFromCssVar(): number {
