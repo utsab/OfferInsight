@@ -15,7 +15,6 @@ type TypingHeroLineProps = {
 export function TypingHeroLine({ descriptions, className }: TypingHeroLineProps) {
   const [displayed, setDisplayed] = useState('');
   const [cursorVisible, setCursorVisible] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
   const wordIndexRef = useRef(0);
   const letterIndexRef = useRef(0);
 
@@ -40,7 +39,6 @@ export function TypingHeroLine({ descriptions, className }: TypingHeroLineProps)
     };
 
     const startBlink = () => {
-      setIsTyping(false);
       if (blinkTimer) clearInterval(blinkTimer);
       blinkTimer = setInterval(() => {
         setCursorVisible((v) => !v);
@@ -60,7 +58,6 @@ export function TypingHeroLine({ descriptions, className }: TypingHeroLineProps)
       pauseTimer = setTimeout(() => {
         if (cancelled) return;
         stopBlink();
-        setIsTyping(true);
         const phrase = descriptions[wordIndexRef.current % descriptions.length];
 
         typingTimer = setInterval(() => {
@@ -70,11 +67,8 @@ export function TypingHeroLine({ descriptions, className }: TypingHeroLineProps)
 
           if (nextIndex >= phrase.length) {
             clearTimers();
-            startBlink();
-            pauseTimer = setTimeout(() => {
-              if (cancelled) return;
-              startDeleting();
-            }, PAUSE_BEFORE_DELETE_MS);
+            // startDeleting owns the hold-then-delete pause
+            startDeleting();
           }
         }, TYPING_INTERVAL_MS);
       }, PAUSE_BEFORE_TYPE_MS);
@@ -86,18 +80,25 @@ export function TypingHeroLine({ descriptions, className }: TypingHeroLineProps)
       pauseTimer = setTimeout(() => {
         if (cancelled) return;
         stopBlink();
-        setIsTyping(true);
+
+        // Drive deletion from a ref — not a setState updater. React Strict Mode
+        // double-invokes updaters in dev, which would skip every other slogan.
+        const phrase = descriptions[wordIndexRef.current % descriptions.length];
+        letterIndexRef.current = phrase.length;
 
         deletingTimer = setInterval(() => {
-          setDisplayed((prev) => {
-            if (prev.length === 0) {
-              clearTimers();
-              wordIndexRef.current = (wordIndexRef.current + 1) % descriptions.length;
-              startTyping();
-              return '';
-            }
-            return prev.slice(0, -1);
-          });
+          const nextIndex = letterIndexRef.current - 1;
+          letterIndexRef.current = nextIndex;
+
+          if (nextIndex <= 0) {
+            setDisplayed('');
+            clearTimers();
+            wordIndexRef.current = (wordIndexRef.current + 1) % descriptions.length;
+            startTyping();
+            return;
+          }
+
+          setDisplayed(phrase.slice(0, nextIndex));
         }, DELETING_INTERVAL_MS);
       }, PAUSE_BEFORE_DELETE_MS);
     };
@@ -110,12 +111,10 @@ export function TypingHeroLine({ descriptions, className }: TypingHeroLineProps)
     };
   }, [descriptions]);
 
-  const showCursor = isTyping || cursorVisible;
-
   return (
     <div className={className} aria-live="polite">
       <span>{displayed}</span>
-      <span className={showCursor ? 'opacity-100' : 'opacity-0'} aria-hidden>
+      <span className={cursorVisible ? 'opacity-100' : 'opacity-0'} aria-hidden>
         |
       </span>
     </div>
