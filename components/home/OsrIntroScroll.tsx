@@ -324,13 +324,29 @@ function createCompactMasterTimeline(params: {
     timelineEndVh,
   );
 
-  // Compact page indicator: independent of phase fades/wipes (z above the white
-  // handoff). Constant-speed climb; tip clears around Agreements fade-out.
+  // Compact page indicator: in front for Typing + Agreements; behind for Who + How.
+  // Lift above the wipe during handoffs that land on a "behind" phase so it doesn't flash.
   if (pageIndicator) {
-    // Bar: top 90% + h 68% → bottom ~158%. Travel 145 leaves a short tip into fade-out
-    // so the line doesn't vanish early mid-Agreements.
-    const exitTravelVh = 145;
-    const exitEndVh = Math.max(whoopInAt, 0.01);
+    // Bar: top 88% + h 38% → bottom ~126%.
+    const exitTravelVh = 130;
+    const exitEndVh = Math.max(
+      whoopInAt + Math.max(whoopPhaseDur * 0.2, whoopHandoffDur),
+      whoopInAt + 0.01,
+    );
+    const zFront = 91;
+    const zBehind = 7;
+
+    gsap.set(pageIndicator, { zIndex: zFront });
+    // Typing (and typing→who wipe): in front
+    timeline.set(pageIndicator, { zIndex: zFront }, 0);
+    // Who steady: behind copy
+    timeline.set(pageIndicator, { zIndex: zBehind }, whoInEnd);
+    // Who→How wipe: briefly in front, then behind for How
+    timeline.set(pageIndicator, { zIndex: zFront }, whoOutAt);
+    timeline.set(pageIndicator, { zIndex: zBehind }, howInEnd);
+    // How→Agreements wipe + Agreements: in front through exit
+    timeline.set(pageIndicator, { zIndex: zFront }, howOutAt);
+
     holdTween(timeline, pageIndicator, { opacity: 1 }, 0, exitEndVh);
     timeline.fromTo(
       pageIndicator,
@@ -1340,10 +1356,10 @@ export function OsrIntroScroll() {
     ? 'mt-4 text-base leading-relaxed text-gray-800'
     : 'mt-5 text-lg leading-relaxed text-gray-800 md:text-4xl';
   const storyContentWidthClass = isCompactViewport
-    ? 'relative z-[2] ml-auto mr-3 w-[calc(100%-2.75rem)] max-w-3xl pt-10'
+    ? 'relative z-[2] w-[88%] max-w-3xl pt-10'
     : 'relative z-[2] w-[75%] max-w-3xl md:w-1/2';
   const heroContentWidthClass = isCompactViewport
-    ? 'ml-auto mr-3 w-[calc(100%-2.75rem)] max-w-4xl pt-10'
+    ? 'w-[88%] max-w-4xl pt-10'
     : 'w-[75%] max-w-4xl md:w-1/2';
 
   return (
@@ -1362,20 +1378,15 @@ export function OsrIntroScroll() {
         aria-hidden
       />
 
-      {/* Compact Typing→Who wipe: covers story layers only — page indicator sits above. */}
-      {isCompactViewport ? (
-        <div
-          data-compact-empty-beat
-          className="pointer-events-none fixed inset-x-0 top-[var(--navbar-height)] bottom-0 z-[90] bg-white opacity-0"
-          aria-hidden
-        />
-      ) : null}
-
+      {/*
+        Compact indicator: z toggled by scroll phase (front for Typing/Agreements,
+        behind for Who/How). Default z-7; GSAP sets inline z-index while scrubbing.
+      */}
       {isCompactViewport ? (
         <div
           data-page-indicator
-          className="pointer-events-none fixed left-3 z-[91] h-[68%] w-0.5 sm:left-4"
-          style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
+          className="pointer-events-none fixed left-[20%] z-[7] h-[38%] w-0.5"
+          style={{ backgroundColor: ACCENT_CORAL, top: '88%' }}
           aria-hidden
         />
       ) : (
@@ -1387,11 +1398,20 @@ export function OsrIntroScroll() {
         />
       )}
 
+      {/* Compact chapter wipe: covers story layers only. */}
+      {isCompactViewport ? (
+        <div
+          data-compact-empty-beat
+          className="pointer-events-none fixed inset-x-0 top-[var(--navbar-height)] bottom-0 z-[90] bg-white opacity-0"
+          aria-hidden
+        />
+      ) : null}
+
       {/* Phase 1 — typing hero */}
       <section
         ref={sectionZeroRef}
         id="intro-zero"
-        className={`${sectionShell} z-[7]`}
+        className={sectionShell}
         style={sectionShellStyle}
         aria-label="Introduction"
       >

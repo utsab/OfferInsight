@@ -7,7 +7,6 @@ type IntroAgreementsSectionProps = {
   sectionShell: string;
   sectionStyle?: CSSProperties;
   sectionRef: RefObject<HTMLElement | null>;
-  /** Compact: tighter padding + left gutter for the fixed page-indicator line. */
   compactLayout?: boolean;
 };
 
@@ -28,7 +27,7 @@ export function IntroAgreementsSection({
       <div
         className={
           compactLayout
-            ? 'flex h-full w-full flex-col items-center justify-center py-6 pl-10 pr-4'
+            ? 'flex h-full w-full flex-col items-center justify-center px-4 py-6'
             : 'flex h-full w-full flex-col items-center justify-center px-4 sm:px-8'
         }
       >
