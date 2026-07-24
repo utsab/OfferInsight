@@ -37,11 +37,6 @@ export function getViewportBelowNavbar(): number {
   return Math.max(window.innerHeight - getSiteNavbarHeightPx(), 320);
 }
 
-/** Absolute viewport Y for a point `offsetVh` below the navbar. */
-export function getViewportOffsetTopPx(offsetVh: number): number {
-  return getSiteNavbarHeightPx() + (offsetVh / 100) * getViewportBelowNavbar();
-}
-
 /** Keep scrubbed ScrollTrigger timelines aligned with the current scroll position. */
 export function syncScrollTrackAnimations(scrollTrack: HTMLElement): void {
   ScrollTrigger.getAll().forEach((st) => {
@@ -54,12 +49,6 @@ export function syncScrollTrackAnimations(scrollTrack: HTMLElement): void {
     }
     st.animation.progress(st.progress);
   });
-}
-
-export function getOsrSceneConfig(offsetVh: number) {
-  return {
-    startPx: Math.round(offsetVh * getViewportBelowNavbar()),
-  };
 }
 
 export const PERSONAL_BAR_CONTENT_START_VH = 140;
@@ -122,13 +111,11 @@ export function applyScrollTrackHeight(track: HTMLElement, endDistancePx: number
   track.style.height = `${Math.round(window.innerHeight + endDistancePx)}px`;
 }
 
-/** Document Y of the scroll track top (offsetTop is 0 vs intro root — use this for scrollTo). */
-export function getScrollTrackDocumentTopPx(scrollTrack: HTMLElement): number {
+function getScrollTrackDocumentTopPx(scrollTrack: HTMLElement): number {
   return scrollTrack.getBoundingClientRect().top + window.scrollY;
 }
 
-/** Pixels scrolled into the track from its top. */
-export function getScrollTrackRelativePx(scrollTrack: HTMLElement): number {
+function getScrollTrackRelativePx(scrollTrack: HTMLElement): number {
   return Math.max(window.scrollY - getScrollTrackDocumentTopPx(scrollTrack), 0);
 }
 
@@ -146,18 +133,9 @@ export function preserveScrollTrackProgress(
   updateLayout();
 
   const afterHeight = Math.max(scrollTrack.offsetHeight, 1);
-  scrollToTrackOffsetPx(scrollTrack, progress * afterHeight, 'auto');
-}
-
-/** Scroll so `offsetPx` of the track has passed the viewport top. */
-export function scrollToTrackOffsetPx(
-  scrollTrack: HTMLElement,
-  offsetPx: number,
-  behavior: ScrollBehavior = 'smooth',
-): void {
   window.scrollTo({
-    top: getScrollTrackDocumentTopPx(scrollTrack) + offsetPx,
-    behavior,
+    top: getScrollTrackDocumentTopPx(scrollTrack) + progress * afterHeight,
+    behavior: 'auto',
   });
 }
 

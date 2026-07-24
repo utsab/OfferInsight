@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
@@ -8,10 +8,7 @@ import { buildIntroScrollPhases, getPageIndicatorScrollPhase, WHOOP_ENTRANCE_CRO
 import {
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
-  getOsrSceneConfig,
   getPhaseEndVh,
-  getScrollTrackRelativePx,
-  scrollToTrackOffsetPx,
   applyScrollTrackHeight,
   getScrollTrackEndDistancePx,
   getViewportBelowNavbar,
@@ -24,14 +21,6 @@ import { TypingHeroLine } from './TypingHeroLine';
 import { IntroActionsSection } from './IntroActionsSection';
 import { IntroAgreementsSection } from './IntroAgreementsSection';
 import { WhoopPersonalBarSection } from './WhoopPersonalBarSection';
-import { IntroScrollNav } from './IntroScrollNav';
-import { computeScrollVhForAnchorTarget } from './introScrollJump';
-import {
-  buildIntroNavSections,
-  getActiveIntroNavId,
-  getIntroNavSectionProgress,
-  type IntroNavSection,
-} from './introScrollNav';
 
 gsap.registerPlugin(ScrollTrigger);
 ScrollTrigger.config({ ignoreMobileResize: true });
@@ -883,11 +872,6 @@ const STAGE_BASE_HEIGHT = 1080;
 const STAGE_WIDTH_OFFSET_PX = 2;
 /** Wider desktop still crops Whoop cards sooner — use earlier slide-in at/below this width. */
 const EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX = 1918;
-/**
- * Compact top jump nav — flip to `true` to show it again.
- * Desktop left-rail nav is unaffected either way.
- */
-const ENABLE_COMPACT_INTRO_JUMP_NAV = false;
 
 function applyIntroStartFrame(
   sectionZero: HTMLElement,
@@ -925,9 +909,6 @@ export function OsrIntroScroll() {
   const introRootRef = useRef<HTMLDivElement>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [stageScale, setStageScale] = useState(1);
-  const [introNavSections, setIntroNavSections] = useState<IntroNavSection[]>([]);
-  const [activeNavId, setActiveNavId] = useState('intro');
-  const [activeNavProgress, setActiveNavProgress] = useState(0);
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const sectionZeroRef = useRef<HTMLElement>(null);
   const sectionOneRef = useRef<HTMLElement>(null);
@@ -947,58 +928,6 @@ export function OsrIntroScroll() {
   const lastCompactViewportRef = useRef<boolean | null>(null);
   const scheduleLayoutSyncRef = useRef<(() => void) | null>(null);
   const skipNextStageScaleSyncRef = useRef(true);
-  const showIntroJumpNav = !isCompactViewport || ENABLE_COMPACT_INTRO_JUMP_NAV;
-
-  const scrollToNavSection = useCallback((section: IntroNavSection) => {
-    const track = scrollTrackRef.current;
-    if (!track) return;
-
-    if (section.id === 'intro') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    const anchorJump = section.anchorJump;
-    if (anchorJump) {
-      const anchor = document.getElementById(anchorJump.anchorId);
-      if (anchor) {
-        const jumpVh = computeScrollVhForAnchorTarget(
-          track,
-          anchor,
-          anchorJump.targetFromTopVh,
-          anchorJump.scrollMinVh,
-          anchorJump.scrollMaxVh,
-        );
-        scrollToTrackOffsetPx(track, getOsrSceneConfig(jumpVh).startPx);
-        return;
-      }
-    }
-
-    scrollToTrackOffsetPx(track, getOsrSceneConfig(section.jumpVh).startPx);
-  }, []);
-
-  useEffect(() => {
-    if (!showIntroJumpNav) return;
-    const track = scrollTrackRef.current;
-    if (!track || introNavSections.length === 0) return;
-
-    const updateActive = () => {
-      const vh = getViewportBelowNavbar();
-      const relativePx = getScrollTrackRelativePx(track);
-      const relativeVh = relativePx / vh;
-      const activeId = getActiveIntroNavId(introNavSections, relativeVh);
-      setActiveNavId(activeId);
-      setActiveNavProgress(getIntroNavSectionProgress(introNavSections, relativeVh, activeId));
-    };
-
-    updateActive();
-    window.addEventListener('scroll', updateActive, { passive: true });
-    ScrollTrigger.addEventListener('refresh', updateActive);
-    return () => {
-      window.removeEventListener('scroll', updateActive);
-      ScrollTrigger.removeEventListener('refresh', updateActive);
-    };
-  }, [introNavSections, showIntroJumpNav]);
 
   useEffect(() => {
     const previousOverscroll = document.documentElement.style.overscrollBehaviorY;
@@ -1129,7 +1058,7 @@ export function OsrIntroScroll() {
       let layoutScrubEndDistancePx = 0;
       let layoutSyncCancelled = false;
       // Never preserve progress until the initial reset wave finishes. Browser restoration
-      // (and compact↔desktop remounts that jump to top) can land mid-page between
+      // (and compact↔desktop remounts that scroll to top) can land mid-page between
       // scrollTo(0,0) and the first layout sync.
       let forceResetScroll = true;
 
@@ -1231,15 +1160,6 @@ export function OsrIntroScroll() {
           // create — otherwise ST initializes mid-page and scrub snaps layers twice.
           applyScrollTrackHeight(scrollTrack, scrubEndDistancePx);
           layoutScrubEndDistancePx = scrubEndDistancePx;
-          setIntroNavSections(
-            buildIntroNavSections(
-              {
-                whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
-                actionsScroll: phases.actionsScroll,
-              },
-              { scrollTrackEndVh },
-            ),
-          );
           ScrollTrigger.clearScrollMemory();
           window.scrollTo(0, 0);
           ScrollTrigger.update();
@@ -1458,16 +1378,6 @@ export function OsrIntroScroll() {
         style={sectionShellStyle}
         aria-hidden
       />
-
-      {showIntroJumpNav && (
-        <IntroScrollNav
-          sections={introNavSections}
-          activeId={activeNavId}
-          activeProgress={activeNavProgress}
-          onSelect={scrollToNavSection}
-          compactLayout={isCompactViewport}
-        />
-      )}
 
       {/* Compact Typing→Who wipe: solid white covering all story layers for one viewport of scroll. */}
       {isCompactViewport ? (
