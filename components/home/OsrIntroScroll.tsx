@@ -1,18 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import { buildIntroScrollPhases, getOsrScrollHeightVh, getPageIndicatorScrollPhase, WHOOP_ENTRANCE_CROSSFADE_SHARE } from './osrIntroTimeline';
+import { buildIntroScrollPhases, getPageIndicatorScrollPhase, WHOOP_ENTRANCE_CROSSFADE_SHARE } from './osrIntroTimeline';
 import {
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
-  getOsrSceneConfig,
   getPhaseEndVh,
-  getScrollTrackRelativePx,
-  scrollToTrackOffsetPx,
   applyScrollTrackHeight,
+  getScrollTrackEndDistancePx,
   getViewportBelowNavbar,
   measurePersonalBarContentHeight,
   syncScrollTrackAnimations,
@@ -23,14 +21,6 @@ import { TypingHeroLine } from './TypingHeroLine';
 import { IntroActionsSection } from './IntroActionsSection';
 import { IntroAgreementsSection } from './IntroAgreementsSection';
 import { WhoopPersonalBarSection } from './WhoopPersonalBarSection';
-import { IntroScrollNav } from './IntroScrollNav';
-import { computeScrollVhForAnchorTarget } from './introScrollJump';
-import {
-  buildIntroNavSections,
-  getActiveIntroNavId,
-  getIntroNavSectionProgress,
-  type IntroNavSection,
-} from './introScrollNav';
 
 gsap.registerPlugin(ScrollTrigger);
 ScrollTrigger.config({ ignoreMobileResize: true });
@@ -56,9 +46,24 @@ function holdTween(
 }
 
 /**
- * Compact chapter handoff wipe: rises with outgoing fade, clears with incoming fade.
- * Kiss at outEnd === inAt — brief white when scrolling slowly.
+ * Compact Contact handoff is sequential (Whoop out → Contact in), each leg at least
+ * COMPACT_ACTIONS_HANDOFF_MIN_VH, then a short settle so opacity 1 is not only at progress 1.
  */
+const COMPACT_ACTIONS_HANDOFF_MIN_VH = 0.12;
+const COMPACT_CONTACT_SETTLE_VH = 0.45;
+
+function getCompactActionsScrollTrackEndVh(actionsScroll: {
+  at: number;
+  durationPercent: number;
+}): number {
+  const handoffVh = Math.max(
+    actionsScroll.durationPercent / 100,
+    COMPACT_ACTIONS_HANDOFF_MIN_VH,
+  );
+  return actionsScroll.at + handoffVh * 2 + COMPACT_CONTACT_SETTLE_VH;
+}
+
+/** Compact wipe: fromTo so reverse scrub does not re-capture mid-opacity starts. */
 function attachCompactWipeHandoff(
   timeline: gsap.core.Timeline,
   wipe: HTMLElement | null,
@@ -69,13 +74,15 @@ function attachCompactWipeHandoff(
   holdZeroUntil: number,
 ) {
   if (!wipe) return;
-  timeline.to(
+  timeline.fromTo(
     wipe,
+    { opacity: 0 },
     { opacity: 1, duration: outDurationVh, immediateRender: false },
     outAt,
   );
-  timeline.to(
+  timeline.fromTo(
     wipe,
+    { opacity: 1 },
     { opacity: 0, duration: inDurationVh, immediateRender: false },
     inAt,
   );
@@ -120,9 +127,10 @@ function createCompactMasterTimeline(params: {
   whoopPersonalBarIIIPanelBg: HTMLElement | null;
   whoopPersonalBarIIICards: HTMLElement[];
   emptyBeatOverlay: HTMLElement | null;
-  agreementsScrollLine: HTMLElement | null;
+  pageIndicator: HTMLElement | null;
   scrollTrack: HTMLElement;
-  scrollTrackEndVh: number;
+  timelineEndVh: number;
+  scrubEndDistancePx: number;
 }) {
   const {
     phases,
@@ -131,13 +139,13 @@ function createCompactMasterTimeline(params: {
     whoopPersonalBarIIIPanelBg,
     whoopPersonalBarIIICards,
     emptyBeatOverlay,
-    agreementsScrollLine,
+    pageIndicator,
     scrollTrack,
-    scrollTrackEndVh,
+    timelineEndVh,
+    scrubEndDistancePx,
   } = params;
 
   const timeline = gsap.timeline({ defaults: { ease: 'none' } });
-  const timelineEndVh = scrollTrackEndVh;
   const wipe = emptyBeatOverlay;
 
   const typingAt = phases.typingFadeOut.at;
@@ -167,7 +175,10 @@ function createCompactMasterTimeline(params: {
   const whoopInAt = phases.whoopPersonalBarScroll.at;
   const whoopInEnd = whoopInAt + whoopHandoffDur;
   const actionsAt = phases.actionsScroll.at;
-  const actionsDur = Math.max(phases.actionsScroll.durationPercent / 100, 0.12);
+  const actionsDur = Math.max(
+    phases.actionsScroll.durationPercent / 100,
+    COMPACT_ACTIONS_HANDOFF_MIN_VH,
+  );
   const actionsEnd = actionsAt + actionsDur;
 
   // --- Wipe idle before first handoff ---
@@ -313,34 +324,41 @@ function createCompactMasterTimeline(params: {
     timelineEndVh,
   );
 
-  // Orange scroll cue: starts above the agreements copy and climbs upward only
-  // (never down through the text) while agreements stays on screen.
-  if (agreementsScrollLine) {
-    // Climb across fade-in + marquee hold so travel feels slower.
-    const climbAt = agreementsInAt;
-    const climbDur = Math.max(whoopInAt - climbAt, 0.01);
-    holdTween(timeline, agreementsScrollLine, { opacity: 0, y: 0 }, 0, agreementsInAt);
-    timeline.to(
-      agreementsScrollLine,
-      { opacity: 1, duration: agreementsInDur, immediateRender: false },
-      agreementsInAt,
+  // Compact page indicator: in front for Typing + Agreements; behind for Who + How.
+  // Lift above the wipe during handoffs that land on a "behind" phase so it doesn't flash.
+  if (pageIndicator) {
+    // Bar: top 88% + h 38% → bottom ~126%.
+    const exitTravelVh = 130;
+    const exitEndVh = Math.max(
+      whoopInAt + Math.max(whoopPhaseDur * 0.2, whoopHandoffDur),
+      whoopInAt + 0.01,
     );
+    const zFront = 91;
+    const zBehind = 7;
+
+    gsap.set(pageIndicator, { zIndex: zFront });
+    // Typing (and typing→who wipe): in front
+    timeline.set(pageIndicator, { zIndex: zFront }, 0);
+    // Who steady: behind copy
+    timeline.set(pageIndicator, { zIndex: zBehind }, whoInEnd);
+    // Who→How wipe: briefly in front, then behind for How
+    timeline.set(pageIndicator, { zIndex: zFront }, whoOutAt);
+    timeline.set(pageIndicator, { zIndex: zBehind }, howInEnd);
+    // How→Agreements wipe + Agreements: in front through exit
+    timeline.set(pageIndicator, { zIndex: zFront }, howOutAt);
+
+    holdTween(timeline, pageIndicator, { opacity: 1 }, 0, exitEndVh);
     timeline.fromTo(
-      agreementsScrollLine,
+      pageIndicator,
       { y: 0 },
-      { y: '-28vh', duration: climbDur, immediateRender: false, ease: 'none' },
-      climbAt,
-    );
-    timeline.to(
-      agreementsScrollLine,
-      { opacity: 0, duration: whoopHandoffDur, immediateRender: false },
-      whoopInAt,
+      { y: `-${exitTravelVh}vh`, duration: exitEndVh, immediateRender: false },
+      0,
     );
     holdTween(
       timeline,
-      agreementsScrollLine,
-      { opacity: 0, y: '-28vh' },
-      whoopInAt + whoopHandoffDur,
+      pageIndicator,
+      { opacity: 0, y: `-${exitTravelVh}vh` },
+      exitEndVh,
       timelineEndVh,
     );
   }
@@ -422,17 +440,19 @@ function createCompactMasterTimeline(params: {
     );
   }
 
-  timeline.to(
+  timeline.fromTo(
     sections.sectionWhoopPersonalBar,
+    { opacity: 1 },
     { opacity: 0, duration: actionsDur, immediateRender: false },
     actionsAt,
   );
   holdTween(timeline, sections.sectionWhoopPersonalBar, { opacity: 0 }, actionsEnd, timelineEndVh);
 
   // --- Contact: Whoop fully out, then Contact fades in ---
-  holdTween(timeline, sections.sectionActions, { opacity: 0 }, 0, actionsAt);
-  timeline.set(sections.sectionActions, { pointerEvents: 'none' }, 0);
   const contactVisibleAt = actionsAt + actionsDur;
+  const contactOpaqueAt = contactVisibleAt + actionsDur;
+  holdTween(timeline, sections.sectionActions, { opacity: 0 }, 0, contactVisibleAt);
+  timeline.set(sections.sectionActions, { pointerEvents: 'none' }, 0);
   attachCompactWipeHandoff(
     timeline,
     wipe,
@@ -443,26 +463,18 @@ function createCompactMasterTimeline(params: {
     timelineEndVh,
   );
   timeline.set(sections.sectionActions, { pointerEvents: 'auto' }, contactVisibleAt);
-  timeline.to(
+  timeline.fromTo(
     sections.sectionActions,
+    { opacity: 0 },
     { opacity: 1, duration: actionsDur, immediateRender: false },
     contactVisibleAt,
   );
-  holdTween(
-    timeline,
-    sections.sectionActions,
-    { opacity: 1 },
-    contactVisibleAt + actionsDur,
-    timelineEndVh,
-  );
+  holdTween(timeline, sections.sectionActions, { opacity: 1 }, contactOpaqueAt, timelineEndVh);
 
   ScrollTrigger.create({
     trigger: scrollTrack,
     start: 'top top',
-    end: () => {
-      const { startPx } = getOsrSceneConfig(scrollTrackEndVh);
-      return `top+=${startPx} top`;
-    },
+    end: () => `top+=${scrubEndDistancePx} top`,
     scrub: true,
     invalidateOnRefresh: false,
     animation: timeline,
@@ -505,9 +517,9 @@ function createPrimaryMasterTimeline(params: {
   whoopPersonalBarIIICards: HTMLElement[];
   pageIndicator: HTMLElement | null;
   emptyBeatOverlay: HTMLElement | null;
-  agreementsScrollLine: HTMLElement | null;
   scrollTrack: HTMLElement;
   scrollTrackEndVh: number;
+  scrubEndDistancePx: number;
   isCompactMode: boolean;
   useEarlyWhoopCardEntrance: boolean;
 }) {
@@ -522,9 +534,9 @@ function createPrimaryMasterTimeline(params: {
     whoopPersonalBarIIICards,
     pageIndicator,
     emptyBeatOverlay,
-    agreementsScrollLine,
     scrollTrack,
     scrollTrackEndVh,
+    scrubEndDistancePx,
     isCompactMode,
     useEarlyWhoopCardEntrance,
   } = params;
@@ -537,9 +549,10 @@ function createPrimaryMasterTimeline(params: {
       whoopPersonalBarIIIPanelBg,
       whoopPersonalBarIIICards,
       emptyBeatOverlay,
-      agreementsScrollLine,
+      pageIndicator,
       scrollTrack,
-      scrollTrackEndVh,
+      timelineEndVh: scrollTrackEndVh,
+      scrubEndDistancePx,
     });
     return;
   }
@@ -849,10 +862,7 @@ function createPrimaryMasterTimeline(params: {
   ScrollTrigger.create({
     trigger: scrollTrack,
     start: 'top top',
-    end: () => {
-      const { startPx } = getOsrSceneConfig(scrollTrackEndVh);
-      return `top+=${startPx} top`;
-    },
+    end: () => `top+=${scrubEndDistancePx} top`,
     scrub: 0.45,
     // Master timeline uses authored fromTo/to values — invalidateOnRefresh would
     // re-record starts from mid-scroll computed styles and cause phase overlap on resize.
@@ -867,11 +877,6 @@ const STAGE_BASE_HEIGHT = 1080;
 const STAGE_WIDTH_OFFSET_PX = 2;
 /** Wider desktop still crops Whoop cards sooner — use earlier slide-in at/below this width. */
 const EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX = 1918;
-/**
- * Compact top jump nav — flip to `true` to show it again.
- * Desktop left-rail nav is unaffected either way.
- */
-const ENABLE_COMPACT_INTRO_JUMP_NAV = false;
 
 function applyIntroStartFrame(
   sectionZero: HTMLElement,
@@ -891,7 +896,8 @@ function applyIntroStartFrame(
   gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
   gsap.set(sectionActions, { opacity: 0, pointerEvents: 'none' });
   if (pageIndicator) {
-    gsap.set(pageIndicator, { opacity: 1, top: '90%', y: 0 });
+    // Leave `top` to CSS (desktop 90% / compact 88%) — GSAP only drives y climb + opacity.
+    gsap.set(pageIndicator, { opacity: 1, y: 0 });
   }
 }
 
@@ -908,11 +914,7 @@ function getLayoutViewportWidthPx(): number {
 export function OsrIntroScroll() {
   const introRootRef = useRef<HTMLDivElement>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
-  const [scrollTrackEndVh, setScrollTrackEndVh] = useState(() => getOsrScrollHeightVh(false));
   const [stageScale, setStageScale] = useState(1);
-  const [introNavSections, setIntroNavSections] = useState<IntroNavSection[]>([]);
-  const [activeNavId, setActiveNavId] = useState('intro');
-  const [activeNavProgress, setActiveNavProgress] = useState(0);
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const sectionZeroRef = useRef<HTMLElement>(null);
   const sectionOneRef = useRef<HTMLElement>(null);
@@ -932,64 +934,6 @@ export function OsrIntroScroll() {
   const lastCompactViewportRef = useRef<boolean | null>(null);
   const scheduleLayoutSyncRef = useRef<(() => void) | null>(null);
   const skipNextStageScaleSyncRef = useRef(true);
-  const showIntroJumpNav = !isCompactViewport || ENABLE_COMPACT_INTRO_JUMP_NAV;
-
-  const scrollToNavSection = useCallback((section: IntroNavSection) => {
-    const track = scrollTrackRef.current;
-    if (!track) return;
-
-    if (section.id === 'intro') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    const anchorJump = section.anchorJump;
-    if (anchorJump) {
-      const anchor = document.getElementById(anchorJump.anchorId);
-      if (anchor) {
-        const jumpVh = computeScrollVhForAnchorTarget(
-          track,
-          anchor,
-          anchorJump.targetFromTopVh,
-          anchorJump.scrollMinVh,
-          anchorJump.scrollMaxVh,
-        );
-        scrollToTrackOffsetPx(track, getOsrSceneConfig(jumpVh).startPx);
-        return;
-      }
-    }
-
-    scrollToTrackOffsetPx(track, getOsrSceneConfig(section.jumpVh).startPx);
-  }, []);
-
-  useEffect(() => {
-    if (!showIntroJumpNav) return;
-    const track = scrollTrackRef.current;
-    if (!track || introNavSections.length === 0) return;
-
-    const updateActive = () => {
-      const vh = getViewportBelowNavbar();
-      const relativePx = getScrollTrackRelativePx(track);
-      const relativeVh = relativePx / vh;
-      const activeId = getActiveIntroNavId(introNavSections, relativeVh);
-      setActiveNavId(activeId);
-      setActiveNavProgress(getIntroNavSectionProgress(introNavSections, relativeVh, activeId));
-    };
-
-    updateActive();
-    window.addEventListener('scroll', updateActive, { passive: true });
-    ScrollTrigger.addEventListener('refresh', updateActive);
-    return () => {
-      window.removeEventListener('scroll', updateActive);
-      ScrollTrigger.removeEventListener('refresh', updateActive);
-    };
-  }, [introNavSections, showIntroJumpNav]);
-
-  useEffect(() => {
-    const track = scrollTrackRef.current;
-    if (!track || scrollTrackEndVh <= 0) return;
-    applyScrollTrackHeight(track, scrollTrackEndVh);
-  }, [scrollTrackEndVh]);
 
   useEffect(() => {
     const previousOverscroll = document.documentElement.style.overscrollBehaviorY;
@@ -1105,9 +1049,6 @@ export function OsrIntroScroll() {
 
       const pageIndicator = introRoot.querySelector<HTMLElement>('[data-page-indicator]');
       const emptyBeatOverlay = introRoot.querySelector<HTMLElement>('[data-compact-empty-beat]');
-      const agreementsScrollLine = introRoot.querySelector<HTMLElement>(
-        '[data-agreements-scroll-line]',
-      );
       const whoopPersonalBarIIIPanelBg = sectionWhoopPersonalBar.querySelector<HTMLElement>(
         '[data-personal-bar-iii-panel-bg]',
       );
@@ -1117,12 +1058,17 @@ export function OsrIntroScroll() {
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       let pendingLayoutSyncRaf: number | null = null;
-      let layoutScrollTrackEndVh = 0;
+      let layoutScrubEndDistancePx = 0;
       let layoutSyncCancelled = false;
       // Never preserve progress until the initial reset wave finishes. Browser restoration
-      // (and compact↔desktop remounts that jump to top) can land mid-page between
+      // (and compact↔desktop remounts that scroll to top) can land mid-page between
       // scrollTo(0,0) and the first layout sync.
       let forceResetScroll = true;
+
+      const applyTrackHeightForCurrentLayout = () => {
+        if (layoutScrubEndDistancePx <= 0) return;
+        applyScrollTrackHeight(scrollTrack, layoutScrubEndDistancePx);
+      };
 
       const scheduleLayoutSync = () => {
         if (pendingLayoutSyncRaf !== null) return;
@@ -1132,9 +1078,7 @@ export function OsrIntroScroll() {
 
           const resetScroll = forceResetScroll;
           const applyLayout = () => {
-            if (layoutScrollTrackEndVh > 0) {
-              applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
-            }
+            applyTrackHeightForCurrentLayout();
             ScrollTrigger.refresh(true);
           };
 
@@ -1198,23 +1142,27 @@ export function OsrIntroScroll() {
           };
 
           const viewportHeight = getViewportBelowNavbar();
-          const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(compactMode, {
-            viewportHeight,
-            whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
-          });
+          const { phases, motion, scrollTrackEndVh: phaseTrackEndVh } = buildIntroScrollPhases(
+            compactMode,
+            {
+              viewportHeight,
+              whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
+            },
+          );
           const { whoopEndY: whoopContentEndY } = motion;
+          // Compact Contact handoff is two sequential fades; phase end only budgets one.
+          const scrollTrackEndVh = compactMode
+            ? getCompactActionsScrollTrackEndVh(phases.actionsScroll)
+            : phaseTrackEndVh;
+          const scrubEndDistancePx = getScrollTrackEndDistancePx(
+            scrollTrackEndVh,
+            viewportHeight,
+          );
 
           // Settle track height + scroll at progress 0 before start frames / ScrollTrigger
           // create — otherwise ST initializes mid-page and scrub snaps layers twice.
-          applyScrollTrackHeight(scrollTrack, scrollTrackEndVh);
-          layoutScrollTrackEndVh = scrollTrackEndVh;
-          setScrollTrackEndVh(scrollTrackEndVh);
-          setIntroNavSections(
-            buildIntroNavSections({
-              whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
-              actionsScroll: phases.actionsScroll,
-            }),
-          );
+          applyScrollTrackHeight(scrollTrack, scrubEndDistancePx);
+          layoutScrubEndDistancePx = scrubEndDistancePx;
           ScrollTrigger.clearScrollMemory();
           window.scrollTo(0, 0);
           ScrollTrigger.update();
@@ -1244,9 +1192,6 @@ export function OsrIntroScroll() {
           }
           if (emptyBeatOverlay) {
             gsap.set(emptyBeatOverlay, { opacity: 0 });
-          }
-          if (agreementsScrollLine) {
-            gsap.set(agreementsScrollLine, { opacity: 0, y: 0 });
           }
           resetWhoLetterStartFrame();
           resetHowLetterStartFrame();
@@ -1286,9 +1231,9 @@ export function OsrIntroScroll() {
             whoopPersonalBarIIICards,
             pageIndicator: pageIndicator ?? null,
             emptyBeatOverlay,
-            agreementsScrollLine,
             scrollTrack,
             scrollTrackEndVh,
+            scrubEndDistancePx,
             isCompactMode: compactMode,
             useEarlyWhoopCardEntrance: getLayoutViewportWidthPx() <= EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX,
           });
@@ -1330,14 +1275,22 @@ export function OsrIntroScroll() {
 
       let resizeTimer: ReturnType<typeof setTimeout> | undefined;
       let lastLayoutWidth = getLayoutViewportWidthPx();
+      const onCompactChromeResize = () => {
+        if (!isCompactViewport || layoutScrubEndDistancePx <= 0) return;
+        applyTrackHeightForCurrentLayout();
+        syncScrollTrackAnimations(scrollTrack);
+      };
       const onWindowResize = () => {
         const nextLayoutWidth = getLayoutViewportWidthPx();
         const widthChanged = nextLayoutWidth !== lastLayoutWidth;
         lastLayoutWidth = nextLayoutWidth;
 
-        // On mobile/compact view, browser chrome show/hide can fire frequent resize events
-        // while scrolling; avoid refreshing triggers unless layout width actually changes.
-        if (isCompactViewport && !widthChanged) return;
+        // Chrome show/hide: retarget track to live innerHeight + frozen scrub end.
+        // Do not refresh ScrollTrigger (matches ignoreMobileResize).
+        if (isCompactViewport && !widthChanged) {
+          onCompactChromeResize();
+          return;
+        }
 
         // Crossing the compact threshold remounts GSAP with different phase timings —
         // preserving progress against the dying timeline scrubs letters/copy haywire.
@@ -1347,9 +1300,7 @@ export function OsrIntroScroll() {
         }
 
         preserveScrollTrackProgress(scrollTrack, () => {
-          if (layoutScrollTrackEndVh > 0) {
-            applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
-          }
+          applyTrackHeightForCurrentLayout();
         });
         syncScrollTrackAnimations(scrollTrack);
 
@@ -1357,6 +1308,7 @@ export function OsrIntroScroll() {
         resizeTimer = setTimeout(scheduleLayoutSync, 120);
       };
       window.addEventListener('resize', onWindowResize);
+      window.visualViewport?.addEventListener('resize', onCompactChromeResize);
 
       return () => {
         layoutSyncCancelled = true;
@@ -1367,6 +1319,7 @@ export function OsrIntroScroll() {
         scheduleLayoutSyncRef.current = null;
         window.removeEventListener('pageshow', onPageShow);
         window.removeEventListener('resize', onWindowResize);
+        window.visualViewport?.removeEventListener('resize', onCompactChromeResize);
         if (resizeTimer) clearTimeout(resizeTimer);
         ctx.revert();
         ScrollTrigger.clearScrollMemory();
@@ -1425,17 +1378,27 @@ export function OsrIntroScroll() {
         aria-hidden
       />
 
-      {showIntroJumpNav && (
-        <IntroScrollNav
-          sections={introNavSections}
-          activeId={activeNavId}
-          activeProgress={activeNavProgress}
-          onSelect={scrollToNavSection}
-          compactLayout={isCompactViewport}
+      {/*
+        Compact indicator: z toggled by scroll phase (front for Typing/Agreements,
+        behind for Who/How). Default z-7; GSAP sets inline z-index while scrubbing.
+      */}
+      {isCompactViewport ? (
+        <div
+          data-page-indicator
+          className="pointer-events-none fixed left-[20%] z-[7] h-[38%] w-0.5"
+          style={{ backgroundColor: ACCENT_CORAL, top: '88%' }}
+          aria-hidden
+        />
+      ) : (
+        <div
+          data-page-indicator
+          className="pointer-events-none fixed left-[20%] z-[21] h-[45%] w-0.5"
+          style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
+          aria-hidden
         />
       )}
 
-      {/* Compact Typing→Who wipe: solid white covering all story layers for one viewport of scroll. */}
+      {/* Compact chapter wipe: covers story layers only. */}
       {isCompactViewport ? (
         <div
           data-compact-empty-beat
@@ -1444,20 +1407,11 @@ export function OsrIntroScroll() {
         />
       ) : null}
 
-      {!isCompactViewport ? (
-        <div
-          data-page-indicator
-          className="pointer-events-none fixed left-[20%] z-[21] h-[45%] w-0.5"
-          style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
-          aria-hidden
-        />
-      ) : null}
-
       {/* Phase 1 — typing hero */}
       <section
         ref={sectionZeroRef}
         id="intro-zero"
-        className={`${sectionShell} z-[7]`}
+        className={sectionShell}
         style={sectionShellStyle}
         aria-label="Introduction"
       >

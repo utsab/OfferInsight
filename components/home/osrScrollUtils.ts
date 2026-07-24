@@ -37,11 +37,6 @@ export function getViewportBelowNavbar(): number {
   return Math.max(window.innerHeight - getSiteNavbarHeightPx(), 320);
 }
 
-/** Absolute viewport Y for a point `offsetVh` below the navbar. */
-export function getViewportOffsetTopPx(offsetVh: number): number {
-  return getSiteNavbarHeightPx() + (offsetVh / 100) * getViewportBelowNavbar();
-}
-
 /** Keep scrubbed ScrollTrigger timelines aligned with the current scroll position. */
 export function syncScrollTrackAnimations(scrollTrack: HTMLElement): void {
   ScrollTrigger.getAll().forEach((st) => {
@@ -54,12 +49,6 @@ export function syncScrollTrackAnimations(scrollTrack: HTMLElement): void {
     }
     st.animation.progress(st.progress);
   });
-}
-
-export function getOsrSceneConfig(offsetVh: number) {
-  return {
-    startPx: Math.round(offsetVh * getViewportBelowNavbar()),
-  };
 }
 
 export const PERSONAL_BAR_CONTENT_START_VH = 140;
@@ -105,31 +94,28 @@ export function getPhaseEndVh(phase: { at: number; durationPercent: number }): n
   return phase.at + phase.durationPercent / 100;
 }
 
-/**
- * Scroll track height in px — phase positions use below-navbar vh, so total
- * scrollable distance is `scrollTrackEndVh * belowNav`, plus one viewport to
- * reach the first phase.
- */
-export function getScrollTrackHeightPx(scrollTrackEndVh: number): number {
-  if (typeof window === 'undefined') return 0;
-  return Math.round(window.innerHeight + scrollTrackEndVh * getViewportBelowNavbar());
-}
-
-/** Client-only — sets scroll track height from phase end (below-navbar vh). */
-export function applyScrollTrackHeight(
-  track: HTMLElement,
+/** Scrub distance (px) for `scrollTrackEndVh` × below-navbar viewport. */
+export function getScrollTrackEndDistancePx(
   scrollTrackEndVh: number,
-): void {
-  track.style.height = `${getScrollTrackHeightPx(scrollTrackEndVh)}px`;
+  belowNavPx: number = getViewportBelowNavbar(),
+): number {
+  return Math.round(scrollTrackEndVh * belowNavPx);
 }
 
-/** Document Y of the scroll track top (offsetTop is 0 vs intro root — use this for scrollTo). */
-export function getScrollTrackDocumentTopPx(scrollTrack: HTMLElement): number {
+/**
+ * Track height = live `innerHeight` + scrub end distance.
+ * Freeze `endDistancePx` across mobile chrome toggles so max scroll stays reachable.
+ */
+export function applyScrollTrackHeight(track: HTMLElement, endDistancePx: number): void {
+  if (typeof window === 'undefined') return;
+  track.style.height = `${Math.round(window.innerHeight + endDistancePx)}px`;
+}
+
+function getScrollTrackDocumentTopPx(scrollTrack: HTMLElement): number {
   return scrollTrack.getBoundingClientRect().top + window.scrollY;
 }
 
-/** Pixels scrolled into the track from its top. */
-export function getScrollTrackRelativePx(scrollTrack: HTMLElement): number {
+function getScrollTrackRelativePx(scrollTrack: HTMLElement): number {
   return Math.max(window.scrollY - getScrollTrackDocumentTopPx(scrollTrack), 0);
 }
 
@@ -147,18 +133,9 @@ export function preserveScrollTrackProgress(
   updateLayout();
 
   const afterHeight = Math.max(scrollTrack.offsetHeight, 1);
-  scrollToTrackOffsetPx(scrollTrack, progress * afterHeight, 'auto');
-}
-
-/** Scroll so `offsetPx` of the track has passed the viewport top. */
-export function scrollToTrackOffsetPx(
-  scrollTrack: HTMLElement,
-  offsetPx: number,
-  behavior: ScrollBehavior = 'smooth',
-): void {
   window.scrollTo({
-    top: getScrollTrackDocumentTopPx(scrollTrack) + offsetPx,
-    behavior,
+    top: getScrollTrackDocumentTopPx(scrollTrack) + progress * afterHeight,
+    behavior: 'auto',
   });
 }
 

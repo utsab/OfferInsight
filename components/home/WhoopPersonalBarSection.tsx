@@ -26,7 +26,7 @@ export function WhoopPersonalBarSection({
     <PersonalBarSectionIII
       sectionShell={sectionShell}
       sectionId="intro-whoop-bar"
-      headingId="whoop-bar-heading"
+      headingId="intro-whoop-bar-heading"
       title={WHOOP_PERSONAL_BAR_TITLE}
       logoPath={WHOOP_LOGO_PATH}
       criteria={WHOOP_PERSONAL_BAR_CRITERIA}

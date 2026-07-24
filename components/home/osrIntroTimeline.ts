@@ -278,8 +278,3 @@ export function buildIntroScrollPhases(
 
   return { phases, motion, scrollTrackEndVh: getPhaseEndVh(phases.actionsScroll) };
 }
-
-/** Pre-measurement scroll track height (updated once content is measured in GSAP). */
-export function getOsrScrollHeightVh(isMobile: boolean): number {
-  return buildIntroScrollPhases(isMobile, estimatedMeasurements(isMobile)).scrollTrackEndVh;
-}
