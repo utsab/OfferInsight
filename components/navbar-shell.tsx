@@ -38,7 +38,7 @@ export function NavbarShell({ children }: NavbarShellProps) {
             }`}
           >
             <span className="sm:hidden">OSR</span>
-            <span className="hidden sm:inline">OpenSourceResumeBook</span>
+            <span className="hidden sm:inline">OpenSourceResume</span>
           </h1>
         </Link>
         <div className="user-button-container flex-shrink-0">{children}</div>

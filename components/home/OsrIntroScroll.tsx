@@ -127,7 +127,7 @@ function createCompactMasterTimeline(params: {
   whoopPersonalBarIIIPanelBg: HTMLElement | null;
   whoopPersonalBarIIICards: HTMLElement[];
   emptyBeatOverlay: HTMLElement | null;
-  agreementsScrollLine: HTMLElement | null;
+  pageIndicator: HTMLElement | null;
   scrollTrack: HTMLElement;
   timelineEndVh: number;
   scrubEndDistancePx: number;
@@ -139,7 +139,7 @@ function createCompactMasterTimeline(params: {
     whoopPersonalBarIIIPanelBg,
     whoopPersonalBarIIICards,
     emptyBeatOverlay,
-    agreementsScrollLine,
+    pageIndicator,
     scrollTrack,
     timelineEndVh,
     scrubEndDistancePx,
@@ -324,34 +324,25 @@ function createCompactMasterTimeline(params: {
     timelineEndVh,
   );
 
-  // Orange scroll cue: starts above the agreements copy and climbs upward only
-  // (never down through the text) while agreements stays on screen.
-  if (agreementsScrollLine) {
-    // Climb across fade-in + marquee hold so travel feels slower.
-    const climbAt = agreementsInAt;
-    const climbDur = Math.max(whoopInAt - climbAt, 0.01);
-    holdTween(timeline, agreementsScrollLine, { opacity: 0, y: 0 }, 0, agreementsInAt);
-    timeline.to(
-      agreementsScrollLine,
-      { opacity: 1, duration: agreementsInDur, immediateRender: false },
-      agreementsInAt,
-    );
+  // Compact page indicator: independent of phase fades/wipes (z above the white
+  // handoff). Constant-speed climb; tip clears around Agreements fade-out.
+  if (pageIndicator) {
+    // Bar: top 90% + h 68% → bottom ~158%. Travel 145 leaves a short tip into fade-out
+    // so the line doesn't vanish early mid-Agreements.
+    const exitTravelVh = 145;
+    const exitEndVh = Math.max(whoopInAt, 0.01);
+    holdTween(timeline, pageIndicator, { opacity: 1 }, 0, exitEndVh);
     timeline.fromTo(
-      agreementsScrollLine,
+      pageIndicator,
       { y: 0 },
-      { y: '-28vh', duration: climbDur, immediateRender: false, ease: 'none' },
-      climbAt,
-    );
-    timeline.to(
-      agreementsScrollLine,
-      { opacity: 0, duration: whoopHandoffDur, immediateRender: false },
-      whoopInAt,
+      { y: `-${exitTravelVh}vh`, duration: exitEndVh, immediateRender: false },
+      0,
     );
     holdTween(
       timeline,
-      agreementsScrollLine,
-      { opacity: 0, y: '-28vh' },
-      whoopInAt + whoopHandoffDur,
+      pageIndicator,
+      { opacity: 0, y: `-${exitTravelVh}vh` },
+      exitEndVh,
       timelineEndVh,
     );
   }
@@ -510,7 +501,6 @@ function createPrimaryMasterTimeline(params: {
   whoopPersonalBarIIICards: HTMLElement[];
   pageIndicator: HTMLElement | null;
   emptyBeatOverlay: HTMLElement | null;
-  agreementsScrollLine: HTMLElement | null;
   scrollTrack: HTMLElement;
   scrollTrackEndVh: number;
   scrubEndDistancePx: number;
@@ -528,7 +518,6 @@ function createPrimaryMasterTimeline(params: {
     whoopPersonalBarIIICards,
     pageIndicator,
     emptyBeatOverlay,
-    agreementsScrollLine,
     scrollTrack,
     scrollTrackEndVh,
     scrubEndDistancePx,
@@ -544,7 +533,7 @@ function createPrimaryMasterTimeline(params: {
       whoopPersonalBarIIIPanelBg,
       whoopPersonalBarIIICards,
       emptyBeatOverlay,
-      agreementsScrollLine,
+      pageIndicator,
       scrollTrack,
       timelineEndVh: scrollTrackEndVh,
       scrubEndDistancePx,
@@ -891,7 +880,8 @@ function applyIntroStartFrame(
   gsap.set(sectionWhoopPersonalBar, { opacity: 0 });
   gsap.set(sectionActions, { opacity: 0, pointerEvents: 'none' });
   if (pageIndicator) {
-    gsap.set(pageIndicator, { opacity: 1, top: '90%', y: 0 });
+    // Leave `top` to CSS (desktop 90% / compact 88%) — GSAP only drives y climb + opacity.
+    gsap.set(pageIndicator, { opacity: 1, y: 0 });
   }
 }
 
@@ -1043,9 +1033,6 @@ export function OsrIntroScroll() {
 
       const pageIndicator = introRoot.querySelector<HTMLElement>('[data-page-indicator]');
       const emptyBeatOverlay = introRoot.querySelector<HTMLElement>('[data-compact-empty-beat]');
-      const agreementsScrollLine = introRoot.querySelector<HTMLElement>(
-        '[data-agreements-scroll-line]',
-      );
       const whoopPersonalBarIIIPanelBg = sectionWhoopPersonalBar.querySelector<HTMLElement>(
         '[data-personal-bar-iii-panel-bg]',
       );
@@ -1190,9 +1177,6 @@ export function OsrIntroScroll() {
           if (emptyBeatOverlay) {
             gsap.set(emptyBeatOverlay, { opacity: 0 });
           }
-          if (agreementsScrollLine) {
-            gsap.set(agreementsScrollLine, { opacity: 0, y: 0 });
-          }
           resetWhoLetterStartFrame();
           resetHowLetterStartFrame();
           createPrimaryMasterTimeline({
@@ -1231,7 +1215,6 @@ export function OsrIntroScroll() {
             whoopPersonalBarIIICards,
             pageIndicator: pageIndicator ?? null,
             emptyBeatOverlay,
-            agreementsScrollLine,
             scrollTrack,
             scrollTrackEndVh,
             scrubEndDistancePx,
@@ -1357,10 +1340,10 @@ export function OsrIntroScroll() {
     ? 'mt-4 text-base leading-relaxed text-gray-800'
     : 'mt-5 text-lg leading-relaxed text-gray-800 md:text-4xl';
   const storyContentWidthClass = isCompactViewport
-    ? 'relative z-[2] w-[88%] max-w-3xl pt-10'
+    ? 'relative z-[2] ml-auto mr-3 w-[calc(100%-2.75rem)] max-w-3xl pt-10'
     : 'relative z-[2] w-[75%] max-w-3xl md:w-1/2';
   const heroContentWidthClass = isCompactViewport
-    ? 'w-[88%] max-w-4xl pt-10'
+    ? 'ml-auto mr-3 w-[calc(100%-2.75rem)] max-w-4xl pt-10'
     : 'w-[75%] max-w-4xl md:w-1/2';
 
   return (
@@ -1379,7 +1362,7 @@ export function OsrIntroScroll() {
         aria-hidden
       />
 
-      {/* Compact Typing→Who wipe: solid white covering all story layers for one viewport of scroll. */}
+      {/* Compact Typing→Who wipe: covers story layers only — page indicator sits above. */}
       {isCompactViewport ? (
         <div
           data-compact-empty-beat
@@ -1388,14 +1371,21 @@ export function OsrIntroScroll() {
         />
       ) : null}
 
-      {!isCompactViewport ? (
+      {isCompactViewport ? (
+        <div
+          data-page-indicator
+          className="pointer-events-none fixed left-3 z-[91] h-[68%] w-0.5 sm:left-4"
+          style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
+          aria-hidden
+        />
+      ) : (
         <div
           data-page-indicator
           className="pointer-events-none fixed left-[20%] z-[21] h-[45%] w-0.5"
           style={{ backgroundColor: ACCENT_CORAL, top: '90%' }}
           aria-hidden
         />
-      ) : null}
+      )}
 
       {/* Phase 1 — typing hero */}
       <section
