@@ -105,22 +105,21 @@ export function getPhaseEndVh(phase: { at: number; durationPercent: number }): n
   return phase.at + phase.durationPercent / 100;
 }
 
-/**
- * Scroll track height in px — phase positions use below-navbar vh, so total
- * scrollable distance is `scrollTrackEndVh * belowNav`, plus one viewport to
- * reach the first phase.
- */
-export function getScrollTrackHeightPx(scrollTrackEndVh: number): number {
-  if (typeof window === 'undefined') return 0;
-  return Math.round(window.innerHeight + scrollTrackEndVh * getViewportBelowNavbar());
+/** Scrub distance (px) for `scrollTrackEndVh` × below-navbar viewport. */
+export function getScrollTrackEndDistancePx(
+  scrollTrackEndVh: number,
+  belowNavPx: number = getViewportBelowNavbar(),
+): number {
+  return Math.round(scrollTrackEndVh * belowNavPx);
 }
 
-/** Client-only — sets scroll track height from phase end (below-navbar vh). */
-export function applyScrollTrackHeight(
-  track: HTMLElement,
-  scrollTrackEndVh: number,
-): void {
-  track.style.height = `${getScrollTrackHeightPx(scrollTrackEndVh)}px`;
+/**
+ * Track height = live `innerHeight` + scrub end distance.
+ * Freeze `endDistancePx` across mobile chrome toggles so max scroll stays reachable.
+ */
+export function applyScrollTrackHeight(track: HTMLElement, endDistancePx: number): void {
+  if (typeof window === 'undefined') return;
+  track.style.height = `${Math.round(window.innerHeight + endDistancePx)}px`;
 }
 
 /** Document Y of the scroll track top (offsetTop is 0 vs intro root — use this for scrollTo). */

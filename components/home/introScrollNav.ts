@@ -26,8 +26,8 @@ export const INTRO_NAV_MOBILE_NAV_PADDING_CLASS = 'px-3 sm:px-5';
  * **Personal Bar** — `introScrollJump.ts` aligns the first personal-bar heading
  * below the navbar.
  *
- * **Contact** — `jumpVh` is the track end (`getPhaseEndVh(actionsScroll)`); same
- * document-coordinate scroll path as other sections via `scrollToTrackOffsetPx`.
+ * **Contact** — `jumpVh` is the scroll-track end (pass `scrollTrackEndVh` when the
+ * track is longer than `getPhaseEndVh(actionsScroll)`, e.g. compact dual-leg handoff).
  */
 
 import { getPhaseEndVh } from './osrScrollUtils';
@@ -58,6 +58,11 @@ type IntroNavBuildPhases = {
   actionsScroll: IntroNavPhase;
 };
 
+type IntroNavBuildOptions = {
+  /** Actual track end vh — overrides phase-only end when provided. */
+  scrollTrackEndVh?: number;
+};
+
 /** vh below navbar for personal-bar heading alignment in anchor jumps. */
 const SCROLL_CONTENT_HEADING_TOP_VH = 14;
 
@@ -74,10 +79,13 @@ function scrollContentAnchorJump(
   };
 }
 
-export function buildIntroNavSections(phases: IntroNavBuildPhases): IntroNavSection[] {
+export function buildIntroNavSections(
+  phases: IntroNavBuildPhases,
+  options?: IntroNavBuildOptions,
+): IntroNavSection[] {
   const whoop = phases.whoopPersonalBarScroll.at;
   const actions = phases.actionsScroll.at;
-  const trackEndVh = getPhaseEndVh(phases.actionsScroll);
+  const trackEndVh = options?.scrollTrackEndVh ?? getPhaseEndVh(phases.actionsScroll);
 
   return [
     {

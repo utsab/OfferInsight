@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
-import { buildIntroScrollPhases, getOsrScrollHeightVh, getPageIndicatorScrollPhase, WHOOP_ENTRANCE_CROSSFADE_SHARE } from './osrIntroTimeline';
+import { buildIntroScrollPhases, getPageIndicatorScrollPhase, WHOOP_ENTRANCE_CROSSFADE_SHARE } from './osrIntroTimeline';
 import {
   PERSONAL_BAR_CONTENT_START_Y,
   TYPING_DESCRIPTIONS,
@@ -13,6 +13,7 @@ import {
   getScrollTrackRelativePx,
   scrollToTrackOffsetPx,
   applyScrollTrackHeight,
+  getScrollTrackEndDistancePx,
   getViewportBelowNavbar,
   measurePersonalBarContentHeight,
   syncScrollTrackAnimations,
@@ -56,9 +57,24 @@ function holdTween(
 }
 
 /**
- * Compact chapter handoff wipe: rises with outgoing fade, clears with incoming fade.
- * Kiss at outEnd === inAt — brief white when scrolling slowly.
+ * Compact Contact handoff is sequential (Whoop out → Contact in), each leg at least
+ * COMPACT_ACTIONS_HANDOFF_MIN_VH, then a short settle so opacity 1 is not only at progress 1.
  */
+const COMPACT_ACTIONS_HANDOFF_MIN_VH = 0.12;
+const COMPACT_CONTACT_SETTLE_VH = 0.45;
+
+function getCompactActionsScrollTrackEndVh(actionsScroll: {
+  at: number;
+  durationPercent: number;
+}): number {
+  const handoffVh = Math.max(
+    actionsScroll.durationPercent / 100,
+    COMPACT_ACTIONS_HANDOFF_MIN_VH,
+  );
+  return actionsScroll.at + handoffVh * 2 + COMPACT_CONTACT_SETTLE_VH;
+}
+
+/** Compact wipe: fromTo so reverse scrub does not re-capture mid-opacity starts. */
 function attachCompactWipeHandoff(
   timeline: gsap.core.Timeline,
   wipe: HTMLElement | null,
@@ -69,13 +85,15 @@ function attachCompactWipeHandoff(
   holdZeroUntil: number,
 ) {
   if (!wipe) return;
-  timeline.to(
+  timeline.fromTo(
     wipe,
+    { opacity: 0 },
     { opacity: 1, duration: outDurationVh, immediateRender: false },
     outAt,
   );
-  timeline.to(
+  timeline.fromTo(
     wipe,
+    { opacity: 1 },
     { opacity: 0, duration: inDurationVh, immediateRender: false },
     inAt,
   );
@@ -122,7 +140,8 @@ function createCompactMasterTimeline(params: {
   emptyBeatOverlay: HTMLElement | null;
   agreementsScrollLine: HTMLElement | null;
   scrollTrack: HTMLElement;
-  scrollTrackEndVh: number;
+  timelineEndVh: number;
+  scrubEndDistancePx: number;
 }) {
   const {
     phases,
@@ -133,11 +152,11 @@ function createCompactMasterTimeline(params: {
     emptyBeatOverlay,
     agreementsScrollLine,
     scrollTrack,
-    scrollTrackEndVh,
+    timelineEndVh,
+    scrubEndDistancePx,
   } = params;
 
   const timeline = gsap.timeline({ defaults: { ease: 'none' } });
-  const timelineEndVh = scrollTrackEndVh;
   const wipe = emptyBeatOverlay;
 
   const typingAt = phases.typingFadeOut.at;
@@ -167,7 +186,10 @@ function createCompactMasterTimeline(params: {
   const whoopInAt = phases.whoopPersonalBarScroll.at;
   const whoopInEnd = whoopInAt + whoopHandoffDur;
   const actionsAt = phases.actionsScroll.at;
-  const actionsDur = Math.max(phases.actionsScroll.durationPercent / 100, 0.12);
+  const actionsDur = Math.max(
+    phases.actionsScroll.durationPercent / 100,
+    COMPACT_ACTIONS_HANDOFF_MIN_VH,
+  );
   const actionsEnd = actionsAt + actionsDur;
 
   // --- Wipe idle before first handoff ---
@@ -422,17 +444,19 @@ function createCompactMasterTimeline(params: {
     );
   }
 
-  timeline.to(
+  timeline.fromTo(
     sections.sectionWhoopPersonalBar,
+    { opacity: 1 },
     { opacity: 0, duration: actionsDur, immediateRender: false },
     actionsAt,
   );
   holdTween(timeline, sections.sectionWhoopPersonalBar, { opacity: 0 }, actionsEnd, timelineEndVh);
 
   // --- Contact: Whoop fully out, then Contact fades in ---
-  holdTween(timeline, sections.sectionActions, { opacity: 0 }, 0, actionsAt);
-  timeline.set(sections.sectionActions, { pointerEvents: 'none' }, 0);
   const contactVisibleAt = actionsAt + actionsDur;
+  const contactOpaqueAt = contactVisibleAt + actionsDur;
+  holdTween(timeline, sections.sectionActions, { opacity: 0 }, 0, contactVisibleAt);
+  timeline.set(sections.sectionActions, { pointerEvents: 'none' }, 0);
   attachCompactWipeHandoff(
     timeline,
     wipe,
@@ -443,26 +467,18 @@ function createCompactMasterTimeline(params: {
     timelineEndVh,
   );
   timeline.set(sections.sectionActions, { pointerEvents: 'auto' }, contactVisibleAt);
-  timeline.to(
+  timeline.fromTo(
     sections.sectionActions,
+    { opacity: 0 },
     { opacity: 1, duration: actionsDur, immediateRender: false },
     contactVisibleAt,
   );
-  holdTween(
-    timeline,
-    sections.sectionActions,
-    { opacity: 1 },
-    contactVisibleAt + actionsDur,
-    timelineEndVh,
-  );
+  holdTween(timeline, sections.sectionActions, { opacity: 1 }, contactOpaqueAt, timelineEndVh);
 
   ScrollTrigger.create({
     trigger: scrollTrack,
     start: 'top top',
-    end: () => {
-      const { startPx } = getOsrSceneConfig(scrollTrackEndVh);
-      return `top+=${startPx} top`;
-    },
+    end: () => `top+=${scrubEndDistancePx} top`,
     scrub: true,
     invalidateOnRefresh: false,
     animation: timeline,
@@ -508,6 +524,7 @@ function createPrimaryMasterTimeline(params: {
   agreementsScrollLine: HTMLElement | null;
   scrollTrack: HTMLElement;
   scrollTrackEndVh: number;
+  scrubEndDistancePx: number;
   isCompactMode: boolean;
   useEarlyWhoopCardEntrance: boolean;
 }) {
@@ -525,6 +542,7 @@ function createPrimaryMasterTimeline(params: {
     agreementsScrollLine,
     scrollTrack,
     scrollTrackEndVh,
+    scrubEndDistancePx,
     isCompactMode,
     useEarlyWhoopCardEntrance,
   } = params;
@@ -539,7 +557,8 @@ function createPrimaryMasterTimeline(params: {
       emptyBeatOverlay,
       agreementsScrollLine,
       scrollTrack,
-      scrollTrackEndVh,
+      timelineEndVh: scrollTrackEndVh,
+      scrubEndDistancePx,
     });
     return;
   }
@@ -849,10 +868,7 @@ function createPrimaryMasterTimeline(params: {
   ScrollTrigger.create({
     trigger: scrollTrack,
     start: 'top top',
-    end: () => {
-      const { startPx } = getOsrSceneConfig(scrollTrackEndVh);
-      return `top+=${startPx} top`;
-    },
+    end: () => `top+=${scrubEndDistancePx} top`,
     scrub: 0.45,
     // Master timeline uses authored fromTo/to values — invalidateOnRefresh would
     // re-record starts from mid-scroll computed styles and cause phase overlap on resize.
@@ -908,7 +924,6 @@ function getLayoutViewportWidthPx(): number {
 export function OsrIntroScroll() {
   const introRootRef = useRef<HTMLDivElement>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
-  const [scrollTrackEndVh, setScrollTrackEndVh] = useState(() => getOsrScrollHeightVh(false));
   const [stageScale, setStageScale] = useState(1);
   const [introNavSections, setIntroNavSections] = useState<IntroNavSection[]>([]);
   const [activeNavId, setActiveNavId] = useState('intro');
@@ -984,12 +999,6 @@ export function OsrIntroScroll() {
       ScrollTrigger.removeEventListener('refresh', updateActive);
     };
   }, [introNavSections, showIntroJumpNav]);
-
-  useEffect(() => {
-    const track = scrollTrackRef.current;
-    if (!track || scrollTrackEndVh <= 0) return;
-    applyScrollTrackHeight(track, scrollTrackEndVh);
-  }, [scrollTrackEndVh]);
 
   useEffect(() => {
     const previousOverscroll = document.documentElement.style.overscrollBehaviorY;
@@ -1117,12 +1126,17 @@ export function OsrIntroScroll() {
 
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       let pendingLayoutSyncRaf: number | null = null;
-      let layoutScrollTrackEndVh = 0;
+      let layoutScrubEndDistancePx = 0;
       let layoutSyncCancelled = false;
       // Never preserve progress until the initial reset wave finishes. Browser restoration
       // (and compact↔desktop remounts that jump to top) can land mid-page between
       // scrollTo(0,0) and the first layout sync.
       let forceResetScroll = true;
+
+      const applyTrackHeightForCurrentLayout = () => {
+        if (layoutScrubEndDistancePx <= 0) return;
+        applyScrollTrackHeight(scrollTrack, layoutScrubEndDistancePx);
+      };
 
       const scheduleLayoutSync = () => {
         if (pendingLayoutSyncRaf !== null) return;
@@ -1132,9 +1146,7 @@ export function OsrIntroScroll() {
 
           const resetScroll = forceResetScroll;
           const applyLayout = () => {
-            if (layoutScrollTrackEndVh > 0) {
-              applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
-            }
+            applyTrackHeightForCurrentLayout();
             ScrollTrigger.refresh(true);
           };
 
@@ -1198,22 +1210,35 @@ export function OsrIntroScroll() {
           };
 
           const viewportHeight = getViewportBelowNavbar();
-          const { phases, motion, scrollTrackEndVh } = buildIntroScrollPhases(compactMode, {
-            viewportHeight,
-            whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
-          });
+          const { phases, motion, scrollTrackEndVh: phaseTrackEndVh } = buildIntroScrollPhases(
+            compactMode,
+            {
+              viewportHeight,
+              whoopContentHeight: measurePersonalBarContentHeight(whoopPersonalBarContent),
+            },
+          );
           const { whoopEndY: whoopContentEndY } = motion;
+          // Compact Contact handoff is two sequential fades; phase end only budgets one.
+          const scrollTrackEndVh = compactMode
+            ? getCompactActionsScrollTrackEndVh(phases.actionsScroll)
+            : phaseTrackEndVh;
+          const scrubEndDistancePx = getScrollTrackEndDistancePx(
+            scrollTrackEndVh,
+            viewportHeight,
+          );
 
           // Settle track height + scroll at progress 0 before start frames / ScrollTrigger
           // create — otherwise ST initializes mid-page and scrub snaps layers twice.
-          applyScrollTrackHeight(scrollTrack, scrollTrackEndVh);
-          layoutScrollTrackEndVh = scrollTrackEndVh;
-          setScrollTrackEndVh(scrollTrackEndVh);
+          applyScrollTrackHeight(scrollTrack, scrubEndDistancePx);
+          layoutScrubEndDistancePx = scrubEndDistancePx;
           setIntroNavSections(
-            buildIntroNavSections({
-              whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
-              actionsScroll: phases.actionsScroll,
-            }),
+            buildIntroNavSections(
+              {
+                whoopPersonalBarScroll: phases.whoopPersonalBarScroll,
+                actionsScroll: phases.actionsScroll,
+              },
+              { scrollTrackEndVh },
+            ),
           );
           ScrollTrigger.clearScrollMemory();
           window.scrollTo(0, 0);
@@ -1289,6 +1314,7 @@ export function OsrIntroScroll() {
             agreementsScrollLine,
             scrollTrack,
             scrollTrackEndVh,
+            scrubEndDistancePx,
             isCompactMode: compactMode,
             useEarlyWhoopCardEntrance: getLayoutViewportWidthPx() <= EARLY_WHOOP_CARD_ENTRANCE_MAX_WIDTH_PX,
           });
@@ -1330,14 +1356,22 @@ export function OsrIntroScroll() {
 
       let resizeTimer: ReturnType<typeof setTimeout> | undefined;
       let lastLayoutWidth = getLayoutViewportWidthPx();
+      const onCompactChromeResize = () => {
+        if (!isCompactViewport || layoutScrubEndDistancePx <= 0) return;
+        applyTrackHeightForCurrentLayout();
+        syncScrollTrackAnimations(scrollTrack);
+      };
       const onWindowResize = () => {
         const nextLayoutWidth = getLayoutViewportWidthPx();
         const widthChanged = nextLayoutWidth !== lastLayoutWidth;
         lastLayoutWidth = nextLayoutWidth;
 
-        // On mobile/compact view, browser chrome show/hide can fire frequent resize events
-        // while scrolling; avoid refreshing triggers unless layout width actually changes.
-        if (isCompactViewport && !widthChanged) return;
+        // Chrome show/hide: retarget track to live innerHeight + frozen scrub end.
+        // Do not refresh ScrollTrigger (matches ignoreMobileResize).
+        if (isCompactViewport && !widthChanged) {
+          onCompactChromeResize();
+          return;
+        }
 
         // Crossing the compact threshold remounts GSAP with different phase timings —
         // preserving progress against the dying timeline scrubs letters/copy haywire.
@@ -1347,9 +1381,7 @@ export function OsrIntroScroll() {
         }
 
         preserveScrollTrackProgress(scrollTrack, () => {
-          if (layoutScrollTrackEndVh > 0) {
-            applyScrollTrackHeight(scrollTrack, layoutScrollTrackEndVh);
-          }
+          applyTrackHeightForCurrentLayout();
         });
         syncScrollTrackAnimations(scrollTrack);
 
@@ -1357,6 +1389,7 @@ export function OsrIntroScroll() {
         resizeTimer = setTimeout(scheduleLayoutSync, 120);
       };
       window.addEventListener('resize', onWindowResize);
+      window.visualViewport?.addEventListener('resize', onCompactChromeResize);
 
       return () => {
         layoutSyncCancelled = true;
@@ -1367,6 +1400,7 @@ export function OsrIntroScroll() {
         scheduleLayoutSyncRef.current = null;
         window.removeEventListener('pageshow', onPageShow);
         window.removeEventListener('resize', onWindowResize);
+        window.visualViewport?.removeEventListener('resize', onCompactChromeResize);
         if (resizeTimer) clearTimeout(resizeTimer);
         ctx.revert();
         ScrollTrigger.clearScrollMemory();
