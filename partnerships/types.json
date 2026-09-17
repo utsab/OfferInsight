@@ -93,7 +93,7 @@
             "is_primary": true,
             "short_name": "reliability_artifact",
             "quality": "Interest in designing reliable, fault-tolerant systems", 
-            "metric": "1 artifact demonsrating an interest in designing a system to be reliable/fault-tolerant. The artifact could be a personal project, open source contribution, or a blog post).", 
+            "metric": "1 artifact demonstrating an interest in designing a system to be reliable/fault-tolerant. The artifact could be a personal project, open source contribution, or a blog post).", 
             "baby_step_column_fields": [{
                 "type": "checkbox",
                 "text": "Helper video is coming soon...",
@@ -693,6 +693,106 @@
             {
                 "type": "text",
                 "text": "In 1 sentence, explain which domain knowledge or specific skill you applied and how you used it to do something useful."
+            }]
+        },
+        "ecosystem_comments": {
+            "is_primary": true,
+            "short_name": "ecosystem_comments",
+            "quality": "Energy/Enthusiasm",
+            "metric": "Leave 12 comments across the project's ecosystem (about one per week) — forums, answering questions, PR/issue comments, etc.",
+            "plan_column_fields": [],
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "URL",
+                "text": "Link to comment/example 1 (of your top 3):"
+            },
+            {
+                "type": "URL",
+                "text": "Link to comment/example 2 (of your top 3):"
+            },
+            {
+                "type": "URL",
+                "text": "Link to comment/example 3 (of your top 3):"
+            },
+            {
+                "type": "checkbox",
+                "text": "Did you leave about 12 comments, roughly one per week?"
+            }]
+        },
+        "system_design": {
+            "is_primary": true,
+            "short_name": "system_design",
+            "quality": "Systems thinking",
+            "metric": "Name 3 complex systems you would feel comfortable explaining (e.g. cache vs RAM vs disk, how the internet works, how an LLM works, SSL handshake).",
+            "plan_column_fields": [],
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "Name 3 complex systems where you would feel comfortable explaining how it works."
+            },
+            {
+                "type": "URL",
+                "text": "Link to video or blog post where you explain one of the systems."
+            },
+            {
+                "type": "checkbox",
+                "text": "If we quizzed you on these 3, you would be able to talk about it."
+            }]
+        },
+        "help_onboarding": {
+            "is_primary": true,
+            "short_name": "help_onboarding",
+            "quality": "Initiative",
+            "metric": "Help one person get onboarded to the project.",
+            "plan_column_fields": [],
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "Name of the person you helped."
+            },
+            {
+                "type": "text",
+                "text": "In 1 or 2 sentences, describe what you did to help them get onboarded."
+            },
+            {
+                "type": "URL",
+                "text": "Link to the forum or Discord channel where you helped them."
+            },
+            {
+                "type": "text",
+                "text": "Your username/handle on that forum or Discord channel."
+            }]
+        },
+        "teach_new_proposal": {
+            "is_primary": true,
+            "short_name": "teach_new_proposal",
+            "quality": "Curiosity",
+            "metric": "Learn something new and submit a proposal to bring it into the project (teach the project).",
+            "plan_column_fields": [],
+            "baby_step_column_fields": [{
+                "type": "checkbox",
+                "text": "Coming soon...",
+                "helper_video": ""
+            }],
+            "proof_of_completion": [{
+                "type": "text",
+                "text": "In 1 or 2 sentences, describe what you learned and how it helps the project."
+            },
+            {
+                "type": "URL",
+                "text": "Link to the blog post or video."
             }]
         }
     }   
