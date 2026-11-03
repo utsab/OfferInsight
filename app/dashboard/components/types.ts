@@ -3,11 +3,10 @@
 export type ApplicationStatus = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
 export type ApplicationColumnId = 'apply' | 'messageRecruiter' | 'messageHiringManager' | 'followUp' | 'interview';
 
-export type LinkedinOutreachStatus = 'prospects' | 'sendFirstMessage' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
-export type LinkedinOutreachColumnId = 'prospects' | 'sendFirstMessage' | 'requestAccepted' | 'followUp' | 'coffeeChat' | 'askForReferral';
+export type NetworkingStatus = 'niche' | 'vibe' | 'discover' | 'offerValue' | 'pitch';
+export type NetworkingColumnId = 'niche' | 'vibe' | 'discover' | 'offerValue' | 'pitch';
 
-export type InPersonEventStatus = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
-export type EventColumnId = 'plan' | 'attended' | 'sendLinkedInRequest' | 'followUp';
+export type NetworkingNicheType = 'openSource' | 'techEvent' | 'hobby' | 'alumni' | 'partTimeJob' | 'other';
 
 export type OpenSourceStatus = 'plan' | 'babyStep' | 'inProgress' | 'done';
 export type OpenSourceColumnId = 'plan' | 'babyStep' | 'inProgress' | 'done';
@@ -29,36 +28,22 @@ export type Application = {
   userId: string;
 };
 
-export type LinkedinOutreach = {
+export type Networking = {
   id: number;
-  name: string;
-  company: string;
-  firstMessage?: string | null;
-  secondMessage?: string | null;
-  linkedInUrl?: string | null;
-  notes?: string | null;
-  status: LinkedinOutreachStatus;
+  nicheType: NetworkingNicheType;
+  nicheName: string;
+  contactName?: string | null;
+  contactLinkedInUrl?: string | null;
+  buildTrust?: string | null;
+  summary?: string | null;
+  artifact?: string | null;
+  feedback?: string | null;
+  pitchAsk?: string | null;
+  pitchResult?: string | null;
+  status: NetworkingStatus;
   dateCreated: string;
   dateModified?: string | null;
-  recievedReferral: boolean;
   userId: string;
-};
-
-export type InPersonEvent = {
-  id: number;
-  event: string;
-  date: string;
-  location?: string | null;
-  url?: string | null;
-  notes?: string | null;
-  status: InPersonEventStatus;
-  nameOfPersonSpokenTo?: string | null;
-  sentLinkedInRequest: boolean;
-  careerFair: boolean;
-  followUpMessage?: string | null;
-  userId: string;
-  dateCreated?: string;
-  dateModified?: string | null;
 };
 
 export type OpenSourceEntry = {
@@ -86,7 +71,21 @@ export const APPLICATION_COMPLETION_COLUMNS: ApplicationColumnId[] = [
   'interview',
 ];
 
-export const EVENT_COMPLETION_COLUMNS: EventColumnId[] = ['attended', 'sendLinkedInRequest', 'followUp'];
+export const NETWORKING_COMPLETION_COLUMNS: NetworkingColumnId[] = [
+  'vibe',
+  'discover',
+  'offerValue',
+  'pitch',
+];
+
+export const NETWORKING_NICHE_TYPE_LABELS: Record<NetworkingNicheType, string> = {
+  openSource: 'Open Source Project',
+  techEvent: 'Tech Conference / Event',
+  hobby: 'Non-tech Hobby',
+  alumni: 'Alumni',
+  partTimeJob: 'Part-time Job',
+  other: 'Other',
+};
 
 export const applicationStatusToColumn: Record<ApplicationStatus, ApplicationColumnId> = {
   apply: 'apply',
@@ -104,36 +103,20 @@ export const applicationColumnToStatus: Record<ApplicationColumnId, ApplicationS
   interview: 'interview',
 };
 
-export const linkedinOutreachStatusToColumn: Record<LinkedinOutreachStatus, LinkedinOutreachColumnId> = {
-  prospects: 'prospects',
-  sendFirstMessage: 'sendFirstMessage',
-  requestAccepted: 'requestAccepted',
-  followUp: 'followUp',
-  coffeeChat: 'coffeeChat',
-  askForReferral: 'askForReferral',
+export const networkingStatusToColumn: Record<NetworkingStatus, NetworkingColumnId> = {
+  niche: 'niche',
+  vibe: 'vibe',
+  discover: 'discover',
+  offerValue: 'offerValue',
+  pitch: 'pitch',
 };
 
-export const linkedinOutreachColumnToStatus: Record<LinkedinOutreachColumnId, LinkedinOutreachStatus> = {
-  prospects: 'prospects',
-  sendFirstMessage: 'sendFirstMessage',
-  requestAccepted: 'requestAccepted',
-  followUp: 'followUp',
-  coffeeChat: 'coffeeChat',
-  askForReferral: 'askForReferral',
-};
-
-export const eventStatusToColumn: Record<InPersonEventStatus, EventColumnId> = {
-  plan: 'plan',
-  attended: 'attended',
-  sendLinkedInRequest: 'sendLinkedInRequest',
-  followUp: 'followUp',
-};
-
-export const eventColumnToStatus: Record<EventColumnId, InPersonEventStatus> = {
-  plan: 'plan',
-  attended: 'attended',
-  sendLinkedInRequest: 'sendLinkedInRequest',
-  followUp: 'followUp',
+export const networkingColumnToStatus: Record<NetworkingColumnId, NetworkingStatus> = {
+  niche: 'niche',
+  vibe: 'vibe',
+  discover: 'discover',
+  offerValue: 'offerValue',
+  pitch: 'pitch',
 };
 
 export const openSourceStatusToColumn: Record<OpenSourceStatus, OpenSourceColumnId> = {
@@ -149,4 +132,3 @@ export const openSourceColumnToStatus: Record<OpenSourceColumnId, OpenSourceStat
   inProgress: 'inProgress',
   done: 'done',
 };
-

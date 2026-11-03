@@ -40,7 +40,6 @@ type OpenSourceTabProps = {
   setEditingEntry: React.Dispatch<React.SetStateAction<OpenSourceEntry | null>>;
   sensors: any;
   handleOpenSourceDragStart: (event: any) => void;
-  handleOpenSourceDragOver: (event: any) => void;
   handleOpenSourceDragEnd: (event: any) => void;
   activeOpenSourceId: string | null;
   getOpenSourceColumnOfItem: (id: string) => OpenSourceColumnId | null;
@@ -106,13 +105,6 @@ function getBabyStepHelperLinks(
   }));
 }
 
-function getOpenSourceCardBorderClass(criteriaType?: string | null): string {
-  if (criteriaType === 'ecosystem_conversation') {
-    return 'border-2 border-amber-400 bg-amber-50/60 hover:border-amber-500 hover:shadow-sm';
-  }
-  return 'border border-gray-200 hover:border-electric-blue';
-}
-
 function SortableOpenSourceCard(props: {
   card: OpenSourceEntry;
   activeOpenSourceId: string | null;
@@ -158,7 +150,7 @@ function SortableOpenSourceCard(props: {
       {...(props.readOnly ? {} : attributes)} 
       {...(props.readOnly ? {} : listeners)}
       onClick={handleClick}
-      className={`bg-white rounded-lg p-3 cursor-pointer transition-colors group relative ${getOpenSourceCardBorderClass(props.card.criteriaType)}`}
+      className="bg-white rounded-lg p-3 cursor-pointer transition-colors group relative border border-gray-200 hover:border-electric-blue"
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
@@ -1042,7 +1034,6 @@ export default function OpenSourceTab({
   setEditingEntry,
   sensors,
   handleOpenSourceDragStart,
-  handleOpenSourceDragOver,
   handleOpenSourceDragEnd,
   activeOpenSourceId,
   getOpenSourceColumnOfItem,
@@ -1947,7 +1938,7 @@ export default function OpenSourceTab({
           {isLoading ? (
         <div className="text-center py-8 text-gray-400">Loading open source entries...</div>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleOpenSourceDragStart} onDragOver={handleOpenSourceDragOver} onDragEnd={handleOpenSourceDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleOpenSourceDragStart} onDragEnd={handleOpenSourceDragEnd}>
           <div className="overflow-x-auto -mx-4 px-4">
             <div className="grid grid-cols-5 gap-3 min-w-[800px] items-stretch">
               <div className="bg-gray-100 rounded-lg p-2 flex flex-col">
@@ -2257,7 +2248,7 @@ export default function OpenSourceTab({
               if (!card) return null;
               return (
                 <div
-                  className={`rounded-lg p-3 ${getOpenSourceCardBorderClass(card.criteriaType)} bg-white`}
+                  className="rounded-lg p-3 border border-gray-200 hover:border-electric-blue bg-white"
                   style={{ touchAction: 'none' }}
                 >
                   <div className="text-gray-900 font-medium mb-1">{card.metric || 'Untitled'}</div>
