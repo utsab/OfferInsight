@@ -108,15 +108,22 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
         if (pub.source === Track.Source.ScreenShare) void stopSharing();
       });
       const publication = await room.localParticipant.setScreenShareEnabled(true);
-      if (!publication?.track) {
-        await room.disconnect();
-        roomRef.current = null;
-        throw new Error('Screen sharing was cancelled.');
-      }
+      if (!publication?.track) throw new Error('Screen sharing was cancelled.');
       if (videoRef.current) publication.track.attach(videoRef.current);
       setSharing(true);
     } catch (err) {
-      setShareError(err instanceof Error ? err.message : 'Could not start screen sharing.');
+      // Don't stay connected to the room without a screen share.
+      const room = roomRef.current;
+      roomRef.current = null;
+      if (room) await room.disconnect();
+      const blocked = err instanceof Error && (err.name === 'NotAllowedError' || /permission/i.test(err.message));
+      setShareError(
+        blocked
+          ? 'Screen sharing was cancelled or blocked by the browser. Click Share screen to try again.'
+          : err instanceof Error
+            ? err.message
+            : 'Could not start screen sharing.'
+      );
     } finally {
       setShareBusy(false);
     }
@@ -254,7 +261,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
                   </button>
                 ))}
             </div>
-            {shareError && (
+            {shareError && !finished && (
               <p className="mb-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{shareError}</p>
             )}
             <div className="relative flex-1 rounded-lg bg-gray-900 overflow-hidden flex items-center justify-center">

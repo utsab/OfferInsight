@@ -65,7 +65,7 @@ export function openingMessage(name: string | null | undefined, scheduledEnd: Da
 
 /** The host's message when the student clicks End or time runs out. */
 export function wrapUpMessage(plan: string | null): string {
-  const planPart = plan ? ` Your plan was: "${plan}".` : '';
+  const planPart = plan ? ` Your plan was: "${plan.trim().replace(/[.!\s]+$/, '')}".` : '';
   return (
     `Time to wrap up.${planPart} How did it go? Tell me what you got done, ` +
     'what is left, and anything that got in the way.'
