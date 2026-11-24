@@ -89,6 +89,7 @@ model User {
   assignedInstructorId   String?
   assignedInstructor     Instructor? @relation("AssignedStudents", fields: [assignedInstructorId], references: [id], onDelete: SetNull)
   deepWorkSlots          DeepWorkSlotSignup[]
+  deepWorkSessions       DeepWorkSession[]
 
   @@index([assignedInstructorId])
 }
@@ -268,6 +269,56 @@ model DeepWorkSlotSignup {
 
   @@unique([userId, slotKey])
   @@index([slotKey])
+}
+
+/// One occurrence of a Deep Work slot that a student joined (rows are created on join).
+model DeepWorkSession {
+  id             String                @id @default(cuid())
+  userId         String
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Slot key from app/lib/deep-work/slots.ts, or "practice" for a dev-only session
+  slotKey        String
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  status         DeepWorkSessionStatus @default(ACTIVE)
+  /// The student's plan for this session, as the AI host captured it
+  plan           String?               @db.Text
+  /// The student's end-of-session progress summary, as the AI host captured it
+  summary        String?               @db.Text
+  startedAt      DateTime              @default(now())
+  /// When the student clicked End (or time ran out) and the AI asked for a summary
+  wrapUpAt       DateTime?
+  endedAt        DateTime?
+  livekitRoom    String
+  messages       DeepWorkMessage[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@unique([userId, scheduledStart])
+  @@index([userId, status])
+}
+
+/// One chat message between a student and the AI host in a Deep Work session.
+model DeepWorkMessage {
+  id        String              @id @default(cuid())
+  sessionId String
+  session   DeepWorkSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      DeepWorkMessageRole
+  content   String              @db.Text
+  createdAt DateTime            @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+enum DeepWorkSessionStatus {
+  ACTIVE
+  WRAPPING_UP
+  COMPLETED
+}
+
+enum DeepWorkMessageRole {
+  AI
+  STUDENT
 }
 
 /// OAuth tokens for writing monthly 1:1s on the instructor's Google Calendar.

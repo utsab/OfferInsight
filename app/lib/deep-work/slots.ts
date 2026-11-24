@@ -32,6 +32,25 @@ export const DEEP_WORK_SLOTS: readonly DeepWorkSlot[] = [
 
 const MINUTE_MS = 60 * 1000;
 const SESSION_MS = DEEP_WORK_SESSION_MINUTES * MINUTE_MS;
+const JOIN_EARLY_MS = DEEP_WORK_JOIN_EARLY_MINUTES * MINUTE_MS;
+
+/** True from the join window opening until the session's scheduled end. */
+export function canJoinNow(
+  session: Pick<NextDeepWorkSession, 'joinOpensIso' | 'endIso'>,
+  now = new Date()
+): boolean {
+  const t = now.getTime();
+  return t >= Date.parse(session.joinOpensIso) && t < Date.parse(session.endIso);
+}
+
+/** The session the student can join right now, or null outside every join window. */
+export function joinableDeepWorkSession(
+  slotKeys: readonly string[],
+  now = new Date()
+): NextDeepWorkSession | null {
+  const next = nextDeepWorkSession(slotKeys, now);
+  return next && canJoinNow(next, now) ? next : null;
+}
 
 export function getDeepWorkSlot(key: string): DeepWorkSlot | undefined {
   return DEEP_WORK_SLOTS.find((slot) => slot.key === key);
@@ -113,6 +132,8 @@ export type NextDeepWorkSession = {
   slotKey: string;
   startIso: string;
   endIso: string;
+  /** When the Join button turns on (DEEP_WORK_JOIN_EARLY_MINUTES before start) */
+  joinOpensIso: string;
   /** True while the session is running now */
   inProgress: boolean;
   /** e.g. "Monday, November 30 at 7:00 PM PST" */
@@ -137,6 +158,7 @@ export function nextDeepWorkSession(
     slotKey: best.slot.key,
     startIso: best.start.toISOString(),
     endIso: end.toISOString(),
+    joinOpensIso: new Date(best.start.getTime() - JOIN_EARLY_MS).toISOString(),
     inProgress: best.start.getTime() <= now.getTime(),
     label: new Intl.DateTimeFormat('en-US', {
       timeZone: DEEP_WORK_TIMEZONE,
@@ -155,7 +177,17 @@ export type DeepWorkSchedule = {
   slotKeys: string[];
   timezone: string;
   nextSession: NextDeepWorkSession | null;
+  /** Dev-only: a "Start practice session" button is offered (see practiceModeEnabled) */
+  practiceMode: boolean;
 };
+
+/**
+ * Local testing aid: with DEEP_WORK_PRACTICE_MODE=true outside production, students can
+ * start a session at any time instead of waiting for one of their slots.
+ */
+export function practiceModeEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.NODE_ENV !== 'production' && env.DEEP_WORK_PRACTICE_MODE === 'true';
+}
 
 export function deepWorkSchedulePayload(
   slotKeys: readonly string[],
@@ -166,5 +198,6 @@ export function deepWorkSchedulePayload(
     slotKeys: sorted,
     timezone: DEEP_WORK_TIMEZONE,
     nextSession: nextDeepWorkSession(sorted, now),
+    practiceMode: practiceModeEnabled(),
   };
 }
