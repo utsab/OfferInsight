@@ -88,6 +88,7 @@ model User {
   /// Instructor this student books monthly 1:1s with; null = default instructor
   assignedInstructorId   String?
   assignedInstructor     Instructor? @relation("AssignedStudents", fields: [assignedInstructorId], references: [id], onDelete: SetNull)
+  deepWorkSlots          DeepWorkSlotSignup[]
 
   @@index([assignedInstructorId])
 }
@@ -254,6 +255,19 @@ model MissedMeeting {
   createdAt            DateTime @default(now())
 
   @@unique([userId, occurrenceStart])
+}
+
+/// One of the (up to 2) weekly Deep Work slots a student picked; repeats weekly until changed.
+model DeepWorkSlotSignup {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Key from DEEP_WORK_SLOTS in app/lib/deep-work/slots.ts, e.g. "mon-19"
+  slotKey   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, slotKey])
+  @@index([slotKey])
 }
 
 /// OAuth tokens for writing monthly 1:1s on the instructor's Google Calendar.

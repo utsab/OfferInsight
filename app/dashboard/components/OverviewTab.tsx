@@ -5,6 +5,7 @@ import { INSTRUCTOR_DISPLAY_NAME_FALLBACK } from '@/app/lib/calendar/constants';
 import { looksLikeLeetCodeUrl } from '@/app/lib/leetcode-username';
 import type { MeetingSummary } from '@/components/monthly-meeting-scheduler';
 import MustBookAlert, { type MustBookNotice } from '@/components/must-book-alert';
+import DeepWorkCard from '@/components/deep-work-card';
 import { ModalOverlay, ModalPanel } from './shared';
 
 type OpenSourceActivityItem = {
@@ -425,6 +426,8 @@ export default function OverviewTab({
           </Link>
         )}
       </div>
+
+      <DeepWorkCard instructorViewUserId={instructorViewUserId} />
 
       {leetCodeUrlModalOpen && (
         <ModalOverlay onClose={dismissLeetCodeUrlModal}>
