@@ -101,6 +101,19 @@ describe('POST /api/deep-work/sessions/join', () => {
     expect((await join(req(`${BASE}/join`, { practice: true }))).status).toBe(403);
   });
 
+  it('starts a new practice session once the last one was ended', async () => {
+    process.env.DEEP_WORK_PRACTICE_MODE = 'true';
+    db.deepWorkSession.findFirst.mockResolvedValue(null);
+    db.deepWorkSession.findUnique.mockResolvedValue(null);
+    db.deepWorkSession.create.mockImplementation(({ data }) => Promise.resolve({ id: data.id }));
+    const res = await join(req(`${BASE}/join`, { practice: true }));
+    expect(res.status).toBe(200);
+    // Only a still-running practice session is reused; one in wrap-up is not.
+    expect(db.deepWorkSession.findFirst.mock.calls[0][0].where.status).toBe('ACTIVE');
+    expect(db.deepWorkSession.create).toHaveBeenCalled();
+    delete process.env.DEEP_WORK_PRACTICE_MODE;
+  });
+
   it('refuses the instructor userId parameter', async () => {
     expect((await join(req(`${BASE}/join?userId=user-2`, {}))).status).toBe(403);
   });
