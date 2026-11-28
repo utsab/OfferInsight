@@ -7,6 +7,7 @@ import {
   joinableDeepWorkSession,
   practiceModeEnabled,
 } from '@/app/lib/deep-work/slots';
+import { livekitConfig } from '@/app/lib/deep-work/livekit';
 import { openingMessage, PRACTICE_SLOT_KEY, roomNameForSession } from '@/app/lib/deep-work/sessions';
 import { prisma } from '@/db';
 
@@ -27,7 +28,7 @@ async function findOrCreateSession(userId: string, userName: string | null, occ:
         scheduledStart: occ.scheduledStart,
         scheduledEnd: occ.scheduledEnd,
         livekitRoom: roomNameForSession(id),
-        messages: { create: { role: 'AI', content: openingMessage(userName, occ.scheduledEnd) } },
+        messages: { create: { role: 'AI', content: openingMessage(userName, occ.scheduledEnd, livekitConfig() !== null) } },
       },
     });
   } catch (error) {

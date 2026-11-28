@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Brain, Loader2, MonitorUp, MonitorX, Send, Square } from 'lucide-react';
 import { Room, RoomEvent, Track, type LocalTrackPublication } from 'livekit-client';
 import type { DeepWorkSessionPayload } from '@/app/lib/deep-work/sessions';
-import { MAX_STUDENT_MESSAGE_CHARS } from '@/app/lib/deep-work/sessions';
+import { MAX_STUDENT_MESSAGE_CHARS, shareReminderDelayMs } from '@/app/lib/deep-work/sessions';
 import {
   buildContactSheet,
   captureFrame,
@@ -127,8 +127,22 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
     [postShareAction]
   );
 
-  // Leave the LiveKit room when the page closes.
-  useEffect(() => () => void roomRef.current?.disconnect(), []);
+  // Leave the LiveKit room when the page closes, and tell the server sharing stopped
+  // (a beacon still gets sent while the page unloads).
+  useEffect(() => {
+    const onPageHide = () => {
+      if (!roomRef.current) return;
+      navigator.sendBeacon(
+        `/api/deep-work/sessions/${encodeURIComponent(sessionId)}/screen-share`,
+        new Blob([JSON.stringify({ action: 'stopped' })], { type: 'application/json' })
+      );
+    };
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
+      void roomRef.current?.disconnect();
+    };
+  }, [sessionId]);
 
   const phase = data?.session.phase;
   const finished = phase === 'done';
@@ -253,6 +267,25 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
     return () => document.removeEventListener('pointerdown', unlock);
   }, []);
 
+  // Chime once if they still haven't shared 5 minutes after joining. The Join click on the
+  // Overview tab usually lets sound play here; after a page reload, a click on the page does.
+  const shareReminderPlayed = useRef(false);
+  const reminderDelay = data ? shareReminderDelayMs(data.session, sharing) : null;
+  useEffect(() => {
+    unlockAlertSound();
+  }, []);
+  useEffect(() => {
+    if (reminderDelay === null || shareReminderPlayed.current) return;
+    const timer = setTimeout(() => {
+      const current = dataRef.current;
+      if (current && shareReminderDelayMs(current.session, roomRef.current !== null) !== null) {
+        shareReminderPlayed.current = true;
+        playAlertChime();
+      }
+    }, reminderDelay);
+    return () => clearTimeout(timer);
+  }, [reminderDelay === null, sharing]); // reschedule only when it starts/stops applying
+
   // Chime when the host asks for the summary (End clicked, or time ran out).
   const lastStatusRef = useRef<string | null>(null);
   const status = data?.session.status ?? null;
@@ -328,6 +361,8 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
   }
 
   const { session, messages, livekitConfigured } = data;
+  // Required sharing: until a check finds them on track, the chat waits for a screen share.
+  const chatLocked = session.shareRequired && session.status === 'ACTIVE' && livekitConfigured && !sharing;
   const placeholder =
     phase === 'planning'
       ? 'What will you get done this session?'
@@ -476,6 +511,24 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
                 <Link href="/dashboard" className="font-semibold text-electric-blue">
                   Back to dashboard
                 </Link>
+              </div>
+            ) : chatLocked ? (
+              <div className="border-t border-gray-200 px-4 py-4 text-sm bg-blue-50">
+                <p className="font-semibold text-gray-900">
+                  {session.nextScreenCheckAt ? 'Share your screen to continue' : 'Share your screen to start'}
+                </p>
+                <p className="text-gray-600 mt-1">
+                  Screen sharing stays on until your first check-in shows you&apos;re on track. Snapshots are never saved.
+                </p>
+                <button
+                  type="button"
+                  onClick={startSharing}
+                  disabled={shareBusy}
+                  className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-electric-blue text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {shareBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MonitorUp className="w-4 h-4" />}
+                  Share screen
+                </button>
               </div>
             ) : (
               <form onSubmit={sendMessage} className="border-t border-gray-200 p-3 flex items-end gap-2">

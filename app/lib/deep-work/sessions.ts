@@ -28,6 +28,23 @@ export function sessionPhase(session: {
   return session.plan ? 'working' : 'planning';
 }
 
+/** Chime if a student who must share still hasn't, this long after joining. */
+export const SHARE_REMINDER_MINUTES = 5;
+
+/**
+ * Milliseconds until the "you haven't shared yet" chime, or null when it doesn't apply:
+ * sharing isn't required, they're sharing now, or they already shared once this session
+ * (a scheduled screen check means sharing started at some point).
+ */
+export function shareReminderDelayMs(
+  session: Pick<DeepWorkSessionView, 'status' | 'shareRequired' | 'nextScreenCheckAt' | 'startedAt'>,
+  sharingNow: boolean,
+  now = Date.now()
+): number | null {
+  if (session.status !== 'ACTIVE' || !session.shareRequired || sharingNow || session.nextScreenCheckAt) return null;
+  return Math.max(0, Date.parse(session.startedAt) + SHARE_REMINDER_MINUTES * 60_000 - now);
+}
+
 export function roomNameForSession(sessionId: string): string {
   return `dw-${sessionId}`;
 }
@@ -53,11 +70,32 @@ export function firstName(name: string | null | undefined): string | null {
   return first ? first : null;
 }
 
+/**
+ * Screen sharing is required while a session is running until a screen check finds the
+ * student on track (an off-track check keeps it required). Without LiveKit set up there is
+ * nothing to share, so it's never required.
+ */
+export function screenShareRequired(params: {
+  status: DeepWorkSessionStatus;
+  livekitConfigured: boolean;
+  hasOnTrackCheck: boolean;
+}): boolean {
+  return params.livekitConfigured && params.status === 'ACTIVE' && !params.hasOnTrackCheck;
+}
+
 /** The host's first message, written when the session row is created. */
-export function openingMessage(name: string | null | undefined, scheduledEnd: Date): string {
+export function openingMessage(
+  name: string | null | undefined,
+  scheduledEnd: Date,
+  requireShare = false
+): string {
   const hello = firstName(name) ? `Hi ${firstName(name)}!` : 'Hi!';
+  const share = requireShare
+    ? 'First, click Share screen. Sharing stays on until your first check-in shows you on track. '
+    : '';
   return (
     `${hello} Welcome to Deep Work. You have until ${pacificClockTime(scheduledEnd)} PT. ` +
+    share +
     'What do you plan to get done in this session? The more specific, the better, ' +
     'for example "send 5 applications" or "finish the README section of my open source PR".'
   );
@@ -95,6 +133,8 @@ export type DeepWorkSessionView = {
   label: string;
   scheduledStart: string;
   scheduledEnd: string;
+  /** When the student first joined (the row was created) */
+  startedAt: string;
   status: DeepWorkSessionStatus;
   phase: DeepWorkPhase;
   plan: string | null;
@@ -105,6 +145,8 @@ export type DeepWorkSessionView = {
   nextScreenCheckAt: string | null;
   /** The last screen check asked "keep tracking or turn sharing off?" */
   pendingShareChoice: boolean;
+  /** The chat is locked until the student shares (see screenShareRequired) */
+  shareRequired: boolean;
 };
 
 /** What GET /api/deep-work/sessions/[id] and the session actions return. */
@@ -122,6 +164,7 @@ type SessionRow = {
   slotKey: string;
   scheduledStart: Date;
   scheduledEnd: Date;
+  startedAt?: Date;
   status: DeepWorkSessionStatus;
   plan: string | null;
   summary: string | null;
@@ -132,15 +175,18 @@ type SessionRow = {
   pendingShareChoice?: boolean;
 };
 
+type ViewExtras = { shareRequired?: boolean };
+
 type MessageRow = { id: string; role: DeepWorkMessageRole; content: string; createdAt: Date };
 
-export function toSessionView(row: SessionRow): DeepWorkSessionView {
+export function toSessionView(row: SessionRow, extras: ViewExtras = {}): DeepWorkSessionView {
   return {
     id: row.id,
     slotKey: row.slotKey,
     label: sessionSlotLabel(row.slotKey),
     scheduledStart: row.scheduledStart.toISOString(),
     scheduledEnd: row.scheduledEnd.toISOString(),
+    startedAt: (row.startedAt ?? row.scheduledStart).toISOString(),
     status: row.status,
     phase: sessionPhase(row),
     plan: row.plan,
@@ -150,6 +196,7 @@ export function toSessionView(row: SessionRow): DeepWorkSessionView {
     screenShareOn: row.screenShareOn ?? false,
     nextScreenCheckAt: row.nextScreenCheckAt?.toISOString() ?? null,
     pendingShareChoice: row.pendingShareChoice ?? false,
+    shareRequired: extras.shareRequired ?? false,
   };
 }
 

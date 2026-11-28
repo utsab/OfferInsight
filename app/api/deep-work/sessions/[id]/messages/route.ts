@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { anthropicConfigured, runHostTurn } from '@/app/lib/deep-work/ai-host';
-import { findOwnSession, sessionPayload, studentIdForRequest } from '@/app/lib/deep-work/session-store';
+import { findOwnSession, isShareRequired, sessionPayload, studentIdForRequest } from '@/app/lib/deep-work/session-store';
 import { sessionPhase, sessionSlotLabel, validateStudentMessage } from '@/app/lib/deep-work/sessions';
 import { prisma } from '@/db';
 
@@ -19,6 +19,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const phase = sessionPhase(session);
     if (phase === 'done') {
       return NextResponse.json({ error: 'This session is finished.' }, { status: 409 });
+    }
+    if (!session.screenShareOn && (await isShareRequired(session))) {
+      return NextResponse.json(
+        { error: 'Share your screen to keep chatting. Sharing stays on until your first check-in shows you on track.' },
+        { status: 403 }
+      );
     }
     const body = await request.json().catch(() => null);
     const invalid = validateStudentMessage(body?.content);

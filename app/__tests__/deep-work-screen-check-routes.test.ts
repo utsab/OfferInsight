@@ -2,7 +2,7 @@ jest.mock('@/db', () => ({
   prisma: {
     deepWorkSession: { findUnique: jest.fn(), findUniqueOrThrow: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
     deepWorkMessage: { create: jest.fn() },
-    deepWorkScreenCheck: { create: jest.fn() },
+    deepWorkScreenCheck: { create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
   },
 }));

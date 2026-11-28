@@ -11,6 +11,7 @@ jest.mock('@/db', () => ({
       updateMany: jest.fn(),
     },
     deepWorkMessage: { create: jest.fn(), findMany: jest.fn() },
+    deepWorkScreenCheck: { count: jest.fn() },
     $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
   },
 }));
@@ -30,6 +31,7 @@ const db = prisma as unknown as {
   deepWorkSlotSignup: { findMany: jest.Mock };
   deepWorkSession: Record<'findUnique' | 'findUniqueOrThrow' | 'findFirst' | 'create' | 'update' | 'updateMany', jest.Mock>;
   deepWorkMessage: Record<'create' | 'findMany', jest.Mock>;
+  deepWorkScreenCheck: { count: jest.Mock };
 };
 const mockHost = runHostTurn as jest.Mock;
 
@@ -62,6 +64,8 @@ beforeEach(() => {
   (getUserIdForRequest as jest.Mock).mockResolvedValue({ userId: 'user-1', error: null });
   db.user.findUnique.mockResolvedValue({ name: 'Sam Lee' });
   db.deepWorkMessage.findMany.mockResolvedValue([]);
+  db.deepWorkScreenCheck.count.mockResolvedValue(0);
+  delete process.env.LIVEKIT_URL;
 });
 
 describe('POST /api/deep-work/sessions/join', () => {
@@ -166,6 +170,48 @@ describe('POST /api/deep-work/sessions/[id]/messages', () => {
     const res = await postMessage(req(`${BASE}/s1/messages`, { content: 'hi' }), params('s1'));
     expect(res.status).toBe(502);
     expect(db.deepWorkMessage.create).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('required screen sharing', () => {
+  beforeEach(() => {
+    process.env.LIVEKIT_URL = 'wss://x.livekit.cloud';
+    process.env.LIVEKIT_API_KEY = 'k';
+    process.env.LIVEKIT_API_SECRET = 's';
+  });
+  afterEach(() => {
+    delete process.env.LIVEKIT_URL;
+    delete process.env.LIVEKIT_API_KEY;
+    delete process.env.LIVEKIT_API_SECRET;
+  });
+
+  it('blocks chat until the student shares', async () => {
+    db.deepWorkSession.findUnique.mockResolvedValue(sessionRow({ screenShareOn: false }));
+    const res = await postMessage(req(`${BASE}/s1/messages`, { content: 'hi' }), params('s1'));
+    expect(res.status).toBe(403);
+    expect(mockHost).not.toHaveBeenCalled();
+  });
+
+  it('allows chat while sharing', async () => {
+    db.deepWorkSession.findUnique.mockResolvedValue(sessionRow({ screenShareOn: true }));
+    db.deepWorkSession.findUniqueOrThrow.mockResolvedValue(sessionRow());
+    mockHost.mockResolvedValue({ reply: 'ok', plan: null, summary: null });
+    expect((await postMessage(req(`${BASE}/s1/messages`, { content: 'hi' }), params('s1'))).status).toBe(200);
+  });
+
+  it('allows chat without sharing after an on-track check', async () => {
+    db.deepWorkSession.findUnique.mockResolvedValue(sessionRow({ screenShareOn: false }));
+    db.deepWorkSession.findUniqueOrThrow.mockResolvedValue(sessionRow());
+    db.deepWorkScreenCheck.count.mockResolvedValue(1);
+    mockHost.mockResolvedValue({ reply: 'ok', plan: null, summary: null });
+    expect((await postMessage(req(`${BASE}/s1/messages`, { content: 'hi' }), params('s1'))).status).toBe(200);
+  });
+
+  it('never blocks the summary step', async () => {
+    db.deepWorkSession.findUnique.mockResolvedValue(sessionRow({ status: 'WRAPPING_UP', screenShareOn: false }));
+    db.deepWorkSession.findUniqueOrThrow.mockResolvedValue(sessionRow({ status: 'WRAPPING_UP' }));
+    mockHost.mockResolvedValue({ reply: 'What did you finish?', plan: null, summary: null });
+    expect((await postMessage(req(`${BASE}/s1/messages`, { content: 'done' }), params('s1'))).status).toBe(200);
   });
 });
 

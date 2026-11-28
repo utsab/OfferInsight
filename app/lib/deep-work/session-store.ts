@@ -3,6 +3,7 @@ import { getUserIdForRequest } from '@/app/lib/api-user-helper';
 import { livekitConfig } from '@/app/lib/deep-work/livekit';
 import { screenCheckTiming } from '@/app/lib/deep-work/screen-checks';
 import {
+  screenShareRequired,
   toMessageView,
   toSessionView,
   type DeepWorkSessionPayload,
@@ -30,13 +31,20 @@ export async function findOwnSession(sessionId: string, userId: string) {
   return session && session.userId === userId ? session : null;
 }
 
+/** True when this session's chat should stay locked until the student shares their screen. */
+export async function isShareRequired(session: { id: string; status: 'ACTIVE' | 'WRAPPING_UP' | 'COMPLETED' }) {
+  if (session.status !== 'ACTIVE' || livekitConfig() === null) return false;
+  const onTrack = await prisma.deepWorkScreenCheck.count({ where: { sessionId: session.id, onTrack: true } });
+  return screenShareRequired({ status: session.status, livekitConfigured: true, hasOnTrackCheck: onTrack > 0 });
+}
+
 export async function sessionPayload(sessionId: string): Promise<DeepWorkSessionPayload> {
   const session = await prisma.deepWorkSession.findUniqueOrThrow({
     where: { id: sessionId },
     include: { messages: { orderBy: { createdAt: 'asc' } } },
   });
   return {
-    session: toSessionView(session),
+    session: toSessionView(session, { shareRequired: await isShareRequired(session) }),
     messages: session.messages.map(toMessageView),
     livekitConfigured: livekitConfig() !== null,
     screenCheck: screenCheckTiming(),

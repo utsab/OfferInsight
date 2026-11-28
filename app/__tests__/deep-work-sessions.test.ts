@@ -1,7 +1,9 @@
 import {
   firstName,
   openingMessage,
+  screenShareRequired,
   sessionPhase,
+  shareReminderDelayMs,
   sessionSlotLabel,
   toSessionView,
   validateStudentMessage,
@@ -92,5 +94,41 @@ describe('toSessionView', () => {
       endedAt: null,
     });
     expect(view).toMatchObject({ phase: 'planning', label: 'Monday 7-9 PM', scheduledEnd: '2026-12-01T05:00:00.000Z' });
+  });
+});
+
+describe('required screen sharing', () => {
+  it('is required while active until an on-track check, and only with LiveKit set up', () => {
+    expect(screenShareRequired({ status: 'ACTIVE', livekitConfigured: true, hasOnTrackCheck: false })).toBe(true);
+    expect(screenShareRequired({ status: 'ACTIVE', livekitConfigured: true, hasOnTrackCheck: true })).toBe(false);
+    expect(screenShareRequired({ status: 'WRAPPING_UP', livekitConfigured: true, hasOnTrackCheck: false })).toBe(false);
+    expect(screenShareRequired({ status: 'ACTIVE', livekitConfigured: false, hasOnTrackCheck: false })).toBe(false);
+  });
+
+  it('asks the student to share in the opening message when required', () => {
+    expect(openingMessage('Sam', new Date(), true)).toContain('click Share screen');
+    expect(openingMessage('Sam', new Date(), false)).not.toContain('Share screen');
+  });
+});
+
+describe('shareReminderDelayMs', () => {
+  const base = {
+    status: 'ACTIVE' as const,
+    shareRequired: true,
+    nextScreenCheckAt: null,
+    startedAt: '2026-11-27T03:00:00.000Z',
+  };
+  const at = (iso: string) => Date.parse(iso);
+
+  it('counts down to 5 minutes after joining', () => {
+    expect(shareReminderDelayMs(base, false, at('2026-11-27T03:02:00Z'))).toBe(180_000);
+    expect(shareReminderDelayMs(base, false, at('2026-11-27T03:09:00Z'))).toBe(0);
+  });
+
+  it('does not apply once they share, have shared before, or sharing is not required', () => {
+    expect(shareReminderDelayMs(base, true, at('2026-11-27T03:02:00Z'))).toBeNull();
+    expect(shareReminderDelayMs({ ...base, nextScreenCheckAt: '2026-11-27T03:40:00.000Z' }, false)).toBeNull();
+    expect(shareReminderDelayMs({ ...base, shareRequired: false }, false)).toBeNull();
+    expect(shareReminderDelayMs({ ...base, status: 'WRAPPING_UP' }, false)).toBeNull();
   });
 });

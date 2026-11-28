@@ -147,4 +147,12 @@ A session nobody wraps up stays `WRAPPING_UP`. Step 4 (the Slack bot) will nudge
    - **Off track:** the message is a nudge that they seem off their stated task, and the page plays a short alert sound (`playAlertChime`, made with Web Audio and unlocked by the Share screen click, so it plays even with the tab in the background). Sharing stays on, and the next check is in 30 minutes.
 7. Checks stop when the session wraps up. `/end` also clears any pending choice.
 
+**Required sharing.** With LiveKit set up, screen sharing is required while a session is `ACTIVE` until a screen check finds the student on track (`screenShareRequired` in `app/lib/deep-work/sessions.ts`). An off-track check keeps the requirement for another 30 minutes.
+- **Chat lock:** while sharing is required and they aren't sharing, the room page replaces the chat box with a "Share your screen to start" panel ("to continue" once they've shared before), and `POST /messages` answers 403.
+- **Stopping early:** a student who stops sharing before an on-track check is locked again until they reshare. Their check schedule is kept, so stopping can't push a check back.
+- **Always allowed:** End session and the summary step never need sharing.
+- **Closing the page:** the page sends a `stopped` beacon so the server knows sharing ended.
+- **Reminder chime:** if they still haven't shared 5 minutes after joining, the page plays the chime once (`shareReminderDelayMs`).
+
+
 For local testing, `DEEP_WORK_SCREEN_CHECK_MINUTES=3` (ignored in production) shortens the interval, and frames come every interval ÷ 6.
