@@ -156,3 +156,10 @@ A session nobody wraps up stays `WRAPPING_UP`. Step 4 (the Slack bot) will nudge
 
 
 For local testing, `DEEP_WORK_SCREEN_CHECK_MINUTES=3` (ignored in production) shortens the interval, and frames come every interval ÷ 6.
+
+## Planned: notifications (step 4, Slack or SMS)
+
+On top of the reminder before each session and the summary nudge from the plan, send two messages during a session:
+
+1. **5 minutes in, not sharing yet:** remind them to share their screen. This is a session that's `ACTIVE`, more than 5 minutes past `startedAt`, with `nextScreenCheckAt` still null (sharing never started). The room page already plays a chime for the same case.
+2. **30 minutes in, drifted:** encourage them to refocus. This is a session where `firstCheckOnTrack` is `false`, sent when the 30-minute check is saved.
