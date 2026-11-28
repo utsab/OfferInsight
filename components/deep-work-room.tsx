@@ -9,7 +9,8 @@ import { MAX_STUDENT_MESSAGE_CHARS, shareReminderDelayMs } from '@/app/lib/deep-
 import {
   buildContactSheet,
   captureFrame,
-  playAlertChime,
+  playDriftAlarm,
+  playEndFanfare,
   unlockAlertSound,
   type CapturedFrame,
 } from '@/components/deep-work-screen-frames';
@@ -211,7 +212,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
       framesRef.current = [];
       if (res.ok) {
         apply(payload);
-        if ((payload as { onTrack?: boolean }).onTrack === false) playAlertChime();
+        if ((payload as { onTrack?: boolean }).onTrack === false) playDriftAlarm();
       }
       else await reload(); // e.g. another tab already ran it: pick up the new schedule
     } catch (err) {
@@ -280,7 +281,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
       const current = dataRef.current;
       if (current && shareReminderDelayMs(current.session, roomRef.current !== null) !== null) {
         shareReminderPlayed.current = true;
-        playAlertChime();
+        playDriftAlarm();
       }
     }, reminderDelay);
     return () => clearTimeout(timer);
@@ -290,7 +291,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
   const lastStatusRef = useRef<string | null>(null);
   const status = data?.session.status ?? null;
   useEffect(() => {
-    if (lastStatusRef.current === 'ACTIVE' && status === 'WRAPPING_UP') playAlertChime();
+    if (lastStatusRef.current === 'ACTIVE' && status === 'WRAPPING_UP') playEndFanfare();
     lastStatusRef.current = status;
   }, [status]);
 

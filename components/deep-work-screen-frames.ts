@@ -147,7 +147,8 @@ function trumpetNote(ctx: AudioContext, frequency: number, t: number, length: nu
   vibrato.stop(t + length + 0.02);
 }
 
-export function playAlertChime(): void {
+/** End of session: a short, upbeat trumpet fanfare. */
+export function playEndFanfare(): void {
   const ctx = alertContext;
   if (!ctx) return;
   void ctx.resume();
@@ -163,5 +164,35 @@ export function playAlertChime(): void {
   for (const [frequency, length] of notes) {
     trumpetNote(ctx, frequency, t, length);
     t += length + 0.03;
+  }
+}
+
+/** Drifted from the plan, or not sharing yet: two bursts of four sharp beeps. */
+export function playDriftAlarm(): void {
+  const ctx = alertContext;
+  if (!ctx) return;
+  void ctx.resume();
+  // An alarm-clock style alert: two bursts of four sharp beeps, alternating pitch.
+  // Square waves cut through background noise far better than the earlier sine chime.
+  const start = ctx.currentTime + 0.05;
+  const beep = 0.11;
+  const gap = 0.06;
+  const burstGap = 0.35;
+  const frequencies = [1046, 1318, 1046, 1318];
+  for (let burst = 0; burst < 2; burst++) {
+    frequencies.forEach((frequency, i) => {
+      const t = start + burst * (frequencies.length * (beep + gap) + burstGap) + i * (beep + gap);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+      gain.gain.setValueAtTime(0.35, t + beep - 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + beep);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + beep + 0.02);
+    });
   }
 }

@@ -124,7 +124,7 @@ Workflow 6 explains how screen checks use frames from this track.
    - the student clicks **End session**;
    - the page's timer reaches the scheduled end and calls the same route on its own.
 
-   Either way the page sends `POST /sessions/[id]/end`, and when the session switches to wrap-up the page plays the same chime as an off-track screen check (`playAlertChime`). Any click on the page unlocks sound beforehand.
+   Either way the page sends `POST /sessions/[id]/end`, and when the session switches to wrap-up the page plays a short trumpet fanfare (`playEndFanfare`). Any click on the page unlocks sound beforehand.
 2. The route (`app/api/deep-work/sessions/[id]/end/route.ts`) switches the session from `ACTIVE` to `WRAPPING_UP` and sets `wrapUpAt`. It uses a conditional update, so if two tabs press End only one of them posts the host's wrap-up question. That question (`wrapUpMessage`) quotes the saved plan and asks what got done.
 3. The student answers in the chat, which goes through `POST /messages` exactly as in workflow 3, now in the **summary** phase. When Claude returns a `summary`, the route saves it and marks the session `COMPLETED` with `endedAt`.
 4. The page shows the summary under the plan, disconnects any screen share, and closes the chat with a "Back to dashboard" link. Later messages to the session get a 409.
@@ -144,7 +144,7 @@ A session nobody wraps up stays `WRAPPING_UP`. Step 4 (the Slack bot) will nudge
 5. One Claude vision call (`runScreenCheck` in `app/lib/deep-work/screen-checks.ts`) sees the contact sheet and the plan. It judges **relevance and progress over time**: the same file unchanged across the frames counts as stalled, even if it's relevant. It answers `{ on_track, note, message }`.
 6. The route stores **only** a `DeepWorkScreenCheck` row (`checkedAt`, `onTrack`, a one-line `note`, `frameCount`). The image is never written to the database or logs. On the first check, the 30-minute mark, it also saves the verdict on the session as `firstCheckOnTrack`. It then posts the AI's chat message and sets `pendingShareChoice`, so the page shows two buttons: keep sharing for another 30 minutes, or turn screen sharing off.
    - **On track:** the message says what looks good and asks whether to keep tracking or turn sharing off.
-   - **Drifted:** the message tells them they seem to have drifted from their plan, and the page plays the alert chime. It offers to keep sharing for another 30 minutes to help them refocus, which is optional.
+   - **Drifted:** the message tells them they seem to have drifted from their plan, and the page plays an alarm of two bursts of beeps (`playDriftAlarm`). It offers to keep sharing for another 30 minutes to help them refocus, which is optional.
 7. Checks stop when the session wraps up. `/end` also clears any pending choice.
 
 **Required sharing.** With LiveKit set up, screen sharing is required for the first 30 minutes: while a session is `ACTIVE` and its first screen check hasn't happened (`firstCheckOnTrack` is null; `screenShareRequired` in `app/lib/deep-work/sessions.ts`). After that check, on track or not, sharing is the student's choice.
@@ -152,7 +152,7 @@ A session nobody wraps up stays `WRAPPING_UP`. Step 4 (the Slack bot) will nudge
 - **Stopping early:** stopping before the first check locks the chat again until they reshare. The check schedule is kept.
 - **Always allowed:** End session and the summary step never need sharing.
 - **Closing the page:** the page sends a `stopped` beacon so the server knows sharing ended.
-- **Reminder chime:** if they still haven't shared 5 minutes after joining, the page plays the chime once (`shareReminderDelayMs`).
+- **Reminder chime:** if they still haven't shared 5 minutes after joining, the page plays the beeping alarm once (`shareReminderDelayMs`).
 
 
 For local testing, `DEEP_WORK_SCREEN_CHECK_MINUTES=3` (ignored in production) shortens the interval, and frames come every interval ÷ 6.
