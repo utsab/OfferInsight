@@ -9,7 +9,7 @@ import { MAX_STUDENT_MESSAGE_CHARS } from '@/app/lib/deep-work/sessions';
 import {
   buildContactSheet,
   captureFrame,
-  playOffTrackAlert,
+  playAlertChime,
   unlockAlertSound,
   type CapturedFrame,
 } from '@/components/deep-work-screen-frames';
@@ -197,7 +197,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
       framesRef.current = [];
       if (res.ok) {
         apply(payload);
-        if ((payload as { onTrack?: boolean }).onTrack === false) playOffTrackAlert();
+        if ((payload as { onTrack?: boolean }).onTrack === false) playAlertChime();
       }
       else await reload(); // e.g. another tab already ran it: pick up the new schedule
     } catch (err) {
@@ -245,6 +245,21 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
       setChoiceBusy(false);
     }
   }
+
+  // Sound needs a click first: any click on the page unlocks the chime for later.
+  useEffect(() => {
+    const unlock = () => unlockAlertSound();
+    document.addEventListener('pointerdown', unlock);
+    return () => document.removeEventListener('pointerdown', unlock);
+  }, []);
+
+  // Chime when the host asks for the summary (End clicked, or time ran out).
+  const lastStatusRef = useRef<string | null>(null);
+  const status = data?.session.status ?? null;
+  useEffect(() => {
+    if (lastStatusRef.current === 'ACTIVE' && status === 'WRAPPING_UP') playAlertChime();
+    lastStatusRef.current = status;
+  }, [status]);
 
   const endSession = useCallback(async () => {
     setEnding(true);

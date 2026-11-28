@@ -124,7 +124,7 @@ Workflow 6 explains how screen checks use frames from this track.
    - the student clicks **End session**;
    - the page's timer reaches the scheduled end and calls the same route on its own.
 
-   Either way the page sends `POST /sessions/[id]/end`.
+   Either way the page sends `POST /sessions/[id]/end`, and when the session switches to wrap-up the page plays the same chime as an off-track screen check (`playAlertChime`). Any click on the page unlocks sound beforehand.
 2. The route (`app/api/deep-work/sessions/[id]/end/route.ts`) switches the session from `ACTIVE` to `WRAPPING_UP` and sets `wrapUpAt`. It uses a conditional update, so if two tabs press End only one of them posts the host's wrap-up question. That question (`wrapUpMessage`) quotes the saved plan and asks what got done.
 3. The student answers in the chat, which goes through `POST /messages` exactly as in workflow 3, now in the **summary** phase. When Claude returns a `summary`, the route saves it and marks the session `COMPLETED` with `endedAt`.
 4. The page shows the summary under the plan, disconnects any screen share, and closes the chat with a "Back to dashboard" link. Later messages to the session get a 409.
@@ -144,7 +144,7 @@ A session nobody wraps up stays `WRAPPING_UP`. Step 4 (the Slack bot) will nudge
 5. One Claude vision call (`runScreenCheck` in `app/lib/deep-work/screen-checks.ts`) sees the contact sheet and the plan. It judges **relevance and progress over time**: the same file unchanged across the frames counts as stalled, even if it's relevant. It answers `{ on_track, note, message }`.
 6. The route stores **only** a `DeepWorkScreenCheck` row (`checkedAt`, `onTrack`, a one-line `note`, `frameCount`). The image is never written to the database or logs. It also posts the AI's chat message:
    - **On track:** the message ends with "keep tracking your screen, or turn screen sharing off?" and `pendingShareChoice` is set. The page shows two buttons, which send `screen-share` with `keep` or `turn_off`. Turning it off stops the share.
-   - **Off track:** the message is a nudge that they seem off their stated task, and the page plays a short alert sound (`playOffTrackAlert`, made with Web Audio and unlocked by the Share screen click, so it plays even with the tab in the background). Sharing stays on, and the next check is in 30 minutes.
+   - **Off track:** the message is a nudge that they seem off their stated task, and the page plays a short alert sound (`playAlertChime`, made with Web Audio and unlocked by the Share screen click, so it plays even with the tab in the background). Sharing stays on, and the next check is in 30 minutes.
 7. Checks stop when the session wraps up. `/end` also clears any pending choice.
 
 For local testing, `DEEP_WORK_SCREEN_CHECK_MINUTES=3` (ignored in production) shortens the interval, and frames come every interval ÷ 6.

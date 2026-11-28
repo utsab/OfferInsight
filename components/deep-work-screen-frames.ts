@@ -110,7 +110,7 @@ export function unlockAlertSound(): void {
   }
 }
 
-export function playOffTrackAlert(): void {
+export function playAlertChime(): void {
   const ctx = alertContext;
   if (!ctx) return;
   void ctx.resume();
