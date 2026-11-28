@@ -91,3 +91,41 @@ export function buildContactSheet(frames: CapturedFrame[]): string | null {
   });
   return sheet.toDataURL('image/jpeg', 0.7);
 }
+
+/**
+ * A short two-tone alert, synthesized with Web Audio so there's no sound file to ship.
+ * Browsers only let a page play sound after a click, so call unlockAlertSound() from a
+ * click handler (Share screen) first; later alerts then play even with the tab in the background.
+ */
+let alertContext: AudioContext | null = null;
+
+export function unlockAlertSound(): void {
+  try {
+    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    alertContext ??= new Ctx();
+    void alertContext.resume();
+  } catch {
+    // no audio available: alerts stay silent
+  }
+}
+
+export function playOffTrackAlert(): void {
+  const ctx = alertContext;
+  if (!ctx) return;
+  void ctx.resume();
+  const start = ctx.currentTime + 0.05;
+  [880, 660, 880].forEach((frequency, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = frequency;
+    const t = start + i * 0.28;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.26);
+  });
+}

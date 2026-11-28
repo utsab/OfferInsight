@@ -6,7 +6,13 @@ import { ArrowLeft, Brain, Loader2, MonitorUp, MonitorX, Send, Square } from 'lu
 import { Room, RoomEvent, Track, type LocalTrackPublication } from 'livekit-client';
 import type { DeepWorkSessionPayload } from '@/app/lib/deep-work/sessions';
 import { MAX_STUDENT_MESSAGE_CHARS } from '@/app/lib/deep-work/sessions';
-import { buildContactSheet, captureFrame, type CapturedFrame } from '@/components/deep-work-screen-frames';
+import {
+  buildContactSheet,
+  captureFrame,
+  playOffTrackAlert,
+  unlockAlertSound,
+  type CapturedFrame,
+} from '@/components/deep-work-screen-frames';
 
 const FRAMES_PER_CHECK = 6;
 
@@ -132,6 +138,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
   }, [finished, stopSharing]);
 
   async function startSharing() {
+    unlockAlertSound(); // this click lets the off-track alert play later
     setShareBusy(true);
     setShareError(null);
     try {
@@ -188,7 +195,10 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
       });
       const payload = await readJson(res);
       framesRef.current = [];
-      if (res.ok) apply(payload);
+      if (res.ok) {
+        apply(payload);
+        if ((payload as { onTrack?: boolean }).onTrack === false) playOffTrackAlert();
+      }
       else await reload(); // e.g. another tab already ran it: pick up the new schedule
     } catch (err) {
       console.error('Screen check failed', err);

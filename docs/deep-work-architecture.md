@@ -144,7 +144,7 @@ A session nobody wraps up stays `WRAPPING_UP`. Step 4 (the Slack bot) will nudge
 5. One Claude vision call (`runScreenCheck` in `app/lib/deep-work/screen-checks.ts`) sees the contact sheet and the plan. It judges **relevance and progress over time**: the same file unchanged across the frames counts as stalled, even if it's relevant. It answers `{ on_track, note, message }`.
 6. The route stores **only** a `DeepWorkScreenCheck` row (`checkedAt`, `onTrack`, a one-line `note`, `frameCount`). The image is never written to the database or logs. It also posts the AI's chat message:
    - **On track:** the message ends with "keep tracking your screen, or turn screen sharing off?" and `pendingShareChoice` is set. The page shows two buttons, which send `screen-share` with `keep` or `turn_off`. Turning it off stops the share.
-   - **Off track:** the message is a nudge that they seem off their stated task. Sharing stays on, and the next check is in 30 minutes.
+   - **Off track:** the message is a nudge that they seem off their stated task, and the page plays a short alert sound (`playOffTrackAlert`, made with Web Audio and unlocked by the Share screen click, so it plays even with the tab in the background). Sharing stays on, and the next check is in 30 minutes.
 7. Checks stop when the session wraps up. `/end` also clears any pending choice.
 
 For local testing, `DEEP_WORK_SCREEN_CHECK_MINUTES=3` (ignored in production) shortens the interval, and frames come every interval ÷ 6.
