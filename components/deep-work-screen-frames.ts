@@ -93,7 +93,7 @@ export function buildContactSheet(frames: CapturedFrame[]): string | null {
 }
 
 /**
- * A short two-tone alert, synthesized with Web Audio so there's no sound file to ship.
+ * A short alert, synthesized with Web Audio so there's no sound file to ship.
  * Browsers only let a page play sound after a click, so call unlockAlertSound() from a
  * click handler (Share screen) first; later alerts then play even with the tab in the background.
  */
@@ -114,18 +114,27 @@ export function playAlertChime(): void {
   const ctx = alertContext;
   if (!ctx) return;
   void ctx.resume();
+  // An alarm-clock style alert: two bursts of four sharp beeps, alternating pitch.
+  // Square waves cut through background noise far better than the earlier sine chime.
   const start = ctx.currentTime + 0.05;
-  [880, 660, 880].forEach((frequency, i) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = frequency;
-    const t = start + i * 0.28;
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(t);
-    osc.stop(t + 0.26);
-  });
+  const beep = 0.11;
+  const gap = 0.06;
+  const burstGap = 0.35;
+  const frequencies = [1046, 1318, 1046, 1318];
+  for (let burst = 0; burst < 2; burst++) {
+    frequencies.forEach((frequency, i) => {
+      const t = start + burst * (frequencies.length * (beep + gap) + burstGap) + i * (beep + gap);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+      gain.gain.setValueAtTime(0.35, t + beep - 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + beep);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + beep + 0.02);
+    });
+  }
 }
