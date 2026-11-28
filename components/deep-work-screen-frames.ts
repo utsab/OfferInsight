@@ -110,31 +110,58 @@ export function unlockAlertSound(): void {
   }
 }
 
+/** One brass-like note: two detuned sawtooth waves through a filter that opens on the attack. */
+function trumpetNote(ctx: AudioContext, frequency: number, t: number, length: number): void {
+  const out = ctx.createGain();
+  out.gain.setValueAtTime(0.0001, t);
+  out.gain.exponentialRampToValueAtTime(0.28, t + 0.03);
+  out.gain.setValueAtTime(0.24, t + Math.max(0.05, length - 0.06));
+  out.gain.exponentialRampToValueAtTime(0.0001, t + length);
+
+  // Brass gets brighter as it's blown harder: sweep the filter open, then settle.
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.Q.value = 1.5;
+  filter.frequency.setValueAtTime(frequency * 1.5, t);
+  filter.frequency.exponentialRampToValueAtTime(frequency * 6, t + 0.05);
+  filter.frequency.exponentialRampToValueAtTime(frequency * 4, t + length);
+  filter.connect(out).connect(ctx.destination);
+
+  // A little vibrato on longer notes.
+  const vibrato = ctx.createOscillator();
+  const vibratoDepth = ctx.createGain();
+  vibrato.frequency.value = 5.5;
+  vibratoDepth.gain.value = length > 0.3 ? frequency * 0.006 : 0;
+
+  for (const detune of [-6, 6]) {
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = frequency;
+    osc.detune.value = detune;
+    vibrato.connect(vibratoDepth).connect(osc.frequency);
+    osc.connect(filter);
+    osc.start(t);
+    osc.stop(t + length + 0.02);
+  }
+  vibrato.start(t);
+  vibrato.stop(t + length + 0.02);
+}
+
 export function playAlertChime(): void {
   const ctx = alertContext;
   if (!ctx) return;
   void ctx.resume();
-  // An alarm-clock style alert: two bursts of four sharp beeps, alternating pitch.
-  // Square waves cut through background noise far better than the earlier sine chime.
+  // A short, upbeat trumpet fanfare: G4, C5, E5, then a held G5 ("ta-ta-ta-taaa").
   const start = ctx.currentTime + 0.05;
-  const beep = 0.11;
-  const gap = 0.06;
-  const burstGap = 0.35;
-  const frequencies = [1046, 1318, 1046, 1318];
-  for (let burst = 0; burst < 2; burst++) {
-    frequencies.forEach((frequency, i) => {
-      const t = start + burst * (frequencies.length * (beep + gap) + burstGap) + i * (beep + gap);
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'square';
-      osc.frequency.value = frequency;
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
-      gain.gain.setValueAtTime(0.35, t + beep - 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + beep);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + beep + 0.02);
-    });
+  const notes: [number, number][] = [
+    [392.0, 0.13],
+    [523.25, 0.13],
+    [659.25, 0.13],
+    [783.99, 0.55],
+  ];
+  let t = start;
+  for (const [frequency, length] of notes) {
+    trumpetNote(ctx, frequency, t, length);
+    t += length + 0.03;
   }
 }
