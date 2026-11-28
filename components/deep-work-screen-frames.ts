@@ -1,0 +1,93 @@
+/**
+ * Browser-only helpers for screen checks: grab a small frame from the student's own
+ * screen-share track, and tile the last few frames into one labelled contact sheet.
+ * Frames live only in memory and are dropped after each check.
+ */
+
+export const FRAME_WIDTH = 640;
+export const FRAME_HEIGHT = 360;
+const SHEET_COLUMNS = 3;
+
+export type CapturedFrame = { canvas: HTMLCanvasElement; capturedAt: Date };
+
+type ImageCaptureLike = { grabFrame(): Promise<ImageBitmap> };
+type ImageCaptureCtor = new (track: MediaStreamTrack) => ImageCaptureLike;
+
+/** Draw a source into a FRAME_WIDTH x FRAME_HEIGHT canvas, letterboxed. */
+function toFrameCanvas(source: CanvasImageSource, width: number, height: number): HTMLCanvasElement | null {
+  if (!width || !height) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = FRAME_WIDTH;
+  canvas.height = FRAME_HEIGHT;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.fillStyle = '#111827';
+  ctx.fillRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+  const scale = Math.min(FRAME_WIDTH / width, FRAME_HEIGHT / height);
+  const w = width * scale;
+  const h = height * scale;
+  ctx.drawImage(source, (FRAME_WIDTH - w) / 2, (FRAME_HEIGHT - h) / 2, w, h);
+  return canvas;
+}
+
+/**
+ * One frame from the screen-share track. ImageCapture (Chrome, Edge) keeps working while
+ * the tab is in the background; other browsers fall back to the preview <video>.
+ */
+export async function captureFrame(
+  track: MediaStreamTrack | null | undefined,
+  video: HTMLVideoElement | null
+): Promise<CapturedFrame | null> {
+  const capturedAt = new Date();
+  const ImageCapture = (globalThis as unknown as { ImageCapture?: ImageCaptureCtor }).ImageCapture;
+  if (track && track.readyState === 'live' && ImageCapture) {
+    try {
+      const bitmap = await new ImageCapture(track).grabFrame();
+      const canvas = toFrameCanvas(bitmap, bitmap.width, bitmap.height);
+      bitmap.close();
+      if (canvas) return { canvas, capturedAt };
+    } catch {
+      // fall through to the <video> element
+    }
+  }
+  if (video && video.readyState >= 2) {
+    const canvas = toFrameCanvas(video, video.videoWidth, video.videoHeight);
+    if (canvas) return { canvas, capturedAt };
+  }
+  return null;
+}
+
+function timeLabel(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+}
+
+/** Tile frames left to right, top to bottom, each labelled with its time; returns a JPEG data URL. */
+export function buildContactSheet(frames: CapturedFrame[]): string | null {
+  if (frames.length === 0) return null;
+  const columns = Math.min(SHEET_COLUMNS, frames.length);
+  const rows = Math.ceil(frames.length / SHEET_COLUMNS);
+  const sheet = document.createElement('canvas');
+  sheet.width = columns * FRAME_WIDTH;
+  sheet.height = rows * FRAME_HEIGHT;
+  const ctx = sheet.getContext('2d');
+  if (!ctx) return null;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, sheet.width, sheet.height);
+  frames.forEach((frame, i) => {
+    const x = (i % SHEET_COLUMNS) * FRAME_WIDTH;
+    const y = Math.floor(i / SHEET_COLUMNS) * FRAME_HEIGHT;
+    ctx.drawImage(frame.canvas, x, y);
+    const label = `${i + 1} · ${timeLabel(frame.capturedAt)}`;
+    ctx.font = 'bold 20px sans-serif';
+    const width = ctx.measureText(label).width + 16;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(x + 8, y + 8, width, 30);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(label, x + 16, y + 30);
+  });
+  return sheet.toDataURL('image/jpeg', 0.7);
+}

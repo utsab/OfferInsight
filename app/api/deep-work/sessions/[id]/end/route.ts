@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       // Only the first End wins, so two tabs can't post the wrap-up question twice.
       const { count } = await prisma.deepWorkSession.updateMany({
         where: { id, status: 'ACTIVE' },
-        data: { status: 'WRAPPING_UP', wrapUpAt: new Date() },
+        data: { status: 'WRAPPING_UP', wrapUpAt: new Date(), pendingShareChoice: false },
       });
       if (count === 1) {
         await prisma.deepWorkMessage.create({

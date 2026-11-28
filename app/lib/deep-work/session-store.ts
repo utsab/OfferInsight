@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getUserIdForRequest } from '@/app/lib/api-user-helper';
 import { livekitConfig } from '@/app/lib/deep-work/livekit';
+import { screenCheckTiming } from '@/app/lib/deep-work/screen-checks';
 import {
   toMessageView,
   toSessionView,
@@ -38,5 +39,6 @@ export async function sessionPayload(sessionId: string): Promise<DeepWorkSession
     session: toSessionView(session),
     messages: session.messages.map(toMessageView),
     livekitConfigured: livekitConfig() !== null,
+    screenCheck: screenCheckTiming(),
   };
 }

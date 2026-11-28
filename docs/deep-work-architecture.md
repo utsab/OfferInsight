@@ -1,6 +1,6 @@
 # Deep Work architecture
 
-The parts added so far: weekly slot signup (step 1), and the session room with its AI host and screen share (step 2). Screen checks (step 3) and the Slack bot (step 4) come later.
+The parts added so far: weekly slot signup (step 1), the session room with its AI host and screen share (step 2), and the 30-minute screen checks (step 3). The Slack bot (step 4) comes later. The image below doesn't show the screen check routes yet; the Mermaid diagram does.
 
 ![Deep Work system diagram](deep-work-architecture.svg)
 
@@ -21,10 +21,12 @@ flowchart LR
     Token["POST /sessions/[id]/token<br/>signs a LiveKit JWT locally"]
     Messages["POST /sessions/[id]/messages"]
     End["POST /sessions/[id]/end"]
+    Share["POST /sessions/[id]/screen-share<br/>started, stopped, keep, turn_off"]
+    Check["POST /sessions/[id]/screen-check<br/>contact sheet of up to 6 frames"]
   end
 
   subgraph Services["Data and services"]
-    DB[("Postgres via Prisma<br/>DeepWorkSlotSignup<br/>DeepWorkSession<br/>DeepWorkMessage")]
+    DB[("Postgres via Prisma<br/>DeepWorkSlotSignup<br/>DeepWorkSession<br/>DeepWorkMessage<br/>DeepWorkScreenCheck")]
     Claude["Claude API<br/>ai-host.ts"]
     LiveKit["LiveKit Cloud<br/>room dw-[sessionId]"]
   end
@@ -36,12 +38,17 @@ flowchart LR
   Room --> Token
   Room --> Messages
   Room --> End
+  Room --> Share
+  Room --> Check
 
   Schedule --> DB
   Join --> DB
   Get --> DB
   Messages --> DB
   End --> DB
+  Share --> DB
+  Check -- "verdict only (DeepWorkScreenCheck)" --> DB
+  Check -- "contact sheet + plan (vision)" --> Claude
   Messages -- "reply, plan, summary (JSON)" --> Claude
   Room -- "screen share (WebRTC) with the token" --> LiveKit
 ```
@@ -107,7 +114,7 @@ No AI process sits in the LiveKit room. The host is stateless: each turn is rebu
 3. The browser uses `livekit-client` to connect to **LiveKit Cloud** with that token, and publishes the screen over WebRTC. The video goes straight from the browser to LiveKit, never through our server, and nothing is recorded. The page shows a local preview.
 4. If the student cancels the picker or uses the browser's own "Stop sharing" bar, the page leaves the room. Without the `LIVEKIT_*` env vars the token route answers 503 and the room runs chat-only.
 
-Step 3 (screen checks) will add a still frame from this track every 30 minutes.
+Workflow 6 explains how screen checks use frames from this track.
 
 ### 5. Ending a session and capturing the summary
 
@@ -123,3 +130,21 @@ Step 3 (screen checks) will add a still frame from this track every 30 minutes.
 4. The page shows the summary under the plan, disconnects any screen share, and closes the chat with a "Back to dashboard" link. Later messages to the session get a 409.
 
 A session nobody wraps up stays `WRAPPING_UP`. Step 4 (the Slack bot) will nudge students who haven't sent a summary.
+
+### 6. Screen checks every 30 minutes
+
+*Diagram (Mermaid): Session room → `POST /sessions/[id]/screen-share` → Postgres; Session room → `POST /sessions/[id]/screen-check` → Claude API, and the verdict → Postgres*
+
+1. When the screen share starts, the room page sends `POST /screen-share` with `{ action: "started" }`. The route (`app/api/deep-work/sessions/[id]/screen-share/route.ts`) sets `screenShareOn` and schedules `nextScreenCheckAt` 30 minutes out:
+   - **A check is already scheduled** (for example after a page refresh): it keeps that time, so a refresh can't skip a check.
+   - **That check is overdue:** it moves it one frame interval out, so the browser can collect frames first.
+2. While sharing, the page (`components/deep-work-room.tsx`) keeps one small frame every 5 minutes from its own screen-share track (`captureFrame` in `components/deep-work-screen-frames.ts`). It uses `ImageCapture`, which keeps working while the tab is in the background, and falls back to the preview video in other browsers. It keeps at most 6 frames, **in memory only**.
+3. Once `nextScreenCheckAt` has passed, the page tiles the frames into one labelled contact sheet (`buildContactSheet`, a 3x2 grid of 640x360 frames, about 300 KB as JPEG). It sends the sheet with the frame times to `POST /screen-check`, then drops the frames.
+4. The route (`app/api/deep-work/sessions/[id]/screen-check/route.ts`) checks that the session is `ACTIVE`, sharing is on, and the check is due. It then **claims** the check by moving `nextScreenCheckAt` 30 minutes ahead in a conditional update, so two tabs can't both run it. Without a saved plan it stops here, because there is nothing to compare against.
+5. One Claude vision call (`runScreenCheck` in `app/lib/deep-work/screen-checks.ts`) sees the contact sheet and the plan. It judges **relevance and progress over time**: the same file unchanged across the frames counts as stalled, even if it's relevant. It answers `{ on_track, note, message }`.
+6. The route stores **only** a `DeepWorkScreenCheck` row (`checkedAt`, `onTrack`, a one-line `note`, `frameCount`). The image is never written to the database or logs. It also posts the AI's chat message:
+   - **On track:** the message ends with "keep tracking your screen, or turn screen sharing off?" and `pendingShareChoice` is set. The page shows two buttons, which send `screen-share` with `keep` or `turn_off`. Turning it off stops the share.
+   - **Off track:** the message is a nudge that they seem off their stated task. Sharing stays on, and the next check is in 30 minutes.
+7. Checks stop when the session wraps up. `/end` also clears any pending choice.
+
+For local testing, `DEEP_WORK_SCREEN_CHECK_MINUTES=3` (ignored in production) shortens the interval, and frames come every interval ÷ 6.

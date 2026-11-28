@@ -290,7 +290,14 @@ model DeepWorkSession {
   wrapUpAt       DateTime?
   endedAt        DateTime?
   livekitRoom    String
+  /// True while the student's browser is publishing a screen share
+  screenShareOn      Boolean               @default(false)
+  /// When the next screen check is due; set when sharing first starts, so a refresh can't skip one
+  nextScreenCheckAt  DateTime?
+  /// An on-track check asked "keep tracking or turn sharing off?" and the student hasn't answered
+  pendingShareChoice Boolean               @default(false)
   messages       DeepWorkMessage[]
+  screenChecks   DeepWorkScreenCheck[]
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
 
@@ -308,6 +315,21 @@ model DeepWorkMessage {
   createdAt DateTime            @default(now())
 
   @@index([sessionId, createdAt])
+}
+
+/// The result of one 30-minute screen check. The screenshots themselves are never stored.
+model DeepWorkScreenCheck {
+  id         String          @id @default(cuid())
+  sessionId  String
+  session    DeepWorkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  checkedAt  DateTime        @default(now())
+  onTrack    Boolean
+  /// One line from the AI, e.g. "Editing resume.tex, the plan's first task"
+  note       String
+  /// How many frames the contact sheet held (fewer than 6 after a page refresh)
+  frameCount Int
+
+  @@index([sessionId, checkedAt])
 }
 
 enum DeepWorkSessionStatus {

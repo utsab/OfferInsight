@@ -6,6 +6,9 @@ import { ArrowLeft, Brain, Loader2, MonitorUp, MonitorX, Send, Square } from 'lu
 import { Room, RoomEvent, Track, type LocalTrackPublication } from 'livekit-client';
 import type { DeepWorkSessionPayload } from '@/app/lib/deep-work/sessions';
 import { MAX_STUDENT_MESSAGE_CHARS } from '@/app/lib/deep-work/sessions';
+import { buildContactSheet, captureFrame, type CapturedFrame } from '@/components/deep-work-screen-frames';
+
+const FRAMES_PER_CHECK = 6;
 
 function formatRemaining(ms: number): string {
   const totalMinutes = Math.max(0, Math.ceil(ms / 60000));
@@ -45,9 +48,39 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const autoEndSent = useRef(false);
 
+  // Screen checks: frames stay in memory only and are dropped after each check.
+  const trackRef = useRef<MediaStreamTrack | null>(null);
+  const framesRef = useRef<CapturedFrame[]>([]);
+  const lastCaptureRef = useRef(0);
+  const checkInFlightRef = useRef(false);
+  const dataRef = useRef<DeepWorkSessionPayload | null>(null);
+  const [choiceBusy, setChoiceBusy] = useState(false);
+
   const apply = useCallback((payload: Partial<DeepWorkSessionPayload>) => {
-    if (payload.session && payload.messages) setData(payload as DeepWorkSessionPayload);
+    if (payload.session && payload.messages) {
+      dataRef.current = payload as DeepWorkSessionPayload;
+      setData(payload as DeepWorkSessionPayload);
+    }
   }, []);
+
+  const reload = useCallback(async () => {
+    const res = await fetch(`/api/deep-work/sessions/${encodeURIComponent(sessionId)}`);
+    if (res.ok) apply(await readJson(res));
+  }, [sessionId, apply]);
+
+  const postShareAction = useCallback(
+    async (action: 'started' | 'stopped' | 'keep' | 'turn_off') => {
+      const res = await fetch(`/api/deep-work/sessions/${encodeURIComponent(sessionId)}/screen-share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const payload = await readJson(res);
+      apply(payload);
+      if (!res.ok) throw new Error(payload.error || 'Could not update screen sharing.');
+    },
+    [sessionId, apply]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -74,13 +107,19 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [data?.messages.length, sending]);
 
-  const stopSharing = useCallback(async () => {
-    const room = roomRef.current;
-    roomRef.current = null;
-    setSharing(false);
-    if (videoRef.current) videoRef.current.srcObject = null;
-    if (room) await room.disconnect();
-  }, []);
+  const stopSharing = useCallback(
+    async (notifyServer = true) => {
+      const room = roomRef.current;
+      roomRef.current = null;
+      trackRef.current = null;
+      framesRef.current = [];
+      setSharing(false);
+      if (videoRef.current) videoRef.current.srcObject = null;
+      if (room) await room.disconnect();
+      if (room && notifyServer) await postShareAction('stopped').catch(() => {});
+    },
+    [postShareAction]
+  );
 
   // Leave the LiveKit room when the page closes.
   useEffect(() => () => void roomRef.current?.disconnect(), []);
@@ -89,7 +128,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
   const finished = phase === 'done';
 
   useEffect(() => {
-    if (finished && roomRef.current) void stopSharing();
+    if (finished && roomRef.current) void stopSharing(false);
   }, [finished, stopSharing]);
 
   async function startSharing() {
@@ -110,7 +149,11 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
       const publication = await room.localParticipant.setScreenShareEnabled(true);
       if (!publication?.track) throw new Error('Screen sharing was cancelled.');
       if (videoRef.current) publication.track.attach(videoRef.current);
+      trackRef.current = publication.track.mediaStreamTrack;
+      framesRef.current = [];
+      lastCaptureRef.current = 0;
       setSharing(true);
+      await postShareAction('started');
     } catch (err) {
       // Don't stay connected to the room without a screen share.
       const room = roomRef.current;
@@ -126,6 +169,70 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
       );
     } finally {
       setShareBusy(false);
+    }
+  }
+
+  // Every few seconds while sharing: keep a frame every frameIntervalMs (at most 6), and
+  // when the server's nextScreenCheckAt has passed, send them as one contact sheet.
+  const runScreenCheck = useCallback(async () => {
+    if (checkInFlightRef.current) return;
+    const frames = framesRef.current;
+    const image = buildContactSheet(frames);
+    if (!image) return;
+    checkInFlightRef.current = true;
+    try {
+      const res = await fetch(`/api/deep-work/sessions/${encodeURIComponent(sessionId)}/screen-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image, frameTimes: frames.map((f) => f.capturedAt.toISOString()) }),
+      });
+      const payload = await readJson(res);
+      framesRef.current = [];
+      if (res.ok) apply(payload);
+      else await reload(); // e.g. another tab already ran it: pick up the new schedule
+    } catch (err) {
+      console.error('Screen check failed', err);
+    } finally {
+      checkInFlightRef.current = false;
+    }
+  }, [sessionId, apply, reload]);
+
+  useEffect(() => {
+    if (!sharing || !data) return;
+    const { frameIntervalMs } = data.screenCheck;
+    const tickMs = Math.max(5_000, Math.min(30_000, Math.floor(frameIntervalMs / 2)));
+    const tick = async () => {
+      const current = dataRef.current;
+      if (!current || current.session.status !== 'ACTIVE' || checkInFlightRef.current) return;
+      const t = Date.now();
+      const next = current.session.nextScreenCheckAt ? Date.parse(current.session.nextScreenCheckAt) : null;
+      const due = next !== null && t >= next;
+      const sinceLast = t - lastCaptureRef.current;
+      if (sinceLast >= frameIntervalMs || (due && sinceLast > 15_000)) {
+        const frame = await captureFrame(trackRef.current, videoRef.current);
+        if (frame) {
+          lastCaptureRef.current = t;
+          framesRef.current = [...framesRef.current, frame].slice(-FRAMES_PER_CHECK);
+        }
+      }
+      if (due && framesRef.current.length > 0) await runScreenCheck();
+    };
+    void tick();
+    const timer = setInterval(() => void tick(), tickMs);
+    return () => clearInterval(timer);
+    // Restart only when sharing toggles or the interval changes, not on every chat update.
+  }, [sharing, data?.screenCheck.frameIntervalMs, runScreenCheck]);
+
+  async function answerShareChoice(action: 'keep' | 'turn_off') {
+    setChoiceBusy(true);
+    setChatError(null);
+    try {
+      await postShareAction(action);
+      if (action === 'turn_off') await stopSharing(false);
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : 'Could not update screen sharing.');
+    } finally {
+      setChoiceBusy(false);
     }
   }
 
@@ -244,7 +351,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
                 (sharing ? (
                   <button
                     type="button"
-                    onClick={() => void stopSharing()}
+                    onClick={() => void stopSharing(true)}
                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold border border-gray-300 hover:bg-gray-100"
                   >
                     <MonitorX className="w-4 h-4" /> Stop sharing
@@ -271,7 +378,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
                   {finished
                     ? 'This session is finished.'
                     : livekitConfigured
-                      ? 'Share your screen so your session is accountable. Only you and the host can see it, and nothing is recorded.'
+                      ? 'Share your screen so your session is accountable. Every 30 minutes the host looks at a few snapshots to see how your plan is going. Snapshots are never saved, and nothing is recorded.'
                       : 'Screen sharing is not set up on this server yet. You can still work with the host in the chat.'}
                 </p>
               )}
@@ -315,6 +422,26 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
               )}
               <div ref={chatEndRef} />
             </div>
+            {session.pendingShareChoice && session.status === 'ACTIVE' && (
+              <div className="mx-4 mb-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => answerShareChoice('keep')}
+                  disabled={choiceBusy}
+                  className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-electric-blue text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  Keep tracking my screen
+                </button>
+                <button
+                  type="button"
+                  onClick={() => answerShareChoice('turn_off')}
+                  disabled={choiceBusy}
+                  className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                >
+                  Turn screen sharing off
+                </button>
+              </div>
+            )}
             {chatError && (
               <p className="mx-4 mb-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{chatError}</p>
             )}

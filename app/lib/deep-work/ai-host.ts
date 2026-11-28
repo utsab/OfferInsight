@@ -122,7 +122,7 @@ export function parseHostResponse(response: Pick<Anthropic.Beta.BetaMessage, 'co
 }
 
 let defaultClient: Anthropic | null = null;
-function client(): Anthropic {
+export function anthropicClient(): Anthropic {
   defaultClient ??= new Anthropic();
   return defaultClient;
 }
@@ -132,7 +132,7 @@ export function anthropicConfigured(env: NodeJS.ProcessEnv = process.env): boole
 }
 
 /** One host turn. Throws on API errors so the route can report them. */
-export async function runHostTurn(ctx: HostContext, api: Anthropic = client()): Promise<HostTurn> {
+export async function runHostTurn(ctx: HostContext, api: Anthropic = anthropicClient()): Promise<HostTurn> {
   const response = await api.beta.messages.create(buildHostRequest(ctx));
   return parseHostResponse(response);
 }

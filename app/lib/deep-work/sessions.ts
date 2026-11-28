@@ -101,6 +101,10 @@ export type DeepWorkSessionView = {
   summary: string | null;
   wrapUpAt: string | null;
   endedAt: string | null;
+  screenShareOn: boolean;
+  nextScreenCheckAt: string | null;
+  /** The last screen check asked "keep tracking or turn sharing off?" */
+  pendingShareChoice: boolean;
 };
 
 /** What GET /api/deep-work/sessions/[id] and the session actions return. */
@@ -109,6 +113,8 @@ export type DeepWorkSessionPayload = {
   messages: DeepWorkMessageView[];
   /** False when LIVEKIT_* env vars are missing: chat works, screen share is off */
   livekitConfigured: boolean;
+  /** How often the browser keeps a frame and sends a screen check */
+  screenCheck: { checkIntervalMs: number; frameIntervalMs: number };
 };
 
 type SessionRow = {
@@ -121,6 +127,9 @@ type SessionRow = {
   summary: string | null;
   wrapUpAt: Date | null;
   endedAt: Date | null;
+  screenShareOn?: boolean;
+  nextScreenCheckAt?: Date | null;
+  pendingShareChoice?: boolean;
 };
 
 type MessageRow = { id: string; role: DeepWorkMessageRole; content: string; createdAt: Date };
@@ -138,6 +147,9 @@ export function toSessionView(row: SessionRow): DeepWorkSessionView {
     summary: row.summary,
     wrapUpAt: row.wrapUpAt?.toISOString() ?? null,
     endedAt: row.endedAt?.toISOString() ?? null,
+    screenShareOn: row.screenShareOn ?? false,
+    nextScreenCheckAt: row.nextScreenCheckAt?.toISOString() ?? null,
+    pendingShareChoice: row.pendingShareChoice ?? false,
   };
 }
 
