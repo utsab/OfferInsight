@@ -78,7 +78,7 @@ They are on track when the screen is mostly on the plan and the work moves. Othe
 Answer in JSON:
 - "on_track": true or false.
 - "note": one line for the session record describing what you saw, e.g. "Editing resume.tex, bullets changing across frames". No personal data such as names, emails or messages you can read on screen.
-- "message": what the student sees in chat. One or two short, warm sentences, plain text. On track: say what looks good, specifically. Off track: say kindly that they seem off their stated task (or stuck on the same thing), name the plan, and suggest one next step. Don't ask a question; the app adds one when needed.`;
+- "message": what the student sees in chat. One or two short, warm sentences, plain text. On track: say what looks good, specifically. Off track: say kindly that they seem to have drifted from their stated task (or got stuck on the same thing), name the plan, and suggest one next step. Don't ask a question; the app adds one.`;
 
 const OUTPUT_SCHEMA = {
   type: 'object',
@@ -152,12 +152,12 @@ export function parseScreenCheckResponse(
   }
 }
 
-/** The chat message after a check: on track adds the keep/turn-off question. */
+/** The chat message after a check. Either way the student chooses whether to keep sharing. */
 export function screenCheckChatMessage(result: ScreenCheckResult, checkIntervalMs: number): string {
   const minutes = Math.round(checkIntervalMs / 60_000);
   return result.onTrack
     ? `${result.message} Do you want me to keep tracking your screen, or turn screen sharing off?`
-    : `${result.message} Your screen stays shared, and I'll check in again in ${minutes} minutes.`;
+    : `${result.message} If it would help you refocus, you can keep sharing your screen for another ${minutes} minutes and I'll check again. It's up to you.`;
 }
 
 export async function runScreenCheck(

@@ -296,6 +296,8 @@ model DeepWorkSession {
   nextScreenCheckAt  DateTime?
   /// An on-track check asked "keep tracking or turn sharing off?" and the student hasn't answered
   pendingShareChoice Boolean               @default(false)
+  /// Result of the first screen check (the 30-minute mark): true on track, false drifted, null not checked yet
+  firstCheckOnTrack  Boolean?
   messages       DeepWorkMessage[]
   screenChecks   DeepWorkScreenCheck[]
   createdAt      DateTime              @default(now())

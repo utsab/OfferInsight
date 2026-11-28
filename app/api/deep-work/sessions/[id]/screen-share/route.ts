@@ -53,14 +53,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
           data: keep ? { pendingShareChoice: false } : { pendingShareChoice: false, screenShareOn: false },
         }),
         prisma.deepWorkMessage.create({
-          data: { sessionId: id, role: 'STUDENT', content: keep ? 'Keep tracking my screen.' : 'Turn screen sharing off.' },
+          data: { sessionId: id, role: 'STUDENT', content: keep ? 'Keep sharing my screen.' : 'Turn screen sharing off.' },
         }),
         prisma.deepWorkMessage.create({
           data: {
             sessionId: id,
             role: 'AI',
             content: keep
-              ? `Got it. I'll check your screen again in ${minutes} minutes.`
+              ? `Got it. Screen sharing stays on, and I'll check again in ${minutes} minutes.`
               : 'Done, screen sharing is off. Keep going with your plan, and share again anytime.',
           },
         }),

@@ -71,16 +71,16 @@ export function firstName(name: string | null | undefined): string | null {
 }
 
 /**
- * Screen sharing is required while a session is running until a screen check finds the
- * student on track (an off-track check keeps it required). Without LiveKit set up there is
- * nothing to share, so it's never required.
+ * Screen sharing is required for the first 30 minutes: while a session is running and its
+ * first screen check (the 30-minute mark) hasn't happened yet. After that check, on track
+ * or not, sharing is the student's choice. Without LiveKit set up it's never required.
  */
 export function screenShareRequired(params: {
   status: DeepWorkSessionStatus;
   livekitConfigured: boolean;
-  hasOnTrackCheck: boolean;
+  firstCheckDone: boolean;
 }): boolean {
-  return params.livekitConfigured && params.status === 'ACTIVE' && !params.hasOnTrackCheck;
+  return params.livekitConfigured && params.status === 'ACTIVE' && !params.firstCheckDone;
 }
 
 /** The host's first message, written when the session row is created. */
@@ -91,7 +91,7 @@ export function openingMessage(
 ): string {
   const hello = firstName(name) ? `Hi ${firstName(name)}!` : 'Hi!';
   const share = requireShare
-    ? 'First, click Share screen. Sharing stays on until your first check-in shows you on track. '
+    ? 'First, click Share screen. The app requires screen sharing for the first 30 minutes. '
     : '';
   return (
     `${hello} Welcome to Deep Work. You have until ${pacificClockTime(scheduledEnd)} PT. ` +
@@ -143,8 +143,10 @@ export type DeepWorkSessionView = {
   endedAt: string | null;
   screenShareOn: boolean;
   nextScreenCheckAt: string | null;
-  /** The last screen check asked "keep tracking or turn sharing off?" */
+  /** The last screen check asked "keep sharing or turn it off?" */
   pendingShareChoice: boolean;
+  /** The 30-minute check's result: true on track, false drifted, null not checked yet */
+  firstCheckOnTrack: boolean | null;
   /** The chat is locked until the student shares (see screenShareRequired) */
   shareRequired: boolean;
 };
@@ -173,6 +175,7 @@ type SessionRow = {
   screenShareOn?: boolean;
   nextScreenCheckAt?: Date | null;
   pendingShareChoice?: boolean;
+  firstCheckOnTrack?: boolean | null;
 };
 
 type ViewExtras = { shareRequired?: boolean };
@@ -196,6 +199,7 @@ export function toSessionView(row: SessionRow, extras: ViewExtras = {}): DeepWor
     screenShareOn: row.screenShareOn ?? false,
     nextScreenCheckAt: row.nextScreenCheckAt?.toISOString() ?? null,
     pendingShareChoice: row.pendingShareChoice ?? false,
+    firstCheckOnTrack: row.firstCheckOnTrack ?? null,
     shareRequired: extras.shareRequired ?? false,
   };
 }

@@ -98,12 +98,12 @@ describe('parseScreenCheckResponse', () => {
 });
 
 describe('screenCheckChatMessage', () => {
-  it('asks the keep/turn-off question only when on track', () => {
+  it('offers the choice either way, optional when they drifted', () => {
     expect(screenCheckChatMessage({ onTrack: true, note: '', message: 'Nice progress.' }, 1_800_000)).toMatch(
       /keep tracking your screen, or turn screen sharing off\?$/
     );
     expect(screenCheckChatMessage({ onTrack: false, note: '', message: 'You seem off task.' }, 1_800_000)).toContain(
-      'check in again in 30 minutes'
+      "keep sharing your screen for another 30 minutes and I'll check again. It's up to you."
     );
   });
 });

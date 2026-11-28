@@ -490,7 +490,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
                   disabled={choiceBusy}
                   className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-electric-blue text-white hover:opacity-90 disabled:opacity-50"
                 >
-                  Keep tracking my screen
+                  Keep sharing for another {Math.round(data.screenCheck.checkIntervalMs / 60_000)} minutes
                 </button>
                 <button
                   type="button"
@@ -518,7 +518,7 @@ export default function DeepWorkRoom({ sessionId }: { sessionId: string }) {
                   {session.nextScreenCheckAt ? 'Share your screen to continue' : 'Share your screen to start'}
                 </p>
                 <p className="text-gray-600 mt-1">
-                  Screen sharing stays on until your first check-in shows you&apos;re on track. Snapshots are never saved.
+                  The app requires screen-sharing for the first 30 minutes.
                 </p>
                 <button
                   type="button"

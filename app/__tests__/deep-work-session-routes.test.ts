@@ -53,6 +53,7 @@ function sessionRow(overrides: Record<string, unknown> = {}) {
     wrapUpAt: null,
     endedAt: null,
     livekitRoom: 'dw-s1',
+    firstCheckOnTrack: null,
     messages: [],
     ...overrides,
   };
@@ -199,10 +200,9 @@ describe('required screen sharing', () => {
     expect((await postMessage(req(`${BASE}/s1/messages`, { content: 'hi' }), params('s1'))).status).toBe(200);
   });
 
-  it('allows chat without sharing after an on-track check', async () => {
-    db.deepWorkSession.findUnique.mockResolvedValue(sessionRow({ screenShareOn: false }));
+  it('allows chat without sharing after the 30-minute check, even if they drifted', async () => {
+    db.deepWorkSession.findUnique.mockResolvedValue(sessionRow({ screenShareOn: false, firstCheckOnTrack: false }));
     db.deepWorkSession.findUniqueOrThrow.mockResolvedValue(sessionRow());
-    db.deepWorkScreenCheck.count.mockResolvedValue(1);
     mockHost.mockResolvedValue({ reply: 'ok', plan: null, summary: null });
     expect((await postMessage(req(`${BASE}/s1/messages`, { content: 'hi' }), params('s1'))).status).toBe(200);
   });

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     }
     if (!session.screenShareOn && (await isShareRequired(session))) {
       return NextResponse.json(
-        { error: 'Share your screen to keep chatting. Sharing stays on until your first check-in shows you on track.' },
+        { error: 'Share your screen to keep chatting. The app requires screen sharing for the first 30 minutes.' },
         { status: 403 }
       );
     }

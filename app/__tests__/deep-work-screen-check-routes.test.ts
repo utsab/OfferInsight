@@ -48,6 +48,7 @@ function row(overrides: Record<string, unknown> = {}) {
     screenShareOn: true,
     nextScreenCheckAt: new Date('2026-11-27T03:30:00Z'),
     pendingShareChoice: false,
+    firstCheckOnTrack: null,
     messages: [],
     ...overrides,
   };
@@ -71,17 +72,24 @@ describe('POST /screen-check', () => {
     expect(db.deepWorkSession.updateMany.mock.calls[0][0].data.nextScreenCheckAt.toISOString()).toBe('2026-11-27T04:00:00.000Z');
     expect(db.deepWorkScreenCheck.create.mock.calls[0][0].data).toMatchObject({ onTrack: true, note: 'Applying on Greenhouse', frameCount: 2 });
     expect(db.deepWorkMessage.create.mock.calls[0][0].data.content).toMatch(/turn screen sharing off\?$/);
-    expect(db.deepWorkSession.update).toHaveBeenCalledWith({ where: { id: 's1' }, data: { pendingShareChoice: true } });
+    expect(db.deepWorkSession.update).toHaveBeenCalledWith({ where: { id: 's1' }, data: { pendingShareChoice: true, firstCheckOnTrack: true } });
     // The image goes to Claude and nowhere else.
     expect(JSON.stringify(db.deepWorkScreenCheck.create.mock.calls)).not.toContain('QUJD');
   });
 
-  it('nudges when off track and leaves no pending choice', async () => {
+  it('tells a drifted student, offers optional sharing, and records the 30-minute result', async () => {
     db.deepWorkSession.findUnique.mockResolvedValue(row());
-    mockCheck.mockResolvedValue({ onTrack: false, note: 'YouTube', message: 'You seem off your plan.' });
+    mockCheck.mockResolvedValue({ onTrack: false, note: 'YouTube', message: 'You seem to have drifted from your plan.' });
     await screenCheck(post('screen-check', goodBody), params);
-    expect(db.deepWorkMessage.create.mock.calls[0][0].data.content).toContain('stays shared');
-    expect(db.deepWorkSession.update).toHaveBeenCalledWith({ where: { id: 's1' }, data: { pendingShareChoice: false } });
+    expect(db.deepWorkMessage.create.mock.calls[0][0].data.content).toContain("It's up to you.");
+    expect(db.deepWorkSession.update).toHaveBeenCalledWith({ where: { id: 's1' }, data: { pendingShareChoice: true, firstCheckOnTrack: false } });
+  });
+
+  it('keeps the 30-minute result on later checks', async () => {
+    db.deepWorkSession.findUnique.mockResolvedValue(row({ firstCheckOnTrack: false }));
+    mockCheck.mockResolvedValue({ onTrack: true, note: 'Back on it', message: 'Nice.' });
+    await screenCheck(post('screen-check', goodBody), params);
+    expect(db.deepWorkSession.update).toHaveBeenCalledWith({ where: { id: 's1' }, data: { pendingShareChoice: true } });
   });
 
   it('refuses a check that is not due', async () => {

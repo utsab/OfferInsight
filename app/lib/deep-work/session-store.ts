@@ -32,10 +32,15 @@ export async function findOwnSession(sessionId: string, userId: string) {
 }
 
 /** True when this session's chat should stay locked until the student shares their screen. */
-export async function isShareRequired(session: { id: string; status: 'ACTIVE' | 'WRAPPING_UP' | 'COMPLETED' }) {
-  if (session.status !== 'ACTIVE' || livekitConfig() === null) return false;
-  const onTrack = await prisma.deepWorkScreenCheck.count({ where: { sessionId: session.id, onTrack: true } });
-  return screenShareRequired({ status: session.status, livekitConfigured: true, hasOnTrackCheck: onTrack > 0 });
+export async function isShareRequired(session: {
+  status: 'ACTIVE' | 'WRAPPING_UP' | 'COMPLETED';
+  firstCheckOnTrack: boolean | null;
+}) {
+  return screenShareRequired({
+    status: session.status,
+    livekitConfigured: livekitConfig() !== null,
+    firstCheckDone: session.firstCheckOnTrack !== null,
+  });
 }
 
 export async function sessionPayload(sessionId: string): Promise<DeepWorkSessionPayload> {

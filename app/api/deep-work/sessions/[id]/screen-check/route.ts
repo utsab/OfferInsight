@@ -78,7 +78,15 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       prisma.deepWorkMessage.create({
         data: { sessionId: id, role: 'AI', content: screenCheckChatMessage(result, timing.checkIntervalMs) },
       }),
-      prisma.deepWorkSession.update({ where: { id }, data: { pendingShareChoice: result.onTrack } }),
+      prisma.deepWorkSession.update({
+        where: { id },
+        data: {
+          // After every check, keeping the share on is the student's choice.
+          pendingShareChoice: true,
+          // The first check is the 30-minute mark; record whether they were on track.
+          ...(session.firstCheckOnTrack === null ? { firstCheckOnTrack: result.onTrack } : {}),
+        },
+      }),
     ]);
 
     return NextResponse.json({ skipped: false, onTrack: result.onTrack, ...(await sessionPayload(id)) });
