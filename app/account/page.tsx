@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, Save, User, GraduationCap, Code, Shield } from 'luc
 import { looksLikeLeetCodeUrl } from '@/app/lib/leetcode-username';
 import { ModalOverlay, ModalPanel } from '@/app/dashboard/components/shared';
 import MonthlyMeetingScheduler from '@/components/monthly-meeting-scheduler';
+import DeepWorkScheduler from '@/components/deep-work-scheduler';
 
 type AccountData = {
   name: string | null;
@@ -245,6 +246,10 @@ export default function AccountPage() {
 
         <section className="bg-white border border-gray-200 rounded-lg p-5 sm:p-6 mt-6">
           <MonthlyMeetingScheduler collapsible />
+        </section>
+
+        <section id="deep-work" className="bg-white border border-gray-200 rounded-lg p-5 sm:p-6 mt-6 scroll-mt-6">
+          <DeepWorkScheduler />
         </section>
       </main>
 

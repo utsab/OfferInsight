@@ -1,0 +1,71 @@
+<svg viewBox="0 0 900 640" width="900" height="640" xmlns="http://www.w3.org/2000/svg" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+    <style>
+      .h { font-size: 15px; font-weight: 600; fill: #0f172a; }
+      .t { font-size: 14px; fill: #0f172a; }
+      .tb { font-size: 14px; font-weight: 600; fill: #0f172a; }
+      .s { font-size: 12px; fill: #475569; }
+      .ln { stroke: #64748b; stroke-width: 1.5; fill: none; }
+    </style>
+  </defs>
+  <rect width="900" height="640" fill="#ffffff"/>
+  <text class="h" x="20" y="36">Browser</text>
+  <text class="h" x="310" y="36">Next.js API routes</text>
+  <text class="h" x="630" y="36">Data and services</text>
+
+  <g fill="#e0f2fe" stroke="#0284c7">
+    <rect x="20" y="60" width="220" height="56" rx="8"/>
+    <rect x="20" y="196" width="220" height="60" rx="8"/>
+    <rect x="20" y="380" width="220" height="110" rx="8"/>
+  </g>
+  <text class="tb" x="32" y="84">Account page</text><text class="s" x="32" y="104">DeepWorkScheduler: pick 2 slots</text>
+  <text class="tb" x="32" y="220">Overview tab</text><text class="s" x="32" y="240">DeepWorkCard: next session, Join</text>
+  <text class="tb" x="32" y="404">Session room</text><text class="s" x="32" y="424">/deep-work/[sessionId]</text>
+  <text class="s" x="32" y="446">Screen preview + AI chat</text><text class="s" x="32" y="466">Timer, End session</text>
+
+  <g fill="#ccfbf1" stroke="#0d9488">
+    <rect x="310" y="60" width="250" height="44" rx="8"/>
+    <rect x="310" y="180" width="250" height="44" rx="8"/>
+    <rect x="310" y="250" width="250" height="44" rx="8"/>
+    <rect x="310" y="320" width="250" height="44" rx="8"/>
+    <rect x="310" y="390" width="250" height="44" rx="8"/>
+    <rect x="310" y="460" width="250" height="44" rx="8"/>
+  </g>
+  <text class="t" x="322" y="87">GET/PUT /api/deep-work/schedule</text>
+  <text class="t" x="322" y="207">POST /sessions/join</text>
+  <text class="t" x="322" y="277">GET /sessions/[id]</text>
+  <text class="t" x="322" y="340">POST /sessions/[id]/token</text><text class="s" x="322" y="357">signs a LiveKit JWT locally</text>
+  <text class="t" x="322" y="417">POST /sessions/[id]/messages</text>
+  <text class="t" x="322" y="487">POST /sessions/[id]/end</text>
+
+  <rect x="630" y="60" width="250" height="150" rx="8" fill="#ede9fe" stroke="#7c3aed"/>
+  <text class="tb" x="642" y="84">Postgres (Prisma)</text>
+  <text class="s" x="642" y="112">DeepWorkSlotSignup</text><text class="s" x="654" y="132">2 slot keys per student</text>
+  <text class="s" x="642" y="156">DeepWorkSession</text><text class="s" x="654" y="176">plan, summary, status</text>
+  <text class="s" x="642" y="198">DeepWorkMessage: chat log</text>
+
+  <rect x="630" y="370" width="250" height="56" rx="8" fill="#fef3c7" stroke="#d97706"/>
+  <text class="tb" x="642" y="394">Claude API</text><text class="s" x="642" y="414">ai-host.ts, Opus 5.5, JSON out</text>
+  <rect x="630" y="470" width="250" height="56" rx="8" fill="#ffe4e6" stroke="#e11d48"/>
+  <text class="tb" x="642" y="494">LiveKit Cloud</text><text class="s" x="642" y="514">room dw-[sessionId]</text>
+
+  <g class="ln" marker-end="url(#a)">
+    <line x1="240" y1="88" x2="308" y2="82"/>
+    <line x1="240" y1="212" x2="308" y2="92"/>
+    <line x1="240" y1="236" x2="308" y2="204"/>
+    <line x1="240" y1="396" x2="308" y2="274"/>
+    <line x1="240" y1="420" x2="308" y2="344"/>
+    <line x1="240" y1="444" x2="308" y2="412"/>
+    <line x1="240" y1="468" x2="308" y2="480"/>
+    <line x1="560" y1="82" x2="628" y2="90"/>
+    <line x1="560" y1="420" x2="628" y2="405"/>
+    <path d="M595,482 L595,180 L628,180"/>
+    <path d="M130,490 L130,566 L755,566 L755,528"/>
+  </g>
+  <path class="ln" d="M560,202 L595,202 M560,272 L595,272 M560,405 L595,405 M560,482 L595,482"/>
+  <text class="s" x="603" y="442">reply,</text><text class="s" x="603" y="456">plan,</text><text class="s" x="603" y="470">summary</text>
+  <text class="s" x="300" y="558">screen share over WebRTC, using the token from /token</text>
+  <text class="s" x="20" y="604">Shared logic: slots.ts (6 fixed Pacific slots, next session, 10-minute join window) and sessions.ts</text>
+  <text class="s" x="20" y="624">(phases: planning, working, summary, done). Practice mode (dev only) lets /join start a session any time.</text>
+</svg>

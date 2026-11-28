@@ -88,6 +88,8 @@ model User {
   /// Instructor this student books monthly 1:1s with; null = default instructor
   assignedInstructorId   String?
   assignedInstructor     Instructor? @relation("AssignedStudents", fields: [assignedInstructorId], references: [id], onDelete: SetNull)
+  deepWorkSlots          DeepWorkSlotSignup[]
+  deepWorkSessions       DeepWorkSession[]
 
   @@index([assignedInstructorId])
 }
@@ -254,6 +256,93 @@ model MissedMeeting {
   createdAt            DateTime @default(now())
 
   @@unique([userId, occurrenceStart])
+}
+
+/// One of the (up to 2) weekly Deep Work slots a student picked; repeats weekly until changed.
+model DeepWorkSlotSignup {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Key from DEEP_WORK_SLOTS in app/lib/deep-work/slots.ts, e.g. "mon-19"
+  slotKey   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, slotKey])
+  @@index([slotKey])
+}
+
+/// One occurrence of a Deep Work slot that a student joined (rows are created on join).
+model DeepWorkSession {
+  id             String                @id @default(cuid())
+  userId         String
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Slot key from app/lib/deep-work/slots.ts, or "practice" for a dev-only session
+  slotKey        String
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  status         DeepWorkSessionStatus @default(ACTIVE)
+  /// The student's plan for this session, as the AI host captured it
+  plan           String?               @db.Text
+  /// The student's end-of-session progress summary, as the AI host captured it
+  summary        String?               @db.Text
+  startedAt      DateTime              @default(now())
+  /// When the student clicked End (or time ran out) and the AI asked for a summary
+  wrapUpAt       DateTime?
+  endedAt        DateTime?
+  livekitRoom    String
+  /// True while the student's browser is publishing a screen share
+  screenShareOn      Boolean               @default(false)
+  /// When the next screen check is due; set when sharing first starts, so a refresh can't skip one
+  nextScreenCheckAt  DateTime?
+  /// An on-track check asked "keep tracking or turn sharing off?" and the student hasn't answered
+  pendingShareChoice Boolean               @default(false)
+  /// Result of the first screen check (the 30-minute mark): true on track, false drifted, null not checked yet
+  firstCheckOnTrack  Boolean?
+  messages       DeepWorkMessage[]
+  screenChecks   DeepWorkScreenCheck[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@unique([userId, scheduledStart])
+  @@index([userId, status])
+}
+
+/// One chat message between a student and the AI host in a Deep Work session.
+model DeepWorkMessage {
+  id        String              @id @default(cuid())
+  sessionId String
+  session   DeepWorkSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      DeepWorkMessageRole
+  content   String              @db.Text
+  createdAt DateTime            @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+/// The result of one 30-minute screen check. The screenshots themselves are never stored.
+model DeepWorkScreenCheck {
+  id         String          @id @default(cuid())
+  sessionId  String
+  session    DeepWorkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  checkedAt  DateTime        @default(now())
+  onTrack    Boolean
+  /// One line from the AI, e.g. "Editing resume.tex, the plan's first task"
+  note       String
+  /// How many frames the contact sheet held (fewer than 6 after a page refresh)
+  frameCount Int
+
+  @@index([sessionId, checkedAt])
+}
+
+enum DeepWorkSessionStatus {
+  ACTIVE
+  WRAPPING_UP
+  COMPLETED
+}
+
+enum DeepWorkMessageRole {
+  AI
+  STUDENT
 }
 
 /// OAuth tokens for writing monthly 1:1s on the instructor's Google Calendar.
